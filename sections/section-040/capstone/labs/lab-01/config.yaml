@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-capstone-040"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "capstone-040-setup"
+      description: "Creates the payments namespace with two healthy ledger replicas, one that returns 503 to everything, and a fortio load generator"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-section-040-capstone"
+      description: "Confirms the write path is never retried while the read path is, that the timeout budgets are sufficient, that the connection pool rejects concurrent overflow with UO, that the failing endpoint is ejected, and that no workload was scaled or removed"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

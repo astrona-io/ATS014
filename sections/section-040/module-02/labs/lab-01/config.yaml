@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-040-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-02-setup"
+      description: "Creates the circuit-demo namespace with a backend and a fortio load generator, and no DestinationRule"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-circuit-breaking"
+      description: "Confirms the connection pool limits are configured and live in the proxy, that a sequential load still succeeds, that a concurrent load is rejected, and that the rejections carry the UO flag and move the pending-overflow counter while the backend sees nothing"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

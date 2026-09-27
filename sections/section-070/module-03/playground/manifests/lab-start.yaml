@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vm-demo
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: legacy-sa
+  namespace: vm-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tester
+  namespace: vm-demo
+  labels:
+    app: tester
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tester
+  template:
+    metadata:
+      labels:
+        app: tester
+    spec:
+      containers:
+        - name: tester
+          image: curlimages/curl
+          command: ["sh", "-c", "while true; do sleep 30; done"]
+---
+# Stands in for a virtual machine: not injected, reached by address only.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-backend
+  namespace: vm-demo
+  labels:
+    app: legacy-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legacy-backend
+  template:
+    metadata:
+      labels:
+        app: legacy-backend
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: legacy-sa
+      containers:
+        - name: legacy-backend
+          image: mccutchen/go-httpbin:v2.15.0
+          args: ["-port", "8080"]
+          ports:
+            - containerPort: 8080

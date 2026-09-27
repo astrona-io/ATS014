@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-060-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane including the ingress gateway"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-060-02-setup"
+      description: "Creates the k8s-ingress-demo namespace with a backend service, a TLS key pair on disk, and no Ingress or IngressClass"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-kubernetes-ingress"
+      description: "Confirms an istio IngressClass with the correct controller, an Ingress claimed by it routing two path types, the TLS secret in the gateway namespace with HTTPS working, and element-wise Prefix semantics"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

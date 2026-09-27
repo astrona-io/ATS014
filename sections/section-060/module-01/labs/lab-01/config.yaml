@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-060-01"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane including the ingress gateway"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-060-01-setup"
+      description: "Creates the ingress-demo namespace with two backend services and no Gateway or VirtualService"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-ingress-gateway"
+      description: "Confirms a Gateway opens an HTTP listener for the required hosts, that two VirtualServices bind to it and route by host, that the gateway proxy holds the routes, and that an unknown host is rejected"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

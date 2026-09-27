@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-capstone-080"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane including the egress gateway"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "capstone-080-setup"
+      description: "Creates the edge-egress namespace with two differently labelled clients, a plain HTTP endpoint and a TLS-only endpoint, both outside the mesh registry"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-section-080-capstone"
+      description: "Confirms one egress gateway carrying two external hosts - one plain HTTP and one with TLS originated at the gateway - with the path restricted by sourceLabels and the TLS context on the gateway rather than the sidecar"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

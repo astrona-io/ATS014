@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-030-01"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-030-01-setup"
+      description: "Creates the lb-demo namespace with a three-replica stable version, a two-replica canary version behind the same Service, and a tester client"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-load-balancer-policy"
+      description: "Confirms host-level consistent hashing pins a user to one stable endpoint, that a subset-level ROUND_ROBIN override spreads canary traffic, that the two clusters really carry different lbPolicy values, and that a request with no hashed header falls back to spreading"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

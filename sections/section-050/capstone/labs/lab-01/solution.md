@@ -1,0 +1,196 @@
+# Solution Walkthrough
+
+One object, three rules, two independent experiments — and the first one's result is the lesson.
+
+---
+
+## Step 1: Baseline, And Note Who Else Is Here
+
+```sh
+kubectl -n orders get virtualservice
+kubectl -n orders run t0 --rm -i --restart=Never --image=curlimages/curl -- \
+  curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -X POST http://booking-service/book
+```
+
+```text
+No resources found in orders namespace.
+200 0.041s
+```
+
+The namespace is shared. Every rule you add that lacks a `match` block is a change to somebody else's traffic, which is why both experiments get their own header and a clean catch-all goes last.
+
+---
+
+## Step 2: Predict Experiment 1 Before Running It
+
+The first rule aborts with 503 **and** carries a retry policy that retries on `gateway-error` — which covers 503. So what happens?
+
+```text
+  attempt 1  →  caller's proxy fabricates 503 (FI)  →  retriable
+  attempt 2  →  caller's proxy fabricates 503 (FI)  →  retriable
+  attempt 3  →  caller's proxy fabricates 503 (FI)  →  attempts exhausted
+                                                        │
+                                                        ▼
+                                              caller gets 503
+```
+
+Three attempts, all faulted, no improvement. The retries happen — you can count them — and they cannot possibly help, because the fault is manufactured by the caller's own proxy on every attempt. It never reaches `notification-service`, so there is nothing transient to recover from.
+
+That is the point of the experiment: it shows what retries are *for*. They recover from transient failures. A deterministic fault, an application bug, or a circuit-breaker rejection are none of those.
+
+Check the budget too, since the rule has both: `attempts: 2` plus the original is 3 attempts × `perTryTimeout: 1s` = 3s, and `timeout: 5s` leaves room. A 2-second timeout would truncate the retries and you would count fewer than three.
+
+---
+
+## Step 3: Write All Three Rules
+
+```sh
+kubectl apply -f - <<'EOF'
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: notification
+  namespace: orders
+spec:
+  hosts:
+    - notification-service
+  http:
+    - match:
+        - headers:
+            x-chaos:
+              exact: abort
+      fault:
+        abort:
+          httpStatus: 503
+          percentage:
+            value: 100
+      retries:
+        attempts: 2
+        perTryTimeout: 1s
+        retryOn: gateway-error
+      timeout: 5s
+      route:
+        - destination:
+            host: notification-service
+    - match:
+        - headers:
+            x-chaos:
+              exact: delay
+      fault:
+        delay:
+          fixedDelay: 7s
+          percentage:
+            value: 100
+      timeout: 2s
+      route:
+        - destination:
+            host: notification-service
+    - route:
+        - destination:
+            host: notification-service
+EOF
+istioctl analyze -n orders
+```
+
+```text
+virtualservice.networking.istio.io/notification created
+✔ No validation issues found when analyzing namespace: orders.
+```
+
+Both chaos rules are above the catch-all, each matching a different value of the same header. The third rule has no `fault`, no `timeout` and no `retries` — the grader checks all three are absent.
+
+---
+
+## Step 4: Verify Unmarked Traffic First
+
+Always this order. If the scoping is wrong, you want to find out before you start generating failures.
+
+```sh
+for i in 1 2 3 4 5; do
+  kubectl -n orders run "u$i" --rm -i --restart=Never --image=curlimages/curl --quiet -- \
+    curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -X POST http://booking-service/book
+done
+```
+
+```text
+200 0.039s
+200 0.042s
+200 0.040s
+200 0.043s
+200 0.038s
+```
+
+---
+
+## Step 5: Run Experiment 1 And Count the Attempts
+
+```sh
+BEFORE=$(kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=-1 | grep -c ' FI ')
+kubectl -n orders run c1 --rm -i --restart=Never --image=curlimages/curl -- \
+  curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -H "x-chaos: abort" -X POST http://booking-service/book
+sleep 3
+AFTER=$(kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=-1 | grep -c ' FI ')
+echo "FI-flagged attempts: $((AFTER - BEFORE))"
+kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=5 | grep ' FI ' | head -1
+```
+
+```text
+503 0.018s
+FI-flagged attempts: 3
+[2026-09-27T13:44:11.220Z] "POST /notify HTTP/1.1" 503 FI fault_filter_abort - "-" 0 18 0 - ...
+```
+
+Three attempts for one client request, every one flagged `FI`, and the whole thing finished in 18 milliseconds — because none of the attempts went anywhere. Confirm that last claim:
+
+```sh
+kubectl -n orders logs -l app=notification-service -c istio-proxy --tail=20 | grep -c ' 503 '
+```
+
+```text
+0
+```
+
+The dependency never heard about any of it.
+
+---
+
+## Step 6: Run Experiment 2
+
+```sh
+kubectl -n orders run c2 --rm -i --restart=Never --image=curlimages/curl -- \
+  curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -H "x-chaos: delay" -X POST http://booking-service/book
+sleep 2
+kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=5 | grep ' 504 UT ' | head -1
+```
+
+```text
+504 2.041s
+[2026-09-27T13:45:02.118Z] "POST /notify HTTP/1.1" 504 UT upstream_response_timeout - "-" 0 24 2001 - ...
+```
+
+Two seconds, not seven — the timeout cut the delay off. `UT` rather than `FI`, because this time the *timeout* produced the response, not the fault filter.
+
+Those two flags side by side are the section's diagnostic payoff: `FI` means "I fabricated this", `UT` means "my deadline expired". Both appear in the caller's log, and they mean different things.
+
+---
+
+## Step 7: Clean Up
+
+```sh
+kubectl -n orders delete virtualservice notification
+```
+
+A fault is configuration. Left in place, the `x-chaos` rules are harmless — nobody sends that header — but the habit of deleting is what stops an unscoped one becoming an outage.
+
+---
+
+## Common Mistakes
+
+- **Expecting retries to rescue the abort.** They run, and every attempt is re-faulted by the caller's own proxy. Counting three `FI` lines is the proof.
+- **`timeout: 2s` on rule 1.** Truncates the retry budget of `(2 + 1) × 1s`; you would count fewer than three attempts.
+- **Adding retries to rule 2.** The task asks for none, and the grader checks.
+- **Anything on the catch-all rule.** No fault, no timeout, no retries — unscoped traffic must be untouched.
+- **Both chaos rules matching the same header value.** They need distinct values; first match wins.
+- **The catch-all placed first.** It matches everything and neither experiment ever runs.
+- **Putting the faults on `booking-service`.** That delays the inbound request and tests the wrong hop.
+- **Reading only the outer status.** The `FI` and `UT` evidence is in the intermediate service's proxy log.

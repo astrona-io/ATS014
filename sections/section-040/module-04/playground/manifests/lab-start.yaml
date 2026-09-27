@@ -1,0 +1,112 @@
+# Starting workloads for the locality load balancing playground.
+#
+# Adapted from domains/traffic-management/09-locality-load-balancing-and-failover:
+# that lab assumes a multi-node cluster and pins each Deployment to a zoned node
+# with required nodeAffinity. This playground runs on a single-node kind cluster,
+# so the pods declare their locality with the `istio-locality` pod label instead.
+# Everything the module teaches about localityLbSetting behaves the same way.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: locality-demo
+  labels:
+    istio-injection: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpbin-zone-a
+  namespace: locality-demo
+  labels:
+    app: httpbin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin
+      zone: a
+  template:
+    metadata:
+      labels:
+        app: httpbin
+        zone: a
+        # Single-node playground: the pods cannot be spread over real zoned
+        # nodes, so locality is declared directly on the pod. Istio reads the
+        # `istio-locality` label as region.zone[.subzone] and it overrides the
+        # locality the pod would otherwise inherit from its node.
+        istio-locality: local.zone-a
+    spec:
+      containers:
+        - name: httpbin
+          image: mccutchen/go-httpbin:v2.15.0
+          args: ["-port", "8080"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpbin-zone-b
+  namespace: locality-demo
+  labels:
+    app: httpbin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin
+      zone: b
+  template:
+    metadata:
+      labels:
+        app: httpbin
+        zone: b
+        # Single-node playground: the pods cannot be spread over real zoned
+        # nodes, so locality is declared directly on the pod. Istio reads the
+        # `istio-locality` label as region.zone[.subzone] and it overrides the
+        # locality the pod would otherwise inherit from its node.
+        istio-locality: local.zone-b
+    spec:
+      containers:
+        - name: httpbin
+          image: mccutchen/go-httpbin:v2.15.0
+          args: ["-port", "8080"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+  namespace: locality-demo
+  labels:
+    app: httpbin
+spec:
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8080
+  selector:
+    app: httpbin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tester
+  namespace: locality-demo
+  labels:
+    app: tester
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tester
+  template:
+    metadata:
+      labels:
+        app: tester
+    spec:
+      containers:
+        - name: tester
+          image: curlimages/curl
+          command: ["sh", "-c", "while true; do sleep 30; done"]

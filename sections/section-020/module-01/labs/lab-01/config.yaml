@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-020-01"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-020-01-setup"
+      description: "Creates the shifting-demo namespace with two versions of notification-service and a tester client, and no Istio traffic configuration"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-weighted-routing"
+      description: "Confirms the subsets exist, an internal-tester header rule pins to v2 above a 70/30 weighted rule, the proxy holds the matching weightedClusters, live traffic lands in the right proportion, and the Deployments were not scaled to fake the split"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

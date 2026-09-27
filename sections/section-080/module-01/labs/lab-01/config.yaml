@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-080-01"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane including the egress gateway"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-080-01-setup"
+      description: "Creates the egwgw-demo namespace with two clients and an endpoint outside the mesh registry"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-egress-gateway"
+      description: "Confirms the four objects route external traffic through the egress gateway, that the gateway's own log records the request, that the sidecar route points inward, and that sourceLabels diverts only the permitted workload"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

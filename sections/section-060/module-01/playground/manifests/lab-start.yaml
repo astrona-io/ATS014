@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-demo
+  labels:
+    istio-injection: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking-service-v1
+  namespace: ingress-demo
+  labels:
+    app: booking-service
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: booking-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: booking-service
+        version: v1
+    spec:
+      containers:
+        - name: booking-service
+          image: kubeteam/booking-service:v1
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SERVICE_PORT
+              value: "8084"
+            - name: NOTIFICATION_SERVICE_URL
+              value: notification-service
+            - name: NOTIFICATION_SERVICE_PORT
+              value: "80"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking-service
+  namespace: ingress-demo
+  labels:
+    app: booking-service
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8084
+  selector:
+    app: booking-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service-v1
+  namespace: ingress-demo
+  labels:
+    app: notification-service
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        version: v1
+    spec:
+      containers:
+        - name: notification-service
+          image: kubeteam/notification-service:v1
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SERVICE_PORT
+              value: "8084"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: ingress-demo
+  labels:
+    app: notification-service
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8084
+  selector:
+    app: notification-service

@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-040-01"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-01-setup"
+      description: "Creates the resilience-demo namespace with an httpbin whose /delay and /status endpoints make failure controllable, plus a tester client"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-timeouts-and-retries"
+      description: "Confirms a POST rule disables retries above a read rule that retries on gateway errors, that the read timeout covers the full retry budget, and that live traffic shows four attempts for a retried read and exactly one for a POST"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

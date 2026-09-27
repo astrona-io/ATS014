@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-capstone-060"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5, a demo-profile control plane, and the Gateway API CRDs"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "capstone-060-setup"
+      description: "Creates the edge namespace with three backends and a TLS key pair, and no ingress configuration of any kind"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-section-060-capstone"
+      description: "Confirms all three ingress APIs serving three applications at once: native Gateway plus VirtualService, a Kubernetes Ingress with TLS in the gateway namespace, and a Gateway API Gateway with its own proxy"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

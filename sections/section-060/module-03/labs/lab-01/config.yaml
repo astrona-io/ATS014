@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-060-03"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5, a demo-profile control plane, and the Gateway API CRDs"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-060-03-setup"
+      description: "Creates the gwapi-demo and gwapi-team namespaces with two backends, and no Gateway or HTTPRoute"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-gateway-api"
+      description: "Confirms a Gateway creates its own proxy in its own namespace, that allowedRoutes permits a labelled namespace, that both HTTPRoutes report Accepted and ResolvedRefs, and that live traffic reaches both backends"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

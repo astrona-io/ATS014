@@ -1,0 +1,613 @@
+training:
+  id: ATS014
+  title: "ICA: Traffic Management"
+  description: >
+    Training material covering the Istio Certified Associate (ICA) Traffic
+    Management domain — request routing and configuration scoping, traffic
+    shifting and mirroring, destination rule traffic policies, resilience
+    features, fault injection, ingress across three APIs, external services
+    and workloads, and egress gateways. Each module pairs a layered reader
+    with an ungraded hands-on playground and a graded practice lab, and each
+    section closes with an integration capstone.
+    Built and verified against Istio 1.30.5.
+
+  certification:
+    name: Istio Certified Associate
+    code: ICA
+    provider: CNCF / Linux Foundation
+    domain: Traffic Management
+
+modules:
+
+  - id: module-010
+    title: "Section 010: Configuring Routing Within A Service Mesh"
+    description: >
+      Split a Service into named subsets and route individual requests by
+      header, URI and query parameter, then cut a proxy's configuration down
+      from the whole service registry to the hosts a workload actually calls.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-010/README.md
+
+      - type: reading
+        title: "Module 1: Route Requests By Header, URI And Query Parameter"
+        path: sections/section-010/module-01/course.md
+      - type: reading
+        title: "Module 1.1: Subsets And The Destination Vocabulary"
+        path: sections/section-010/module-01/course-01-subsets-and-destination-vocabulary.md
+      - type: reading
+        title: "Module 1.2: Matching A Request"
+        path: sections/section-010/module-01/course-02-matching-a-request.md
+      - type: reading
+        title: "Module 1.3: Evaluation Order, Name Resolution And Proof"
+        path: sections/section-010/module-01/course-03-evaluation-order-and-proof.md
+
+      - type: reading
+        title: Question
+        path: sections/section-010/module-01/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-010/module-01/labs/lab-01/solution.md
+      - type: lab
+        title: "Route Requests By Header, URI And Query Parameter Lab"
+        path: sections/section-010/module-01/labs/lab-01
+
+      - type: reading
+        title: "Module 2: Scope Proxy Configuration With The Sidecar Resource"
+        path: sections/section-010/module-02/course.md
+      - type: reading
+        title: "Module 2.1: What A Proxy Is Programmed With"
+        path: sections/section-010/module-02/course-01-what-a-proxy-is-programmed-with.md
+      - type: reading
+        title: "Module 2.2: The Sidecar Object And Its Host Language"
+        path: sections/section-010/module-02/course-02-the-sidecar-object-and-host-language.md
+      - type: reading
+        title: "Module 2.3: Precedence, Reachability And What It Is Not"
+        path: sections/section-010/module-02/course-03-precedence-reachability-and-limits.md
+
+      - type: reading
+        title: Question
+        path: sections/section-010/module-02/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-010/module-02/labs/lab-01/solution.md
+      - type: lab
+        title: "Scope Proxy Configuration With The Sidecar Resource Lab"
+        path: sections/section-010/module-02/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-010/capstone/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-010/capstone/labs/lab-01/solution.md
+      - type: lab
+        title: "Route And Scope A Storefront Capstone Lab"
+        path: sections/section-010/capstone/labs/lab-01
+
+  - id: module-020
+    title: "Section 020: Configuring Traffic Shifting"
+    description: >
+      Move a controllable percentage of live traffic to a new version with
+      weighted routing, and send a release candidate a full copy of production
+      traffic with mirroring — the two opposite answers to "is this version
+      safe?".
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-020/README.md
+
+      - type: reading
+        title: "Module 1: Shift Traffic With Weighted Routing"
+        path: sections/section-020/module-01/course.md
+      - type: reading
+        title: "Module 1.1: Weighted Destinations"
+        path: sections/section-020/module-01/course-01-weighted-destinations.md
+      - type: reading
+        title: "Module 1.2: Running A Rollout"
+        path: sections/section-020/module-01/course-02-running-a-rollout.md
+      - type: reading
+        title: "Module 1.3: Weight Versus Replicas, And Proof"
+        path: sections/section-020/module-01/course-03-weight-versus-replicas-and-proof.md
+
+      - type: reading
+        title: Question
+        path: sections/section-020/module-01/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-020/module-01/labs/lab-01/solution.md
+      - type: lab
+        title: "Shift Traffic With Weighted Routing Lab"
+        path: sections/section-020/module-01/labs/lab-01
+
+      - type: reading
+        title: "Module 2: Mirror Live Traffic To A Shadow Service"
+        path: sections/section-020/module-02/course.md
+      - type: reading
+        title: "Module 2.1: Mirror As A Sibling Of Route"
+        path: sections/section-020/module-02/course-01-mirror-as-a-sibling-of-route.md
+      - type: reading
+        title: "Module 2.2: Identifying And Sampling Shadow Traffic"
+        path: sections/section-020/module-02/course-02-identifying-and-sampling-shadow-traffic.md
+      - type: reading
+        title: "Module 2.3: Consequences, Verification And Limits"
+        path: sections/section-020/module-02/course-03-consequences-verification-and-limits.md
+
+      - type: reading
+        title: Question
+        path: sections/section-020/module-02/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-020/module-02/labs/lab-01/solution.md
+      - type: lab
+        title: "Mirror Live Traffic To A Shadow Service Lab"
+        path: sections/section-020/module-02/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-020/capstone/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-020/capstone/labs/lab-01/solution.md
+      - type: lab
+        title: "Canary And Shadow At The Same Time Capstone Lab"
+        path: sections/section-020/capstone/labs/lab-01
+
+  - id: module-030
+    title: "Section 030: Defining Traffic Policies With Destination Rules"
+    description: >
+      Take over the endpoint decision with trafficPolicy.loadBalancer —
+      standard algorithms, consistent-hash session affinity, and the host,
+      subset and port precedence that governs every other key in the same
+      field.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-030/README.md
+
+      - type: reading
+        title: "Module 1: Load Balancer Policy And Session Affinity"
+        path: sections/section-030/module-01/course.md
+      - type: reading
+        title: "Module 1.1: Endpoint Selection And The `simple` Algorithms"
+        path: sections/section-030/module-01/course-01-endpoint-selection-and-simple-algorithms.md
+      - type: reading
+        title: "Module 1.2: `consistentHash` And The Ring"
+        path: sections/section-030/module-01/course-02-consistent-hash-and-the-ring.md
+      - type: reading
+        title: "Module 1.3: Policy Levels And Verification"
+        path: sections/section-030/module-01/course-03-policy-levels-and-verification.md
+
+      - type: reading
+        title: Question
+        path: sections/section-030/module-01/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-030/module-01/labs/lab-01/solution.md
+      - type: lab
+        title: "Load Balancer Policy And Session Affinity Lab"
+        path: sections/section-030/module-01/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-030/capstone/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-030/capstone/labs/lab-01/solution.md
+      - type: lab
+        title: "Sticky Sessions With A Shadowed Canary Capstone Lab"
+        path: sections/section-030/capstone/labs/lab-01
+
+  - id: module-040
+    title: "Section 040: Using Resilience Features"
+    description: >
+      Bound how long a caller waits, retry what is worth retrying, refuse work
+      that cannot be done promptly, eject endpoints that keep failing, and
+      prefer a locality that still works — all configured on the calling side.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-040/README.md
+
+      - type: reading
+        title: "Module 1: Timeouts And Retries"
+        path: sections/section-040/module-01/course.md
+      - type: reading
+        title: "Module 1.1: The Route Timeout"
+        path: sections/section-040/module-01/course-01-the-route-timeout.md
+      - type: reading
+        title: "Module 1.2: The Retry Policy"
+        path: sections/section-040/module-01/course-02-the-retry-policy.md
+      - type: reading
+        title: "Module 1.3: The Shared Budget And Idempotency"
+        path: sections/section-040/module-01/course-03-the-shared-budget-and-idempotency.md
+
+      - type: reading
+        title: Question
+        path: sections/section-040/module-01/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-040/module-01/labs/lab-01/solution.md
+      - type: lab
+        title: "Timeouts And Retries Lab"
+        path: sections/section-040/module-01/labs/lab-01
+
+      - type: reading
+        title: "Module 2: Circuit Breaking With Connection Pool Limits"
+        path: sections/section-040/module-02/course.md
+      - type: reading
+        title: "Module 2.1: The Connection Pool"
+        path: sections/section-040/module-02/course-01-the-connection-pool.md
+      - type: reading
+        title: "Module 2.2: Overflow And Its Signatures"
+        path: sections/section-040/module-02/course-02-overflow-and-its-signatures.md
+      - type: reading
+        title: "Module 2.3: Scope, Verification And Retry Amplification"
+        path: sections/section-040/module-02/course-03-scope-verification-and-retry-amplification.md
+
+      - type: reading
+        title: Question
+        path: sections/section-040/module-02/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-040/module-02/labs/lab-01/solution.md
+      - type: lab
+        title: "Circuit Breaking With Connection Pool Limits Lab"
+        path: sections/section-040/module-02/labs/lab-01
+
+      - type: reading
+        title: "Module 3: Outlier Detection And Endpoint Ejection"
+        path: sections/section-040/module-03/course.md
+      - type: reading
+        title: "Module 3.1: Passive Health Checking"
+        path: sections/section-040/module-03/course-01-passive-health-checking.md
+      - type: reading
+        title: "Module 3.2: Ejection Mechanics And Limits"
+        path: sections/section-040/module-03/course-02-ejection-mechanics-and-limits.md
+      - type: reading
+        title: "Module 3.3: Local, Temporary, And Verified"
+        path: sections/section-040/module-03/course-03-local-temporary-and-verified.md
+
+      - type: reading
+        title: Question
+        path: sections/section-040/module-03/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-040/module-03/labs/lab-01/solution.md
+      - type: lab
+        title: "Outlier Detection And Endpoint Ejection Lab"
+        path: sections/section-040/module-03/labs/lab-01
+
+      - type: reading
+        title: "Module 4: Locality Load Balancing And Failover"
+        path: sections/section-040/module-04/course.md
+      - type: reading
+        title: "Module 4.1: Where Locality Comes From"
+        path: sections/section-040/module-04/course-01-where-locality-comes-from.md
+      - type: reading
+        title: "Module 4.2: Preference, `distribute` And `failover`"
+        path: sections/section-040/module-04/course-02-preference-distribute-and-failover.md
+      - type: reading
+        title: "Module 4.3: The Health Dependency And Scope"
+        path: sections/section-040/module-04/course-03-the-health-dependency-and-scope.md
+
+      - type: reading
+        title: Question
+        path: sections/section-040/module-04/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-040/module-04/labs/lab-01/solution.md
+      - type: lab
+        title: "Locality Load Balancing And Failover Lab"
+        path: sections/section-040/module-04/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-040/capstone/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-040/capstone/labs/lab-01/solution.md
+      - type: lab
+        title: "A Resilient Payment Path Capstone Lab"
+        path: sections/section-040/capstone/labs/lab-01
+
+  - id: module-050
+    title: "Section 050: Using Fault Injection"
+    description: >
+      Fabricate delays and failures in the proxy to find out whether the
+      resilience configuration from the previous section actually works,
+      scoped so only your own requests are affected.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-050/README.md
+
+      - type: reading
+        title: "Module 1: Fault Injection With Delays And Aborts"
+        path: sections/section-050/module-01/course.md
+      - type: reading
+        title: "Module 1.1: `fault.delay`"
+        path: sections/section-050/module-01/course-01-fault-delay.md
+      - type: reading
+        title: "Module 1.2: `fault.abort`"
+        path: sections/section-050/module-01/course-02-fault-abort.md
+      - type: reading
+        title: "Module 1.3: Scoping, Composition And Hazards"
+        path: sections/section-050/module-01/course-03-scoping-composition-and-hazards.md
+
+      - type: reading
+        title: Question
+        path: sections/section-050/module-01/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-050/module-01/labs/lab-01/solution.md
+      - type: lab
+        title: "Fault Injection With Delays And Aborts Lab"
+        path: sections/section-050/module-01/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-050/capstone/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-050/capstone/labs/lab-01/solution.md
+      - type: lab
+        title: "A Controlled Chaos Experiment Capstone Lab"
+        path: sections/section-050/capstone/labs/lab-01
+
+  - id: module-060
+    title: "Section 060: Configuring Ingress Traffic"
+    description: >
+      Bring north-south traffic into the mesh through three different APIs —
+      Istio's own Gateway and VirtualService, the Kubernetes Ingress API, and
+      the Kubernetes Gateway API — and know what each one cannot express.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-060/README.md
+
+      - type: reading
+        title: "Module 1: Expose A Service With An Istio Ingress Gateway"
+        path: sections/section-060/module-01/course.md
+      - type: reading
+        title: "Module 1.1: The Gateway Pod And Its Listener"
+        path: sections/section-060/module-01/course-01-the-gateway-pod-and-its-listener.md
+      - type: reading
+        title: "Module 1.2: Binding Routes With `gateways:`"
+        path: sections/section-060/module-01/course-02-binding-routes-with-gateways.md
+      - type: reading
+        title: "Module 1.3: Diagnosing The Gateway"
+        path: sections/section-060/module-01/course-03-diagnosing-the-gateway.md
+
+      - type: reading
+        title: Question
+        path: sections/section-060/module-01/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-060/module-01/labs/lab-01/solution.md
+      - type: lab
+        title: "Expose A Service With An Istio Ingress Gateway Lab"
+        path: sections/section-060/module-01/labs/lab-01
+
+      - type: reading
+        title: "Module 2: Expose A Service With A Kubernetes Ingress"
+        path: sections/section-060/module-02/course.md
+      - type: reading
+        title: "Module 2.1: Claiming An Ingress"
+        path: sections/section-060/module-02/course-01-claiming-an-ingress.md
+      - type: reading
+        title: "Module 2.2: Rules, Path Types And Translation"
+        path: sections/section-060/module-02/course-02-rules-path-types-and-translation.md
+      - type: reading
+        title: "Module 2.3: TLS And The Feature Ceiling"
+        path: sections/section-060/module-02/course-03-tls-and-the-feature-ceiling.md
+
+      - type: reading
+        title: Question
+        path: sections/section-060/module-02/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-060/module-02/labs/lab-01/solution.md
+      - type: lab
+        title: "Expose A Service With A Kubernetes Ingress Lab"
+        path: sections/section-060/module-02/labs/lab-01
+
+      - type: reading
+        title: "Module 3: Ingress With The Kubernetes Gateway API"
+        path: sections/section-060/module-03/course.md
+      - type: reading
+        title: "Module 3.1: Three Objects, Three Owners"
+        path: sections/section-060/module-03/course-01-three-objects-three-owners.md
+      - type: reading
+        title: "Module 3.2: A Gateway That Creates Its Own Data Plane"
+        path: sections/section-060/module-03/course-02-a-gateway-that-creates-its-own-data-plane.md
+      - type: reading
+        title: "Module 3.3: `HTTPRoute`, Status And What Stays In Istio"
+        path: sections/section-060/module-03/course-03-httproute-status-and-what-stays-in-istio.md
+
+      - type: reading
+        title: Question
+        path: sections/section-060/module-03/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-060/module-03/labs/lab-01/solution.md
+      - type: lab
+        title: "Ingress With The Kubernetes Gateway API Lab"
+        path: sections/section-060/module-03/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-060/capstone/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-060/capstone/labs/lab-01/solution.md
+      - type: lab
+        title: "Three APIs, One Edge Capstone Lab"
+        path: sections/section-060/capstone/labs/lab-01
+
+  - id: module-070
+    title: "Section 070: Connecting In-Mesh Workloads To External Workloads And Services"
+    description: >
+      Register the services your workloads call but do not run, move the TLS
+      boundary so the mesh can see them, and bring your own non-Kubernetes
+      machines in as first-class mesh members with identity.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-070/README.md
+
+      - type: reading
+        title: "Module 1: Control External Access With ServiceEntry"
+        path: sections/section-070/module-01/course.md
+      - type: reading
+        title: "Module 1.1: The Outbound Traffic Policy"
+        path: sections/section-070/module-01/course-01-the-outbound-traffic-policy.md
+      - type: reading
+        title: "Module 1.2: The `ServiceEntry` Object"
+        path: sections/section-070/module-01/course-02-the-serviceentry-object.md
+      - type: reading
+        title: "Module 1.3: A Registered Host Is An Ordinary Host"
+        path: sections/section-070/module-01/course-03-a-registered-host-is-an-ordinary-host.md
+
+      - type: reading
+        title: Question
+        path: sections/section-070/module-01/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-070/module-01/labs/lab-01/solution.md
+      - type: lab
+        title: "Control External Access With ServiceEntry Lab"
+        path: sections/section-070/module-01/labs/lab-01
+
+      - type: reading
+        title: "Module 2: TLS Origination For External Services"
+        path: sections/section-070/module-02/course.md
+      - type: reading
+        title: "Module 2.1: Why HTTPS Is Opaque"
+        path: sections/section-070/module-02/course-01-why-https-is-opaque.md
+      - type: reading
+        title: "Module 2.2: The Three Objects"
+        path: sections/section-070/module-02/course-02-the-three-objects.md
+      - type: reading
+        title: "Module 2.3: Proving It, And Mutual TLS"
+        path: sections/section-070/module-02/course-03-proving-it-and-mutual-tls.md
+
+      - type: reading
+        title: Question
+        path: sections/section-070/module-02/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-070/module-02/labs/lab-01/solution.md
+      - type: lab
+        title: "TLS Origination For External Services Lab"
+        path: sections/section-070/module-02/labs/lab-01
+
+      - type: reading
+        title: "Module 3: Add External Workloads With WorkloadEntry"
+        path: sections/section-070/module-03/course.md
+      - type: reading
+        title: "Module 3.1: `WorkloadEntry`: One Instance"
+        path: sections/section-070/module-03/course-01-workloadentry-one-instance.md
+      - type: reading
+        title: "Module 3.2: `MESH_INTERNAL` And The Selector"
+        path: sections/section-070/module-03/course-02-mesh-internal-and-the-selector.md
+      - type: reading
+        title: "Module 3.3: `WorkloadGroup` And Real Onboarding"
+        path: sections/section-070/module-03/course-03-workloadgroup-and-real-onboarding.md
+
+      - type: reading
+        title: Question
+        path: sections/section-070/module-03/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-070/module-03/labs/lab-01/solution.md
+      - type: lab
+        title: "Add External Workloads With WorkloadEntry Lab"
+        path: sections/section-070/module-03/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-070/capstone/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-070/capstone/labs/lab-01/solution.md
+      - type: lab
+        title: "A Deny-By-Default Integration Layer Capstone Lab"
+        path: sections/section-070/capstone/labs/lab-01
+
+  - id: module-080
+    title: "Section 080: Egress Gateways"
+    description: >
+      Concentrate outbound traffic through a single standalone proxy with a
+      two-stage VirtualService, then move the TLS handshake onto it so a
+      client certificate lives in one namespace instead of every calling
+      workload's.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-080/README.md
+
+      - type: reading
+        title: "Module 1: Route External Traffic Through An Egress Gateway"
+        path: sections/section-080/module-01/course.md
+      - type: reading
+        title: "Module 1.1: A Gateway That Carries Nothing"
+        path: sections/section-080/module-01/course-01-a-gateway-that-carries-nothing.md
+      - type: reading
+        title: "Module 1.2: The Two-Stage `VirtualService`"
+        path: sections/section-080/module-01/course-02-the-two-stage-virtualservice.md
+      - type: reading
+        title: "Module 1.3: Restricting, Proving And The Trade-Off"
+        path: sections/section-080/module-01/course-03-restricting-proving-and-the-trade-off.md
+
+      - type: reading
+        title: Question
+        path: sections/section-080/module-01/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-080/module-01/labs/lab-01/solution.md
+      - type: lab
+        title: "Route External Traffic Through An Egress Gateway Lab"
+        path: sections/section-080/module-01/labs/lab-01
+
+      - type: reading
+        title: "Module 2: TLS Origination At The Egress Gateway"
+        path: sections/section-080/module-02/course.md
+      - type: reading
+        title: "Module 2.1: The Five-Step Chain"
+        path: sections/section-080/module-02/course-01-the-five-step-chain.md
+      - type: reading
+        title: "Module 2.2: Where The `DestinationRule` Attaches"
+        path: sections/section-080/module-02/course-02-where-the-destinationrule-attaches.md
+      - type: reading
+        title: "Module 2.3: Mutual TLS And The Consolidation Argument"
+        path: sections/section-080/module-02/course-03-mutual-tls-and-consolidation.md
+
+      - type: reading
+        title: Question
+        path: sections/section-080/module-02/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-080/module-02/labs/lab-01/solution.md
+      - type: lab
+        title: "TLS Origination At The Egress Gateway Lab"
+        path: sections/section-080/module-02/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-080/capstone/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-080/capstone/labs/lab-01/solution.md
+      - type: lab
+        title: "One Exit, Two Partners Capstone Lab"
+        path: sections/section-080/capstone/labs/lab-01

@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-020-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-020-02-setup"
+      description: "Creates the mirror-demo namespace with a primary and a shadow version of notification-service and a tester client, and no Istio traffic configuration"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-traffic-mirroring"
+      description: "Confirms all caller traffic reaches v1, that a mirror to v2 is configured at the required percentage, that the client proxy holds a requestMirrorPolicy, and that the shadow really received copies carrying the -shadow authority"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

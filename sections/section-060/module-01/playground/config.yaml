@@ -1,0 +1,29 @@
+# Expose A Service With An Istio Ingress Gateway (PLAYGROUND) — Playground environment
+# A clean sandbox: it spins up, runs OS prep, then stays running for free
+# exploration. No task, no grading, no `astrona submit`.
+# Schema: internal/config.LabConfig.
+#
+# Runtime: kind cluster by default (no `runtime:` block). For a clean VM over
+# SSH with no Kubernetes, add a `runtime:` block with type "qemu" — see
+# references/astrona-cli.md in the skill. `scripts/scaffold_playground.sh
+# --runtime qemu` appends a starter block for you.
+
+metadata:
+  name: "ats-014-playground-060-01"
+  docs:
+    guide: "docs/overview.md"
+
+bootstrap:
+  init:
+    - name: "prepare"
+      description: "Install istioctl, install the Istio control plane, and make sure the starting workloads are injected."
+      type: "file"
+      source: "bootstrap/prepare.sh"
+  manifests:
+    - name: "lab-start"
+      description: "Starting workloads for this module (namespace, Deployments, Service, client pod)."
+      type: "file"
+      source: "manifests/lab-start.yaml"
+
+teardown:
+  keepCluster: false

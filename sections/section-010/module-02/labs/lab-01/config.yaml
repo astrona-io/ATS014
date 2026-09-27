@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-010-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-010-02-setup"
+      description: "Creates the sidecar-demo and sidecar-other namespaces with a client and a backend, and no Sidecar resource"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-sidecar-scoping"
+      description: "Confirms a namespace-wide Sidecar scopes sidecar-demo to its own namespace plus istio-system and one named namespace, that the proxy's cluster list really shrank, that the permitted namespace is reachable and a third namespace is not, and that the workloads were left alone"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

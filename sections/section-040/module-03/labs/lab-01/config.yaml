@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-040-03"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-03-setup"
+      description: "Creates the outlier-demo namespace with one healthy backend and one that returns 503 to everything while passing its readiness probe, behind one Service, plus a tester client"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-outlier-detection"
+      description: "Confirms the outlier detection fields are set with a maxEjectionPercent that can actually act, that the policy is live in the proxy, that driving traffic ejects the failing endpoint, and that the ejection is visible in the proxy while Kubernetes still lists the pod as a ready endpoint"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

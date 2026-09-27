@@ -1,0 +1,26 @@
+metadata:
+  name: "ats-014-lab-070-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-070-02-setup"
+      description: "Creates the tlsorig-demo namespace with a client, and a TLS-only endpoint outside the mesh that reports the scheme it was reached over"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+validation:
+  scripts:
+    - name: "verify-tls-origination"
+      description: "Confirms the ServiceEntry declares both ports, the VirtualService redirects 8080 to 8443, the DestinationRule originates TLS under portLevelSettings with sni, and that a plain HTTP call reaches the TLS-only endpoint which reports scheme=https"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false
