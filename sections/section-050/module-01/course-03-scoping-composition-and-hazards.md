@@ -72,10 +72,20 @@ This is what the module is for. Three experiments, each pointing at one field fr
 | Experiment | Tests | What you should see |
 | --- | --- | --- |
 | `delay.fixedDelay: 7s` on the *inner* hop against `timeout: 3s` on the *outer* one | the route timeout | `504` in about three seconds, every time, with `UT` in the caller's log |
-| `abort.httpStatus: 503` against a retry policy | retries | `attempts + 1` requests in the *caller's* log, all aborted; retries cannot help when every attempt is faulted |
+| `abort.httpStatus: 503` against a retry policy | retries | **one** request in the *caller's* log, not `attempts + 1` — the retry policy never runs at all |
 | `abort` at 60% against `outlierDetection` | ejection thresholds | whether your `consecutive5xxErrors` is reachable at that failure rate |
 
-The second one deserves a note, because the result surprises people. An injected abort is produced by the caller's own proxy, so a retry is re-faulted immediately — the retries happen, cost nothing in upstream load, and change nothing. That is a genuinely useful lesson about what retries are for: they recover from *transient* failures, and an injected fault is not transient.
+The second one deserves a note, because the result surprises people — including
+people who have written about it. The intuition is that each retry is re-faulted,
+so you count `attempts + 1` aborted tries. What actually happens is that you
+count **one**. The fault filter sits before the router in the filter chain and
+answers the request itself; the router never dispatches an upstream attempt, so
+there is no failure for the retry policy to act on. The policy is valid
+configuration that never runs.
+
+That is a sharper lesson than the usual one. Retries recover from *transient
+upstream* failures, and an injected fault is not upstream at all — it never
+leaves the caller's proxy.
 
 The third is the most practically valuable. Section 040 module 3 made the point that ejection needs consecutive failures on one endpoint, and that healthy endpoints dilute them. An abort percentage gives you a dial to find out what failure rate your thresholds actually respond to, before an incident does the experiment for you.
 

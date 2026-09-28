@@ -86,17 +86,27 @@ Three details in the YAML:
 
 ---
 
-## Step 3: Label the Team Namespace
+## Step 3: Label Both Namespaces
 
 ```sh
 kubectl label namespace gwapi-team gateway-access=true
+kubectl label namespace gwapi-demo gateway-access=true
 ```
 
 ```text
 namespace/gwapi-team labeled
+namespace/gwapi-demo labeled
 ```
 
-This is the grant. Without it the selector matches nothing, and the cross-namespace route in step 5 will attach to nothing — reporting exactly that in its status.
+This is the grant. Without it the selector matches nothing, and the
+cross-namespace route in step 5 will attach to nothing — reporting exactly that
+in its status.
+
+The second line is the one people miss. A `Selector` grant is literal: it
+permits the namespaces whose labels match, and the Gateway's **own** namespace
+gets no exemption. Label only `gwapi-team` and you get the confusing result that
+the cross-namespace route attaches while the route sitting right beside the
+Gateway is rejected.
 
 ---
 

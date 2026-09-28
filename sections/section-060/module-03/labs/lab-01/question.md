@@ -16,7 +16,7 @@ Build a shared gateway that both teams can use.
 1.  Create a `Gateway` named **`shared-gateway`** in namespace **`gwapi-demo`**, with `gatewayClassName` **`istio`**. Annotate it `networking.istio.io/service-type: ClusterIP` — this cluster is `kind`, which has no load balancer, and without that annotation the Service Istio creates for the Gateway never gets an address and the Gateway stays `Programmed=False`.
 2.  It must have **one** listener named **`http`**, on **port 80**, protocol **`HTTP`**, with **no `hostname`** so it accepts any host.
 3.  Its `allowedRoutes` must permit routes from namespaces carrying the label **`gateway-access: "true"`** — use the **`Selector`** form. `All` is not acceptable; the point is a deliberate grant.
-4.  Label the **`gwapi-team`** namespace so it qualifies.
+4.  Label **both** the **`gwapi-team`** namespace and the Gateway's own namespace **`gwapi-demo`** so they qualify. `Selector` grants nothing implicitly — a Gateway's own namespace is not exempt, and forgetting it leaves the route that lives beside the Gateway rejected while the cross-namespace one works.
 
 **The routes**
 

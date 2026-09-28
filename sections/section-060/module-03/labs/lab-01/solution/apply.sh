@@ -32,6 +32,10 @@ EOF
 kubectl -n gwapi-demo rollout status deployment shared-gateway-istio --timeout=120s
 
 kubectl label namespace gwapi-team gateway-access=true
+# The Gateway's own namespace needs the label too: a Selector grants nothing
+# implicitly, so without this the booking route sitting beside the Gateway is
+# rejected while the cross-namespace catalog route is accepted.
+kubectl label namespace gwapi-demo gateway-access=true
 
 kubectl apply -f - <<'EOF'
 apiVersion: gateway.networking.k8s.io/v1

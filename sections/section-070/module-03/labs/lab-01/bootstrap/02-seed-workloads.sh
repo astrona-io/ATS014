@@ -85,6 +85,24 @@ printf '%s' "$VM1" > /tmp/vm1-ip
 printf '%s' "$VM2" > /tmp/vm2-ip
 
 echo
+
+# The stand-in "VMs" are ordinary pods with no sidecar, so they speak plain
+# HTTP. A mesh-internal ServiceEntry makes callers attempt mTLS, which fails
+# against a plaintext listener with "WRONG_VERSION_NUMBER" and a 503. A real
+# onboarded VM runs a sidecar and needs none of this; the stand-in cannot, so
+# the environment turns mTLS off for that host. It is not part of the task.
+kubectl apply -f - <<'EOF'
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: legacy-plaintext
+  namespace: vm-demo
+spec:
+  host: legacy.vm-demo.svc
+  trafficPolicy:
+    tls:
+      mode: DISABLE
+EOF
 echo "[lab] Two stand-in virtual machines (uninjected, no Service):"
 echo "[lab]   legacy-vm-1  ${VM1}:8080"
 echo "[lab]   legacy-vm-2  ${VM2}:8080"

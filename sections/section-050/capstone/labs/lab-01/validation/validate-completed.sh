@@ -99,7 +99,7 @@ for i in 1 2 3 4 5; do
   [[ "$slow" == "0" ]] || fail "an unmarked POST /book took ${took}s - a delay is leaking into unscoped traffic"
 done
 
-# --- 7. experiment 1: the abort is retried, and every attempt is re-faulted --
+# --- 7. experiment 1: the abort is NOT retried, because it never reaches the router --
 before_fi=$(caller_log_count ' FI ')
 res=$(run_curl -H "x-chaos: abort" -X POST http://booking-service/book)
 code=${res%% *}
@@ -108,8 +108,11 @@ code=${res%% *}
 sleep 3
 after_fi=$(caller_log_count ' FI ')
 attempts=$((after_fi - before_fi))
-[[ "$attempts" -eq 3 ]] \
-  || fail "the aborted request produced $attempts FI-flagged attempts in booking-service's proxy log, expected 3 (the original plus 2 retries). If it was 1 the retry policy is missing or retryOn does not cover a 503; if it was fewer than 3 the timeout may be truncating the retries"
+# One attempt, not three. The fault filter runs before the router and answers
+# the request itself, so the router's retry policy is never consulted. This is
+# the result the experiment exists to produce.
+[[ "$attempts" -eq 1 ]] \
+  || fail "the aborted request produced $attempts FI-flagged attempts in booking-service's proxy log, expected exactly 1. An injected abort is a local reply from the fault filter, which sits before the router, so the retry policy never runs"
 
 # --- 8. experiment 2: the delay drives the timeout --------------------------
 # The timeout is enforced by the CLIENT's proxy, so that is where UT is logged.
@@ -128,5 +131,5 @@ after_ut=$(client_ut)
 [[ $((after_ut - before_ut)) -gt 0 ]] \
   || fail "no new ' 504 UT ' line in the client proxy's log for the delay experiment - the route timeout on booking-service did not fire"
 
-echo "PASS: three scoped rules on the notification-service VirtualService; the abort experiment produced ${attempts} FI-flagged attempts (retries ran and every one was re-faulted), the delay experiment was cut off at ${took}s with a 504 UT, and five unmarked requests returned 200 quickly"
+echo "PASS: three scoped rules on the notification-service VirtualService; the abort experiment produced ${attempts} FI-flagged attempt (the retry policy never ran, because the fault filter answered before the router), the delay experiment was cut off at ${took}s with a 504 UT, and five unmarked requests returned 200 quickly"
 exit 0

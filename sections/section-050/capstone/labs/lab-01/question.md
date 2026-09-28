@@ -22,7 +22,7 @@ Create a `VirtualService` named `notification` for host **`notification-service`
 
 1.  Matches the header **`x-chaos: abort`**.
 2.  Injects an `abort` with `httpStatus` **`503`** at **100%**.
-3.  Carries a retry policy on the **same rule**: `attempts` **2**, `perTryTimeout` **`1s`**, `retryOn` **`gateway-error`**.
+3.  Carries a retry policy on the **same rule**: `attempts` **2**, `perTryTimeout` **`1s`**, `retryOn` **`gateway-error`**. It is correct configuration, and you will watch it do nothing.
 4.  Sets `timeout` to **`5s`** — comfortably above the retry budget, so the retries are not truncated.
 5.  Routes to `notification-service`.
 
@@ -44,7 +44,7 @@ Then create a second `VirtualService` named **`booking`** for host
 
 **What the grader checks**
 
-11. A request with `x-chaos: abort` fails, and `booking-service`'s proxy log shows **3** attempts against `notification-service` for that single request — the original plus two retries, every one of them carrying the **`FI`** flag. Retries cannot rescue an injected fault, because the caller's own proxy re-fabricates it each time.
+11. A request with `x-chaos: abort` fails, and `booking-service`'s proxy log shows exactly **1** attempt against `notification-service`, carrying the **`FI`** flag — *not* three. The retry policy is configured and still never runs: an injected abort is a local reply from the fault filter, which sits before the router in the filter chain, so the router never sees a failed upstream attempt to retry. Retries rescue *transient upstream* failures; a fabricated one is neither.
 12. A request with `x-chaos: delay` fails in roughly **2 seconds**, and the **client** proxy's log carries the **`UT`** flag for `booking-service`.
 13. Five requests with **no** `x-chaos` header return **200**, quickly.
 14. The `VirtualService` is for host `notification-service`, and the faults are visible in `booking-service`'s route configuration.

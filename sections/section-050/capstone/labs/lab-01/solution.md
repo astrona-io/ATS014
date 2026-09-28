@@ -23,22 +23,37 @@ The namespace is shared. Every rule you add that lacks a `match` block is a chan
 
 ## Step 2: Predict Experiment 1 Before Running It
 
-The first rule aborts with 503 **and** carries a retry policy that retries on `gateway-error` — which covers 503. So what happens?
+The first rule aborts with 503 **and** carries a retry policy that retries on `gateway-error` — which covers 503. So how many attempts do you expect?
+
+The intuitive answer is three: the original plus two retries, each one re-faulted.
+The actual answer is **one**, and the reason is the filter chain:
 
 ```text
-  attempt 1  →  caller's proxy fabricates 503 (FI)  →  retriable
-  attempt 2  →  caller's proxy fabricates 503 (FI)  →  retriable
-  attempt 3  →  caller's proxy fabricates 503 (FI)  →  attempts exhausted
-                                                        │
-                                                        ▼
-                                              caller gets 503
+  client request
+        │
+        ▼
+  ┌───────────────┐
+  │ fault filter  │ ── abort: answer 503 right here (FI)
+  └───────────────┘
+        │  ✗ never continues
+        ▼
+  ┌───────────────┐
+  │    router     │ ← the retry policy lives here, and is never consulted
+  └───────────────┘
 ```
 
-Three attempts, all faulted, no improvement. The retries happen — you can count them — and they cannot possibly help, because the fault is manufactured by the caller's own proxy on every attempt. It never reaches `notification-service`, so there is nothing transient to recover from.
+The fault filter sits **before** the router. An injected abort is a local reply:
+the router never dispatches an upstream request, so there is no failed attempt
+for it to retry. The retry policy is perfectly valid configuration and simply
+never runs.
 
-That is the point of the experiment: it shows what retries are *for*. They recover from transient failures. A deterministic fault, an application bug, or a circuit-breaker rejection are none of those.
+That is the point of the experiment, and it is a sharper version of the usual
+lesson. Retries recover from *transient upstream* failures. An injected fault is
+not upstream at all — it never leaves the caller's proxy.
 
-Check the budget too, since the rule has both: `attempts: 2` plus the original is 3 attempts × `perTryTimeout: 1s` = 3s, and `timeout: 5s` leaves room. A 2-second timeout would truncate the retries and you would count fewer than three.
+Check the budget too, since the rule has both: `attempts: 2` plus the original
+would be 3 attempts × `perTryTimeout: 1s` = 3s, and `timeout: 5s` leaves room —
+so if retries were going to run, nothing here would truncate them.
 
 ---
 
@@ -140,7 +155,7 @@ done
 
 ```sh
 BEFORE=$(kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=-1 | grep -c ' FI ')
-kubectl -n orders run c1 --rm -i --restart=Never --image=curlimages/curl -- \
+kubectl -n orders exec deploy/tester -- \
   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -H "x-chaos: abort" -X POST http://booking-service/book
 sleep 3
 AFTER=$(kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=-1 | grep -c ' FI ')
@@ -149,12 +164,15 @@ kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=5 | grep ' F
 ```
 
 ```text
-503 0.018s
-FI-flagged attempts: 3
-[2026-09-27T13:44:11.220Z] "POST /notify HTTP/1.1" 503 FI fault_filter_abort - "-" 0 18 0 - ...
+503 0.008s
+FI-flagged attempts: 1
+[2026-09-28T19:12:22.462Z] "POST /notify HTTP/1.1" 503 FI fault_filter_abort - "-" 0 18 0 - ...
 ```
 
-Three attempts for one client request, every one flagged `FI`, and the whole thing finished in 18 milliseconds — because none of the attempts went anywhere. Confirm that last claim:
+One attempt for one client request, flagged `FI`, finished in 8 milliseconds. If
+you expected three, re-read step 2: the retry policy is there, it is correct, and
+the router never got the chance to use it. Confirm that nothing reached the
+dependency:
 
 ```sh
 kubectl -n orders logs -l app=notification-service -c istio-proxy --tail=20 | grep -c ' 503 '
@@ -208,8 +226,8 @@ A fault is configuration. Left in place, the `x-chaos` rules are harmless — no
 
 ## Common Mistakes
 
-- **Expecting retries to rescue the abort.** They run, and every attempt is re-faulted by the caller's own proxy. Counting three `FI` lines is the proof.
-- **`timeout: 2s` on rule 1.** Truncates the retry budget of `(2 + 1) × 1s`; you would count fewer than three attempts.
+- **Expecting retries to rescue the abort, or even to run.** They do not run: the fault filter answers before the router, so exactly one `FI` line appears. Counting it is the proof.
+- **Expecting the retry policy to produce three attempts.** It produces one. The fault filter answers before the router, so the retries never run — that is the experiment's whole result.
 - **Putting the 2s timeout next to the delay on rule 2.** Inert: the fault filter holds the request before the router starts timing it, so the call takes the full seven seconds and no `UT` is ever logged.
 - **Adding retries to rule 2.** The task asks for none, and the grader checks.
 - **Anything on the catch-all rule.** No fault, no timeout, no retries — unscoped traffic must be untouched.
