@@ -16,7 +16,7 @@ There is no Istio configuration. This lab needs no internet access.
 4.  A `VirtualService` named **`partner-through-egress`** for `partner.example.com`, listing both **`mesh`** and **`egress-gateway`** in its top-level `gateways`, with two `http` rules:
     *   **Stage 1** — `gateways: [mesh]`, port **8080** → the egress gateway Service, subset `partner`, port **8080**
     *   **Stage 2** — `gateways: [egress-gateway]`, port **8080** → `partner.example.com` port **8443**
-5.  A `DestinationRule` named **`originate-tls-for-partner`** for host **`partner.example.com`** — the **external** host, not the gateway — with `trafficPolicy.portLevelSettings` for port **8443**, `tls.mode` **`SIMPLE`**, `tls.sni` **`partner.example.com`**, and `insecureSkipVerify: true` (the certificate is self-signed).
+5.  A `DestinationRule` named **`originate-tls-for-partner`** for host **`partner.example.com`** — the **external** host, not the gateway — with `trafficPolicy.portLevelSettings` for port **8443**, `tls.mode` **`SIMPLE`**, `tls.sni` **`partner.example.com`**, and `insecureSkipVerify: true` (the certificate is self-signed). Scope it with **`exportTo: [istio-system]`**. A `DestinationRule` for an external host is visible mesh-wide by default, so without that every sidecar originates TLS for the host too — and the grader checks that the client sidecar does *not*.
 
 **What the grader checks**
 

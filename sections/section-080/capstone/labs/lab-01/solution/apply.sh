@@ -125,6 +125,12 @@ metadata:
   name: originate-tls-for-secure
   namespace: edge-egress
 spec:
+  # Scope the rule to the egress gateway's namespace. A DestinationRule for an
+  # external host is visible mesh-wide by default, so every sidecar would also
+  # originate TLS for it - the opposite of the point here, which is that the
+  # sidecar speaks plain HTTP to the gateway and the gateway does the TLS.
+  exportTo:
+    - istio-system
   host: secure.partner.example
   trafficPolicy:
     portLevelSettings:

@@ -101,6 +101,31 @@ When the chain does not work, this sequence resolves it faster than re-reading f
 4. **Does the destination report `X-Forwarded-Proto: https`?**
    - The end-to-end confirmation.
 
+## Keeping it off the sidecars
+
+One detail decides whether that comparison comes out the way this part describes.
+A `DestinationRule` is visible mesh-wide by default, so a rule for
+`partner.example.com` is handed to **every** sidecar as well as to the gateway —
+and each one then builds a TLS-originating cluster for the host. Nothing breaks,
+because the sidecars route to the gateway rather than to the host directly and
+never use that cluster, but the evidence you are about to rely on is gone: dump
+a sidecar and you find a `transportSocket` there too.
+
+Scope the rule to the gateway's namespace so it is handed to the gateway alone:
+
+```yaml
+spec:
+  exportTo:
+    - istio-system
+  host: partner.example.com
+  trafficPolicy:
+    portLevelSettings:
+      ...
+```
+
+Then the sidecar has no `transportSocket` for the host and the gateway does,
+which is both the design you want and the thing you can point at to prove it.
+
 > *`transportSocket` on the gateway and not on the sidecar — that one comparison proves the policy followed the caller.*
 
 ## Reference

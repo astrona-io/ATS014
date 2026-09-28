@@ -27,7 +27,7 @@ Route **both** partners through the **one** egress gateway.
 6.  A `VirtualService` named **`secure-through-egress`** for `secure.partner.example`, gateways `mesh` and `egress-gateway`, with two stages:
     *   Stage 1 — `gateways: [mesh]`, port **8081** → gateway Service, subset `secure`, port **8081**
     *   Stage 2 — `gateways: [egress-gateway]`, port **8081** → `secure.partner.example` port **8443**
-7.  A `DestinationRule` named **`originate-tls-for-secure`** for host **`secure.partner.example`**, `portLevelSettings` for port **8443**, `tls.mode` **`SIMPLE`**, `tls.sni` **`secure.partner.example`**, `insecureSkipVerify: true`.
+7.  A `DestinationRule` named **`originate-tls-for-secure`** for host **`secure.partner.example`**, `portLevelSettings` for port **8443**, `tls.mode` **`SIMPLE`**, `tls.sni` **`secure.partner.example`**, `insecureSkipVerify: true`. Scope it with **`exportTo: [istio-system]`**. A `DestinationRule` for an external host is visible mesh-wide by default, so without that every sidecar originates TLS for the host too — and the grader checks that the client sidecar does *not*.
 
 **What the grader checks**
 
