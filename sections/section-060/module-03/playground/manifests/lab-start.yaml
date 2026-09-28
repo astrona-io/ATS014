@@ -111,7 +111,11 @@ data:
     server {
       listen 8084;
       location / {
-        proxy_pass http://notification-service:80/notify;
+        # rewrite ... break sends a fixed path upstream. A proxy_pass with a URI
+        # substitutes the matched prefix instead, so POST /book would arrive as
+        # POST /notifybook - which no policy or route is written for.
+        rewrite ^ /notify break;
+        proxy_pass http://notification-service:80;
         proxy_http_version 1.1;
         # No proxy_set_header Host here on purpose: nginx then sends the
         # upstream's own name as the authority. Keeping the caller's Host
