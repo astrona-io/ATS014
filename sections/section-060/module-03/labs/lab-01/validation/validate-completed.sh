@@ -107,18 +107,51 @@ prns=$(kubectl -n "$TEAMNS" get httproute catalog -o jsonpath='{.spec.parentRefs
   || fail "the catalog HTTPRoute's parentRefs[0].namespace is '$prns', expected $GWNS. A cross-namespace parentRef must name the Gateway's namespace"
 
 # --- 6. live traffic through the NEW gateway --------------------------------
-kubectl -n "$GWNS" port-forward "svc/${GW}-istio" 18080:80 >/dev/null 2>&1 &
+# Pick a free local port instead of a fixed one, and wait for the forward to
+# actually bind. A fixed port collides when two labs are graded at the same time
+# on one machine, and every probe then returns 000 for reasons that have nothing
+# to do with the student's configuration.
+free_port() {
+  python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'
+}
+wait_bound() {
+  local port="$1" i
+  for i in $(seq 1 40); do
+    if python3 -c "import socket,sys; s=socket.socket(); sys.exit(0 if s.connect_ex(('127.0.0.1',$port))==0 else 1)" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  return 1
+}
+
+PF_HTTP_PORT=$(free_port)
+kubectl -n "$GWNS" port-forward "svc/${GW}-istio" ${PF_HTTP_PORT}:80 >/dev/null 2>&1 &
+wait_bound "${PF_HTTP_PORT}" || fail "the local port-forward to the gateway never came up"
 PF=$!
 sleep 5
 
 code_for() {
-  curl -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $1" "http://localhost:18080$2" 2>/dev/null
+  curl -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $1" "http://localhost:${PF_HTTP_PORT}$2" 2>/dev/null
 }
 
-c=$(code_for booking.ica.local /book)
+# Retry the first probe while the gateway's route is still being pushed.
+# Applying config and grading it seconds later is a race; the negative checks
+# below need no retry, because they assert a code that must never be 200.
+wait_200() {
+  local host="$1" path="$2" i code
+  for i in $(seq 1 30); do
+    code=$(code_for "$host" "$path")
+    [[ "$code" == "200" ]] && { echo "$code"; return; }
+    sleep 2
+  done
+  echo "$code"
+}
+
+c=$(wait_200 booking.ica.local /book)
 [[ "$c" == "200" ]] || fail "GET /book with Host booking.ica.local returned '$c', expected 200"
 
-c=$(code_for catalog.ica.local /items)
+c=$(wait_200 catalog.ica.local /items)
 [[ "$c" == "200" ]] \
   || fail "GET /items with Host catalog.ica.local returned '$c', expected 200. The cross-namespace route is attached but traffic is not reaching $TEAMNS/catalog-service"
 

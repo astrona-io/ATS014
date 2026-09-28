@@ -83,23 +83,58 @@ grep -q 'booking.ica.local' <<<"$routes" \
   || fail "booking.ica.local does not appear in the gateway's route table - the Ingress was never translated. Check the class and the controller string"
 
 # --- 6. live traffic ---------------------------------------------------------
-kubectl -n istio-system port-forward svc/istio-ingressgateway 18080:80  >/dev/null 2>&1 & PF_HTTP=$!
-kubectl -n istio-system port-forward svc/istio-ingressgateway 18443:443 >/dev/null 2>&1 & PF_TLS=$!
+# Pick a free local port instead of a fixed one, and wait for the forward to
+# actually bind. A fixed port collides when two labs are graded at the same time
+# on one machine, and every probe then returns 000 for reasons that have nothing
+# to do with the student's configuration.
+free_port() {
+  python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'
+}
+wait_bound() {
+  local port="$1" i
+  for i in $(seq 1 40); do
+    if python3 -c "import socket,sys; s=socket.socket(); sys.exit(0 if s.connect_ex(('127.0.0.1',$port))==0 else 1)" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  return 1
+}
+
+PF_HTTP_PORT=$(free_port)
+PF_TLS_PORT=$(free_port)
+kubectl -n istio-system port-forward svc/istio-ingressgateway ${PF_HTTP_PORT}:80  >/dev/null 2>&1 & PF_HTTP=$!
+kubectl -n istio-system port-forward svc/istio-ingressgateway ${PF_TLS_PORT}:443 >/dev/null 2>&1 & PF_TLS=$!
 sleep 5
+wait_bound "${PF_HTTP_PORT}" || fail "the local port-forward to the gateway never came up"
+wait_bound "${PF_TLS_PORT}" || fail "the local port-forward to the gateway never came up"
 
 http_code() {
   curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
-    -H "Host: booking.ica.local" "http://localhost:18080$1" 2>/dev/null
+    -H "Host: booking.ica.local" "http://localhost:${PF_HTTP_PORT}$1" 2>/dev/null
 }
 https_code() {
   curl -sk -o /dev/null -w '%{http_code}' --max-time 10 \
-    --resolve "booking.ica.local:18443:127.0.0.1" "https://booking.ica.local:18443$1" 2>/dev/null
+    --resolve "booking.ica.local:${PF_TLS_PORT}:127.0.0.1" "https://booking.ica.local:${PF_TLS_PORT}$1" 2>/dev/null
 }
 
-c=$(http_code /book)
+# Retry while the listeners come up. Applying config and grading it seconds
+# later is a race: the gateway has to receive the route, and for HTTPS also
+# fetch and load the credential, before either listener answers.
+wait_200() {
+  local fn="$1" path="$2" i code
+  for i in $(seq 1 30); do
+    code=$("$fn" "$path")
+    [[ "$code" == "200" ]] && { echo "$code"; return; }
+    sleep 2
+  done
+  echo "$code"
+}
+
+c=$(wait_200 http_code /book)
 [[ "$c" == "200" ]] || fail "GET /book over HTTP returned '$c', expected 200"
 
-c=$(https_code /book)
+c=$(wait_200 https_code /book)
 [[ "$c" == "200" ]] \
   || fail "GET /book over HTTPS returned '$c', expected 200. A '000' here almost always means the HTTPS listener never came up because the gateway cannot read the secret"
 

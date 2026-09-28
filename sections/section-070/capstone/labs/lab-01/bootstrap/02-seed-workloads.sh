@@ -6,23 +6,7 @@
 set -euo pipefail
 
 
-# The stand-in "VMs" are ordinary pods with no sidecar, so they speak plain
-# HTTP. A mesh-internal ServiceEntry makes callers attempt mTLS, which fails
-# against a plaintext listener with "WRONG_VERSION_NUMBER" and a 503. A real
-# onboarded VM runs a sidecar and needs none of this; the stand-in cannot, so
-# the environment turns mTLS off for that host. It is not part of the task.
-kubectl apply -f - <<'EOF'
-apiVersion: networking.istio.io/v1
-kind: DestinationRule
-metadata:
-  name: legacy-plaintext
-  namespace: integrations
-spec:
-  host: legacy.integrations.svc
-  trafficPolicy:
-    tls:
-      mode: DISABLE
-EOF
+
 echo "[capstone] Generating a self-signed certificate for partner.example.com..."
 WORK="$(mktemp -d)"
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -160,6 +144,19 @@ VM=$(kubectl -n integrations get pod legacy-vm -o jsonpath='{.status.podIP}')
 printf '%s' "$PARTNER" > /tmp/partner-ip
 printf '%s' "$BLOCKED" > /tmp/blocked-ip
 printf '%s' "$VM"      > /tmp/vm-ip
+
+kubectl apply -f - <<'EOF'
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: legacy-plaintext
+  namespace: integrations
+spec:
+  host: legacy.integrations.svc
+  trafficPolicy:
+    tls:
+      mode: DISABLE
+EOF
 
 echo
 echo "[capstone] The mesh is REGISTRY_ONLY. Three endpoints, none registered:"

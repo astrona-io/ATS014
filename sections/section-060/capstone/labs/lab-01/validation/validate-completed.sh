@@ -99,24 +99,60 @@ rr=$(cond httproute modern '.status.parents[0].conditions' ResolvedRefs)
 [[ "$rr" == "True" ]] || fail "HTTPRoute 'modern' reports ResolvedRefs=$rr - check the backend name and port"
 
 # ============================ live traffic ==================================
-kubectl -n istio-system port-forward svc/istio-ingressgateway 18080:80  >/dev/null 2>&1 & PF_SHARED=$!
-kubectl -n istio-system port-forward svc/istio-ingressgateway 18443:443 >/dev/null 2>&1 & PF_TLS=$!
-kubectl -n "$NS"        port-forward svc/modern-gw-istio      18081:80  >/dev/null 2>&1 & PF_MODERN=$!
+# Pick a free local port instead of a fixed one, and wait for the forward to
+# actually bind. A fixed port collides when two labs are graded at the same time
+# on one machine, and every probe then returns 000 for reasons that have nothing
+# to do with the student's configuration.
+free_port() {
+  python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'
+}
+wait_bound() {
+  local port="$1" i
+  for i in $(seq 1 40); do
+    if python3 -c "import socket,sys; s=socket.socket(); sys.exit(0 if s.connect_ex(('127.0.0.1',$port))==0 else 1)" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  return 1
+}
+
+PF_HTTP_PORT=$(free_port)
+PF_TLS_PORT=$(free_port)
+PF_MODERN_PORT=$(free_port)
+kubectl -n istio-system port-forward svc/istio-ingressgateway ${PF_HTTP_PORT}:80  >/dev/null 2>&1 & PF_SHARED=$!
+kubectl -n istio-system port-forward svc/istio-ingressgateway ${PF_TLS_PORT}:443 >/dev/null 2>&1 & PF_TLS=$!
+kubectl -n "$NS"        port-forward svc/modern-gw-istio      ${PF_MODERN_PORT}:80  >/dev/null 2>&1 & PF_MODERN=$!
 sleep 6
+wait_bound "${PF_HTTP_PORT}" || fail "the local port-forward to the gateway never came up"
+wait_bound "${PF_TLS_PORT}" || fail "the local port-forward to the gateway never came up"
+wait_bound "${PF_MODERN_PORT}" || fail "the local port-forward to the gateway never came up"
 
-shared_http() { curl -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $1" "http://localhost:18080$2" 2>/dev/null; }
-shared_https(){ curl -sk -o /dev/null -w '%{http_code}' --max-time 10 --resolve "$1:18443:127.0.0.1" "https://$1:18443$2" 2>/dev/null; }
-modern_http() { curl -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $1" "http://localhost:18081$2" 2>/dev/null; }
+shared_http() { curl -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $1" "http://localhost:${PF_HTTP_PORT}$2" 2>/dev/null; }
+shared_https(){ curl -sk -o /dev/null -w '%{http_code}' --max-time 10 --resolve "$1:${PF_TLS_PORT}:127.0.0.1" "https://$1:${PF_TLS_PORT}$2" 2>/dev/null; }
+modern_http() { curl -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $1" "http://localhost:${PF_MODERN_PORT}$2" 2>/dev/null; }
 
-c=$(shared_http native.ica.local /api)
+# Retry while the three data planes come up. Each has to receive its route, and
+# the TLS one also has to fetch and load its credential, before it answers.
+wait_200() {
+  local fn="$1" host="$2" path="$3" i code
+  for i in $(seq 1 30); do
+    code=$("$fn" "$host" "$path")
+    [[ "$code" == "200" ]] && { echo "$code"; return; }
+    sleep 2
+  done
+  echo "$code"
+}
+
+c=$(wait_200 shared_http native.ica.local /api)
 [[ "$c" == "200" ]] \
   || fail "GET /api with Host native.ica.local through istio-ingressgateway returned '$c', expected 200"
 
-c=$(shared_https legacy.ica.local /api)
+c=$(wait_200 shared_https legacy.ica.local /api)
 [[ "$c" == "200" ]] \
   || fail "GET /api with Host legacy.ica.local over HTTPS returned '$c', expected 200. A '000' means the HTTPS listener never came up - check the secret's namespace"
 
-c=$(modern_http modern.ica.local /api)
+c=$(wait_200 modern_http modern.ica.local /api)
 [[ "$c" == "200" ]] \
   || fail "GET /api with Host modern.ica.local through modern-gw-istio returned '$c', expected 200"
 
