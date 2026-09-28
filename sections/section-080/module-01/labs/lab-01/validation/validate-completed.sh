@@ -70,9 +70,13 @@ grep -qw 'mesh' <<<"$tg" \
 grep -qE '(^| )(egress-gateway|'"$NS"'/egress-gateway)( |$)' <<<"$tg" \
   || fail "the VirtualService top-level gateways are [$tg] - the gateway is missing, so stage 2 never reaches it"
 
+# Stage 1 must NOT pin gateways: [mesh]. On 1.30.5 that combination makes Istio
+# ignore the sourceLabels predicate and hand the diverting route to every
+# sidecar, which is exactly what this lab asks you to prevent. Without it the
+# rule still cannot fire on the gateway, which carries no egress-allowed label.
 s1g=$(kubectl -n "$NS" get virtualservice "$VS" -o jsonpath='{.spec.http[0].match[0].gateways[0]}' 2>/dev/null)
-[[ "$s1g" == "mesh" ]] \
-  || fail "the FIRST http rule matches gateways '[$s1g]', expected [mesh]. Stage 1 runs in the sidecars"
+[[ -z "$s1g" ]] \
+  || fail "the FIRST http rule pins gateways '[$s1g]' in its match. Combined with sourceLabels that disables the label filter and every sidecar takes the egress path - match on the port and sourceLabels only"
 s1d=$(kubectl -n "$NS" get virtualservice "$VS" -o jsonpath='{.spec.http[0].route[0].destination.host}' 2>/dev/null)
 grep -q 'istio-egressgateway' <<<"$s1d" \
   || fail "stage 1 routes to '$s1d', expected the egress gateway Service"

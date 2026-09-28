@@ -16,7 +16,7 @@ Route calls to the partner endpoint through the egress gateway — and only from
 2.  A `Gateway` named **`egress-gateway`** in `egwgw-demo`, selecting **`istio: egressgateway`**, opening port **8080**, protocol **`HTTP`**, for host **`partner.example.com`** — the **external** hostname, not an internal one.
 3.  A `DestinationRule` named **`egressgateway-for-partner`** in `egwgw-demo` for host `istio-egressgateway.istio-system.svc.cluster.local`, with a single subset named **`partner`** and no labels.
 4.  A `VirtualService` named **`partner-through-egress`** in `egwgw-demo` for host `partner.example.com`, listing **both** `mesh` and `egress-gateway` in its top-level `gateways`, with exactly **two** `http` rules:
-    *   **Stage 1** — `match` on `gateways: [mesh]`, port **8080**, **and `sourceLabels: {egress-allowed: "true"}`** — routes to `istio-egressgateway.istio-system.svc.cluster.local`, subset **`partner`**, port **8080**.
+    *   **Stage 1** — `match` on port **8080** **and `sourceLabels: {egress-allowed: "true"}`** — routes to `istio-egressgateway.istio-system.svc.cluster.local`, subset **`partner`**, port **8080**. Match on the **port and `sourceLabels` only** — do **not** add `gateways: [mesh]` here. On Istio 1.30.5 combining it with `sourceLabels` makes the label predicate be ignored and every sidecar gets the diverting route. The rule still cannot fire on the gateway itself, because the gateway pod does not carry that label.
     *   **Stage 2** — `match` on `gateways: [egress-gateway]`, port **8080** — routes to `partner.example.com` port **8080**.
 
 **What the grader checks**

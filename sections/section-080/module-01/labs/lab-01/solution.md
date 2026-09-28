@@ -114,8 +114,7 @@ spec:
     - egress-gateway
   http:
     - match:
-        - gateways: [mesh]
-          port: 8080
+        - port: 8080
           sourceLabels:
             egress-allowed: "true"
       route:

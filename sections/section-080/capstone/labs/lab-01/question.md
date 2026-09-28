@@ -18,7 +18,7 @@ Route **both** partners through the **one** egress gateway.
 2.  A `Gateway` named **`egress-gateway`** in `edge-egress`, selecting `istio: egressgateway`, with **two servers**: port **8080** protocol `HTTP` for `plain.partner.example`, and port **8081** protocol `HTTP` for `secure.partner.example`. Using a separate listener port per host keeps the two chains distinguishable.
 3.  A `DestinationRule` named **`egressgateway-subsets`** for `istio-egressgateway.istio-system.svc.cluster.local` with **two** subsets, **`plain`** and **`secure`**, neither carrying labels.
 4.  A `VirtualService` named **`plain-through-egress`** for `plain.partner.example`, gateways `mesh` and `egress-gateway`, with two stages:
-    *   Stage 1 — `gateways: [mesh]`, port 8080, **`sourceLabels: {egress-allowed: "true"}`** → gateway Service, subset `plain`, port **8080**
+    *   Stage 1 — port 8080 and **`sourceLabels: {egress-allowed: "true"}`**, with no `gateways` in the match → gateway Service, subset `plain`, port **8080**. Match on the **port and `sourceLabels` only** — do **not** add `gateways: [mesh]` here. On Istio 1.30.5 combining it with `sourceLabels` makes the label predicate be ignored and every sidecar gets the diverting route. The rule still cannot fire on the gateway itself, because the gateway pod does not carry that label.
     *   Stage 2 — `gateways: [egress-gateway]`, port 8080 → `plain.partner.example` port **8080**
 
 **Partner B — TLS originated at the gateway**

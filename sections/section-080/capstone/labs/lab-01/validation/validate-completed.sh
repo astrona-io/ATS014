@@ -77,8 +77,16 @@ check_vs() {
   grep -qw mesh <<<"$tg" || fail "$vs top-level gateways are [$tg] - 'mesh' is missing"
   grep -q 'egress-gateway' <<<"$tg" || fail "$vs top-level gateways are [$tg] - the gateway is missing"
 
+  # With sourceLabels, stage 1 must not pin gateways: [mesh] - on 1.30.5 that
+  # combination makes Istio drop the label predicate and divert every sidecar.
+  # Without sourceLabels, [mesh] is the correct and expected scoping.
   s1g=$(kubectl -n "$NS" get virtualservice "$vs" -o jsonpath='{.spec.http[0].match[0].gateways[0]}' 2>/dev/null)
-  [[ "$s1g" == "mesh" ]] || fail "$vs stage 1 matches gateways '[$s1g]', expected [mesh]"
+  if [[ "$want_labels" == "yes" ]]; then
+    [[ -z "$s1g" ]] \
+      || fail "$vs stage 1 pins gateways '[$s1g]' alongside sourceLabels, which disables the label filter - match on the port and sourceLabels only"
+  else
+    [[ "$s1g" == "mesh" ]] || fail "$vs stage 1 matches gateways '[$s1g]', expected [mesh]"
+  fi
   s1p=$(kubectl -n "$NS" get virtualservice "$vs" -o jsonpath='{.spec.http[0].match[0].port}' 2>/dev/null)
   [[ "$s1p" == "$s1port" ]] || fail "$vs stage 1 matches port '$s1p', expected $s1port"
   s1sub=$(kubectl -n "$NS" get virtualservice "$vs" -o jsonpath='{.spec.http[0].route[0].destination.subset}' 2>/dev/null)

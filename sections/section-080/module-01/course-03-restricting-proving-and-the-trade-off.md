@@ -38,8 +38,7 @@ Stage 1 is an ordinary mesh-side rule, so it can match on ordinary things — in
 
 ```yaml
 - match:
-    - gateways: [mesh]
-      port: 80
+    - port: 80
       sourceLabels:
         app: tester
   route:
@@ -51,6 +50,22 @@ Stage 1 is an ordinary mesh-side rule, so it can match on ordinary things — in
 ```
 
 Now only pods labelled `app: tester` are routed through the gateway.
+
+> [!WARNING]
+> **Do not add `gateways: [mesh]` to that match.** It is the obvious thing to
+> write — stage 2 names its gateway, so stage 1 ought to name `mesh` — and on
+> Istio 1.30.5 it silently disables the `sourceLabels` predicate: every sidecar
+> in the mesh then gets the diverting route, including the workloads you meant
+> to exclude. Check it the way you would check any routing claim, by dumping a
+> proxy that should *not* have been diverted:
+>
+> ```sh
+> istioctl proxy-config routes deploy/other-client -n egwgw-demo --name 8080
+> ```
+>
+> Leaving `gateways` off the match costs nothing here. The rule still cannot fire
+> on the gateway itself, because the gateway pod does not carry the label the
+> match requires.
 
 Be precise about what that achieves. `sourceLabels` narrows **the route, not the permission**. A workload that does not match simply takes the *direct* path instead — it is not blocked, it is un-diverted. On an `ALLOW_ANY` mesh that means it still reaches the internet, just without the audit trail.
 
