@@ -33,7 +33,7 @@ done
 if kubectl -n outside-mesh get svc -o name 2>/dev/null | grep -q .; then
   fail "a Service exists in outside-mesh - that registers an endpoint through the back door"
 fi
-cn=$(kubectl -n "$NS" get pod legacy-vm -o jsonpath='{.spec.containers[*].name}' 2>/dev/null)
+cn=$(kubectl -n "$NS" get pod legacy-vm -o jsonpath='{.spec.initContainers[*].name} {.spec.containers[*].name}' 2>/dev/null)
 grep -qw istio-proxy <<<"$cn" && fail "legacy-vm now has a sidecar - it must stay uninjected and be declared instead"
 
 mode=$(kubectl -n istio-system get cm istio -o jsonpath='{.data.mesh}' 2>/dev/null \

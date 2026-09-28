@@ -21,7 +21,7 @@ r=$(kubectl -n "$NS" get deployment tester -o jsonpath='{.status.readyReplicas}'
 for p in legacy-vm-1 legacy-vm-2; do
   ph=$(kubectl -n "$NS" get pod "$p" -o jsonpath='{.status.phase}' 2>/dev/null)
   [[ "$ph" == "Running" ]] || fail "$NS/$p is '$ph', expected Running"
-  cn=$(kubectl -n "$NS" get pod "$p" -o jsonpath='{.spec.containers[*].name}' 2>/dev/null)
+  cn=$(kubectl -n "$NS" get pod "$p" -o jsonpath='{.spec.initContainers[*].name} {.spec.containers[*].name}' 2>/dev/null)
   grep -qw istio-proxy <<<"$cn" \
     && fail "$p now has an istio-proxy sidecar. The point is to bring an UNINJECTED workload into the mesh with a WorkloadEntry, not to inject it"
 done
