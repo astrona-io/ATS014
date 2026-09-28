@@ -1,4 +1,4 @@
-# Section 040 Capstone: A Resilient Payment Path
+# Capstone: A Resilient Payment Path
 
 This is the Section 040 integration challenge. All four of the section's features act on one service at the same time: a deadline and a retry policy that differ between reads and writes, a connection pool that refuses work the caller cannot do promptly, outlier detection that removes an endpoint which keeps failing, and locality awareness on top.
 

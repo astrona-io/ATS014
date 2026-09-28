@@ -1,4 +1,4 @@
-# Section 040: Using Resilience Features
+# Using Resilience Features
 
 Every service in a mesh depends on services it does not control. Resilience features are what a caller can do about that without the callee's cooperation — bound how long it waits, retry what is worth retrying, refuse to queue work it cannot finish, stop talking to an endpoint that keeps failing, and prefer a locality that still works.
 
@@ -36,7 +36,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 ## The Learning Path
 
 ### 1. Timeouts And Retries
-*   **Module Reader:** **[Module 1: Timeouts And Retries](./module-01/course.md)**
+*   **Module Reader:** **[Timeouts And Retries](./module-01/course.md)**
     1. [The Route Timeout](./module-01/course-01-the-route-timeout.md)
     2. [The Retry Policy](./module-01/course-02-the-retry-policy.md)
     3. [The Shared Budget And Idempotency](./module-01/course-03-the-shared-budget-and-idempotency.md)
@@ -52,7 +52,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 *   **Hands-on Objective:** Retry the read path and deliberately not the write path, with a timeout budget that actually lets the retries run — then prove the attempt counts from the server's own log.
 
 ### 2. Circuit Breaking With Connection Pool Limits
-*   **Module Reader:** **[Module 2: Circuit Breaking With Connection Pool Limits](./module-02/course.md)**
+*   **Module Reader:** **[Circuit Breaking With Connection Pool Limits](./module-02/course.md)**
     1. [The Connection Pool](./module-02/course-01-the-connection-pool.md)
     2. [Overflow And Its Signatures](./module-02/course-02-overflow-and-its-signatures.md)
     3. [Scope, Verification And Retry Amplification](./module-02/course-03-scope-verification-and-retry-amplification.md)
@@ -68,7 +68,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 *   **Hands-on Objective:** Cap concurrent outstanding work, then prove the cap is real by showing the same total request count succeeding sequentially and failing concurrently — with `UO` in the log and nothing at all in the backend's.
 
 ### 3. Outlier Detection And Endpoint Ejection
-*   **Module Reader:** **[Module 3: Outlier Detection And Endpoint Ejection](./module-03/course.md)**
+*   **Module Reader:** **[Outlier Detection And Endpoint Ejection](./module-03/course.md)**
     1. [Passive Health Checking](./module-03/course-01-passive-health-checking.md)
     2. [Ejection Mechanics And Limits](./module-03/course-02-ejection-mechanics-and-limits.md)
     3. [Local, Temporary, And Verified](./module-03/course-03-local-temporary-and-verified.md)
@@ -84,7 +84,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 *   **Hands-on Objective:** Get a client proxy to notice a failing endpoint on its own and stop using it — choosing a `maxEjectionPercent` that can actually act — while Kubernetes goes on insisting the pod is perfectly ready.
 
 ### 4. Locality Load Balancing And Failover
-*   **Module Reader:** **[Module 4: Locality Load Balancing And Failover](./module-04/course.md)**
+*   **Module Reader:** **[Locality Load Balancing And Failover](./module-04/course.md)**
     1. [Where Locality Comes From](./module-04/course-01-where-locality-comes-from.md)
     2. [Preference, `distribute` And `failover`](./module-04/course-02-preference-distribute-and-failover.md)
     3. [The Health Dependency And Scope](./module-04/course-03-the-health-dependency-and-scope.md)

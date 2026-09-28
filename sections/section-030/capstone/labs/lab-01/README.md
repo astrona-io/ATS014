@@ -1,4 +1,4 @@
-# Section 030 Capstone: Sticky Sessions With A Shadowed Canary
+# Capstone: Sticky Sessions With A Shadowed Canary
 
 This is the Section 030 integration challenge. It combines this section's `trafficPolicy` work — host-level session affinity with a subset-level override — with section 020's mirroring, on one host at the same time.
 

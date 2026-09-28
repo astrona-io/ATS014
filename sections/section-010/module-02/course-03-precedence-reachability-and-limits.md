@@ -1,6 +1,6 @@
-# Part 3 — Precedence, Reachability And What It Is Not
+# Precedence, Reachability And What It Is Not
 
-> Prerequisite: [Part 2 — The Sidecar Object And Its Host Language](./course-02-the-sidecar-object-and-host-language.md). Next: [the module landing page](./course.md).
+> Prerequisite: [The Sidecar Object And Its Host Language](./course-02-the-sidecar-object-and-host-language.md). Next: [the module landing page](./course.md).
 
 Two questions remain, and both cause real outages. When several `Sidecar` resources could apply to a pod, which one does? And what exactly have you prevented when you scope a host away — is it a routing change, or is it a permission? This part answers both, and ends with the module's consolidated pitfalls.
 

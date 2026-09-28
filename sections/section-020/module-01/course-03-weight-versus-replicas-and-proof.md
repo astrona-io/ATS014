@@ -1,6 +1,6 @@
-# Part 3 — Weight Versus Replicas, And Proof
+# Weight Versus Replicas, And Proof
 
-> Prerequisite: [Part 2 — Running A Rollout](./course-02-running-a-rollout.md). Next: [the module landing page](./course.md).
+> Prerequisite: [Running A Rollout](./course-02-running-a-rollout.md). Next: [the module landing page](./course.md).
 
 One idea remains, and it is the single most reliably examined thing in this module: the relationship between how much traffic a version receives and how many pods it runs. This part settles that, then shows how to read the weights out of a live proxy so that a task which is not working can be diagnosed rather than guessed at.
 

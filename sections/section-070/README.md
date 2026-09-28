@@ -1,4 +1,4 @@
-# Section 070: Connecting In-Mesh Workloads To External Workloads And Services
+# Connecting In-Mesh Workloads To External Workloads And Services
 
 The mesh boundary is not the same as the application boundary. Real systems call payment APIs, object stores and partner endpoints, and they talk to databases and legacy services that were never going to be containerised.
 
@@ -31,7 +31,7 @@ The order matters. `ServiceEntry` is the object all three modules use, so it com
 ## The Learning Path
 
 ### 1. Control External Access With ServiceEntry
-*   **Module Reader:** **[Module 1: Control External Access With ServiceEntry](./module-01/course.md)**
+*   **Module Reader:** **[Control External Access With ServiceEntry](./module-01/course.md)**
     1. [The Outbound Traffic Policy](./module-01/course-01-the-outbound-traffic-policy.md)
     2. [The `ServiceEntry` Object](./module-01/course-02-the-serviceentry-object.md)
     3. [A Registered Host Is An Ordinary Host](./module-01/course-03-a-registered-host-is-an-ordinary-host.md)
@@ -47,7 +47,7 @@ The order matters. `ServiceEntry` is the object all three modules use, so it com
 *   **Hands-on Objective:** On a deny-by-default mesh, register exactly one endpoint — with the right `location`, `resolution` and `exportTo` — prove a second is still refused, and put a timeout on the one you allowed.
 
 ### 2. TLS Origination For External Services
-*   **Module Reader:** **[Module 2: TLS Origination For External Services](./module-02/course.md)**
+*   **Module Reader:** **[TLS Origination For External Services](./module-02/course.md)**
     1. [Why HTTPS Is Opaque](./module-02/course-01-why-https-is-opaque.md)
     2. [The Three Objects](./module-02/course-02-the-three-objects.md)
     3. [Proving It, And Mutual TLS](./module-02/course-03-proving-it-and-mutual-tls.md)
@@ -63,7 +63,7 @@ The order matters. `ServiceEntry` is the object all three modules use, so it com
 *   **Hands-on Objective:** Reach a TLS-only endpoint over plain `http://`, with the endpoint itself reporting the scheme it was reached over — so there is no guessing whether the sidecar did the handshake.
 
 ### 3. Add External Workloads With WorkloadEntry
-*   **Module Reader:** **[Module 3: Add External Workloads With WorkloadEntry](./module-03/course.md)**
+*   **Module Reader:** **[Add External Workloads With WorkloadEntry](./module-03/course.md)**
     1. [`WorkloadEntry`: One Instance](./module-03/course-01-workloadentry-one-instance.md)
     2. [`MESH_INTERNAL` And The Selector](./module-03/course-02-mesh-internal-and-the-selector.md)
     3. [`WorkloadGroup` And Real Onboarding](./module-03/course-03-workloadgroup-and-real-onboarding.md)

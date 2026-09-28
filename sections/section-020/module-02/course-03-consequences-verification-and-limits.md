@@ -1,6 +1,6 @@
-# Part 3 — Consequences, Verification And Limits
+# Consequences, Verification And Limits
 
-> Prerequisite: [Part 2 — Identifying And Sampling Shadow Traffic](./course-02-identifying-and-sampling-shadow-traffic.md). Next: [the module landing page](./course.md).
+> Prerequisite: [Identifying And Sampling Shadow Traffic](./course-02-identifying-and-sampling-shadow-traffic.md). Next: [the module landing page](./course.md).
 
 Two things remain. The first is the one that causes real damage: a mirrored request does real work, and Istio has no idea what that work is. The second is the proxy-side check that tells you whether a mirror exists at all. This part covers both and consolidates the module's pitfalls.
 
@@ -24,14 +24,14 @@ Istio duplicates the request at the network layer and dispatches it. The shadow 
     response  ──►  discarded by the proxy
 ```
 
-The `-shadow` authority from Part 2 is a **hint the application can act on**, not a guard rail Istio enforces. If the shadow does not read it, nothing protects you.
+The `-shadow` authority older Istio releases added was only ever a **hint the application could act on**, never a guard rail Istio enforced — and 1.30 does not add it at all. Nothing in the copy tells the shadow it is a copy.
 
 The practical checklist before mirroring anything with side effects:
 
 - Point the shadow at a **separate datastore**, or make it read-only.
 - Check what the shadow calls *downstream*. Mirroring one service fans out: its dependencies see the extra load too, and they are not aware they are serving a shadow.
 - Account for the volume. At 100% the cluster's internal request count doubles, and so does the load on everything the shadow touches.
-- Confirm the shadow honours the `-shadow` authority if you are relying on it to suppress writes.
+- Do not rely on the shadow recognising itself from the request. On 1.30 it cannot; keep the side effects out of its path instead.
 
 Mirroring is safe when the shadow's side effects are understood — which is a fact about your application, not about Istio.
 
@@ -67,7 +67,7 @@ That gives a three-state diagnostic, which is the useful form:
 | --- | --- | --- |
 | absent | empty | the `VirtualService` has no `mirror`, or never reached the proxy |
 | present | empty | the mirror cluster has no endpoints — subset labels match nothing |
-| present | has `-shadow` lines | working |
+| present | logs requests the route never sent it | working |
 
 ## Mirroring more than one destination
 
@@ -99,7 +99,7 @@ It is the right shape when you are shadowing two candidate versions at once. `mi
 >
 > **Forgetting the shadow does real writes.** This is the failure that causes actual damage. Check side effects, and check what the shadow calls downstream, before mirroring anything.
 >
-> **Assuming `-shadow` protects you.** It is a header the application may read. Istio enforces nothing.
+> **Assuming the shadow can tell it is a shadow.** Istio 1.30 sends the copy unchanged, and even the old `-shadow` authority was only a header the application might read. Istio enforces nothing.
 >
 > **Looking only at application logs for proof.** The authority rewrite is in the proxy access log (`-c istio-proxy`).
 >

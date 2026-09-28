@@ -15,6 +15,13 @@ bootstrap:
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
 
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
 validation:
   scripts:
     - name: "verify-outlier-detection"

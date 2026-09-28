@@ -1,6 +1,6 @@
-# Part 1 — Weighted Destinations
+# Weighted Destinations
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Running A Rollout](./course-02-running-a-rollout.md).
+> Prerequisite: [the module landing page](./course.md). Next: [Running A Rollout](./course-02-running-a-rollout.md).
 
 A route block has always been a list; until now every example had one entry in it. This part is about what happens when it has several, what rule governs the numbers you put on them, and what the proxy actually does with those numbers when a request arrives.
 

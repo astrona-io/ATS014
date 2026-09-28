@@ -51,12 +51,16 @@ spec:
     spec:
       containers:
         - name: catalog
-          image: kubeteam/notification-service:v1
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8084
-          env:
-            - name: SERVICE_PORT
-              value: "8084"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: catalog-v1-nginx-conf
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -80,12 +84,16 @@ spec:
     spec:
       containers:
         - name: catalog
-          image: kubeteam/notification-service:v2
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8084
-          env:
-            - name: SERVICE_PORT
-              value: "8084"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: catalog-v2-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -144,7 +152,7 @@ spec:
       containers:
         - name: pricing
           image: mccutchen/go-httpbin:v2.15.0
-          args: ["-port", "8080"]
+          command: ["/bin/go-httpbin", "-port", "8080"]
           ports:
             - containerPort: 8080
 ---
@@ -181,7 +189,7 @@ spec:
       containers:
         - name: coldstore
           image: mccutchen/go-httpbin:v2.15.0
-          args: ["-port", "8080"]
+          command: ["/bin/go-httpbin", "-port", "8080"]
           ports:
             - containerPort: 8080
 ---
@@ -197,6 +205,36 @@ spec:
       targetPort: 8080
   selector:
     app: coldstore
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-v1-nginx-conf
+  namespace: storefront
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        default_type application/json;
+        return 200 '["EMAIL"]';
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-v2-nginx-conf
+  namespace: storefront
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        default_type application/json;
+        return 200 '["EMAIL","SMS"]';
+      }
+    }
 EOF
 
 kubectl -n storefront rollout status deployment/catalog-v1 --timeout=300s

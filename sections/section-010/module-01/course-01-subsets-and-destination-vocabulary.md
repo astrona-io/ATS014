@@ -1,6 +1,6 @@
-# Part 1 — Subsets And The Destination Vocabulary
+# Subsets And The Destination Vocabulary
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Matching A Request](./course-02-matching-a-request.md).
+> Prerequisite: [the module landing page](./course.md). Next: [Matching A Request](./course-02-matching-a-request.md).
 
 Before Istio can send a request to "v2", something has to define what `v2` means. That is the `DestinationRule`'s entire job in this module, and it is worth its own part because of a property that surprises everyone the first time: applying a correct `DestinationRule` changes no traffic whatsoever. It creates vocabulary. This part settles what that vocabulary is made of, what the control plane builds out of it, and why a subset that matches nothing is not an error.
 

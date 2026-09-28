@@ -1,4 +1,4 @@
-# Section 050 Capstone: A Controlled Chaos Experiment
+# Capstone: A Controlled Chaos Experiment
 
 This is the Section 050 integration challenge. It uses fault injection as what it is actually for — a test harness for the resilience configuration from section 040 — and it asks you to run two experiments at once on one host, each scoped to its own header so neither touches anybody else's traffic.
 

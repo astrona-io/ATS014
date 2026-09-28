@@ -12,10 +12,14 @@ CLUSTER="outbound|8000||httpbin.outlier-demo.svc.cluster.local"
 
 fail() { echo "FAIL: $*"; exit 1; }
 
-stat_val() {
+# Istio filters Envoy's /stats down to a small inclusion list, and per-cluster
+# outlier_detection.* counters are not in it - they come back empty on a stock
+# sidecar. The admin /clusters page is not filtered, and reports the verdict per
+# endpoint as a health flag, which is the same information and harder to fake.
+ejected_endpoints() {
   kubectl -n "$NS" exec deploy/tester -c istio-proxy -- \
-    pilot-agent request GET stats 2>/dev/null \
-    | grep -F "$SVC" | grep -F "$1" | awk -F': ' '{print $2}' | head -1
+    pilot-agent request GET clusters 2>/dev/null \
+    | grep -F "$CLUSTER" | grep -c 'health_flags::/failed_outlier_check'
 }
 
 drive() {
@@ -66,22 +70,18 @@ grep -q 'outlierDetection' <<<"$dump" \
   || fail "the tester proxy's cluster has no outlierDetection block - the DestinationRule exists but never reached the sidecar"
 
 # --- 3. drive traffic until an ejection happens -----------------------------
-before_total=$(stat_val 'outlier_detection.ejections_total'); before_total=${before_total:-0}
-
 ejected=0
 for round in 1 2 3 4; do
   drive 60
   sleep 6
-  active=$(stat_val 'outlier_detection.ejections_active'); active=${active:-0}
-  total=$(stat_val 'outlier_detection.ejections_total');  total=${total:-0}
-  if [[ "$active" -ge 1 || "$total" -gt "$before_total" ]]; then
+  if [[ "$(ejected_endpoints)" -ge 1 ]]; then
     ejected=1
     break
   fi
 done
 
 [[ "$ejected" -eq 1 ]] \
-  || fail "after 240 requests, outlier_detection.ejections_active is 0 and ejections_total has not moved from $before_total. The failures are being counted but nothing is being ejected - the usual cause is maxEjectionPercent being too low for a two-endpoint pool"
+  || fail "after 240 requests no endpoint carries the failed_outlier_check health flag. The failures are being counted but nothing is being ejected - the usual cause is maxEjectionPercent being too low for a two-endpoint pool"
 
 # --- 4. the endpoint view shows the verdict ---------------------------------
 eps=$(istioctl proxy-config endpoints deploy/tester -n "$NS" --cluster "$CLUSTER" 2>/dev/null)
@@ -105,8 +105,7 @@ ok=$(grep -c '^200$' <<<"$out")
 [[ "$ok" -ge 32 ]] \
   || fail "only $ok of 40 requests succeeded after the ejection, which is close to the unconfigured 50% failure rate. The ejection is not holding - check maxEjectionPercent and baseEjectionTime"
 
-final_active=$(stat_val 'outlier_detection.ejections_active'); final_active=${final_active:-0}
-final_total=$(stat_val 'outlier_detection.ejections_total');  final_total=${final_total:-0}
+final_ejected=$(ejected_endpoints)
 
-echo "PASS: outlier detection configured (3 consecutive 5xx, 5s interval, 30s base, maxEjectionPercent ${mx}); ejections_total=${final_total}, ejections_active=${final_active}; the proxy reports OUTLIER CHECK FAILED for one endpoint while Kubernetes still lists both, and ${ok}/40 requests now succeed"
+echo "PASS: outlier detection configured (3 consecutive 5xx, 5s interval, 30s base, maxEjectionPercent ${mx}); ${final_ejected} endpoint carries failed_outlier_check; the proxy reports OUTLIER CHECK FAILED for it while Kubernetes still lists both, and ${ok}/40 requests now succeed"
 exit 0

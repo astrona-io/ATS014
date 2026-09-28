@@ -93,12 +93,21 @@ good=$(grep -cxF "$V1" <<<"$out")
   || fail "only $good of 30 caller responses came from v1 - something is failing rather than mirroring"
 
 # --- 5. the shadow really received copies -----------------------------------
-# baseline first: the log holds copies from any earlier run
-before=$(kubectl -n "$NS" logs -l version=v2 -c istio-proxy --tail=-1 2>/dev/null | grep -c -- "-shadow")
+# Count requests arriving at the shadow. Every caller request is routed 100% to
+# v1, so anything v2's proxy logs is a mirrored copy. (Istio used to append a
+# "-shadow" authority suffix to copies; 1.30 leaves the authority alone, so the
+# suffix is not something to match on.)
+# Baseline first: the log holds copies from any earlier run.
+shadow_hits() {
+  kubectl -n "$NS" logs -l version=v2 -c istio-proxy --tail=-1 2>/dev/null \
+    | grep -c 'POST /notify'
+}
+sleep 2   # let the previous step's access logs flush before the baseline
+before=$(shadow_hits)
 kubectl -n "$NS" exec deploy/tester -- sh -c \
   'for i in $(seq 1 40); do curl -s -o /dev/null --max-time 10 -X POST http://notification-service/notify; done' 2>/dev/null
 sleep 3
-after=$(kubectl -n "$NS" logs -l version=v2 -c istio-proxy --tail=-1 2>/dev/null | grep -c -- "-shadow")
+after=$(shadow_hits)
 copies=$((after - before))
 
 [[ "$copies" -gt 0 ]] \
@@ -106,5 +115,5 @@ copies=$((after - before))
 [[ "$copies" -ge 30 ]] \
   || fail "the shadow received only $copies mirrored requests out of 40, which is well short of 100%. Check mirrorPercentage"
 
-echo "PASS: all 30 caller responses came from v1, the tester proxy holds a requestMirrorPolicy for the v2 cluster at 100%, and the shadow received $copies of 40 copies carrying the -shadow authority"
+echo "PASS: all 30 caller responses came from v1, the tester proxy holds a requestMirrorPolicy for the v2 cluster at 100%, and the shadow logged $copies copies for the 40 requests sent"
 exit 0

@@ -1,6 +1,6 @@
-# Part 2 — Rules, Path Types And Translation
+# Rules, Path Types And Translation
 
-> Prerequisite: [Part 1 — Claiming An Ingress](./course-01-claiming-an-ingress.md). Next: [Part 3 — TLS And The Feature Ceiling](./course-03-tls-and-the-feature-ceiling.md).
+> Prerequisite: [Claiming An Ingress](./course-01-claiming-an-ingress.md). Next: [TLS And The Feature Ceiling](./course-03-tls-and-the-feature-ceiling.md).
 
 The rule structure is Kubernetes', not Istio's, and one of its fields behaves differently from the Istio field with the same name. This part covers the shape, that difference, and what Istio builds out of it.
 

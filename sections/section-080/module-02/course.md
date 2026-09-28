@@ -17,9 +17,9 @@ The change to the configuration is smaller than you might expect. One object mov
 
 ## How this module is organised
 
-1. **[Part 1 — The Five-Step Chain](./course-01-the-five-step-chain.md)** — the full path with the owner of each step, and the two lines where the mistakes live.
-2. **[Part 2 — Where The `DestinationRule` Attaches](./course-02-where-the-destinationrule-attaches.md)** — why traffic policy follows the calling proxy, and how to prove which proxy holds the TLS context.
-3. **[Part 3 — Mutual TLS And The Consolidation Argument](./course-03-mutual-tls-and-consolidation.md)** — `credentialName` and the namespace it is read from, the sidecar-versus-gateway comparison, and the module's pitfalls.
+1. **[The Five-Step Chain](./course-01-the-five-step-chain.md)** — the full path with the owner of each step, and the two lines where the mistakes live.
+2. **[Where The `DestinationRule` Attaches](./course-02-where-the-destinationrule-attaches.md)** — why traffic policy follows the calling proxy, and how to prove which proxy holds the TLS context.
+3. **[Mutual TLS And The Consolidation Argument](./course-03-mutual-tls-and-consolidation.md)** — `credentialName` and the namespace it is read from, the sidecar-versus-gateway comparison, and the module's pitfalls.
 
 ## Learning objectives
 

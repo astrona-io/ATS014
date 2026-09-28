@@ -1,6 +1,6 @@
-# Part 2 — The `ServiceEntry` Object
+# The `ServiceEntry` Object
 
-> Prerequisite: [Part 1 — The Outbound Traffic Policy](./course-01-the-outbound-traffic-policy.md). Next: [Part 3 — A Registered Host Is An Ordinary Host](./course-03-a-registered-host-is-an-ordinary-host.md).
+> Prerequisite: [The Outbound Traffic Policy](./course-01-the-outbound-traffic-policy.md). Next: [A Registered Host Is An Ordinary Host](./course-03-a-registered-host-is-an-ordinary-host.md).
 
 Four fields, each answering one question. This part is what each decides, and why one of them gates everything the rest of the course can do with an external host.
 

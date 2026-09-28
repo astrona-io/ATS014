@@ -1,6 +1,6 @@
-# Part 3 — Diagnosing The Gateway
+# Diagnosing The Gateway
 
-> Prerequisite: [Part 2 — Binding Routes With `gateways:`](./course-02-binding-routes-with-gateways.md). Next: [the module landing page](./course.md).
+> Prerequisite: [Binding Routes With `gateways:`](./course-02-binding-routes-with-gateways.md). Next: [the module landing page](./course.md).
 
 Gateway problems present as two status codes, and almost all of the diagnostic value is in telling them apart. This part is that distinction, the commands that settle it, and the module's consolidated pitfalls.
 

@@ -1,4 +1,4 @@
-# Section 060 Capstone: Three APIs, One Edge
+# Capstone: Three APIs, One Edge
 
 This is the Section 060 integration challenge. You expose three applications at once — one through each of the section's three ingress APIs — on the same cluster, at the same time.
 

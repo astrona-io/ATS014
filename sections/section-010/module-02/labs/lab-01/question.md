@@ -10,6 +10,8 @@ Three injected namespaces exist, and every proxy currently carries the whole ser
 
 There is no `Sidecar` resource anywhere. From `tester`, all three backends are currently reachable.
 
+The mesh runs with `outboundTrafficPolicy: REGISTRY_ONLY`, so a destination the proxy no longer carries is genuinely unreachable rather than quietly passed through.
+
 The platform team wants `sidecar-demo` to be told about only what it actually calls.
 
 1.  Create a `Sidecar` resource named **`default`** in namespace **`sidecar-demo`** that applies to **every workload in that namespace** — do not use a `workloadSelector`.

@@ -1,6 +1,6 @@
-# Part 2 — `consistentHash` And The Ring
+# `consistentHash` And The Ring
 
-> Prerequisite: [Part 1 — Endpoint Selection And The `simple` Algorithms](./course-01-endpoint-selection-and-simple-algorithms.md). Next: [Part 3 — Policy Levels And Verification](./course-03-policy-levels-and-verification.md).
+> Prerequisite: [Endpoint Selection And The `simple` Algorithms](./course-01-endpoint-selection-and-simple-algorithms.md). Next: [Policy Levels And Verification](./course-03-policy-levels-and-verification.md).
 
 Every algorithm in Part 1 spreads traffic. This part is the alternative: instead of choosing by load, the proxy derives the endpoint from a property of the request, so the same input always lands on the same pod. This part covers what you can hash, the mechanism that turns a hash into an endpoint, and the two behaviours that surprise people — sessions moving when the pool changes, and affinity vanishing when the property is absent.
 

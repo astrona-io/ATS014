@@ -137,7 +137,7 @@ Test now, before the last object:
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
 kubectl -n egwtls-demo exec deploy/tester -- \
-  curl -s -o /dev/null -w 'without origination: %{http_code}\n' --max-time 20 "http://$PARTNER:8080/"
+  curl -s -o /dev/null -w 'without origination: %{http_code}\n' --max-time 20 "http://partner.example.com:8080/"
 ```
 
 ```text
@@ -170,7 +170,7 @@ spec:
 EOF
 sleep 4
 PARTNER=$(cat /tmp/partner-ip)
-kubectl -n egwtls-demo exec deploy/tester -- curl -s --max-time 20 "http://$PARTNER:8080/"
+kubectl -n egwtls-demo exec deploy/tester -- curl -s --max-time 20 "http://partner.example.com:8080/"
 ```
 
 ```text

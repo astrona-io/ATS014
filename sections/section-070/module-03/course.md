@@ -17,9 +17,9 @@ The distinction matters because you want more from your own workload than from a
 
 ## How this module is organised
 
-1. **[Part 1 — `WorkloadEntry`: One Instance](./course-01-workloadentry-one-instance.md)** — the three fields that describe a non-Kubernetes instance, and the identity the third one produces.
-2. **[Part 2 — `MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md)** — turning entries into a named service, and what `MESH_INTERNAL` changes compared with module 1.
-3. **[Part 3 — `WorkloadGroup` And Real Onboarding](./course-03-workloadgroup-and-real-onboarding.md)** — auto-registration, what a real VM needs, an honest account of what this playground cannot show, and the module's pitfalls.
+1. **[`WorkloadEntry`: One Instance](./course-01-workloadentry-one-instance.md)** — the three fields that describe a non-Kubernetes instance, and the identity the third one produces.
+2. **[`MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md)** — turning entries into a named service, and what `MESH_INTERNAL` changes compared with module 1.
+3. **[`WorkloadGroup` And Real Onboarding](./course-03-workloadgroup-and-real-onboarding.md)** — auto-registration, what a real VM needs, an honest account of what this playground cannot show, and the module's pitfalls.
 
 ## Learning objectives
 

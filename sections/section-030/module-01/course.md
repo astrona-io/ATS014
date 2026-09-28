@@ -17,9 +17,9 @@ There are two reasons to. The first is efficiency: when requests have very diffe
 
 ## How this module is organised
 
-1. **[Part 1 — Endpoint Selection And The `simple` Algorithms](./course-01-endpoint-selection-and-simple-algorithms.md)** — where in the request path the choice happens, the four `simple` values and what each is for, and how to observe which endpoint a proxy actually chose.
-2. **[Part 2 — `consistentHash` And The Ring](./course-02-consistent-hash-and-the-ring.md)** — the four things you can hash, how a hash becomes an endpoint, why affinity is best effort by design, and what happens to a request with nothing to hash.
-3. **[Part 3 — Policy Levels And Verification](./course-03-policy-levels-and-verification.md)** — host, subset and port level settings and which wins, why a subset policy replaces rather than merges, and reading `lbPolicy` from a live proxy.
+1. **[Endpoint Selection And The `simple` Algorithms](./course-01-endpoint-selection-and-simple-algorithms.md)** — where in the request path the choice happens, the four `simple` values and what each is for, and how to observe which endpoint a proxy actually chose.
+2. **[`consistentHash` And The Ring](./course-02-consistent-hash-and-the-ring.md)** — the four things you can hash, how a hash becomes an endpoint, why affinity is best effort by design, and what happens to a request with nothing to hash.
+3. **[Policy Levels And Verification](./course-03-policy-levels-and-verification.md)** — host, subset and port level settings and which wins, why a subset policy replaces rather than merges, and reading `lbPolicy` from a live proxy.
 
 ## Learning objectives
 

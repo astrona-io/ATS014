@@ -2,7 +2,7 @@
 
 Solve this question on: `terminal`
 
-You have a mesh with three injected namespaces and no Istio traffic configuration at all.
+You have a mesh with three injected namespaces and no Istio traffic configuration at all. It runs with `outboundTrafficPolicy: REGISTRY_ONLY`, so a destination the proxy no longer carries is genuinely unreachable rather than quietly passed through.
 
 **`storefront`**
 * `catalog-v1` — pods labelled `version: v1`, answers `["EMAIL"]` to `POST /notify`

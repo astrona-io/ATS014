@@ -1,4 +1,4 @@
-# Section 010 Capstone: Route And Scope A Storefront
+# Capstone: Route And Scope A Storefront
 
 This is the Section 010 integration challenge. It combines both modules — subsets and request matching from Module 1, configuration scoping from Module 2 — into one specification you have to deliver on a mesh with no traffic configuration at all.
 

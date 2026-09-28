@@ -1,6 +1,6 @@
-# Part 3 — The Shared Budget And Idempotency
+# The Shared Budget And Idempotency
 
-> Prerequisite: [Part 2 — The Retry Policy](./course-02-the-retry-policy.md). Next: [the module landing page](./course.md).
+> Prerequisite: [The Retry Policy](./course-02-the-retry-policy.md). Next: [the module landing page](./course.md).
 
 The two fields you now know share one clock. This part is the arithmetic that follows, the signature of getting it wrong, and the safety question Istio cannot answer for you.
 

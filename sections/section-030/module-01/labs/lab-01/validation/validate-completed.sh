@@ -92,14 +92,18 @@ pol_stable=$(python3 - "$dump" <<'PY' 2>/dev/null
 import json,sys
 for c in json.loads(sys.argv[1]):
     if c.get("name","").split("|")[2:3] == ["stable"]:
-        print(c.get("lbPolicy","")); break
+        # Envoy omits lbPolicy from the dump when it is the default
+        # ROUND_ROBIN, so an absent field means ROUND_ROBIN, not "no cluster".
+        print(c.get("lbPolicy","ROUND_ROBIN")); break
 PY
 )
 pol_canary=$(python3 - "$dump" <<'PY' 2>/dev/null
 import json,sys
 for c in json.loads(sys.argv[1]):
     if c.get("name","").split("|")[2:3] == ["canary"]:
-        print(c.get("lbPolicy","")); break
+        # Envoy omits lbPolicy from the dump when it is the default
+        # ROUND_ROBIN, so an absent field means ROUND_ROBIN, not "no cluster".
+        print(c.get("lbPolicy","ROUND_ROBIN")); break
 PY
 )
 [[ -n "$pol_stable" && -n "$pol_canary" ]] \

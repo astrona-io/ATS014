@@ -1,6 +1,6 @@
-# Part 1 — The Connection Pool
+# The Connection Pool
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Overflow And Its Signatures](./course-02-overflow-and-its-signatures.md).
+> Prerequisite: [the module landing page](./course.md). Next: [Overflow And Its Signatures](./course-02-overflow-and-its-signatures.md).
 
 Four settings, two of which do the real work, and one distinction that determines whether any test you run means anything. This part covers the shape of the object and the mental model underneath it.
 

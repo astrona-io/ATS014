@@ -1,6 +1,6 @@
-# Part 1 — `fault.delay`
+# `fault.delay`
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — `fault.abort`](./course-02-fault-abort.md).
+> Prerequisite: [the module landing page](./course.md). Next: [`fault.abort`](./course-02-fault-abort.md).
 
 The first half of the feature, and the one that models the failure mode people most often forget to test: a dependency that is not broken, just slow.
 

@@ -1,4 +1,4 @@
-# Section 080 Capstone: One Exit, Two Partners
+# Capstone: One Exit, Two Partners
 
 This is the Section 080 integration challenge, and the last practical exercise in the course. One egress gateway carries traffic to two different external hosts: one plain HTTP, one TLS-only with the handshake performed at the gateway. Only one of your two workloads is routed through it.
 

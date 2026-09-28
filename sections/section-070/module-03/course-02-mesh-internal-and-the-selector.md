@@ -1,6 +1,6 @@
-# Part 2 — `MESH_INTERNAL` And The Selector
+# `MESH_INTERNAL` And The Selector
 
-> Prerequisite: [Part 1 — `WorkloadEntry`: One Instance](./course-01-workloadentry-one-instance.md). Next: [Part 3 — `WorkloadGroup` And Real Onboarding](./course-03-workloadgroup-and-real-onboarding.md).
+> Prerequisite: [`WorkloadEntry`: One Instance](./course-01-workloadentry-one-instance.md). Next: [`WorkloadGroup` And Real Onboarding](./course-03-workloadgroup-and-real-onboarding.md).
 
 A `WorkloadEntry` on its own is not reachable by name. This part is the object that gives a group of them a hostname and ports — the same `ServiceEntry` from module 1, with two fields changed and one added.
 

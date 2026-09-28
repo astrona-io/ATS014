@@ -1,4 +1,4 @@
-# Section 050: Using Fault Injection
+# Using Fault Injection
 
 Section 040 configured resilience. This section is how you find out whether any of it works.
 
@@ -30,7 +30,7 @@ The same feature answers a second question that is harder to test any other way:
 ## The Learning Path
 
 ### 1. Fault Injection With Delays And Aborts
-*   **Module Reader:** **[Module 1: Fault Injection With Delays And Aborts](./module-01/course.md)**
+*   **Module Reader:** **[Fault Injection With Delays And Aborts](./module-01/course.md)**
     1. [`fault.delay`](./module-01/course-01-fault-delay.md)
     2. [`fault.abort`](./module-01/course-02-fault-abort.md)
     3. [Scoping, Composition And Hazards](./module-01/course-03-scoping-composition-and-hazards.md)

@@ -1,6 +1,6 @@
-# Part 1 — The Gateway Pod And Its Listener
+# The Gateway Pod And Its Listener
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Binding Routes With `gateways:`](./course-02-binding-routes-with-gateways.md).
+> Prerequisite: [the module landing page](./course.md). Next: [Binding Routes With `gateways:`](./course-02-binding-routes-with-gateways.md).
 
 Two things to establish: what the gateway actually is as a running process, and what a `Gateway` object does to it. Neither is complicated, and the split between them causes most of the confusion in this section.
 

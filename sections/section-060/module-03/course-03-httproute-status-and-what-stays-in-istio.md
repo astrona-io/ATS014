@@ -1,6 +1,6 @@
-# Part 3 — `HTTPRoute`, Status And What Stays In Istio
+# `HTTPRoute`, Status And What Stays In Istio
 
-> Prerequisite: [Part 2 — A Gateway That Creates Its Own Data Plane](./course-02-a-gateway-that-creates-its-own-data-plane.md). Next: [the module landing page](./course.md).
+> Prerequisite: [A Gateway That Creates Its Own Data Plane](./course-02-a-gateway-that-creates-its-own-data-plane.md). Next: [the module landing page](./course.md).
 
 The routing half, the status conditions that make this API far easier to debug than `Ingress`, and an explicit line around what the Gateway API does not cover.
 

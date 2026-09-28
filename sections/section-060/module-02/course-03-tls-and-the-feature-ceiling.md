@@ -1,6 +1,6 @@
-# Part 3 — TLS And The Feature Ceiling
+# TLS And The Feature Ceiling
 
-> Prerequisite: [Part 2 — Rules, Path Types And Translation](./course-02-rules-path-types-and-translation.md). Next: [the module landing page](./course.md).
+> Prerequisite: [Rules, Path Types And Translation](./course-02-rules-path-types-and-translation.md). Next: [the module landing page](./course.md).
 
 Two things left: the TLS configuration, whose one non-obvious rule causes most of the failures on this topic, and an honest account of what the `Ingress` API cannot do — which is the whole reason the next module exists.
 

@@ -115,7 +115,7 @@ pls=$(kubectl -n "$NS" get destinationrule "$DR" -o jsonpath='{.spec.trafficPoli
 
 # --- 6. live: plain host, from the permitted workload -----------------------
 before=$(gw_lines "$PLAIN_HOST")
-code=$(kubectl -n "$NS" exec deploy/tester -- curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://${PLAIN}:8080/get" 2>/dev/null)
+code=$(kubectl -n "$NS" exec deploy/tester -- curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://${PLAIN_HOST}:8080/get" 2>/dev/null)
 sleep 3
 after=$(gw_lines "$PLAIN_HOST")
 [[ "$code" == "200" ]] || fail "the plain call from tester returned '$code', expected 200"
@@ -124,8 +124,8 @@ after=$(gw_lines "$PLAIN_HOST")
 
 # --- 7. live: secure host, TLS originated at the gateway --------------------
 before=$(gw_lines "$SEC_HOST")
-body=$(kubectl -n "$NS" exec deploy/tester -- curl -s --max-time 20 "http://${SECURE}:8081/" 2>/dev/null)
-code=$(kubectl -n "$NS" exec deploy/tester -- curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://${SECURE}:8081/" 2>/dev/null)
+body=$(kubectl -n "$NS" exec deploy/tester -- curl -s --max-time 20 "http://${SEC_HOST}:8081/" 2>/dev/null)
+code=$(kubectl -n "$NS" exec deploy/tester -- curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://${SEC_HOST}:8081/" 2>/dev/null)
 sleep 3
 after=$(gw_lines "$SEC_HOST")
 
@@ -141,7 +141,7 @@ kubectl -n istio-system logs deploy/istio-egressgateway --tail=30 2>/dev/null \
 
 # --- 8. other-client is un-diverted, not blocked ----------------------------
 before=$(gw_lines "$PLAIN_HOST")
-code=$(kubectl -n "$NS" exec deploy/other-client -- curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://${PLAIN}:8080/get" 2>/dev/null)
+code=$(kubectl -n "$NS" exec deploy/other-client -- curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://${PLAIN_HOST}:8080/get" 2>/dev/null)
 sleep 3
 after=$(gw_lines "$PLAIN_HOST")
 [[ "$code" == "200" ]] \

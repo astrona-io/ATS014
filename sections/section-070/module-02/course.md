@@ -19,9 +19,9 @@ TLS origination moves the encryption boundary. The application speaks plain HTTP
 
 ## How this module is organised
 
-1. **[Part 1 — Why HTTPS Is Opaque](./course-01-why-https-is-opaque.md)** — what the sidecar can and cannot see in an encrypted stream, and what that costs you.
-2. **[Part 2 — The Three Objects](./course-02-the-three-objects.md)** — the `ServiceEntry` with two ports, the port redirect, and the `DestinationRule` that performs the handshake — plus the two placement details that break it.
-3. **[Part 3 — Proving It, And Mutual TLS](./course-03-proving-it-and-mutual-tls.md)** — evidence from the destination's own view and from the proxy, what `MUTUAL` changes, and where this belongs relative to section 080.
+1. **[Why HTTPS Is Opaque](./course-01-why-https-is-opaque.md)** — what the sidecar can and cannot see in an encrypted stream, and what that costs you.
+2. **[The Three Objects](./course-02-the-three-objects.md)** — the `ServiceEntry` with two ports, the port redirect, and the `DestinationRule` that performs the handshake — plus the two placement details that break it.
+3. **[Proving It, And Mutual TLS](./course-03-proving-it-and-mutual-tls.md)** — evidence from the destination's own view and from the proxy, what `MUTUAL` changes, and where this belongs relative to section 080.
 
 ## Learning objectives
 

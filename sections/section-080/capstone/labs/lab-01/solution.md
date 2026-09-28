@@ -198,8 +198,7 @@ The origination rule names **`secure.partner.example`**, the external host. The 
 ## Step 6: Verify Both Chains
 
 ```sh
-PLAIN=$(cat /tmp/plain-ip); SECURE=$(cat /tmp/secure-ip)
-for t in "plain $PLAIN 8080 /get" "secure $SECURE 8081 /"; do
+for t in "plain plain.partner.example 8080 /get" "secure secure.partner.example 8081 /"; do
   set -- $t
   B=$(kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c "$1.partner.example")
   printf '%-7s -> ' "$1"
@@ -242,10 +241,9 @@ sidecar transportSocket: 0
 ## Step 7: Verify The Restriction
 
 ```sh
-PLAIN=$(cat /tmp/plain-ip)
 B=$(kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c plain.partner.example)
 kubectl -n edge-egress exec deploy/other-client -- \
-  curl -s -o /dev/null -w 'other-client: %{http_code}\n' --max-time 20 "http://$PLAIN:8080/get"
+  curl -s -o /dev/null -w 'other-client: %{http_code}\n' --max-time 20 "http://plain.partner.example:8080/get"
 sleep 3
 A=$(kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c plain.partner.example)
 echo "gateway lines: +$((A - B))"

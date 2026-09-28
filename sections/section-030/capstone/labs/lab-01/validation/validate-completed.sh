@@ -2,7 +2,7 @@
 # Section 030 capstone. Confirms host-level consistent hashing pins a session to
 # one stable endpoint, that a subset-level LEAST_REQUEST override applies to the
 # canary only, that no caller response comes from the canary, and that the canary
-# still receives mirrored copies carrying the -shadow authority.
+# still receives the mirrored copies.
 
 set -u
 
@@ -101,7 +101,9 @@ want=sys.argv[2]
 for c in json.loads(sys.argv[1]):
     parts=c.get("name","").split("|")
     if len(parts)>2 and parts[2]==want:
-        print(c.get("lbPolicy","")); break
+        # Envoy omits lbPolicy from the dump when it is the default
+        # ROUND_ROBIN, so an absent field means ROUND_ROBIN, not "no cluster".
+        print(c.get("lbPolicy","ROUND_ROBIN")); break
 PY
 }
 pol_stable=$(read_pol stable)
@@ -138,11 +140,18 @@ n2=$(wc -l <<<"$eps2" | tr -d ' ')
   || fail "12 requests with NO x-session header reached only $n2 endpoint. A request with nothing to hash must fall back to normal load balancing"
 
 # --- 7. the canary really receives the copies -------------------------------
-before=$(kubectl -n "$NS" logs -l app=httpbin,version=canary -c istio-proxy --tail=-1 2>/dev/null | grep -c -- "-shadow")
+# No caller traffic is routed to the canary, so every request its proxy logs is
+# a mirrored copy. (Istio 1.30 no longer appends a "-shadow" authority suffix.)
+canary_hits() {
+  kubectl -n "$NS" logs -l app=httpbin,version=canary -c istio-proxy --tail=-1 2>/dev/null \
+    | grep -c 'GET /get'
+}
+sleep 2   # let the previous step's access logs flush before the baseline
+before=$(canary_hits)
 kubectl -n "$NS" exec deploy/tester -- sh -c \
   'for i in $(seq 1 40); do curl -s -o /dev/null --max-time 10 -H "x-session: alice" http://httpbin:8000/get; done' >/dev/null 2>&1
 sleep 3
-after=$(kubectl -n "$NS" logs -l app=httpbin,version=canary -c istio-proxy --tail=-1 2>/dev/null | grep -c -- "-shadow")
+after=$(canary_hits)
 copies=$((after - before))
 
 [[ "$copies" -gt 0 ]] \
@@ -150,5 +159,5 @@ copies=$((after - before))
 [[ "$copies" -ge 30 ]] \
   || fail "the canary received only $copies copies of 40, well short of 100%. Check mirrorPercentage"
 
-echo "PASS: host-level consistentHash pins x-session to one stable endpoint (lbPolicy $pol_stable), the canary subset overrides to $pol_canary, no caller traffic reached a canary pod, unheaded requests spread across $n2 endpoints, and the canary received $copies of 40 mirrored copies"
+echo "PASS: host-level consistentHash pins x-session to one stable endpoint (lbPolicy $pol_stable), the canary subset overrides to $pol_canary, no caller traffic reached a canary pod, unheaded requests spread across $n2 endpoints, and the canary logged $copies mirrored copies for the 40 requests sent"
 exit 0

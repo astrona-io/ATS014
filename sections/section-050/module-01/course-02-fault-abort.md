@@ -1,6 +1,6 @@
-# Part 2 — `fault.abort`
+# `fault.abort`
 
-> Prerequisite: [Part 1 — `fault.delay`](./course-01-fault-delay.md). Next: [Part 3 — Scoping, Composition And Hazards](./course-03-scoping-composition-and-hazards.md).
+> Prerequisite: [`fault.delay`](./course-01-fault-delay.md). Next: [Scoping, Composition And Hazards](./course-03-scoping-composition-and-hazards.md).
 
 The other half, and it is not "delay with an error at the end". This part covers what makes an abort structurally different, where the evidence lives, and how to inject into only some traffic.
 

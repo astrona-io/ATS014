@@ -1,4 +1,4 @@
-# Section 020: Configuring Traffic Shifting
+# Configuring Traffic Shifting
 
 Releasing a new version is a traffic problem before it is a deployment problem. The pods are easy to start; the hard questions are how many real requests reach them, and how fast you can change your mind.
 
@@ -19,7 +19,7 @@ Istio gives two answers and this section covers both. Weighted routing moves a c
 - `mirror` as a sibling of `route`, a single destination whose response *and latency* are discarded.
 - Why a mirror is never part of the weighted split, and that a full mirror doubles internal request volume.
 - `mirrorPercentage` for sampling, and that omitting it means 100%, not 0%.
-- The `-shadow` authority suffix, what it is for, and why the receiving proxy's access log is the only proof a mirror works.
+- Why the receiving proxy's access log is the only proof a mirror works, and what happened to the `-shadow` authority suffix older material describes.
 - The three-state mirror diagnostic: policy absent, policy present but no endpoints, or working.
 - That the mesh discards the mirrored response but not the work the shadow did — and what that means before mirroring anything with side effects.
 - Reading `weightedClusters` and `requestMirrorPolicies` out of a live proxy.
@@ -29,7 +29,7 @@ Istio gives two answers and this section covers both. Weighted routing moves a c
 ## The Learning Path
 
 ### 1. Shift Traffic With Weighted Routing
-*   **Module Reader:** **[Module 1: Shift Traffic With Weighted Routing](./module-01/course.md)**
+*   **Module Reader:** **[Shift Traffic With Weighted Routing](./module-01/course.md)**
     1. [Weighted Destinations](./module-01/course-01-weighted-destinations.md)
     2. [Running A Rollout](./module-01/course-02-running-a-rollout.md)
     3. [Weight Versus Replicas, And Proof](./module-01/course-03-weight-versus-replicas-and-proof.md)
@@ -45,7 +45,7 @@ Istio gives two answers and this section covers both. Weighted routing moves a c
 *   **Hands-on Objective:** Run a 70/30 canary with an internal-tester header rule pinned above the weights, prove the split over 200 requests, and leave the replica counts alone — because share is a weight, not a pod count.
 
 ### 2. Mirror Live Traffic To A Shadow Service
-*   **Module Reader:** **[Module 2: Mirror Live Traffic To A Shadow Service](./module-02/course.md)**
+*   **Module Reader:** **[Mirror Live Traffic To A Shadow Service](./module-02/course.md)**
     1. [Mirror As A Sibling Of Route](./module-02/course-01-mirror-as-a-sibling-of-route.md)
     2. [Identifying And Sampling Shadow Traffic](./module-02/course-02-identifying-and-sampling-shadow-traffic.md)
     3. [Consequences, Verification And Limits](./module-02/course-03-consequences-verification-and-limits.md)

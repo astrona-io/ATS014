@@ -1,6 +1,6 @@
-# Part 1 — Mirror As A Sibling Of Route
+# Mirror As A Sibling Of Route
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Identifying And Sampling Shadow Traffic](./course-02-identifying-and-sampling-shadow-traffic.md).
+> Prerequisite: [the module landing page](./course.md). Next: [Identifying And Sampling Shadow Traffic](./course-02-identifying-and-sampling-shadow-traffic.md).
 
 The whole feature is one field. This part is about where that field goes, what the proxy does when it fires, and the structural fact that trips people up first — that a mirror sits *beside* the route rather than inside it.
 

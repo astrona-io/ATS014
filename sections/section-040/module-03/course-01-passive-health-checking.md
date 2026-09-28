@@ -1,6 +1,6 @@
-# Part 1 — Passive Health Checking
+# Passive Health Checking
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Ejection Mechanics And Limits](./course-02-ejection-mechanics-and-limits.md).
+> Prerequisite: [the module landing page](./course.md). Next: [Ejection Mechanics And Limits](./course-02-ejection-mechanics-and-limits.md).
 
 This part establishes what the mechanism is, what it watches, and why it catches a class of failure that Kubernetes structurally cannot.
 

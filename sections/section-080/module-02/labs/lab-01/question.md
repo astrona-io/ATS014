@@ -20,7 +20,7 @@ There is no Istio configuration. This lab needs no internet access.
 
 **What the grader checks**
 
-6.  `GET http://<partner-ip>:8080/` from `tester` returns **200** and the body contains **`scheme=https`**.
+6.  `GET http://partner.example.com:8080/` from `tester` returns **200** and the body contains **`scheme=https`**. The mesh resolves that name from the `ServiceEntry`; the gateway's route matches on the hostname, not on an IP.
 7.  The **gateway's own access log** gains a line for the request, with the upstream on port **8443**.
 8.  The **gateway** proxy's cluster for `partner.example.com` has a TLS `transportSocket`, and the **tester sidecar's** does **not**. The policy is applied by the proxy that makes the call.
 9.  Stage 2 routes to port **8443** while the `Gateway` listener stays on **8080**.

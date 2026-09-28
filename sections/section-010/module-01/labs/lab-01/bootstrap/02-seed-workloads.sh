@@ -34,12 +34,16 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: kubeteam/notification-service:v1
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8084
-          env:
-            - name: SERVICE_PORT
-              value: "8084"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: notification-service-v1-nginx-conf
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -63,12 +67,16 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: kubeteam/notification-service:v2
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8084
-          env:
-            - name: SERVICE_PORT
-              value: "8084"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: notification-service-v2-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -106,6 +114,36 @@ spec:
         - name: tester
           image: curlimages/curl
           command: ["sh", "-c", "while true; do sleep 30; done"]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-v1-nginx-conf
+  namespace: routing-demo
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        default_type application/json;
+        return 200 '["EMAIL"]';
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-v2-nginx-conf
+  namespace: routing-demo
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        default_type application/json;
+        return 200 '["EMAIL","SMS"]';
+      }
+    }
 EOF
 
 for d in notification-service-v1 notification-service-v2 tester; do

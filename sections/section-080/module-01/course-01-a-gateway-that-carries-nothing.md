@@ -1,6 +1,6 @@
-# Part 1 — A Gateway That Carries Nothing
+# A Gateway That Carries Nothing
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — The Two-Stage `VirtualService`](./course-02-the-two-stage-virtualservice.md).
+> Prerequisite: [the module landing page](./course.md). Next: [The Two-Stage `VirtualService`](./course-02-the-two-stage-virtualservice.md).
 
 Most clusters running the `demo` profile have an egress gateway they have never used. This part is about why, and about the one field in the `Gateway` object that reads backwards until you think about who is serving whom.
 

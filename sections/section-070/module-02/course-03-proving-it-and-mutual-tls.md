@@ -1,6 +1,6 @@
-# Part 3 — Proving It, And Mutual TLS
+# Proving It, And Mutual TLS
 
-> Prerequisite: [Part 2 — The Three Objects](./course-02-the-three-objects.md). Next: [the module landing page](./course.md).
+> Prerequisite: [The Three Objects](./course-02-the-three-objects.md). Next: [the module landing page](./course.md).
 
 A `200` does not prove origination — the external service might simply have accepted plaintext. This part is the evidence, then what changes when the external service also wants a certificate from you.
 

@@ -1,6 +1,6 @@
-# Part 3 — Evaluation Order, Name Resolution And Proof
+# Evaluation Order, Name Resolution And Proof
 
-> Prerequisite: [Part 2 — Matching A Request](./course-02-matching-a-request.md). Next: [the module landing page](./course.md).
+> Prerequisite: [Matching A Request](./course-02-matching-a-request.md). Next: [the module landing page](./course.md).
 
 You can now name destinations and describe requests. What remains is the part that decides behaviour when several rules could apply, the name-resolution rule that makes correct-looking objects do nothing, and the two commands that tell you whether the proxy ever received your work. Every failure mode in this module lands in one of those three.
 

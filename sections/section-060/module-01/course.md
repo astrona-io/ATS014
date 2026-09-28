@@ -15,9 +15,9 @@ The entry point is a dedicated proxy pod, the **ingress gateway**. It is the sam
 
 ## How this module is organised
 
-1. **[Part 1 — The Gateway Pod And Its Listener](./course-01-the-gateway-pod-and-its-listener.md)** — what the gateway is, how a `Gateway` object finds it, and what `servers[]` actually opens.
-2. **[Part 2 — Binding Routes With `gateways:`](./course-02-binding-routes-with-gateways.md)** — the one field that separates north-south from east-west routing, the `mesh` reserved name, host overlap, and cross-namespace references.
-3. **[Part 3 — Diagnosing The Gateway](./course-03-diagnosing-the-gateway.md)** — reading a 404 apart from a 503, inspecting the gateway's own configuration, and the module's pitfalls.
+1. **[The Gateway Pod And Its Listener](./course-01-the-gateway-pod-and-its-listener.md)** — what the gateway is, how a `Gateway` object finds it, and what `servers[]` actually opens.
+2. **[Binding Routes With `gateways:`](./course-02-binding-routes-with-gateways.md)** — the one field that separates north-south from east-west routing, the `mesh` reserved name, host overlap, and cross-namespace references.
+3. **[Diagnosing The Gateway](./course-03-diagnosing-the-gateway.md)** — reading a 404 apart from a 503, inspecting the gateway's own configuration, and the module's pitfalls.
 
 ## Learning objectives
 

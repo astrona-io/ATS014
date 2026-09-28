@@ -31,8 +31,8 @@ Route **both** partners through the **one** egress gateway.
 
 **What the grader checks**
 
-8.  From `tester`: `GET http://<plain-ip>:8080/get` returns **200** and the gateway logs it.
-9.  From `tester`: `GET http://<secure-ip>:8081/` returns **200** with body `scheme=https`, and the gateway logs it with an upstream on **8443**.
+8.  From `tester`: `GET http://plain.partner.example:8080/get` returns **200** and the gateway logs it. The mesh resolves both hostnames from their `ServiceEntry`, and the hostname is what the gateway's listeners match on.
+9.  From `tester`: `GET http://secure.partner.example:8081/` returns **200** with body `scheme=https`, and the gateway logs it with an upstream on **8443**.
 10. From `other-client`: the plain call still returns **200** but produces **no** gateway log line — `sourceLabels` narrows the route, not the permission.
 11. The **gateway** proxy has a TLS `transportSocket` for `secure.partner.example`; the **tester sidecar** does not.
 12. Both hosts are carried by the same gateway deployment.

@@ -19,9 +19,9 @@ The single most important thing to understand before any YAML:
 
 ## How this module is organised
 
-1. **[Part 1 — A Gateway That Carries Nothing](./course-01-a-gateway-that-carries-nothing.md)** — what is already running, why it is idle, and the `Gateway` object with its counter-intuitive host list.
-2. **[Part 2 — The Two-Stage `VirtualService`](./course-02-the-two-stage-virtualservice.md)** — one object holding two rule sets that run in two different proxies, and the reserved `mesh` name that separates them.
-3. **[Part 3 — Restricting, Proving And The Trade-Off](./course-03-restricting-proving-and-the-trade-off.md)** — `sourceLabels`, the evidence that the hop happened, what you gain and pay, and the module's pitfalls.
+1. **[A Gateway That Carries Nothing](./course-01-a-gateway-that-carries-nothing.md)** — what is already running, why it is idle, and the `Gateway` object with its counter-intuitive host list.
+2. **[The Two-Stage `VirtualService`](./course-02-the-two-stage-virtualservice.md)** — one object holding two rule sets that run in two different proxies, and the reserved `mesh` name that separates them.
+3. **[Restricting, Proving And The Trade-Off](./course-03-restricting-proving-and-the-trade-off.md)** — `sourceLabels`, the evidence that the hop happened, what you gain and pay, and the module's pitfalls.
 
 ## Learning objectives
 

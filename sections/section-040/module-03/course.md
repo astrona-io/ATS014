@@ -15,9 +15,9 @@ Outlier detection is the mesh's answer, and it works differently from anything e
 
 ## How this module is organised
 
-1. **[Part 1 — Passive Health Checking](./course-01-passive-health-checking.md)** — what "passive" means, the fields that define an outlier, and how this differs from a readiness probe in kind rather than degree.
-2. **[Part 2 — Ejection Mechanics And Limits](./course-02-ejection-mechanics-and-limits.md)** — the analysis interval, how long an ejection lasts and why repeat offenders are ejected for longer, and the two safety limits that stop the mesh ejecting everything.
-3. **[Part 3 — Local, Temporary, And Verified](./course-03-local-temporary-and-verified.md)** — why every proxy reaches its own verdict, what Kubernetes thinks meanwhile, the counters that prove an ejection, and how this becomes the foundation for locality failover.
+1. **[Passive Health Checking](./course-01-passive-health-checking.md)** — what "passive" means, the fields that define an outlier, and how this differs from a readiness probe in kind rather than degree.
+2. **[Ejection Mechanics And Limits](./course-02-ejection-mechanics-and-limits.md)** — the analysis interval, how long an ejection lasts and why repeat offenders are ejected for longer, and the two safety limits that stop the mesh ejecting everything.
+3. **[Local, Temporary, And Verified](./course-03-local-temporary-and-verified.md)** — why every proxy reaches its own verdict, what Kubernetes thinks meanwhile, the counters that prove an ejection, and how this becomes the foundation for locality failover.
 
 ## Learning objectives
 

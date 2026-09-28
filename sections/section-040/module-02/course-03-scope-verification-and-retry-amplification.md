@@ -1,6 +1,6 @@
-# Part 3 — Scope, Verification And Retry Amplification
+# Scope, Verification And Retry Amplification
 
-> Prerequisite: [Part 2 — Overflow And Its Signatures](./course-02-overflow-and-its-signatures.md). Next: [the module landing page](./course.md).
+> Prerequisite: [Overflow And Its Signatures](./course-02-overflow-and-its-signatures.md). Next: [the module landing page](./course.md).
 
 Three things remain: reading the thresholds the proxy is actually enforcing, being precise about what "per client" means for capacity planning, and the interaction with module 1 that turns a protective mechanism into a destructive one.
 

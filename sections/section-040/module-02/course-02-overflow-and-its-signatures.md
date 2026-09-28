@@ -1,6 +1,6 @@
-# Part 2 — Overflow And Its Signatures
+# Overflow And Its Signatures
 
-> Prerequisite: [Part 1 — The Connection Pool](./course-01-the-connection-pool.md). Next: [Part 3 — Scope, Verification And Retry Amplification](./course-03-scope-verification-and-retry-amplification.md).
+> Prerequisite: [The Connection Pool](./course-01-the-connection-pool.md). Next: [Scope, Verification And Retry Amplification](./course-03-scope-verification-and-retry-amplification.md).
 
 A 503 on its own is ambiguous — the application could have produced it, a pod could be unready, a route could resolve to nothing. This part is about the two pieces of evidence that identify a circuit-breaker rejection specifically, which is the difference between diagnosing an overload and chasing a bug in a backend that is behaving perfectly.
 
@@ -67,6 +67,28 @@ The counters to know, all prefixed with the cluster name:
 
 `upstream_rq_pending_overflow` is the one to name if you are asked how to prove a circuit breaker tripped.
 
+### One thing to do before the counters exist
+
+A stock Istio sidecar does not export them. Istio installs a stats filter that
+keeps a small set of Envoy counters — control-plane and listener health, mostly —
+and per-cluster counters like the ones above are not in that set. Query
+`pilot-agent request GET stats` on an unmodified proxy and the grep comes back
+empty, which looks exactly like "the breaker never tripped".
+
+Add them back per workload with an annotation on the **pod template** of the
+client — the caller, since the breaker lives in the caller's proxy:
+
+```yaml
+template:
+  metadata:
+    annotations:
+      sidecar.istio.io/statsInclusionPrefixes: "cluster.outbound"
+```
+
+The playground and the lab for this module already carry it on the client
+workload. On your own cluster, remember it is a pod annotation: changing it
+restarts the pod, and the counters start from zero again.
+
 > [!TIP]
 > **Try it — the overflow counters**
 >
@@ -78,12 +100,12 @@ The counters to know, all prefixed with the cluster name:
 > Expect something like:
 >
 > ```text
-> cluster.outbound|80||notification-service.circuit-demo.svc.cluster.local.upstream_cx_overflow: 4
-> cluster.outbound|80||notification-service.circuit-demo.svc.cluster.local.upstream_rq_pending_active: 0
-> cluster.outbound|80||notification-service.circuit-demo.svc.cluster.local.upstream_rq_pending_overflow: 23
+> cluster.outbound|80||notification-service.circuit-demo.svc.cluster.local;.upstream_cx_overflow: 9
+> cluster.outbound|80||notification-service.circuit-demo.svc.cluster.local;.upstream_rq_pending_active: 0
+> cluster.outbound|80||notification-service.circuit-demo.svc.cluster.local;.upstream_rq_pending_overflow: 37
 > ```
 >
-> Twenty-three requests rejected for lack of a pending slot, and four occasions where the connection limit itself was the binding constraint. `pending_active: 0` because nothing is in flight while you read it. These are cumulative since the proxy started, so take a baseline if you want a per-run number.
+> Thirty-seven requests rejected for lack of a pending slot, and nine occasions where the connection limit itself was the binding constraint. `pending_active: 0` because nothing is in flight while you read it. These are cumulative since the proxy started, so take a baseline if you want a per-run number.
 
 ## Reading the numbers together
 

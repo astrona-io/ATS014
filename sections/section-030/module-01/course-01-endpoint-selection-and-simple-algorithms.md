@@ -1,6 +1,6 @@
-# Part 1 — Endpoint Selection And The `simple` Algorithms
+# Endpoint Selection And The `simple` Algorithms
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — `consistentHash` And The Ring](./course-02-consistent-hash-and-the-ring.md).
+> Prerequisite: [the module landing page](./course.md). Next: [`consistentHash` And The Ring](./course-02-consistent-hash-and-the-ring.md).
 
 This part establishes where the endpoint decision sits in the request path, gives you a way to watch it happen, and covers the four standard algorithms — all of which have the property that they spread traffic, which is exactly what Part 2 will take away.
 

@@ -1,6 +1,6 @@
-# Part 2 — Matching A Request
+# Matching A Request
 
-> Prerequisite: [Part 1 — Subsets And The Destination Vocabulary](./course-01-subsets-and-destination-vocabulary.md). Next: [Part 3 — Evaluation Order, Name Resolution And Proof](./course-03-evaluation-order-and-proof.md).
+> Prerequisite: [Subsets And The Destination Vocabulary](./course-01-subsets-and-destination-vocabulary.md). Next: [Evaluation Order, Name Resolution And Proof](./course-03-evaluation-order-and-proof.md).
 
 Part 1 gave you named destinations. This part is about the other half of a routing rule: the description of *which requests* it applies to. The `match` block is a small language, and nearly all of the mistakes people make with it come from two things — choosing the wrong string-comparison form, and misreading whether two conditions must both hold. This part settles both.
 

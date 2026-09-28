@@ -19,9 +19,9 @@ The two interact, and that interaction is the most reliably examined detail in t
 
 ## How this module is organised
 
-1. **[Part 1 — The Route Timeout](./course-01-the-route-timeout.md)** — where the deadline is measured, what the caller receives when it expires, and what a timeout does *not* do.
-2. **[Part 2 — The Retry Policy](./course-02-the-retry-policy.md)** — `attempts`, `perTryTimeout` and `retryOn`, the off-by-one in `attempts`, and the retry policy Istio applies when you configure nothing.
-3. **[Part 3 — The Shared Budget And Idempotency](./course-03-the-shared-budget-and-idempotency.md)** — the budget arithmetic, the `UT` response flag, switching retries off properly, and why a retried `POST` is your problem.
+1. **[The Route Timeout](./course-01-the-route-timeout.md)** — where the deadline is measured, what the caller receives when it expires, and what a timeout does *not* do.
+2. **[The Retry Policy](./course-02-the-retry-policy.md)** — `attempts`, `perTryTimeout` and `retryOn`, the off-by-one in `attempts`, and the retry policy Istio applies when you configure nothing.
+3. **[The Shared Budget And Idempotency](./course-03-the-shared-budget-and-idempotency.md)** — the budget arithmetic, the `UT` response flag, switching retries off properly, and why a retried `POST` is your problem.
 
 ## Learning objectives
 

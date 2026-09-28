@@ -1,6 +1,6 @@
-# Part 1 — Three Objects, Three Owners
+# Three Objects, Three Owners
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — A Gateway That Creates Its Own Data Plane](./course-02-a-gateway-that-creates-its-own-data-plane.md).
+> Prerequisite: [the module landing page](./course.md). Next: [A Gateway That Creates Its Own Data Plane](./course-02-a-gateway-that-creates-its-own-data-plane.md).
 
 The Gateway API splits into three objects where `Ingress` had one. That split is not tidiness — it maps onto who owns what in a real organisation, and understanding the mapping makes the rest of the API predictable.
 

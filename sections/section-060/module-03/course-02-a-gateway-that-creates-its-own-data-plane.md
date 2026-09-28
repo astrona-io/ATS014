@@ -1,6 +1,6 @@
-# Part 2 — A Gateway That Creates Its Own Data Plane
+# A Gateway That Creates Its Own Data Plane
 
-> Prerequisite: [Part 1 — Three Objects, Three Owners](./course-01-three-objects-three-owners.md). Next: [Part 3 — `HTTPRoute`, Status And What Stays In Istio](./course-03-httproute-status-and-what-stays-in-istio.md).
+> Prerequisite: [Three Objects, Three Owners](./course-01-three-objects-three-owners.md). Next: [`HTTPRoute`, Status And What Stays In Istio](./course-03-httproute-status-and-what-stays-in-istio.md).
 
 The single biggest behavioural difference from module 1, and the permission model that follows from the three-owner split.
 

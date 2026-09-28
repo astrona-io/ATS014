@@ -19,9 +19,9 @@ It earns three parts because the interesting material is not the YAML — the ob
 
 ## How this module is organised
 
-1. **[Part 1 — What A Proxy Is Programmed With](./course-01-what-a-proxy-is-programmed-with.md)** — the service registry, how it becomes clusters and listeners in every proxy, and why the cost of that scales with the cluster rather than with your workload.
-2. **[Part 2 — The Sidecar Object And Its Host Language](./course-02-the-sidecar-object-and-host-language.md)** — `workloadSelector`, `egress.hosts` and the `<namespace>/<host>` syntax, including why `istio-system/*` is boilerplate rather than a choice.
-3. **[Part 3 — Precedence, Reachability And What It Is Not](./course-03-precedence-reachability-and-limits.md)** — which `Sidecar` applies to a workload when several could, why removing config removes reachability, and why this is not a security boundary.
+1. **[What A Proxy Is Programmed With](./course-01-what-a-proxy-is-programmed-with.md)** — the service registry, how it becomes clusters and listeners in every proxy, and why the cost of that scales with the cluster rather than with your workload.
+2. **[The Sidecar Object And Its Host Language](./course-02-the-sidecar-object-and-host-language.md)** — `workloadSelector`, `egress.hosts` and the `<namespace>/<host>` syntax, including why `istio-system/*` is boilerplate rather than a choice.
+3. **[Precedence, Reachability And What It Is Not](./course-03-precedence-reachability-and-limits.md)** — which `Sidecar` applies to a workload when several could, why removing config removes reachability, and why this is not a security boundary.
 
 ## Learning objectives
 

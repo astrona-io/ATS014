@@ -159,7 +159,7 @@ The response looks identical either way, so the evidence has to come from the ga
 PARTNER=$(cat /tmp/partner-ip)
 BEFORE=$(kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c partner.example.com)
 kubectl -n egwgw-demo exec deploy/tester -- \
-  curl -s -o /dev/null -w 'tester: %{http_code}\n' --max-time 15 "http://$PARTNER:8080/get"
+  curl -s -o /dev/null -w 'tester: %{http_code}\n' --max-time 15 "http://partner.example.com:8080/get"
 sleep 3
 AFTER=$(kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c partner.example.com)
 echo "gateway lines: +$((AFTER - BEFORE))"
@@ -194,7 +194,7 @@ istioctl proxy-config routes deploy/tester -n egwgw-demo -o json | grep -i '"clu
 PARTNER=$(cat /tmp/partner-ip)
 BEFORE=$(kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c partner.example.com)
 kubectl -n egwgw-demo exec deploy/other-client -- \
-  curl -s -o /dev/null -w 'other-client: %{http_code}\n' --max-time 15 "http://$PARTNER:8080/get"
+  curl -s -o /dev/null -w 'other-client: %{http_code}\n' --max-time 15 "http://partner.example.com:8080/get"
 sleep 3
 AFTER=$(kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c partner.example.com)
 echo "gateway lines: +$((AFTER - BEFORE))"

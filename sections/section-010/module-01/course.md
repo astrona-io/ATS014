@@ -19,9 +19,9 @@ What makes this worth three parts is that almost every later module is this pair
 
 ## How this module is organised
 
-1. **[Part 1 — Subsets And The Destination Vocabulary](./course-01-subsets-and-destination-vocabulary.md)** — what a `DestinationRule` actually creates, how a subset name becomes an Envoy cluster, and why applying one on its own moves no traffic at all.
-2. **[Part 2 — Matching A Request](./course-02-matching-a-request.md)** — the `match` block in detail: the four match types, the three string forms, and the AND/OR rule that decides whether two conditions must both hold.
-3. **[Part 3 — Evaluation Order, Name Resolution And Proof](./course-03-evaluation-order-and-proof.md)** — top-down first-match evaluation, why the default route must be last, how short host names resolve, and how to prove the proxy received what you wrote.
+1. **[Subsets And The Destination Vocabulary](./course-01-subsets-and-destination-vocabulary.md)** — what a `DestinationRule` actually creates, how a subset name becomes an Envoy cluster, and why applying one on its own moves no traffic at all.
+2. **[Matching A Request](./course-02-matching-a-request.md)** — the `match` block in detail: the four match types, the three string forms, and the AND/OR rule that decides whether two conditions must both hold.
+3. **[Evaluation Order, Name Resolution And Proof](./course-03-evaluation-order-and-proof.md)** — top-down first-match evaluation, why the default route must be last, how short host names resolve, and how to prove the proxy received what you wrote.
 
 ## Learning objectives
 

@@ -15,9 +15,9 @@ This is a **migration and compatibility feature**, not the recommended way to co
 
 ## How this module is organised
 
-1. **[Part 1 — Claiming An Ingress](./course-01-claiming-an-ingress.md)** — how a controller takes ownership of an `Ingress`, the two ways to select Istio, and what an unclaimed object looks like.
-2. **[Part 2 — Rules, Path Types And Translation](./course-02-rules-path-types-and-translation.md)** — the rule structure, the three `pathType` values and the element-wise trap, and watching Istio translate the object into gateway configuration.
-3. **[Part 3 — TLS And The Feature Ceiling](./course-03-tls-and-the-feature-ceiling.md)** — the secret-namespace rule that catches everyone, an honest inventory of what `Ingress` cannot do, and how to choose between the three APIs in this section.
+1. **[Claiming An Ingress](./course-01-claiming-an-ingress.md)** — how a controller takes ownership of an `Ingress`, the two ways to select Istio, and what an unclaimed object looks like.
+2. **[Rules, Path Types And Translation](./course-02-rules-path-types-and-translation.md)** — the rule structure, the three `pathType` values and the element-wise trap, and watching Istio translate the object into gateway configuration.
+3. **[TLS And The Feature Ceiling](./course-03-tls-and-the-feature-ceiling.md)** — the secret-namespace rule that catches everyone, an honest inventory of what `Ingress` cannot do, and how to choose between the three APIs in this section.
 
 ## Learning objectives
 

@@ -39,10 +39,16 @@ spec:
     spec:
       containers:
         - name: booking-service
-          image: mccutchen/go-httpbin:v2.15.0
-          args: ["-port", "8080"]
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8080
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: booking-service-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -76,10 +82,16 @@ spec:
     spec:
       containers:
         - name: catalog-service
-          image: mccutchen/go-httpbin:v2.15.0
-          args: ["-port", "8080"]
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8080
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: catalog-service-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -93,6 +105,36 @@ spec:
       targetPort: 8080
   selector:
     app: catalog-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: booking-service-nginx-conf
+  namespace: gwapi-demo
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      location / {
+        default_type application/json;
+        return 200 '{"service":"booking-service"}';
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-service-nginx-conf
+  namespace: gwapi-team
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      location / {
+        default_type application/json;
+        return 200 '{"service":"catalog-service"}';
+      }
+    }
 EOF
 
 kubectl -n gwapi-demo rollout status deployment/booking-service-v1 --timeout=300s

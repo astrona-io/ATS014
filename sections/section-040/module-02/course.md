@@ -17,9 +17,9 @@ Istio's answer is blunt and effective: cap how much concurrent work a caller may
 
 ## How this module is organised
 
-1. **[Part 1 — The Connection Pool](./course-01-the-connection-pool.md)** — the four settings, which side enforces them, and the distinction that decides whether your test proves anything: concurrency versus volume.
-2. **[Part 2 — Overflow And Its Signatures](./course-02-overflow-and-its-signatures.md)** — what the proxy does when a limit is exceeded, and the two pieces of evidence that tell a breaker 503 from an application 503.
-3. **[Part 3 — Scope, Verification And Retry Amplification](./course-03-scope-verification-and-retry-amplification.md)** — reading the live thresholds, why the limits are per client rather than per service, and the interaction that turns an overload into a storm.
+1. **[The Connection Pool](./course-01-the-connection-pool.md)** — the four settings, which side enforces them, and the distinction that decides whether your test proves anything: concurrency versus volume.
+2. **[Overflow And Its Signatures](./course-02-overflow-and-its-signatures.md)** — what the proxy does when a limit is exceeded, and the two pieces of evidence that tell a breaker 503 from an application 503.
+3. **[Scope, Verification And Retry Amplification](./course-03-scope-verification-and-retry-amplification.md)** — reading the live thresholds, why the limits are per client rather than per service, and the interaction that turns an overload into a storm.
 
 ## Learning objectives
 

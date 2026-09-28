@@ -21,7 +21,7 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 
 - Route 100% to `v1` with a full mirror to `v2`, then read
   `kubectl -n mirror-demo logs -l version=v2 -c istio-proxy` and find the
-  `notification-service-shadow` authority on every copied request.
+  copies in the shadow proxy's access log, which the caller never sees.
 - Point `mirror.subset` at a subset no `DestinationRule` defines. The caller is
   completely unaffected — confirm for yourself that the only symptom is a silent
   shadow.

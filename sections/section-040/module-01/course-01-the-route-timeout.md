@@ -1,6 +1,6 @@
-# Part 1 — The Route Timeout
+# The Route Timeout
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — The Retry Policy](./course-02-the-retry-policy.md).
+> Prerequisite: [the module landing page](./course.md). Next: [The Retry Policy](./course-02-the-retry-policy.md).
 
 One field, and three properties worth being precise about: where it is measured, what the caller gets, and what it does not do. This part settles all three before retries complicate the picture.
 

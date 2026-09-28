@@ -1,6 +1,6 @@
-# Part 3 — Policy Levels And Verification
+# Policy Levels And Verification
 
-> Prerequisite: [Part 2 — `consistentHash` And The Ring](./course-02-consistent-hash-and-the-ring.md). Next: [the module landing page](./course.md).
+> Prerequisite: [`consistentHash` And The Ring](./course-02-consistent-hash-and-the-ring.md). Next: [the module landing page](./course.md).
 
 A `trafficPolicy` can be attached in three places on one `DestinationRule`, and the rule for which one applies is simple to state and easy to get wrong in a way that silently drops settings. This part covers that, the proxy-side verification, and the module's consolidated pitfalls.
 

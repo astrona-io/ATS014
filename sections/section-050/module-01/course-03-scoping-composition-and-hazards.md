@@ -1,6 +1,6 @@
-# Part 3 — Scoping, Composition And Hazards
+# Scoping, Composition And Hazards
 
-> Prerequisite: [Part 2 — `fault.abort`](./course-02-fault-abort.md). Next: [the module landing page](./course.md).
+> Prerequisite: [`fault.abort`](./course-02-fault-abort.md). Next: [the module landing page](./course.md).
 
 Everything so far affects every caller of the host. In a shared cluster that is a self-inflicted outage. This part is about limiting the blast radius, using injection to drive the section 040 features, and finding a fault somebody left behind.
 

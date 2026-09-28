@@ -1,6 +1,6 @@
-# Part 1 — Where Locality Comes From
+# Where Locality Comes From
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Preference, `distribute` And `failover`](./course-02-preference-distribute-and-failover.md).
+> Prerequisite: [the module landing page](./course.md). Next: [Preference, `distribute` And `failover`](./course-02-preference-distribute-and-failover.md).
 
 Every setting in this module selects over localities, so the first question is where an endpoint's locality comes from and how to check it has one. Getting this wrong wastes more time than any other mistake here, because every subsequent configuration silently does nothing.
 

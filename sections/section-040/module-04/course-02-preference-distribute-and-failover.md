@@ -1,6 +1,6 @@
-# Part 2 — Preference, `distribute` And `failover`
+# Preference, `distribute` And `failover`
 
-> Prerequisite: [Part 1 — Where Locality Comes From](./course-01-where-locality-comes-from.md). Next: [Part 3 — The Health Dependency And Scope](./course-03-the-health-dependency-and-scope.md).
+> Prerequisite: [Where Locality Comes From](./course-01-where-locality-comes-from.md). Next: [The Health Dependency And Scope](./course-03-the-health-dependency-and-scope.md).
 
 Before writing anything, know what you already have. A surprising share of "locality configurations" in the wild restate the default. This part covers that default, then the two mutually exclusive ways to override it.
 

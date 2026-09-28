@@ -15,9 +15,9 @@ A `ServiceEntry` adds an external host to the mesh registry. Once a host is in t
 
 ## How this module is organised
 
-1. **[Part 1 — The Outbound Traffic Policy](./course-01-the-outbound-traffic-policy.md)** — the mesh-wide setting that decides whether unknown destinations are allowed at all, and the 502 that identifies a refusal.
-2. **[Part 2 — The `ServiceEntry` Object](./course-02-the-serviceentry-object.md)** — the four fields that matter, what each decides, and why the declared protocol is the one that unlocks everything else.
-3. **[Part 3 — A Registered Host Is An Ordinary Host](./course-03-a-registered-host-is-an-ordinary-host.md)** — applying `VirtualService` and `DestinationRule` to somebody else's API, `exportTo` scope, the `Sidecar` interaction, and the module's pitfalls.
+1. **[The Outbound Traffic Policy](./course-01-the-outbound-traffic-policy.md)** — the mesh-wide setting that decides whether unknown destinations are allowed at all, and the 502 that identifies a refusal.
+2. **[The `ServiceEntry` Object](./course-02-the-serviceentry-object.md)** — the four fields that matter, what each decides, and why the declared protocol is the one that unlocks everything else.
+3. **[A Registered Host Is An Ordinary Host](./course-03-a-registered-host-is-an-ordinary-host.md)** — applying `VirtualService` and `DestinationRule` to somebody else's API, `exportTo` scope, the `Sidecar` interaction, and the module's pitfalls.
 
 ## Learning objectives
 

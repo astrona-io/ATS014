@@ -1,6 +1,6 @@
-# Part 2 — The Two-Stage `VirtualService`
+# The Two-Stage `VirtualService`
 
-> Prerequisite: [Part 1 — A Gateway That Carries Nothing](./course-01-a-gateway-that-carries-nothing.md). Next: [Part 3 — Restricting, Proving And The Trade-Off](./course-03-restricting-proving-and-the-trade-off.md).
+> Prerequisite: [A Gateway That Carries Nothing](./course-01-a-gateway-that-carries-nothing.md). Next: [Restricting, Proving And The Trade-Off](./course-03-restricting-proving-and-the-trade-off.md).
 
 One object, two rule sets, two different proxies. This is the shape to memorise, and the `match.gateways` field is what keeps the halves apart.
 

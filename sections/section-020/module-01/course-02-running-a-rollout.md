@@ -1,6 +1,6 @@
-# Part 2 — Running A Rollout
+# Running A Rollout
 
-> Prerequisite: [Part 1 — Weighted Destinations](./course-01-weighted-destinations.md). Next: [Part 3 — Weight Versus Replicas, And Proof](./course-03-weight-versus-replicas-and-proof.md).
+> Prerequisite: [Weighted Destinations](./course-01-weighted-destinations.md). Next: [Weight Versus Replicas, And Proof](./course-03-weight-versus-replicas-and-proof.md).
 
 A canary release has no special machinery in Istio. It is the object from Part 1, applied a few times with different numbers. This part is about doing that safely: how the edit works, how fast it takes effect, and how to measure the result without drawing a conclusion the sample cannot support.
 

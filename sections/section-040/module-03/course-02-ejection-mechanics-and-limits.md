@@ -1,6 +1,6 @@
-# Part 2 — Ejection Mechanics And Limits
+# Ejection Mechanics And Limits
 
-> Prerequisite: [Part 1 — Passive Health Checking](./course-01-passive-health-checking.md). Next: [Part 3 — Local, Temporary, And Verified](./course-03-local-temporary-and-verified.md).
+> Prerequisite: [Passive Health Checking](./course-01-passive-health-checking.md). Next: [Local, Temporary, And Verified](./course-03-local-temporary-and-verified.md).
 
 Marking an endpoint is half the story. This part covers what happens next: when the decision is acted on, how long it lasts, what happens to a repeat offender, and the two limits that exist to stop the mechanism destroying the service it is protecting.
 

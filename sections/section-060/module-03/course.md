@@ -17,9 +17,9 @@ One warning before any YAML: this module's `Gateway` is **not** module 1's `Gate
 
 ## How this module is organised
 
-1. **[Part 1 — Three Objects, Three Owners](./course-01-three-objects-three-owners.md)** — `GatewayClass`, `Gateway` and `HTTPRoute`, why the CRDs must be installed separately, and the role split the design is built around.
-2. **[Part 2 — A Gateway That Creates Its Own Data Plane](./course-02-a-gateway-that-creates-its-own-data-plane.md)** — the difference from `networking.istio.io/Gateway`, where the proxy pod appears, and `allowedRoutes` as deny-by-default attachment.
-3. **[Part 3 — `HTTPRoute`, Status And What Stays In Istio](./course-03-httproute-status-and-what-stays-in-istio.md)** — translating a `VirtualService` field by field, reading `Accepted` / `Programmed` / `ResolvedRefs`, and the Istio features that have no Gateway API equivalent.
+1. **[Three Objects, Three Owners](./course-01-three-objects-three-owners.md)** — `GatewayClass`, `Gateway` and `HTTPRoute`, why the CRDs must be installed separately, and the role split the design is built around.
+2. **[A Gateway That Creates Its Own Data Plane](./course-02-a-gateway-that-creates-its-own-data-plane.md)** — the difference from `networking.istio.io/Gateway`, where the proxy pod appears, and `allowedRoutes` as deny-by-default attachment.
+3. **[`HTTPRoute`, Status And What Stays In Istio](./course-03-httproute-status-and-what-stays-in-istio.md)** — translating a `VirtualService` field by field, reading `Accepted` / `Programmed` / `ResolvedRefs`, and the Istio features that have no Gateway API equivalent.
 
 ## Learning objectives
 

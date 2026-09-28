@@ -27,10 +27,31 @@ spec:
     spec:
       containers:
         - name: app
-          image: mccutchen/go-httpbin:v2.15.0
-          args: ["-port", "8080"]
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8080
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: ${name}-nginx-conf
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${name}-nginx-conf
+  namespace: edge
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      location / {
+        default_type application/json;
+        return 200 '{"service":"${name}"}';
+      }
+    }
 ---
 apiVersion: v1
 kind: Service

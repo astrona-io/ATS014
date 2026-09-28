@@ -98,6 +98,10 @@ hosts=$(kubectl -n "$NS" get sidecar default -o jsonpath='{.spec.egress[*].hosts
 [[ -n "$hosts" ]] || fail "Sidecar 'default' has no egress hosts"
 
 own=0; istio=0; ok=0
+# Disable pathname expansion first: an egress host like './*' or 'ns/*' would
+# otherwise be glob-expanded against the working directory by the unquoted
+# word split below, and never compare equal to the pattern it should match.
+set -f
 for h in $hosts; do
   case "$h" in
     "./*"|"$NS/*")                 own=1 ;;
@@ -107,6 +111,7 @@ for h in $hosts; do
     "$DENY_NS/"*) fail "egress hosts include a $DENY_NS entry - that namespace must be scoped out" ;;
   esac
 done
+set +f
 [[ "$own"   -eq 1 ]] || fail "egress hosts are [$hosts] - the proxy's own namespace is missing. Without './*' the catalog routing you just built cannot work"
 [[ "$istio" -eq 1 ]] || fail "egress hosts are [$hosts] - 'istio-system/*' is missing"
 [[ "$ok"    -eq 1 ]] || fail "egress hosts are [$hosts] - '$OK_NS/*' is missing"

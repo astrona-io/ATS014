@@ -17,9 +17,9 @@ Fault injection removes both. The proxy fabricates the failure: it holds a reque
 
 ## How this module is organised
 
-1. **[Part 1 — `fault.delay`](./course-01-fault-delay.md)** — making a dependency slow, where the fault is enforced, and which `VirtualService` it belongs on.
-2. **[Part 2 — `fault.abort`](./course-02-fault-abort.md)** — making a dependency fail, why the upstream has no record of it, and sampling with `percentage`.
-3. **[Part 3 — Scoping, Composition And Hazards](./course-03-scoping-composition-and-hazards.md)** — limiting a fault to your own requests, using injection to drive the section 040 features, finding a fault somebody left behind, and the module's pitfalls.
+1. **[`fault.delay`](./course-01-fault-delay.md)** — making a dependency slow, where the fault is enforced, and which `VirtualService` it belongs on.
+2. **[`fault.abort`](./course-02-fault-abort.md)** — making a dependency fail, why the upstream has no record of it, and sampling with `percentage`.
+3. **[Scoping, Composition And Hazards](./course-03-scoping-composition-and-hazards.md)** — limiting a fault to your own requests, using injection to drive the section 040 features, finding a fault somebody left behind, and the module's pitfalls.
 
 ## Learning objectives
 

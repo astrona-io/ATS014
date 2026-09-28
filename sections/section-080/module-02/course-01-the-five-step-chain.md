@@ -1,6 +1,6 @@
-# Part 1 — The Five-Step Chain
+# The Five-Step Chain
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Where The `DestinationRule` Attaches](./course-02-where-the-destinationrule-attaches.md).
+> Prerequisite: [the module landing page](./course.md). Next: [Where The `DestinationRule` Attaches](./course-02-where-the-destinationrule-attaches.md).
 
 Five steps, each owned by one object. Two of them are where every mistake in this module lives, so it is worth walking the whole path before writing anything.
 

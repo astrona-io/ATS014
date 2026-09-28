@@ -1,4 +1,4 @@
-# Section 060: Configuring Ingress Traffic
+# Configuring Ingress Traffic
 
 Everything up to here was east-west: one meshed workload calling another. This section is north-south — requests arriving from outside the cluster, from clients with no sidecar and no membership in the mesh.
 
@@ -34,7 +34,7 @@ Reading all three together is the point: the ICA expects you to recognise which 
 ## The Learning Path
 
 ### 1. Expose A Service With An Istio Ingress Gateway
-*   **Module Reader:** **[Module 1: Expose A Service With An Istio Ingress Gateway](./module-01/course.md)**
+*   **Module Reader:** **[Expose A Service With An Istio Ingress Gateway](./module-01/course.md)**
     1. [The Gateway Pod And Its Listener](./module-01/course-01-the-gateway-pod-and-its-listener.md)
     2. [Binding Routes With `gateways:`](./module-01/course-02-binding-routes-with-gateways.md)
     3. [Diagnosing The Gateway](./module-01/course-03-diagnosing-the-gateway.md)
@@ -50,7 +50,7 @@ Reading all three together is the point: the ICA expects you to recognise which 
 *   **Hands-on Objective:** Open one listener for two hostnames, attach an application to each, and prove from the gateway's own route table that both landed — while an unknown host and a crossed host are both rejected.
 
 ### 2. Expose A Service With A Kubernetes Ingress
-*   **Module Reader:** **[Module 2: Expose A Service With A Kubernetes Ingress](./module-02/course.md)**
+*   **Module Reader:** **[Expose A Service With A Kubernetes Ingress](./module-02/course.md)**
     1. [Claiming An Ingress](./module-02/course-01-claiming-an-ingress.md)
     2. [Rules, Path Types And Translation](./module-02/course-02-rules-path-types-and-translation.md)
     3. [TLS And The Feature Ceiling](./module-02/course-03-tls-and-the-feature-ceiling.md)
@@ -66,7 +66,7 @@ Reading all three together is the point: the ICA expects you to recognise which 
 *   **Hands-on Objective:** Have Istio's gateway serve a plain Kubernetes `Ingress` with both path types and TLS — including putting the secret in the namespace that actually works, which is not the one the `Ingress` is in.
 
 ### 3. Ingress With The Kubernetes Gateway API
-*   **Module Reader:** **[Module 3: Ingress With The Kubernetes Gateway API](./module-03/course.md)**
+*   **Module Reader:** **[Ingress With The Kubernetes Gateway API](./module-03/course.md)**
     1. [Three Objects, Three Owners](./module-03/course-01-three-objects-three-owners.md)
     2. [A Gateway That Creates Its Own Data Plane](./module-03/course-02-a-gateway-that-creates-its-own-data-plane.md)
     3. [`HTTPRoute`, Status And What Stays In Istio](./module-03/course-03-httproute-status-and-what-stays-in-istio.md)

@@ -1,6 +1,6 @@
-# Part 2 — The Three Objects
+# The Three Objects
 
-> Prerequisite: [Part 1 — Why HTTPS Is Opaque](./course-01-why-https-is-opaque.md). Next: [Part 3 — Proving It, And Mutual TLS](./course-03-proving-it-and-mutual-tls.md).
+> Prerequisite: [Why HTTPS Is Opaque](./course-01-why-https-is-opaque.md). Next: [Proving It, And Mutual TLS](./course-03-proving-it-and-mutual-tls.md).
 
 Three objects, each doing exactly one thing. Leaving any one out produces a distinct failure, so it is worth being able to name which does what before writing them.
 

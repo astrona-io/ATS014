@@ -1,6 +1,6 @@
-# Part 1 — `WorkloadEntry`: One Instance
+# `WorkloadEntry`: One Instance
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — `MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md).
+> Prerequisite: [the module landing page](./course.md). Next: [`MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md).
 
 One object describing one machine. Three fields, and the third is the one that separates this module from the previous two.
 

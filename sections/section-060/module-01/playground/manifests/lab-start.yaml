@@ -27,16 +27,16 @@ spec:
     spec:
       containers:
         - name: booking-service
-          image: kubeteam/booking-service:v1
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8084
-          env:
-            - name: SERVICE_PORT
-              value: "8084"
-            - name: NOTIFICATION_SERVICE_URL
-              value: notification-service
-            - name: NOTIFICATION_SERVICE_PORT
-              value: "80"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: booking-service-v1-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -75,12 +75,16 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: kubeteam/notification-service:v1
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8084
-          env:
-            - name: SERVICE_PORT
-              value: "8084"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: notification-service-v1-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -96,3 +100,34 @@ spec:
       targetPort: 8084
   selector:
     app: notification-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: booking-service-v1-nginx-conf
+  namespace: ingress-demo
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        proxy_pass http://notification-service:80/notify;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-v1-nginx-conf
+  namespace: ingress-demo
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        default_type application/json;
+        return 200 '["EMAIL"]';
+      }
+    }

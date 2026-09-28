@@ -1,6 +1,6 @@
-# Part 2 — The Sidecar Object And Its Host Language
+# The Sidecar Object And Its Host Language
 
-> Prerequisite: [Part 1 — What A Proxy Is Programmed With](./course-01-what-a-proxy-is-programmed-with.md). Next: [Part 3 — Precedence, Reachability And What It Is Not](./course-03-precedence-reachability-and-limits.md).
+> Prerequisite: [What A Proxy Is Programmed With](./course-01-what-a-proxy-is-programmed-with.md). Next: [Precedence, Reachability And What It Is Not](./course-03-precedence-reachability-and-limits.md).
 
 Part 1 established that a proxy holds the whole registry. This part is the object that narrows it: four fields, one of which is a small host-selection language worth memorising because it is exam material and because getting it wrong fails silently.
 

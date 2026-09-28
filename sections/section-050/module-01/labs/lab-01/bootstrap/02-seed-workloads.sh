@@ -37,16 +37,16 @@ spec:
     spec:
       containers:
         - name: booking-service
-          image: kubeteam/booking-service:v1
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8083
-          env:
-            - name: SERVICE_PORT
-              value: "8083"
-            - name: NOTIFICATION_SERVICE_URL
-              value: "notification-service"
-            - name: NOTIFICATION_SERVICE_PORT
-              value: "80"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: booking-service-v1-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -85,12 +85,16 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: kubeteam/notification-service:v1
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8084
-          env:
-            - name: SERVICE_PORT
-              value: "8084"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: notification-service-v1-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -106,9 +110,62 @@ spec:
       targetPort: 8084
   selector:
     app: notification-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: booking-service-v1-nginx-conf
+  namespace: fault-demo
+data:
+  default.conf: |
+    server {
+      listen 8083;
+      location / {
+        proxy_pass http://notification-service:80/notify;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-v1-nginx-conf
+  namespace: fault-demo
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        default_type application/json;
+        return 200 '["EMAIL"]';
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tester
+  namespace: fault-demo
+  labels:
+    app: tester
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tester
+  template:
+    metadata:
+      labels:
+        app: tester
+    spec:
+      containers:
+        - name: tester
+          image: curlimages/curl
+          command: ["sh", "-c", "while true; do sleep 30; done"]
 EOF
 
-for d in booking-service-v1 notification-service-v1; do
+for d in booking-service-v1 notification-service-v1 tester; do
   kubectl -n fault-demo rollout status "deployment/$d" --timeout=300s
 done
 

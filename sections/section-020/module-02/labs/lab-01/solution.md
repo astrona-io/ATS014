@@ -118,14 +118,14 @@ This output is exactly what you would get with no mirror at all, which is why it
 
 ## Step 5: Prove the Shadow Received the Copies
 
-The evidence is on the **receiving** side, in the proxy access log, where Istio's rewritten authority is visible. Take a baseline first — the log may already hold copies from an earlier attempt:
+The evidence is on the **receiving** side, in the proxy access log. Nothing routes caller traffic to `v2`, so every request its proxy records is a copy. Take a baseline first — the log may already hold copies from an earlier attempt:
 
 ```sh
-BEFORE=$(kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=-1 | grep -c -- -shadow)
+BEFORE=$(kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=-1 | grep -c 'POST /notify')
 kubectl -n mirror-demo exec deploy/tester -- sh -c \
   'for i in $(seq 1 40); do curl -s -o /dev/null -X POST http://notification-service/notify; done'
 sleep 3
-AFTER=$(kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=-1 | grep -c -- -shadow)
+AFTER=$(kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=-1 | grep -c 'POST /notify')
 echo "mirrored this run: $((AFTER - BEFORE)) of 40"
 ```
 
@@ -136,14 +136,14 @@ mirrored this run: 40 of 40
 Look at one of the lines to see why it counts as proof:
 
 ```sh
-kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=3 | grep -i shadow
+kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=3
 ```
 
 ```text
-[2026-09-27T10:14:02.771Z] "POST /notify HTTP/1.1" 200 - via_upstream - "-" 0 16 1 1 "-" "curl/8.5.0" "9b1a..." "notification-service-shadow" "10.244.0.15:8084" ...
+[2026-09-28T18:11:49.139Z] "POST /notify HTTP/1.1" 200 - via_upstream - "-" 0 15 0 0 "10.244.0.10" "curl/8.22.0" "c03f8616..." "notification-service" "10.244.0.9:8084" inbound|8084|| ...
 ```
 
-`notification-service-shadow` is the authority Istio rewrote on the copy. The `200` next to it is the shadow's own response — which the caller never saw. If `v2` were returning 500s, this is where it would show, with the caller still perfectly happy.
+The authority is the plain `notification-service`: Istio 1.30 sends the copy unchanged, so the older `-shadow` suffix you may read about elsewhere is not there. What makes the line proof is that it exists at all — the route sends 100% of traffic to `v1`, so `v2` can only be seeing mirrored copies. The `200` next to it is the shadow's own response, which the caller never saw. If `v2` were returning 500s, this is where it would show, with the caller still perfectly happy.
 
 ---
 
@@ -172,7 +172,7 @@ Three states worth remembering:
 | --- | --- | --- |
 | absent | empty | no `mirror` in the object, or it never reached the proxy |
 | present | empty | the mirror cluster has no endpoints |
-| present | `-shadow` lines | working |
+| present | logs requests the route never sent it | working |
 
 ---
 
@@ -182,6 +182,7 @@ Three states worth remembering:
 - **Putting `v2` in the route block as a weighted destination.** That is traffic shifting, and callers start seeing the candidate's output.
 - **Mirroring to an undefined subset.** Silent — the caller is unaffected and the shadow is quiet. `istioctl analyze` names it.
 - **Counting shadow log lines without a baseline.** The log holds copies from earlier runs; take a `BEFORE` count.
-- **Reading application logs instead of the proxy log.** The `-shadow` authority is in the `istio-proxy` container's log.
+- **Reading application logs instead of the proxy log.** The request record is in the `istio-proxy` container's log.
+- **Grepping for a `-shadow` authority.** Older Istio appended it; 1.30 does not, and the grep silently returns nothing.
 - **Expecting the mirrored response to matter.** It is discarded, along with its latency. Mirroring cannot compare outputs.
 - **Omitting `mirrorPercentage` and assuming nothing is mirrored.** The default is 100%; the task asks you to state it anyway.

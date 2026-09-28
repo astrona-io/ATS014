@@ -1,6 +1,6 @@
-# Part 1 — The Outbound Traffic Policy
+# The Outbound Traffic Policy
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — The `ServiceEntry` Object](./course-02-the-serviceentry-object.md).
+> Prerequisite: [the module landing page](./course.md). Next: [The `ServiceEntry` Object](./course-02-the-serviceentry-object.md).
 
 Before the object, the policy. One mesh-wide setting decides whether a destination Istio has never heard of is allowed, and it changes what a `ServiceEntry` is *for* — from a way to gain features to a way to gain permission.
 

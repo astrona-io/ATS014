@@ -1,4 +1,4 @@
-# Section 010: Configuring Routing Within A Service Mesh
+# Configuring Routing Within A Service Mesh
 
 A Kubernetes Service load balances over pods. It cannot look at a request, and it cannot be told that some requests matter differently from others. Istio's answer is a proxy beside every pod plus two objects that describe, declaratively, what that proxy should do with the traffic it sees.
 
@@ -29,7 +29,7 @@ This section covers both ends of that idea. Module 1 is the request's journey: h
 ## The Learning Path
 
 ### 1. Route Requests By Header, URI And Query Parameter
-*   **Module Reader:** **[Module 1: Route Requests By Header, URI And Query Parameter](./module-01/course.md)**
+*   **Module Reader:** **[Route Requests By Header, URI And Query Parameter](./module-01/course.md)**
     1. [Subsets And The Destination Vocabulary](./module-01/course-01-subsets-and-destination-vocabulary.md)
     2. [Matching A Request](./module-01/course-02-matching-a-request.md)
     3. [Evaluation Order, Name Resolution And Proof](./module-01/course-03-evaluation-order-and-proof.md)
@@ -45,7 +45,7 @@ This section covers both ends of that idea. Module 1 is the request's journey: h
 *   **Hands-on Objective:** Split one Service into `v1` and `v2` subsets and route by header, URI prefix and query parameter, with a default that catches everything else — then prove with live traffic that all three specific rules are still reachable and a near-miss falls through.
 
 ### 2. Scope Proxy Configuration With The Sidecar Resource
-*   **Module Reader:** **[Module 2: Scope Proxy Configuration With The Sidecar Resource](./module-02/course.md)**
+*   **Module Reader:** **[Scope Proxy Configuration With The Sidecar Resource](./module-02/course.md)**
     1. [What A Proxy Is Programmed With](./module-02/course-01-what-a-proxy-is-programmed-with.md)
     2. [The Sidecar Object And Its Host Language](./module-02/course-02-the-sidecar-object-and-host-language.md)
     3. [Precedence, Reachability And What It Is Not](./module-02/course-03-precedence-reachability-and-limits.md)

@@ -1,6 +1,6 @@
-# Part 3 — Local, Temporary, And Verified
+# Local, Temporary, And Verified
 
-> Prerequisite: [Part 2 — Ejection Mechanics And Limits](./course-02-ejection-mechanics-and-limits.md). Next: [the module landing page](./course.md).
+> Prerequisite: [Ejection Mechanics And Limits](./course-02-ejection-mechanics-and-limits.md). Next: [the module landing page](./course.md).
 
 Two properties remain, and both surprise people because they follow from *where* the mechanism lives rather than from what it does. Then the commands that prove an ejection, and the reason the next module depends on all of this.
 

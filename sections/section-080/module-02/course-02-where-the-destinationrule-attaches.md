@@ -1,6 +1,6 @@
-# Part 2 — Where The `DestinationRule` Attaches
+# Where The `DestinationRule` Attaches
 
-> Prerequisite: [Part 1 — The Five-Step Chain](./course-01-the-five-step-chain.md). Next: [Part 3 — Mutual TLS And The Consolidation Argument](./course-03-mutual-tls-and-consolidation.md).
+> Prerequisite: [The Five-Step Chain](./course-01-the-five-step-chain.md). Next: [Mutual TLS And The Consolidation Argument](./course-03-mutual-tls-and-consolidation.md).
 
 Part 1 asserted that traffic policy is applied by the calling proxy. This part proves it, which also happens to be the cleanest way to verify the whole chain.
 

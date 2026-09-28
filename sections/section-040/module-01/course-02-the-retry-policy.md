@@ -1,6 +1,6 @@
-# Part 2 — The Retry Policy
+# The Retry Policy
 
-> Prerequisite: [Part 1 — The Route Timeout](./course-01-the-route-timeout.md). Next: [Part 3 — The Shared Budget And Idempotency](./course-03-the-shared-budget-and-idempotency.md).
+> Prerequisite: [The Route Timeout](./course-01-the-route-timeout.md). Next: [The Shared Budget And Idempotency](./course-03-the-shared-budget-and-idempotency.md).
 
 Retries are already happening in your mesh whether or not you have configured them. This part covers the three fields that control them, the off-by-one in the most important one, and the default policy that explains a class of "why did that take so long" questions.
 

@@ -73,6 +73,23 @@ if ! istioctl proxy-config routes "deploy/tester" -n "$NS" 2>/dev/null | grep -q
   fail "the tester proxy has no route for $SVC - the VirtualService exists but never reached the sidecar"
 fi
 
+# --- 3b. let the sidecars converge before reading behaviour -----------------
+# Applying routing and grading it in the same second is a race: the proxy has
+# the route but may not yet have endpoints for a brand new subset, which shows
+# up as "no healthy upstream". Poll for a real answer before judging anything.
+settle() {
+  local i out
+  for i in $(seq 1 30); do
+    out=$(kubectl -n "$NS" exec deploy/tester -- \
+      curl -s --max-time 5 -X POST http://notification-service/notify 2>/dev/null)
+    if [[ "$out" == "$V1" || "$out" == "$V2" ]]; then
+      return 0
+    fi
+    sleep 2
+  done
+}
+settle
+
 # --- 4. live traffic: the part that proves rule ORDER ------------------------
 curl_from_tester() {
   kubectl -n "$NS" exec deploy/tester -- curl -s --max-time 10 "$@" 2>/dev/null

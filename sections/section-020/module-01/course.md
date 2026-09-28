@@ -19,9 +19,9 @@ What makes it worth three parts is not the field — it is everything around it.
 
 ## How this module is organised
 
-1. **[Part 1 — Weighted Destinations](./course-01-weighted-destinations.md)** — several destinations in one route block, the 100-sum rule and what enforces it, and how a weight becomes a per-request decision inside Envoy.
-2. **[Part 2 — Running A Rollout](./course-02-running-a-rollout.md)** — a canary as a sequence of applies, why rollback is the same operation, and how to measure a statistical split without fooling yourself.
-3. **[Part 3 — Weight Versus Replicas, And Proof](./course-03-weight-versus-replicas-and-proof.md)** — where the weighted choice happens relative to endpoint load balancing, why scaling changes nothing, and reading `weightedClusters` out of a live proxy.
+1. **[Weighted Destinations](./course-01-weighted-destinations.md)** — several destinations in one route block, the 100-sum rule and what enforces it, and how a weight becomes a per-request decision inside Envoy.
+2. **[Running A Rollout](./course-02-running-a-rollout.md)** — a canary as a sequence of applies, why rollback is the same operation, and how to measure a statistical split without fooling yourself.
+3. **[Weight Versus Replicas, And Proof](./course-03-weight-versus-replicas-and-proof.md)** — where the weighted choice happens relative to endpoint load balancing, why scaling changes nothing, and reading `weightedClusters` out of a live proxy.
 
 ## Learning objectives
 

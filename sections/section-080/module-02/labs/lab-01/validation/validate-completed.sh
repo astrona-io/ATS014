@@ -89,13 +89,13 @@ pls=$(kubectl -n "$NS" get destinationrule "$DR" -o jsonpath='{.spec.trafficPoli
 
 # --- 6. live: plain http:// reaches a TLS-only endpoint ---------------------
 before=$(gw_lines)
-body=$(kubectl -n "$NS" exec deploy/tester -- curl -s --max-time 20 "http://${PARTNER}:8080/" 2>/dev/null)
-code=$(kubectl -n "$NS" exec deploy/tester -- curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://${PARTNER}:8080/" 2>/dev/null)
+body=$(kubectl -n "$NS" exec deploy/tester -- curl -s --max-time 20 "http://${HOST}:8080/" 2>/dev/null)
+code=$(kubectl -n "$NS" exec deploy/tester -- curl -s -o /dev/null -w '%{http_code}' --max-time 20 "http://${HOST}:8080/" 2>/dev/null)
 sleep 3
 after=$(gw_lines)
 
 [[ "$code" == "200" ]] \
-  || fail "GET http://${PARTNER}:8080/ returned '$code', expected 200. The endpoint speaks only TLS, so a failure means plaintext reached it"
+  || fail "GET http://${HOST}:8080/ returned '$code', expected 200. The endpoint speaks only TLS, so a failure means plaintext reached it"
 grep -q 'scheme=https' <<<"$body" \
   || fail "the endpoint reported '$body', expected 'scheme=https' - TLS was not originated"
 

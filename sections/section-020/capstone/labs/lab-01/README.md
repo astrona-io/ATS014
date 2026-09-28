@@ -1,4 +1,4 @@
-# Section 020 Capstone: Canary And Shadow At The Same Time
+# Capstone: Canary And Shadow At The Same Time
 
 This is the Section 020 integration challenge. It puts both of the section's answers to "is the new version safe?" on one rule at the same time: a weighted canary that exposes a slice of real users to the candidate, and a mirror that sends a full copy of the same traffic to a separate shadow service nobody sees.
 

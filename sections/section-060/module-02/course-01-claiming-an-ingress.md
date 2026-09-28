@@ -1,6 +1,6 @@
-# Part 1 — Claiming An Ingress
+# Claiming An Ingress
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Rules, Path Types And Translation](./course-02-rules-path-types-and-translation.md).
+> Prerequisite: [the module landing page](./course.md). Next: [Rules, Path Types And Translation](./course-02-rules-path-types-and-translation.md).
 
 An `Ingress` object on its own belongs to nobody. Some controller has to take ownership of it, and the mechanism for that ownership — plus the silent failure when nothing does — is this part.
 

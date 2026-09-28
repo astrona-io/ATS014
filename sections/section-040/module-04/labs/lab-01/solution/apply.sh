@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Reference solution, applied only by `astrona test` (the `testing:` block).
+# `astrona run` never runs this, so students still do the work themselves.
+# Kept in step with solution.md - if one changes, change the other.
+set -euo pipefail
+
+kubectl apply -f - <<'EOF'
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin
+  namespace: locality-demo
+spec:
+  host: httpbin
+  trafficPolicy:
+    outlierDetection:
+      consecutive5xxErrors: 2
+      interval: 5s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 100
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+EOF
+
+kubectl -n locality-demo patch destinationrule httpbin --type json \
+  -p '[{"op":"remove","path":"/spec/trafficPolicy/outlierDetection"}]'
+sleep 40
+
+# Give istiod time to push this configuration to every proxy before the grader
+# reads it back. By hand you spend longer than this reading the apply output;
+# `astrona test` applies and grades in the same second, and would otherwise
+# measure the previous state.
+sleep 15

@@ -19,9 +19,9 @@ Two facts carry the module, and the second is the most examinable thing in secti
 
 ## How this module is organised
 
-1. **[Part 1 — Where Locality Comes From](./course-01-where-locality-comes-from.md)** — the node labels Istio reads, the `region/zone/subzone` hierarchy, the `istio-locality` pod override, and how to confirm an endpoint actually has a locality before configuring anything.
-2. **[Part 2 — Preference, `distribute` And `failover`](./course-02-preference-distribute-and-failover.md)** — what Istio already does without configuration, and the two mutually exclusive ways to change it.
-3. **[Part 3 — The Health Dependency And Scope](./course-03-the-health-dependency-and-scope.md)** — why failover is dead without outlier detection, mesh-wide versus per-host configuration, and what this playground can and cannot demonstrate.
+1. **[Where Locality Comes From](./course-01-where-locality-comes-from.md)** — the node labels Istio reads, the `region/zone/subzone` hierarchy, the `istio-locality` pod override, and how to confirm an endpoint actually has a locality before configuring anything.
+2. **[Preference, `distribute` And `failover`](./course-02-preference-distribute-and-failover.md)** — what Istio already does without configuration, and the two mutually exclusive ways to change it.
+3. **[The Health Dependency And Scope](./course-03-the-health-dependency-and-scope.md)** — why failover is dead without outlier detection, mesh-wide versus per-host configuration, and what this playground can and cannot demonstrate.
 
 ## Learning objectives
 

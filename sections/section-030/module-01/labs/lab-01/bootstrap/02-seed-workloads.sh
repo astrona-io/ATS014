@@ -36,7 +36,7 @@ spec:
       containers:
         - name: httpbin
           image: mccutchen/go-httpbin:v2.15.0
-          args: ["-port", "8080"]
+          command: ["/bin/go-httpbin", "-port", "8080"]
           ports:
             - containerPort: 8080
 ---
@@ -63,7 +63,7 @@ spec:
       containers:
         - name: httpbin
           image: mccutchen/go-httpbin:v2.15.0
-          args: ["-port", "8080"]
+          command: ["/bin/go-httpbin", "-port", "8080"]
           ports:
             - containerPort: 8080
 ---

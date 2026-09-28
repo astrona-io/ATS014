@@ -1,4 +1,4 @@
-# Section 070 Capstone: A Deny-By-Default Integration Layer
+# Capstone: A Deny-By-Default Integration Layer
 
 This is the Section 070 integration challenge. The mesh refuses every destination it has not been told about, and you have three jobs at once: let a partner's TLS-only API through and make it visible to the mesh, bring one of your own non-Kubernetes machines in as a first-class member, and leave a third endpoint firmly blocked.
 

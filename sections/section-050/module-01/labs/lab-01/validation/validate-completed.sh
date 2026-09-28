@@ -12,13 +12,16 @@ VS="notification"
 fail() { echo "FAIL: $*"; exit 1; }
 
 run_curl() {
-  kubectl -n "$NS" run "vt$RANDOM" --rm -i --restart=Never --image=curlimages/curl --quiet -- \
+  # A long-lived client Deployment, not an ephemeral `kubectl run` pod: in an
+  # injected namespace the sidecar keeps a run-once pod alive after curl exits,
+  # so its captured output is unreliable.
+  kubectl -n "$NS" exec deploy/tester -- \
     curl -s -o /dev/null -w '%{http_code} %{time_total}' --max-time 30 "$@" 2>/dev/null \
     | tail -1
 }
 
 # --- 0. the environment is intact -------------------------------------------
-for d in booking-service-v1 notification-service-v1; do
+for d in booking-service-v1 notification-service-v1 tester; do
   r=$(kubectl -n "$NS" get deployment "$d" -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
   [[ -n "$r" && "$r" -ge 1 ]] || fail "$d - deployment missing or has no ready replicas"
 done
@@ -76,7 +79,9 @@ extra=$(kubectl -n "$NS" get virtualservice "$VS" -o jsonpath='{.spec.http[2]}' 
 # --- 4. the fault is in the CALLER's proxy ----------------------------------
 routes=$(istioctl proxy-config routes deploy/booking-service-v1 -n "$NS" -o json 2>/dev/null)
 [[ -n "$routes" ]] || fail "could not read the booking-service proxy's route config"
-grep -qi '"fault"' <<<"$routes" \
+# Istio 1.30 writes the fault filter into typedPerFilterConfig under the key
+# "envoy.filters.http.fault"; older dumps used a bare "fault". Accept either.
+grep -qiE '"(envoy\.filters\.http\.)?fault"' <<<"$routes" \
   || fail "booking-service's proxy holds no fault filter - the VirtualService exists but never reached the caller's sidecar"
 
 # --- 5. unmarked traffic is untouched ---------------------------------------

@@ -1,6 +1,6 @@
-# Part 3 — `WorkloadGroup` And Real Onboarding
+# `WorkloadGroup` And Real Onboarding
 
-> Prerequisite: [Part 2 — `MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md). Next: [the module landing page](./course.md).
+> Prerequisite: [`MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md). Next: [the module landing page](./course.md).
 
 Writing a `WorkloadEntry` per machine does not scale and does not survive autoscaling. This part is the object that fixes that, what a real VM needs for it to work, and an honest account of where this playground stops.
 

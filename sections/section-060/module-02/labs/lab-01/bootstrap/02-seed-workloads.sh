@@ -34,10 +34,16 @@ spec:
     spec:
       containers:
         - name: booking-service
-          image: mccutchen/go-httpbin:v2.15.0
-          args: ["-port", "8080"]
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8080
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: booking-service-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -53,6 +59,21 @@ spec:
       targetPort: 8080
   selector:
     app: booking-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: booking-service-nginx-conf
+  namespace: k8s-ingress-demo
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      location / {
+        default_type application/json;
+        return 200 '{"service":"booking-service"}';
+      }
+    }
 EOF
 
 kubectl -n k8s-ingress-demo rollout status deployment/booking-service-v1 --timeout=300s

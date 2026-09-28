@@ -27,12 +27,16 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: kubeteam/notification-service:v1
+          image: nginx:1.27-alpine
           ports:
             - containerPort: 8084
-          env:
-            - name: SERVICE_PORT
-              value: "8084"
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: notification-service-v1-nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -65,6 +69,12 @@ spec:
     metadata:
       labels:
         app: fortio
+      annotations:
+        # Istio ships a stats filter that keeps only a small set of Envoy
+        # counters; per-cluster ones such as upstream_rq_pending_overflow are
+        # not in it. This annotation adds them back for this workload's proxy,
+        # which is what makes the circuit-breaker counters readable at all.
+        sidecar.istio.io/statsInclusionPrefixes: "cluster.outbound"
     spec:
       containers:
         - name: fortio
@@ -72,3 +82,18 @@ spec:
           args: ["server"]
           ports:
             - containerPort: 8080
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-v1-nginx-conf
+  namespace: circuit-demo
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        default_type application/json;
+        return 200 '["EMAIL"]';
+      }
+    }

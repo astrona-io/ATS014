@@ -1,6 +1,6 @@
-# Part 1 — Why HTTPS Is Opaque
+# Why HTTPS Is Opaque
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — The Three Objects](./course-02-the-three-objects.md).
+> Prerequisite: [the module landing page](./course.md). Next: [The Three Objects](./course-02-the-three-objects.md).
 
 Before the fix, be precise about the problem. This part establishes exactly what a sidecar can see when an application makes its own HTTPS call, and what that costs.
 

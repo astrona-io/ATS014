@@ -1,6 +1,6 @@
-# Part 3 — Restricting, Proving And The Trade-Off
+# Restricting, Proving And The Trade-Off
 
-> Prerequisite: [Part 2 — The Two-Stage `VirtualService`](./course-02-the-two-stage-virtualservice.md). Next: [the module landing page](./course.md).
+> Prerequisite: [The Two-Stage `VirtualService`](./course-02-the-two-stage-virtualservice.md). Next: [the module landing page](./course.md).
 
 The configuration works and looks identical to not having it. This part is the evidence, the way to narrow who uses the path, and an honest account of what the arrangement costs.
 

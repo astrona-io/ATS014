@@ -1,6 +1,6 @@
-# Part 2 — Binding Routes With `gateways:`
+# Binding Routes With `gateways:`
 
-> Prerequisite: [Part 1 — The Gateway Pod And Its Listener](./course-01-the-gateway-pod-and-its-listener.md). Next: [Part 3 — Diagnosing The Gateway](./course-03-diagnosing-the-gateway.md).
+> Prerequisite: [The Gateway Pod And Its Listener](./course-01-the-gateway-pod-and-its-listener.md). Next: [Diagnosing The Gateway](./course-03-diagnosing-the-gateway.md).
 
 Part 1 left a listener with nothing attached. This part is the field that attaches routes to it — one line of YAML that is the single most common omission in the whole section.
 

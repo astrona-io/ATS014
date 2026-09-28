@@ -1,4 +1,4 @@
-# Section 030: Defining Traffic Policies With Destination Rules
+# Defining Traffic Policies With Destination Rules
 
 A `VirtualService` gets a request as far as a destination. Something still has to pick one pod out of that destination, and — in later sections — decide how many connections to hold open to it and when it has misbehaved enough to be taken out of rotation. All of those are `DestinationRule` decisions, made by the *calling* proxy, and they live under one field: `trafficPolicy`.
 
@@ -25,7 +25,7 @@ This section covers the endpoint-selection half of that field, and the precedenc
 ## The Learning Path
 
 ### 1. Load Balancer Policy And Session Affinity
-*   **Module Reader:** **[Module 1: Load Balancer Policy And Session Affinity](./module-01/course.md)**
+*   **Module Reader:** **[Load Balancer Policy And Session Affinity](./module-01/course.md)**
     1. [Endpoint Selection And The `simple` Algorithms](./module-01/course-01-endpoint-selection-and-simple-algorithms.md)
     2. [`consistentHash` And The Ring](./module-01/course-02-consistent-hash-and-the-ring.md)
     3. [Policy Levels And Verification](./module-01/course-03-policy-levels-and-verification.md)

@@ -1,6 +1,6 @@
-# Part 3 — The Health Dependency And Scope
+# The Health Dependency And Scope
 
-> Prerequisite: [Part 2 — Preference, `distribute` And `failover`](./course-02-preference-distribute-and-failover.md). Next: [the module landing page](./course.md).
+> Prerequisite: [Preference, `distribute` And `failover`](./course-02-preference-distribute-and-failover.md). Next: [the module landing page](./course.md).
 
 One fact remains, and it is the most examinable thing in section 040. Then where the configuration lives, and an honest account of what this playground can and cannot show you.
 

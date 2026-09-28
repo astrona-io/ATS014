@@ -1,4 +1,4 @@
-# Section 080: Egress Gateways
+# Egress Gateways
 
 Section 070 let every pod make its own outbound connection. That means as many source addresses as you have nodes, an audit trail spread across every sidecar's logs, and — if an external service wants a client certificate — that certificate distributed to every workload that calls it.
 
@@ -30,7 +30,7 @@ The most important idea arrives in the first paragraph of module 1 and is worth 
 ## The Learning Path
 
 ### 1. Route External Traffic Through An Egress Gateway
-*   **Module Reader:** **[Module 1: Route External Traffic Through An Egress Gateway](./module-01/course.md)**
+*   **Module Reader:** **[Route External Traffic Through An Egress Gateway](./module-01/course.md)**
     1. [A Gateway That Carries Nothing](./module-01/course-01-a-gateway-that-carries-nothing.md)
     2. [The Two-Stage `VirtualService`](./module-01/course-02-the-two-stage-virtualservice.md)
     3. [Restricting, Proving And The Trade-Off](./module-01/course-03-restricting-proving-and-the-trade-off.md)
@@ -46,7 +46,7 @@ The most important idea arrives in the first paragraph of module 1 and is worth 
 *   **Hands-on Objective:** Route one external host through the gateway, prove the hop from the gateway's own log, then restrict the path with `sourceLabels` — and discover that the excluded workload still reaches the endpoint, directly.
 
 ### 2. TLS Origination At The Egress Gateway
-*   **Module Reader:** **[Module 2: TLS Origination At The Egress Gateway](./module-02/course.md)**
+*   **Module Reader:** **[TLS Origination At The Egress Gateway](./module-02/course.md)**
     1. [The Five-Step Chain](./module-02/course-01-the-five-step-chain.md)
     2. [Where The `DestinationRule` Attaches](./module-02/course-02-where-the-destinationrule-attaches.md)
     3. [Mutual TLS And The Consolidation Argument](./module-02/course-03-mutual-tls-and-consolidation.md)

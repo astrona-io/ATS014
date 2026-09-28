@@ -17,9 +17,9 @@ The cost is that a copy of a request is still a request. If the shadow writes to
 
 ## How this module is organised
 
-1. **[Part 1 — Mirror As A Sibling Of Route](./course-01-mirror-as-a-sibling-of-route.md)** — where the field sits, why the mirrored response is discarded, and why a mirror is never part of a weighted split.
-2. **[Part 2 — Identifying And Sampling Shadow Traffic](./course-02-identifying-and-sampling-shadow-traffic.md)** — the `-shadow` authority suffix and what it is for, reading it in the receiving proxy's log, and cutting the copy rate with `mirrorPercentage`.
-3. **[Part 3 — Consequences, Verification And Limits](./course-03-consequences-verification-and-limits.md)** — the side effects that make mirroring unsafe, finding `requestMirrorPolicies` in a live proxy, and the module's pitfalls.
+1. **[Mirror As A Sibling Of Route](./course-01-mirror-as-a-sibling-of-route.md)** — where the field sits, why the mirrored response is discarded, and why a mirror is never part of a weighted split.
+2. **[Identifying And Sampling Shadow Traffic](./course-02-identifying-and-sampling-shadow-traffic.md)** — proving a mirror works from the receiving proxy's access log, what happened to the old `-shadow` authority suffix, and cutting the copy rate with `mirrorPercentage`.
+3. **[Consequences, Verification And Limits](./course-03-consequences-verification-and-limits.md)** — the side effects that make mirroring unsafe, finding `requestMirrorPolicies` in a live proxy, and the module's pitfalls.
 
 ## Learning objectives
 
@@ -28,7 +28,7 @@ After this module you can:
 - Add a `mirror` destination to an HTTP route and say which response the caller receives.
 - Explain why a mirror is not part of the `route` weighted split, and what that means for total request volume.
 - Control the copied share with `mirrorPercentage`, and state the default when it is omitted.
-- Recognise mirrored traffic on the receiving side by the `-shadow` suffix on the authority header, and say why Istio adds it.
+- Recognise mirrored traffic on the receiving side from the shadow proxy's access log, and explain why the old `-shadow` authority suffix is not something to check for on 1.30.
 - Diagnose a mirror that is silently doing nothing.
 - Judge when mirroring is safe, and name the side effects that make it unsafe.
 - Verify a mirror from `istioctl proxy-config routes`.

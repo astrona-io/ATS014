@@ -1,6 +1,6 @@
-# Part 1 — What A Proxy Is Programmed With
+# What A Proxy Is Programmed With
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — The Sidecar Object And Its Host Language](./course-02-the-sidecar-object-and-host-language.md).
+> Prerequisite: [the module landing page](./course.md). Next: [The Sidecar Object And Its Host Language](./course-02-the-sidecar-object-and-host-language.md).
 
 You cannot reason about narrowing a proxy's configuration until you know what is in it and where it came from. This part settles that: what `istiod` sends to a sidecar by default, how it gets there, and why the volume is a function of how big the cluster is rather than how much your application does.
 

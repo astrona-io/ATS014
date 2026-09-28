@@ -1,6 +1,6 @@
-# Part 3 — Mutual TLS And The Consolidation Argument
+# Mutual TLS And The Consolidation Argument
 
-> Prerequisite: [Part 2 — Where The `DestinationRule` Attaches](./course-02-where-the-destinationrule-attaches.md). Next: [the module landing page](./course.md).
+> Prerequisite: [Where The `DestinationRule` Attaches](./course-02-where-the-destinationrule-attaches.md). Next: [the module landing page](./course.md).
 
 With `SIMPLE`, moving origination to the gateway is mostly about consolidation. With `MUTUAL` it becomes the reason the feature exists. This part is that case, and the module's pitfalls.
 

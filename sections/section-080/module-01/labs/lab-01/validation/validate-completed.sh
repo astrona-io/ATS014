@@ -18,7 +18,7 @@ PARTNER=$(cat /tmp/partner-ip 2>/dev/null || kubectl -n outside-mesh get pod par
 gw_lines() { kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 2>/dev/null | grep -c "$HOST"; }
 call_from() {
   kubectl -n "$NS" exec "deploy/$1" -- \
-    curl -s -o /dev/null -w '%{http_code}' --max-time 15 "http://${PARTNER}:8080/get" 2>/dev/null
+    curl -s -o /dev/null -w '%{http_code}' --max-time 15 "http://${HOST}:8080/get" 2>/dev/null
 }
 
 # --- 0. the environment is intact -------------------------------------------

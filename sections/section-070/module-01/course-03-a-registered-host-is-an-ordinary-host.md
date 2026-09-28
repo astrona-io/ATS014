@@ -1,6 +1,6 @@
-# Part 3 — A Registered Host Is An Ordinary Host
+# A Registered Host Is An Ordinary Host
 
-> Prerequisite: [Part 2 — The `ServiceEntry` Object](./course-02-the-serviceentry-object.md). Next: [the module landing page](./course.md).
+> Prerequisite: [The `ServiceEntry` Object](./course-02-the-serviceentry-object.md). Next: [the module landing page](./course.md).
 
 This is what makes `ServiceEntry` more than an allow-list, and it is the part that pays back everything you learned in sections 010 to 050. Then two scoping behaviours that decide whether the object works where you expect it to.
 
