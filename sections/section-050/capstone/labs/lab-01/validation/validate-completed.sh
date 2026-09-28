@@ -62,7 +62,12 @@ h1=$(kubectl -n "$NS" get virtualservice "$VS" \
 d1=$(kubectl -n "$NS" get virtualservice "$VS" -o jsonpath='{.spec.http[1].fault.delay.fixedDelay}' 2>/dev/null)
 [[ "$d1" == "7s" ]] || fail "rule 2 delay fixedDelay is '$d1', expected 7s"
 t1=$(kubectl -n "$NS" get virtualservice "$VS" -o jsonpath='{.spec.http[1].timeout}' 2>/dev/null)
-[[ "$t1" == "2s" ]] || fail "rule 2 timeout is '$t1', expected 2s"
+[[ -z "$t1" ]] \
+  || fail "rule 2 carries a timeout ('$t1'). Next to the delay it is inert - the fault filter holds the request before the router starts timing it. The 2s timeout belongs on the booking-service object, one hop up"
+
+bt=$(kubectl -n "$NS" get virtualservice booking -o jsonpath='{.spec.http[0].timeout}' 2>/dev/null) \
+  || fail "VirtualService 'booking' not found in $NS - the 2s timeout belongs on the booking-service host"
+[[ "$bt" == "2s" ]] || fail "the booking-service VirtualService timeout is '$bt', expected 2s"
 r1=$(kubectl -n "$NS" get virtualservice "$VS" -o jsonpath='{.spec.http[1].retries}' 2>/dev/null)
 [[ -z "$r1" ]] || fail "rule 2 carries a retries block ($r1) - the task asks for none on the delay experiment"
 
@@ -107,7 +112,11 @@ attempts=$((after_fi - before_fi))
   || fail "the aborted request produced $attempts FI-flagged attempts in booking-service's proxy log, expected 3 (the original plus 2 retries). If it was 1 the retry policy is missing or retryOn does not cover a 503; if it was fewer than 3 the timeout may be truncating the retries"
 
 # --- 8. experiment 2: the delay drives the timeout --------------------------
-before_ut=$(caller_log_count ' 504 UT ')
+# The timeout is enforced by the CLIENT's proxy, so that is where UT is logged.
+client_ut() {
+  kubectl -n "$NS" logs deploy/tester -c istio-proxy --tail=-1 2>/dev/null | grep -c ' 504 UT '
+}
+before_ut=$(client_ut)
 res=$(run_curl -H "x-chaos: delay" -X POST http://booking-service/book)
 code=${res%% *}; took=${res##* }
 [[ "$code" != "200" ]] || fail "a request with x-chaos: delay returned 200 - the delay rule did not apply"
@@ -115,9 +124,9 @@ inwindow=$(python3 -c "print(1 if 1.2 <= ${took:-0} <= 5.0 else 0)" 2>/dev/null)
 [[ "$inwindow" == "1" ]] \
   || fail "the delayed request took ${took}s, expected roughly 2s. A 7s delay behind a 2s timeout should be cut off at the timeout"
 sleep 2
-after_ut=$(caller_log_count ' 504 UT ')
+after_ut=$(client_ut)
 [[ $((after_ut - before_ut)) -gt 0 ]] \
-  || fail "no new ' 504 UT ' line in booking-service's proxy log for the delay experiment - the route timeout did not fire"
+  || fail "no new ' 504 UT ' line in the client proxy's log for the delay experiment - the route timeout on booking-service did not fire"
 
 echo "PASS: three scoped rules on the notification-service VirtualService; the abort experiment produced ${attempts} FI-flagged attempts (retries ran and every one was re-faulted), the delay experiment was cut off at ${took}s with a 504 UT, and five unmarked requests returned 200 quickly"
 exit 0

@@ -29,7 +29,7 @@ Expose each application through a **different** one of the section's three APIs.
 
 **C — `modern-app`, via the Kubernetes Gateway API**
 
-6.  A `Gateway` named **`modern-gw`** in `edge`, `apiVersion: gateway.networking.k8s.io/v1`, `gatewayClassName` **`istio`**, one listener named `http` on port **80**, protocol `HTTP`, no hostname.
+6.  A `Gateway` named **`modern-gw`** in `edge`, `apiVersion: gateway.networking.k8s.io/v1`, `gatewayClassName` **`istio`**, one listener named `http` on port **80**, protocol `HTTP`, no hostname. Annotate it `networking.istio.io/service-type: ClusterIP` — this cluster is `kind`, which has no load balancer, and without that annotation the Service Istio creates for the Gateway never gets an address and the Gateway stays `Programmed=False`.
 7.  An `HTTPRoute` named **`modern`** in `edge`, attached to `modern-gw`, for hostname **`modern.ica.local`**, path prefix **`/api`** to `modern-app` port 80.
 
 **What the grader checks**

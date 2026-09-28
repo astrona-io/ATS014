@@ -131,6 +131,10 @@ kind: Gateway
 metadata:
   name: modern-gw
   namespace: edge
+  annotations:
+    # kind has no load balancer: without this the Gateway's Service sits at
+    # EXTERNAL-IP <pending> and the Gateway reports Programmed=False.
+    networking.istio.io/service-type: ClusterIP
 spec:
   gatewayClassName: istio
   listeners:

@@ -23,9 +23,6 @@ spec:
         enabled: true
 EOF
 
-kubectl -n locality-demo patch destinationrule httpbin --type json \
-  -p '[{"op":"remove","path":"/spec/trafficPolicy/outlierDetection"}]'
-sleep 40
 
 # Give istiod time to push this configuration to every proxy before the grader
 # reads it back. By hand you spend longer than this reading the apply output;

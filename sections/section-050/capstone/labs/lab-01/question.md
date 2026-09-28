@@ -30,16 +30,21 @@ Create a `VirtualService` named `notification` for host **`notification-service`
 
 6.  Matches the header **`x-chaos: delay`**.
 7.  Injects a `delay` with `fixedDelay` **`7s`** at **100%**.
-8.  Sets `timeout` to **`2s`**.
-9.  Routes to `notification-service`, with **no** retries configured on this rule.
+8.  Routes to `notification-service`, with **no** timeout and **no** retries on this rule.
 
 **Rule 3 — everyone else**
 
-10. No `match` block, no fault, no timeout, no retries. Routes to `notification-service`.
+9.  No `match` block, no fault, no timeout, no retries. Routes to `notification-service`.
+
+Then create a second `VirtualService` named **`booking`** for host
+**`booking-service`**: one rule, no `match`, `timeout` **`2s`**, routing to
+`booking-service`.
+
+10. The timeout for the delay experiment goes **there**, one hop above the fault, and not beside it. An injected delay is produced by the fault filter, which runs before the router in the same proxy, so a `timeout` on the same rule never sees it and the request waits out all seven seconds. Only a timeout enforced by a different proxy — the client's, on its call to `booking-service` — can cut a fabricated delay short.
 
 **What the grader checks**
 
 11. A request with `x-chaos: abort` fails, and `booking-service`'s proxy log shows **3** attempts against `notification-service` for that single request — the original plus two retries, every one of them carrying the **`FI`** flag. Retries cannot rescue an injected fault, because the caller's own proxy re-fabricates it each time.
-12. A request with `x-chaos: delay` fails in roughly **2 seconds**, and the log carries the **`UT`** flag.
+12. A request with `x-chaos: delay` fails in roughly **2 seconds**, and the **client** proxy's log carries the **`UT`** flag for `booking-service`.
 13. Five requests with **no** `x-chaos` header return **200**, quickly.
 14. The `VirtualService` is for host `notification-service`, and the faults are visible in `booking-service`'s route configuration.

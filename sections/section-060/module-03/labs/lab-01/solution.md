@@ -38,6 +38,10 @@ kind: Gateway
 metadata:
   name: shared-gateway
   namespace: gwapi-demo
+  annotations:
+    # kind has no load balancer: without this the Gateway's Service sits at
+    # EXTERNAL-IP <pending> and the Gateway reports Programmed=False.
+    networking.istio.io/service-type: ClusterIP
 spec:
   gatewayClassName: istio
   listeners:

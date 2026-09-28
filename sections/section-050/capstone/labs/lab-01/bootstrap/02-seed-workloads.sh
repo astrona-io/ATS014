@@ -122,7 +122,10 @@ data:
       location / {
         proxy_pass http://notification-service:80/notify;
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
+        # No proxy_set_header Host here on purpose: nginx then sends the
+        # upstream's own name as the authority. Keeping the caller's Host
+        # would make the sidecar route the hop straight back to this service,
+        # because Istio routes on the authority header.
       }
     }
 ---

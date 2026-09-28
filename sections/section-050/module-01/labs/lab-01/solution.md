@@ -21,25 +21,37 @@ Forty milliseconds across two hops. Both numbers matter: the status is what the 
 
 ---
 
-## Step 2: Work Out What the Two Faults Will Actually Do
+## Step 2: Work Out Where the Timeout Has to Live
 
-The task asks for a 7-second delay **and** a 500 abort **and** a 3-second timeout on the same rule. Think that through before applying it:
+The task asks for a 7-second delay **and** a 500 abort on one rule, and a
+3-second timeout on a **different object**. That split is the whole exercise, so
+work out why before applying anything.
+
+An injected delay is produced by the **fault filter**, which runs before the
+router in the same proxy. A `timeout` on that same rule is a *route* timeout: it
+measures the upstream request, which has not started yet while the fault filter
+is holding the request. Put both on one rule and the timeout never sees the
+delay — the request waits the full seven seconds and then gets the abort's 500.
 
 ```text
-  request matches rule 1
-        │
-        ▼
-  delay: hold for 7s  ─────┐
-        │                  │  but the route timeout is 3s
-        ▼                  │
-  abort: return 500        │  ← never reached
-                           ▼
-              at t=3s the timeout fires: 504
+  client ──────────────► booking-service ──────────────► notification-service
+         │                               │
+         │ timeout: 3s                   │ fault: delay 7s + abort 500
+         │ (enforced in the CLIENT's     │ (enforced in BOOKING-SERVICE's
+         │  proxy, on the outer call)    │  proxy, on the inner call)
+         │                               │
+         ▼                               ▼
+   at t=3s: 504 UT              still holding, never reached
 ```
 
-The delay runs first. The timeout cuts the request off at three seconds, which is before the seven-second hold completes — so the abort never gets its turn. The observable result is a **504 at about 3 seconds**, not a 500 at 7.
+The delay runs on the inner hop. The timeout on the **outer** hop cuts the whole
+exchange off at three seconds, which is before the seven-second hold completes —
+so the abort never gets its turn. The observable result is a **504 at about
+3 seconds**, not a 500 at 7.
 
-That is the point of the exercise: a fabricated delay is how you make a timeout fire on demand, reproducibly, without waiting for a real slow dependency.
+That is the point of the exercise: a fabricated delay is how you make a timeout
+fire on demand, reproducibly, without waiting for a real slow dependency — and a
+timeout only fires against a delay that some *other* proxy is producing.
 
 ---
 
@@ -69,7 +81,6 @@ spec:
           httpStatus: 500
           percentage:
             value: 100
-      timeout: 3s
       route:
         - destination:
             host: notification-service
@@ -77,11 +88,27 @@ spec:
         - destination:
             host: notification-service
 EOF
+kubectl apply -f - <<'EOF'
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: booking
+  namespace: fault-demo
+spec:
+  hosts:
+    - booking-service
+  http:
+    - timeout: 3s
+      route:
+        - destination:
+            host: booking-service
+EOF
 istioctl analyze -n fault-demo
 ```
 
 ```text
 virtualservice.networking.istio.io/notification created
+virtualservice.networking.istio.io/booking created
 ✔ No validation issues found when analyzing namespace: fault-demo.
 ```
 
@@ -90,6 +117,7 @@ Three things the grader checks specifically:
 - **`hosts: [notification-service]`**, not `booking-service`. The fault belongs on the host you are pretending is broken. Putting it on `booking-service` would delay the inbound request from curl — a different experiment entirely.
 - **The scoped rule is first.** The catch-all has no `match`, so it matches everything; below it, the header rule would be dead.
 - **The second rule is clean** — no fault, no timeout. That is what keeps everyone else's traffic working.
+- **The timeout is on the `booking-service` object**, not beside the fault. Next to the delay it would be inert, as step 2 works through.
 
 ---
 
@@ -155,16 +183,21 @@ If this returned `200`, the header did not reach the second hop. `booking-servic
 ## Step 7: Prove the Timeout Fired
 
 ```sh
-kubectl -n fault-demo logs -l app=booking-service -c istio-proxy --tail=10 | grep -E ' 504 UT | FI '
+kubectl -n fault-demo logs deploy/tester -c istio-proxy --tail=-1 | grep ' 504 UT ' | tail -1
+kubectl -n fault-demo logs -l app=booking-service -c istio-proxy --tail=10 | grep ' FI '
 ```
 
 ```text
-[2026-09-27T12:31:02.117Z] "POST /notify HTTP/1.1" 504 UT upstream_response_timeout - "-" 0 24 3001 - ...
+[2026-09-28T19:03:07.140Z] "POST /book HTTP/1.1" 504 UT response_timeout - "-" 0 24 3000 - ...
+[2026-09-28T19:03:07.140Z] "POST /notify HTTP/1.1" 500 FI - "-" ...
 ```
 
-`UT` — upstream timeout — in the **caller's** log, on the inner call to `notification-service`. That is the route timeout doing its job, driven by a delay you fabricated.
-
-Worth noting for the exam: had the abort won instead, the flag would read **`FI`** (fault injected). The two flags tell you which half of the fault produced the result.
+Two proxies, two flags, and they belong to different hops. `UT` — upstream
+timeout — appears in the **client's** log against `booking-service`: that is the
+3-second route timeout firing. `FI` — fault injected — appears in
+**`booking-service`'s** log against `notification-service`: that is the fault
+filter doing the holding. Looking for `UT` in `booking-service`'s log finds
+nothing, because no timeout is configured on that hop.
 
 ---
 

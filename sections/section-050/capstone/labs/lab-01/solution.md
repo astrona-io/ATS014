@@ -81,13 +81,27 @@ spec:
           fixedDelay: 7s
           percentage:
             value: 100
-      timeout: 2s
       route:
         - destination:
             host: notification-service
     - route:
         - destination:
             host: notification-service
+EOF
+kubectl apply -f - <<'EOF'
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: booking
+  namespace: orders
+spec:
+  hosts:
+    - booking-service
+  http:
+    - timeout: 2s
+      route:
+        - destination:
+            host: booking-service
 EOF
 istioctl analyze -n orders
 ```
@@ -157,20 +171,28 @@ The dependency never heard about any of it.
 ## Step 6: Run Experiment 2
 
 ```sh
-kubectl -n orders run c2 --rm -i --restart=Never --image=curlimages/curl -- \
+kubectl -n orders exec deploy/tester -- \
   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -H "x-chaos: delay" -X POST http://booking-service/book
 sleep 2
-kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=5 | grep ' 504 UT ' | head -1
+kubectl -n orders logs deploy/tester -c istio-proxy --tail=-1 | grep ' 504 UT ' | tail -1
+kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=5 | grep ' FI ' | tail -1
 ```
 
 ```text
 504 2.041s
-[2026-09-27T13:45:02.118Z] "POST /notify HTTP/1.1" 504 UT upstream_response_timeout - "-" 0 24 2001 - ...
+[2026-09-28T19:03:07.140Z] "POST /book HTTP/1.1" 504 UT response_timeout - "-" 0 24 2000 - ...
+[2026-09-28T19:03:07.140Z] "POST /notify HTTP/1.1" 500 FI - "-" ...
 ```
 
-Two seconds, not seven — the timeout cut the delay off. `UT` rather than `FI`, because this time the *timeout* produced the response, not the fault filter.
+Two seconds, not seven — the timeout cut the delay off. Note which proxy logged
+what: `UT` is in the **client's** log against `booking-service`, because that is
+where the 2-second timeout is enforced; `FI` is in **`booking-service`'s** log
+against `notification-service`, because that is where the fault filter is
+holding the request.
 
-Those two flags side by side are the section's diagnostic payoff: `FI` means "I fabricated this", `UT` means "my deadline expired". Both appear in the caller's log, and they mean different things.
+Those two flags side by side are the section's diagnostic payoff: `FI` means
+"I fabricated this", `UT` means "my deadline expired" — and they appear one hop
+apart, which is exactly why the timeout had to go on the other object.
 
 ---
 
@@ -188,9 +210,10 @@ A fault is configuration. Left in place, the `x-chaos` rules are harmless — no
 
 - **Expecting retries to rescue the abort.** They run, and every attempt is re-faulted by the caller's own proxy. Counting three `FI` lines is the proof.
 - **`timeout: 2s` on rule 1.** Truncates the retry budget of `(2 + 1) × 1s`; you would count fewer than three attempts.
+- **Putting the 2s timeout next to the delay on rule 2.** Inert: the fault filter holds the request before the router starts timing it, so the call takes the full seven seconds and no `UT` is ever logged.
 - **Adding retries to rule 2.** The task asks for none, and the grader checks.
 - **Anything on the catch-all rule.** No fault, no timeout, no retries — unscoped traffic must be untouched.
 - **Both chaos rules matching the same header value.** They need distinct values; first match wins.
 - **The catch-all placed first.** It matches everything and neither experiment ever runs.
 - **Putting the faults on `booking-service`.** That delays the inbound request and tests the wrong hop.
-- **Reading only the outer status.** The `FI` and `UT` evidence is in the intermediate service's proxy log.
+- **Reading only the outer status.** The `FI` evidence is in the intermediate service's proxy log, and the `UT` evidence is in the client's.

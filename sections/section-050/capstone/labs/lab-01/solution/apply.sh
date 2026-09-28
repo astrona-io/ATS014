@@ -40,13 +40,28 @@ spec:
           fixedDelay: 7s
           percentage:
             value: 100
-      timeout: 2s
       route:
         - destination:
             host: notification-service
     - route:
         - destination:
             host: notification-service
+EOF
+
+kubectl apply -f - <<'EOF'
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: booking
+  namespace: orders
+spec:
+  hosts:
+    - booking-service
+  http:
+    - timeout: 2s
+      route:
+        - destination:
+            host: booking-service
 EOF
 
 # Give istiod time to push this configuration to every proxy before the grader

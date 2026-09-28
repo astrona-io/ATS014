@@ -60,8 +60,17 @@ fa=$(kubectl -n "$NS" get virtualservice "$VS" \
   -o jsonpath='{.spec.http[0].fault.abort.httpStatus}' 2>/dev/null)
 [[ "$fa" == "500" ]] || fail "the fault abort httpStatus is '$fa', expected 500"
 
-ft=$(kubectl -n "$NS" get virtualservice "$VS" -o jsonpath='{.spec.http[0].timeout}' 2>/dev/null)
-[[ "$ft" == "3s" ]] || fail "the first rule's timeout is '$ft', expected 3s"
+# The timeout belongs one hop up, on the booking-service object. On this rule
+# it would be inert: the fault filter produces the delay before the router
+# starts the upstream request, so the route timeout never sees it.
+bt=$(kubectl -n "$NS" get virtualservice booking -o jsonpath='{.spec.http[0].timeout}' 2>/dev/null) \
+  || fail "VirtualService 'booking' not found in $NS - the 3s timeout belongs on the booking-service host, one hop above the fault"
+[[ "$bt" == "3s" ]] \
+  || fail "the booking-service VirtualService timeout is '$bt', expected 3s"
+
+bf=$(kubectl -n "$NS" get virtualservice booking -o jsonpath='{.spec.http[0].fault}' 2>/dev/null)
+[[ -z "$bf" ]] \
+  || fail "the booking-service VirtualService carries a fault ($bf) - it must carry only the timeout"
 
 # --- 3. rule 2: unscoped, clean ---------------------------------------------
 m2=$(kubectl -n "$NS" get virtualservice "$VS" -o jsonpath='{.spec.http[1].match}' 2>/dev/null)
@@ -107,10 +116,11 @@ inwindow=$(python3 -c "print(1 if 2.0 <= ${took:-0} <= 6.0 else 0)" 2>/dev/null)
 
 # --- 7. the UT flag proves the timeout fired --------------------------------
 sleep 2
-ut=$(kubectl -n "$NS" logs -l app=booking-service -c istio-proxy --tail=60 2>/dev/null \
+# The timeout is enforced by the CLIENT's proxy, so that is where UT is logged.
+ut=$(kubectl -n "$NS" logs deploy/tester -c istio-proxy --tail=-1 2>/dev/null \
   | grep -c ' 504 UT ')
 [[ "$ut" -gt 0 ]] \
-  || fail "no ' 504 UT ' line in booking-service's proxy log. The injected delay should have driven the route timeout; without UT the request ended some other way"
+  || fail "no ' 504 UT ' line in the client proxy's log. The injected delay should have driven the route timeout on the call to booking-service; without UT the request ended some other way"
 
-echo "PASS: fault scoped to end-user=tester on the notification-service VirtualService and enforced in booking-service's proxy; the marked request was cut off at ${took}s with a 504 UT while five unmarked requests returned 200 quickly"
+echo "PASS: fault scoped to end-user=tester on the notification-service VirtualService and enforced in booking-service's proxy; the 3s timeout on the booking-service VirtualService cut the marked request off at ${took}s with a 504 UT in the client proxy, while five unmarked requests returned 200 quickly"
 exit 0

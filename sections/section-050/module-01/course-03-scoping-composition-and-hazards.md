@@ -71,7 +71,7 @@ This is what the module is for. Three experiments, each pointing at one field fr
 
 | Experiment | Tests | What you should see |
 | --- | --- | --- |
-| `delay.fixedDelay: 7s` against `timeout: 3s` | the route timeout | `504` in about three seconds, every time, with `UT` in the log |
+| `delay.fixedDelay: 7s` on the *inner* hop against `timeout: 3s` on the *outer* one | the route timeout | `504` in about three seconds, every time, with `UT` in the caller's log |
 | `abort.httpStatus: 503` against a retry policy | retries | `attempts + 1` requests in the *caller's* log, all aborted; retries cannot help when every attempt is faulted |
 | `abort` at 60% against `outlierDetection` | ejection thresholds | whether your `consecutive5xxErrors` is reachable at that failure rate |
 
@@ -82,6 +82,12 @@ The third is the most practically valuable. Section 040 module 3 made the point 
 > [!TIP]
 > **Try it — make a timeout fire on demand**
 >
+> The delay and the timeout have to sit on **different hops**. An injected delay
+> is produced by the fault filter, which runs before the router in that same
+> proxy, so a `timeout` on the same rule never sees it and the request waits out
+> the full delay. Put the delay on the inner call and the timeout on the outer
+> one:
+>
 > ```sh
 > kubectl -n fault-demo patch virtualservice notification --type merge -p '
 > spec:
@@ -91,23 +97,37 @@ The third is the most practically valuable. Section 040 module 3 made the point 
 >           fixedDelay: 7s
 >           percentage:
 >             value: 100
->       timeout: 3s
 >       route:
 >         - destination:
 >             host: notification-service'
+> kubectl apply -f - <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: booking
+>   namespace: fault-demo
+> spec:
+>   hosts:
+>     - booking-service
+>   http:
+>     - timeout: 3s
+>       route:
+>         - destination:
+>             host: booking-service
+> EOF
 > kubectl -n fault-demo run t4 --rm -i --restart=Never --image=curlimages/curl -- \
 >   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -X POST http://booking-service/book
-> kubectl -n fault-demo logs -l app=booking-service -c istio-proxy --tail=3 | grep -E 'UT|FI'
+> kubectl -n fault-demo logs -l app=booking-service -c istio-proxy --tail=5 | grep -E 'FI'
 > ```
 >
 > Expect something like:
 >
 > ```text
-> 200 3.05s
-> [2026-09-27T12:31:02.117Z] "POST /notify HTTP/1.1" 504 UT upstream_response_timeout ...
+> 504 3.01s
+> [2026-09-28T19:03:07.140Z] "POST /notify HTTP/1.1" 500 FI ...
 > ```
 >
-> Read those two lines together, because they say different things. The **inner** call to `notification-service` timed out at three seconds with `UT` — the deadline fired exactly as designed. The **outer** response to curl is whatever `booking-service` chose to do about that, which here is still a `200`. A timeout firing correctly and the user still getting an answer is the system working; if the outer code had been a `500`, you would have learned that `booking-service` has no fallback.
+Read those two lines together, because they say different things. The **inner** call to `notification-service` was held by the fault filter in `booking-service`'s proxy — that is the `FI` flag. The **outer** call from curl was cut at three seconds by the timeout enforced in curl's own proxy, which is where the matching `504 UT` line appears. Swap the two fields around, putting the timeout next to the delay, and the request takes the full seven seconds instead: that arrangement is the single most common way this experiment is written and silently fails.
 
 ## Finding a fault somebody left behind
 

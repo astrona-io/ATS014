@@ -10,6 +10,12 @@ kind: Gateway
 metadata:
   name: shared-gateway
   namespace: gwapi-demo
+  annotations:
+    # kind has no load balancer, so the Service Istio creates for this Gateway
+    # would sit at EXTERNAL-IP <pending> for ever and the Gateway would report
+    # Programmed=False / AddressNotAssigned. Asking for a ClusterIP gives it an
+    # address it can actually be programmed with.
+    networking.istio.io/service-type: ClusterIP
 spec:
   gatewayClassName: istio
   listeners:
