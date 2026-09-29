@@ -47,6 +47,38 @@ Two consequences follow directly:
 - **A running proxy is updated in place.** The stream is long-lived; `istiod` sends the new state and Envoy swaps it in. Nothing about this involves recreating a pod, which is why every `Sidecar` change in Part 3 takes effect in seconds on pods that never restarted.
 - **Every proxy is a recipient of every relevant change.** Add one Service anywhere and `istiod` recomputes and re-pushes to the proxies that need to know — which, by default, is all of them.
 
+## What the dump is made of
+
+"Configuration" is not one thing. The proxy holds all four of the xDS layers from section 000, and a `Sidecar` moves all four together — so it is worth seeing the shape of the whole thing once before you start shrinking it.
+
+> [!TIP]
+> **Try it — all four layers, counted**
+>
+> ```sh
+> for L in listener route cluster endpoint; do
+>   printf '%-10s %s\n' "$L" "$(istioctl proxy-config $L deploy/tester -n sidecar-demo 2>/dev/null | tail -n +2 | wc -l)"
+> done
+> ```
+>
+> Expect something like:
+>
+> ```text
+> listener   16
+> route      9
+> cluster    27
+> endpoint   34
+> ```
+>
+> The numbers depend entirely on what is installed in your cluster — record yours, because the point of this module is watching them fall. Clusters and endpoints dominate, which is why the cluster count is the usual shorthand for "how much is this proxy carrying".
+
+## Why Istio does not work this out for itself
+
+The obvious question is why the control plane does not simply infer which services a workload calls and send only those.
+
+It cannot, and the reason is worth understanding rather than memorising: the call graph is a runtime property. A workload can resolve a name it has never used before, on any request, from a configuration file or a user-supplied value. `istiod` sees Kubernetes objects, not application intent. Sending everything is the only default that cannot break a working application.
+
+So scoping is a declaration *you* make — you are telling the mesh something it has no other way to learn. That also explains why getting it wrong breaks things: you have asserted a call graph, and anything outside your assertion stops resolving.
+
 ## Why the default scales badly
 
 Put numbers on it. With no scoping, each of the **N** proxies in a mesh holds roughly one cluster per (service, port, subset) across the whole mesh — call it **M** entries — plus matching listener and route state. That is **N × M** configuration in memory across the fleet.

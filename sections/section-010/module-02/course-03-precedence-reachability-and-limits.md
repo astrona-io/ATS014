@@ -66,6 +66,27 @@ The supported shape is therefore: one namespace default, plus non-overlapping se
 >
 > The exact counts depend on what is installed. What matters is that the second number is zero: the namespace default still says `istio-system/*`, and the selected workload got none of it. A selective `Sidecar` is the complete list for the pods it matches, and the last line removes it again.
 
+### The mesh-wide default
+
+Rung 3 is worth a worked example, because it is how a platform team applies scoping to namespaces that have never heard of `Sidecar`. A `Sidecar` with no `workloadSelector`, created in the **root namespace** — `istio-system` unless `meshConfig.rootNamespace` says otherwise — becomes the default for every namespace that has no `Sidecar` of its own:
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  egress:
+    - hosts:
+        - "./*"
+        - "istio-system/*"
+```
+
+Read that `./*` carefully: it is evaluated per proxy, so it means "each workload's own namespace", not "istio-system". One object, a different effective host list for every namespace it lands on.
+
+This is a high-blast-radius change — it silently narrows every unscoped namespace in the mesh at once, and the symptom in each is a call that used to work. It belongs to whoever owns the mesh, and it is the reason a namespace default that "does nothing" may still be worth writing: it stops the mesh-wide one from applying to you.
+
 ## Removing configuration removes reachability
 
 Part 1 ended with `tester` calling `httpbin.sidecar-other:8000` and getting a `200`, with nothing having authorised it. Part 2 scoped that namespace away and the cluster disappeared from the proxy.
@@ -125,6 +146,22 @@ Because `egress.hosts` selects over the whole registry — Part 1 noted it inclu
 The case to remember is section 070: you write a `ServiceEntry` for an external host, it is valid, it is exported mesh-wide, and calls from one particular namespace still fail with a 502. The cause is a `Sidecar` in that namespace whose `hosts` list never mentioned the external host. When a `ServiceEntry` works from one namespace and not another, check for a `Sidecar` before re-reading the `ServiceEntry`.
 
 The same applies to gateways and to `MESH_INTERNAL` workloads. If a host is in the registry but absent from a given proxy's clusters, something scoped it away.
+
+## Diagnosing a missing host
+
+Putting the module together, here is the order to work through when a host that should be reachable is not in a proxy's clusters:
+
+```mermaid
+flowchart TD
+    A["host missing from istioctl proxy-config cluster"] --> B{"is there a Sidecar in the workload's namespace"}
+    B -->|"yes, with a matching selector"| C["that object's hosts list is the whole answer"]
+    B -->|"yes, namespace-wide"| D["check its hosts list, including ./* and istio-system/*"]
+    B -->|"no"| E{"is there a Sidecar in the root namespace"}
+    E -->|"yes"| F["the mesh-wide default applies to this namespace"]
+    E -->|"no"| G["not a scoping problem: check exportTo, then the registry itself"]
+```
+
+Each branch ends at exactly one object to read. That is the value of the precedence rules: there is never more than one `Sidecar` to blame.
 
 ## Common pitfalls
 
