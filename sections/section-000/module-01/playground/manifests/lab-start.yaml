@@ -1,0 +1,120 @@
+# Starting workloads for the foundations playground.
+#
+# Two namespaces on purpose: `mesh-demo` is injected, `mesh-legacy` is not.
+# The contrast between a 2/2 pod and a 1/1 pod is the fastest way to see what
+# sidecar injection actually changes.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mesh-demo
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mesh-legacy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: mesh-demo
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: api-nginx-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: mesh-demo
+  labels:
+    app: api
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  selector:
+    app: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: mesh-demo
+  labels:
+    app: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: curlimages/curl
+          command: ["sh", "-c", "while true; do sleep 30; done"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy
+  namespace: mesh-legacy
+  labels:
+    app: legacy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legacy
+  template:
+    metadata:
+      labels:
+        app: legacy
+    spec:
+      containers:
+        - name: legacy
+          image: curlimages/curl
+          command: ["sh", "-c", "while true; do sleep 30; done"]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-nginx-conf
+  namespace: mesh-demo
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      location / {
+        default_type application/json;
+        return 200 '{"service":"api","ok":true}';
+      }
+    }

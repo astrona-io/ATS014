@@ -19,6 +19,32 @@ training:
 
 modules:
 
+  - id: module-000
+    title: "Mesh Foundations"
+    description: >
+      Prerequisite material for the whole domain: what sidecar injection adds
+      to a pod, how traffic is redirected into the proxy, how istiod programs
+      every proxy over xDS, and the diagnostic commands that tell you what a
+      proxy currently holds. No Istio traffic configuration is written here.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-000/README.md
+
+      - type: reading
+        title: "How A Request Moves Through The Mesh"
+        path: sections/section-000/module-01/course.md
+      - type: reading
+        title: "The Sidecar And The Data Path"
+        path: sections/section-000/module-01/course-01-the-sidecar-and-the-data-path.md
+      - type: reading
+        title: "How The Proxy Gets Its Configuration"
+        path: sections/section-000/module-01/course-02-how-the-proxy-gets-its-configuration.md
+      - type: reading
+        title: "The Diagnostic Toolkit"
+        path: sections/section-000/module-01/course-03-the-diagnostic-toolkit.md
+
   - id: module-010
     title: "Configuring Routing Within A Service Mesh"
     description: >
