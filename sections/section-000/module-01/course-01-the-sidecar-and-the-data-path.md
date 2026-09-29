@@ -185,7 +185,7 @@ It also explains why so much of this course points its diagnostic commands at th
 ## Common pitfalls
 
 > [!WARNING]
-> **Labelling a namespace and expecting existing pods to change.** Injection happens at pod creation. Label first, then `kubectl rollout restart deployment --all -n <namespace>`.
+> **Labelling a namespace and expecting existing pods to change.** Injection happens at pod creation. Label first, then `kubectl rollout restart deployment -n <namespace>`.
 >
 > **Reading `2/2` as "healthy" rather than "injected".** It only tells you the proxy container exists. A proxy that is running and holds no useful configuration still reads `2/2`.
 >

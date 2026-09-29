@@ -48,6 +48,11 @@ This section covers both ends of that idea. Module 1 is the request's journey: h
     astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-01
     ```
 *   **Hands-on Objective:** Split one Service into `v1` and `v2` subsets and route by header, URI prefix and query parameter, with a default that catches everything else — then prove with live traffic that all three specific rules are still reachable and a near-miss falls through.
+*   **Second Practice Lab:** **`sections/section-010/module-01/labs/lab-02`** — the fields beside `route`.
+    ```bash
+    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-02
+    ```
+*   **Hands-on Objective:** Redirect a legacy prefix without touching a pod, rewrite a path family onto a backend that has never heard of it, stamp a response header, strip an internal request header, and allow exactly one CORS origin — then prove the rewrite from the compiled route, because no access log will show it to you.
 
 ### 2. Scope Proxy Configuration With The Sidecar Resource
 *   **Module Reader:** **[Scope Proxy Configuration With The Sidecar Resource](./module-02/course.md)**

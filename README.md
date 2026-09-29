@@ -10,7 +10,7 @@ The repository has three layers:
 | --- | --- | --- |
 | **Manifest** | `astrona.yaml` | The course outline the platform reads — every reading and lab, in order |
 | **Reading** | `sections/section-0N0/module-0M/` | A short landing page plus ordered deep-dive parts, each with hands-on "Try it" checkpoints |
-| **Practice** | `.../module-0M/labs/lab-01/` and `.../playground/` | One graded lab per module, and one ungraded sandbox per module (section 000 is reading + playground only) |
+| **Practice** | `.../module-0M/labs/lab-0N/` and `.../playground/` | At least one graded lab per module, and one ungraded sandbox per module |
 | **Integration** | `sections/section-0N0/capstone/labs/lab-01/` | One graded capstone per section, combining that section's modules |
 | **Source** | `domains/traffic-management/` | The original exam-style study labs each module was built from |
 
@@ -32,9 +32,9 @@ Read a module's parts, run its playground alongside, then take the module lab wi
 | [070](sections/section-070) | Connecting In-Mesh Workloads To External Workloads And Services | 3 | Connecting In-Mesh Workloads to External Workloads and Services |
 | [080](sections/section-080) | Egress Gateways | 2 | Configuring Ingress and Egress Traffic |
 
-**19 modules · 59 deep-dive parts · 18 graded labs · 8 capstones · 19 playgrounds.**
+**19 modules · 59 deep-dive parts · 21 graded labs · 8 capstones · 19 playgrounds.**
 
-All of it is listed in [`astrona.yaml`](astrona.yaml) — 165 entries across the 9 sections, in the order a learner should work through them.
+All of it is listed in [`astrona.yaml`](astrona.yaml) — 174 entries across the 9 sections, in the order a learner should work through them.
 
 Sections are ordered so each needs only what came before. Section 000 is foundations — what a sidecar is, how `istiod` programs it, and how to read a proxy's live configuration — because every section after it assumes all three. `VirtualService` and `DestinationRule` are introduced first because everything else is a field on one of them; `ServiceEntry` (070) precedes the egress gateway (080) that depends on it.
 
@@ -46,12 +46,12 @@ Each module is a landing page plus its ordered parts. The landing page links the
 
 | Module | Reader | Graded lab | Source lab |
 | --- | --- | --- | --- |
-| 000-01 | [How A Request Moves Through The Mesh](sections/section-000/module-01/course.md) | *none — reading + playground* | — |
-| 010-01 | [Route Requests Within The Mesh](sections/section-010/module-01/course.md) | [lab](sections/section-010/module-01/labs/lab-01) | [`01-request-routing…`](domains/traffic-management/01-request-routing-headers-uri-query) |
+| 000-01 | [How A Request Moves Through The Mesh](sections/section-000/module-01/course.md) | [lab](sections/section-000/module-01/labs/lab-01) | — |
+| 010-01 | [Route Requests Within The Mesh](sections/section-010/module-01/course.md) | [lab 1](sections/section-010/module-01/labs/lab-01) · [lab 2](sections/section-010/module-01/labs/lab-02) | [`01-request-routing…`](domains/traffic-management/01-request-routing-headers-uri-query) |
 | 010-02 | [Scope Proxy Configuration With The Sidecar Resource](sections/section-010/module-02/course.md) | [lab](sections/section-010/module-02/labs/lab-01) | [`17-sidecar-resource-scoping`](domains/traffic-management/17-sidecar-resource-scoping) |
 | 020-01 | [Shift Traffic With Weighted Routing](sections/section-020/module-01/course.md) | [lab](sections/section-020/module-01/labs/lab-01) | [`02-traffic-shifting…`](domains/traffic-management/02-traffic-shifting-weighted-canary) |
 | 020-02 | [Mirror Live Traffic To A Shadow Service](sections/section-020/module-02/course.md) | [lab](sections/section-020/module-02/labs/lab-01) | [`03-traffic-mirroring`](domains/traffic-management/03-traffic-mirroring) |
-| 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | [lab](sections/section-030/module-01/labs/lab-01) | [`08-load-balancing…`](domains/traffic-management/08-load-balancing-and-session-affinity) |
+| 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | [lab 1](sections/section-030/module-01/labs/lab-01) · [lab 2](sections/section-030/module-01/labs/lab-02) | [`08-load-balancing…`](domains/traffic-management/08-load-balancing-and-session-affinity) |
 | 040-01 | [Timeouts And Retries](sections/section-040/module-01/course.md) | [lab](sections/section-040/module-01/labs/lab-01) | [`04-timeouts-and-retries`](domains/traffic-management/04-timeouts-and-retries) |
 | 040-02 | [Circuit Breaking With Connection Pool Limits](sections/section-040/module-02/course.md) | [lab](sections/section-040/module-02/labs/lab-01) | [`05-circuit-breaking…`](domains/traffic-management/05-circuit-breaking-connection-pool) |
 | 040-03 | [Outlier Detection And Endpoint Ejection](sections/section-040/module-03/course.md) | [lab](sections/section-040/module-03/labs/lab-01) | [`06-outlier-detection-ejection`](domains/traffic-management/06-outlier-detection-ejection) |

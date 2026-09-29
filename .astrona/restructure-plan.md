@@ -93,3 +93,44 @@ added or renamed a file.
 - 2026-09-29 — P3 to P9 complete, one commit per section. Final state: 59 parts, 19 landing
   pages, 48 Mermaid diagrams, 133 checkpoints, a pitfalls block on every part, 165 manifest
   entries, zero broken relative links, zero stacked checkpoints.
+
+## Phase 11 — verification against real clusters, and new labs (2026-09-29)
+
+Booted every affected playground on kind/podman and ran the checkpoints. Nine
+errors in the prose were found and fixed, the largest being that `istio-proxy`
+is a native sidecar on Kubernetes 1.28+ (an initContainer with
+`restartPolicy: Always`), that `istioctl proxy-status` no longer prints per-channel
+SYNCED columns, and that a rewrite is invisible in every access log because Istio's
+format prefers `x-envoy-original-path`.
+
+Lab coverage audit: 18 module labs and 8 capstones already cover the original 18
+modules well. Three labs added for material that was taught and ungraded:
+
+- `sections/section-000/module-01/labs/lab-01` — diagnostic: two workloads outside
+  the mesh for two different reasons, neither reported by Kubernetes.
+- `sections/section-010/module-01/labs/lab-02` — redirect, rewrite, header
+  manipulation and corsPolicy (parts 4 and 5 of the module).
+- `sections/section-030/module-01/labs/lab-02` — cookie affinity with `ttl`,
+  attached through `portLevelSettings`.
+
+**Deliberately not built**, with reasons:
+
+- `sniHosts`, `MUTUAL`, `credentialName` — need a TLS backend or a partner CA. The
+  modules say the playground cannot show them; grading them would need new fixtures.
+- `040-04` `distribute` — one field, adjacent to already-graded `failover`. A lab
+  for a single field is padding.
+- `useSourceIp` — testable only from one tester pod, where it pins trivially and
+  teaches the wrong lesson.
+- `030-01`'s subset-override/replace rule — **already graded** by its lab-01; an
+  earlier keyword scan missed it.
+
+### Grader defects found and fixed while testing
+
+- `kubectl rollout restart deployment --all` is not a valid flag. It appeared in 20
+  scripts repo-wide, 19 of them masked by `|| true`, so the "restart anything that
+  started before the webhook" safety net had never actually run.
+- `declare -A` needs bash 4; the graders can run under macOS bash 3.2. It failed with
+  an unbound-variable error **and the proctor still reported PASS**, so every new
+  grader is now negative-tested against an unsolved cluster.
+- A pod being deleted still reports `phase=Running`, so a grader counting running pods
+  fails a correct answer mid-rollout. Graders now skip pods with a `deletionTimestamp`.

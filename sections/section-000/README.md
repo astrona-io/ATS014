@@ -33,10 +33,15 @@ This section is one module covering exactly that: what injection adds, how `isti
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-000/module-01/playground
     ```
-*   **Practice Lab Sandbox:** none. This section is reading plus a playground — there is nothing to configure yet, and the first graded lab is section 010's.
+*   **Practice Lab Sandbox:** **`sections/section-000/module-01/labs/lab-01`**
+*   **Lab Run Command:**
+    ```bash
+    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-000/module-01/labs/lab-01
+    ```
+*   **Hands-on Objective:** Find the two workloads that are running perfectly and are nevertheless outside the mesh — one namespace that was never labelled, one pod template that opted out — and bring both in without replacing them. Nothing in `kubectl get` reports either fault.
 
 ---
 
-This section has no capstone for the same reason it has no lab: it teaches how to look at a mesh, not how to change one. Everything you learn here is exercised by every graded lab that follows.
+This section has no capstone: it teaches how to look at a mesh, and everything in it is exercised by every graded lab that follows. Its own lab is deliberately diagnostic — the fix is two commands, and finding what to fix is the whole exercise.
 
 The playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear it down with `astrona destroy ats-014-playground-000-01` when you are finished.

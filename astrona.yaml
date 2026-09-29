@@ -45,6 +45,16 @@ modules:
         title: "The Diagnostic Toolkit"
         path: sections/section-000/module-01/course-03-the-diagnostic-toolkit.md
 
+      - type: reading
+        title: Question
+        path: sections/section-000/module-01/labs/lab-01/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-000/module-01/labs/lab-01/solution.md
+      - type: lab
+        title: "Which Workloads Are Actually In The Mesh Lab"
+        path: sections/section-000/module-01/labs/lab-01
+
   - id: module-010
     title: "Configuring Routing Within A Service Mesh"
     description: >
@@ -85,6 +95,16 @@ modules:
       - type: lab
         title: "Route Requests By Header, URI And Query Parameter Lab"
         path: sections/section-010/module-01/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-010/module-01/labs/lab-02/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-010/module-01/labs/lab-02/solution.md
+      - type: lab
+        title: "Reshape A Request Lab"
+        path: sections/section-010/module-01/labs/lab-02
 
       - type: reading
         title: "Scope Proxy Configuration With The Sidecar Resource"
@@ -223,6 +243,16 @@ modules:
       - type: lab
         title: "Load Balancer Policy And Session Affinity Lab"
         path: sections/section-030/module-01/labs/lab-01
+
+      - type: reading
+        title: Question
+        path: sections/section-030/module-01/labs/lab-02/question.md
+      - type: reading
+        title: Solution Walkthrough
+        path: sections/section-030/module-01/labs/lab-02/solution.md
+      - type: lab
+        title: "Session Affinity For Browsers Lab"
+        path: sections/section-030/module-01/labs/lab-02
 
       - type: reading
         title: Question

@@ -1,0 +1,33 @@
+metadata:
+  name: "ats-014-lab-010-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-010-02-setup"
+      description: "Creates the routing-demo namespace with two versions of notification-service and a tester client, and no Istio traffic configuration"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-request-reshaping"
+      description: "Confirms the VirtualService redirects the legacy prefix, rewrites the beta prefix onto v2, stamps a response header, strips an internal request header and answers CORS for one origin - proven with live traffic and the compiled route"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

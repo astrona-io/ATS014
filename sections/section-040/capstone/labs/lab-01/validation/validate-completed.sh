@@ -29,12 +29,16 @@ server_attempts() {
 }
 
 # --- 0. the environment is intact -------------------------------------------
-declare -A WANT=( [ledger-good]=2 [ledger-bad]=1 [fortio]=1 )
-for d in "${!WANT[@]}"; do
+# Parallel "name:replicas" list rather than an associative array: `declare -A`
+# needs bash 4 and this grader can run under bash 3.2, where it fails with an
+# unbound-variable error instead of checking anything.
+WANT="ledger-good:2 ledger-bad:1 fortio:1"
+for entry in $WANT; do
+  d="${entry%%:*}"; want="${entry##*:}"
   r=$(kubectl -n "$NS" get deployment "$d" -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
   [[ -n "$r" && "$r" -ge 1 ]] || fail "$d - deployment missing or has no ready replicas"
   n=$(kubectl -n "$NS" get deployment "$d" -o jsonpath='{.spec.replicas}' 2>/dev/null)
-  [[ "$n" == "${WANT[$d]}" ]] || fail "$d runs $n replicas, expected ${WANT[$d]}. Do not scale or remove the failing replica"
+  [[ "$n" == "$want" ]] || fail "$d runs $n replicas, expected $want. Do not scale or remove the failing replica"
 done
 
 sel=$(kubectl -n "$NS" get service "$SVC" -o jsonpath='{.spec.selector}' 2>/dev/null)
