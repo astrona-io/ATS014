@@ -57,12 +57,12 @@ Because the secret is loaded over SDS, the gateway proxy can be asked what it cu
 > Expect something like:
 >
 > ```text
-> RESOURCE NAME     TYPE           STATUS     VALID CERT     SERIAL NUMBER        NOT AFTER
-> default           Cert Chain     ACTIVE     true           1a2b3c...            2026-09-28T...
-> ROOTCA            CA             ACTIVE     true           4d5e6f...            2036-09-25T...
+> RESOURCE NAME   TYPE         STATUS   VALID CERT   SERIAL NUMBER                      NOT AFTER              NOT BEFORE
+> default         Cert Chain   ACTIVE   true         b52abac6bbaa2576360b7caa2ba756bb   2026-09-30T18:30:29Z   2026-09-29T18:28:29Z
+> ROOTCA          CA           ACTIVE   true         45233b55ed568eac0a223c2ba7c3e403   2036-09-26T18:30:19Z   2026-09-29T18:30:19Z
 > ```
 >
-> `default` and `ROOTCA` are the gateway's own mesh identity and are always there. A secret named by `credentialName` appears as an additional row once it is loaded — and a `credentialName` pointing at a secret in the wrong namespace simply never shows up here, with nothing else reporting the problem. That absence is the diagnosis.
+> `default` and `ROOTCA` are the gateway's own mesh identity and are always there — note the one-day lifetime on `default`, which is the workload certificate Istio rotates automatically, against ten years for the root. A secret named by `credentialName` appears as an additional row once it is loaded — and a `credentialName` pointing at a secret in the wrong namespace simply never shows up here, with nothing else reporting the problem. That absence is the diagnosis.
 
 ## The comparison
 
