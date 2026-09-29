@@ -78,11 +78,15 @@ The patch takes effect in about as long as an xDS push takes: a second or two on
 
 That property is what makes weighted routing worth the configuration. The interesting number is not how fast you can shift traffic *to* a new version — it is how fast you can shift it *away*:
 
-```text
-  100/0  ──►  90/10  ──►  50/50  ──►  0/100        a rollout
-                   ▲
-                   └──────────────────────────      a rollback: one apply, seconds
+```mermaid
+flowchart LR
+    A["100 / 0"] --> B["90 / 10"]
+    B --> C["50 / 50"]
+    C --> D["0 / 100"]
+    D -->|"one apply, seconds"| A
 ```
+
+Forward is a rollout and backward is a rollback, and they are the same operation with different numbers. No step recreates a pod.
 
 Rollback is not a special operation and needs no separate procedure. It is the previous numbers, applied again. Compare with a Deployment rollback, which recreates pods and takes as long as your readiness probes allow.
 
@@ -134,6 +138,19 @@ http:
 This is a genuinely useful pattern — pin your own team to the new version while the public sees 10% of it. It is also a trap if you forget the first rule exists and then wonder why your measured split does not match the weights: the requests carrying that header were never part of the population the weights apply to.
 
 The weights still sum to 100 **within their own route block**. Each `http` rule is quantified independently; there is no global budget across rules.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Concluding anything from ten requests.** At a true 80/20, ten requests landing 10/0 happens about one time in ten. Count 100 before you believe a number.
+>
+> **Expecting a merge patch to edit one route entry.** It replaces the whole `http` list. Restate it, or use `kubectl apply` with the complete object.
+>
+> **Reaching for `--type json` with an array index.** It works and it is brittle: the index moves the next time someone adds a rule.
+>
+> **Forgetting a match rule sitting above the weighted one.** Those requests never enter the split, so you are measuring a different population than you think.
+>
+> **Treating a rollback as a separate procedure.** It is the previous numbers, applied again.
 
 > *A weight change is one apply and takes effect in seconds — which makes the rollback, not the rollout, the reason to use it.*
 

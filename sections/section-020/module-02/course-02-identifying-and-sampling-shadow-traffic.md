@@ -80,7 +80,9 @@ situation mirroring exists to create.
 
 ## Counting instead of eyeballing
 
-For anything beyond a demonstration, count rather than read. Comparing the shadow's request count against the number you sent is the cleanest confirmation that a mirror is running at the rate you configured.
+For anything beyond a demonstration, count rather than read. Because the route sends nothing to `v2`, **every** line in the `v2` proxy's access log is a mirrored copy — so counting lines counts copies, with no header to match on.
+
+The one thing to get right is that the log is cumulative. Take a count before, take a count after, and subtract; a raw count includes every copy from every earlier run.
 
 ## Sampling with `mirrorPercentage`
 
@@ -112,11 +114,11 @@ As with weighted routing, the decision is made per request and independently, so
 >         subset: v2
 >       mirrorPercentage:
 >         value: 50.0'
-> BEFORE=$(kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=-1 2>/dev/null | grep -c shadow)
+> BEFORE=$(kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=-1 2>/dev/null | grep -c '/notify')
 > kubectl -n mirror-demo exec deploy/tester -- sh -c \
 >   'for i in $(seq 1 100); do curl -s -o /dev/null -X POST http://notification-service/notify; done'
 > sleep 2
-> AFTER=$(kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=-1 2>/dev/null | grep -c shadow)
+> AFTER=$(kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=-1 2>/dev/null | grep -c '/notify')
 > echo "mirrored this run: $((AFTER - BEFORE)) of 100"
 > ```
 >
@@ -126,7 +128,7 @@ As with weighted routing, the decision is made per request and independently, so
 > mirrored this run: 54 of 100
 > ```
 >
-> Roughly half — your number will differ by a few. Taking a `BEFORE` count and subtracting is the reason this is trustworthy: the log still holds the copies from the earlier 100% run, so a raw `grep -c` would count those too and report a rate far above 50%.
+> Roughly half — your number will differ by a few. Taking a `BEFORE` count and subtracting is the reason this is trustworthy: the log still holds the copies from the earlier 100% run, so a raw count would include those too and report a rate far above 50%. Note the grep matches the *path*, not an authority suffix — on 1.30 there is no suffix to match.
 
 ## Sampling is not filtering
 
@@ -137,6 +139,19 @@ One distinction worth drawing, because the two are easy to conflate and a task m
 A `match` block picks a **specific kind of request**. Putting a mirror on a rule that matches `x-internal: true` copies only internal traffic — deterministic, repeatable, and not representative of anything.
 
 They compose. A rule matching internal traffic with `mirrorPercentage: 100`, plus a catch-all rule with `mirrorPercentage: 10`, gives you every internal request and a tenth of everything else. Each `http` rule carries its own mirror settings; there is no global mirror.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Looking for a `-shadow` authority suffix.** Istio 1.30 does not add one. Older documentation and some exam material still describe it; the routing, not a header, is what identifies a copy.
+>
+> **Building shadow behaviour on reading that header.** There is nothing to read. Keep a shadow off the shared database and off the outbound mail path instead.
+>
+> **Counting with a cumulative log.** Take a before and an after count and subtract, or you will measure every run you have ever done.
+>
+> **Assuming an omitted `mirrorPercentage` means no mirroring.** The default is 100%.
+>
+> **Looking for the evidence on the caller.** The caller sees nothing. The receiving proxy's access log is the only place a copy appears.
 
 > *A copy is invisible to the caller and, on Istio 1.30, indistinguishable by its headers — the receiving proxy's access log is where a mirror proves it is working.*
 
