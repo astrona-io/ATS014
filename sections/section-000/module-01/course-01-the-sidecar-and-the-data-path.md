@@ -32,13 +32,18 @@ Two things are added:
 ```text
  initContainers:
    istio-init      runs once, writes iptables rules in the pod's network
-                   namespace, exits. Not counted in the READY column.
+                   namespace, and exits.
+   istio-proxy     restartPolicy: Always — a NATIVE SIDECAR. Listed among the
+                   init containers, but it starts before your app and keeps
+                   running for the pod's life.
 
  containers:
    <your app>      unchanged
-   istio-proxy     the Envoy proxy plus istio-agent, running for the pod's life.
-                   THIS is the second number in 2/2.
 ```
+
+That placement surprises people, so it is worth being precise. On Kubernetes 1.28 and later, a container declared in `initContainers` **with `restartPolicy: Always`** is a *native sidecar*: the kubelet starts it in order, like an init container, but never waits for it to exit. Istio uses that mechanism, which is why `istio-proxy` appears in the init list and is nevertheless running the whole time.
+
+Two consequences follow. The proxy is guaranteed to be up **before** your application's first request, which the old arrangement could not promise. And native sidecars still count toward the `READY` column — which is why a pod with one application container reads `2/2`.
 
 `istio-proxy` holds two processes: **Envoy**, the proxy that moves the traffic, and **istio-agent**, a small supervisor that fetches configuration and certificates for it. When this course says "the sidecar", it means Envoy.
 
@@ -69,17 +74,19 @@ The `READY` column counts containers, not what they are. Ask the pod directly wh
 >
 > ```sh
 > kubectl -n mesh-demo get pod -l app=web \
->   -o jsonpath='{.items[0].spec.initContainers[*].name}{"\n"}{.items[0].spec.containers[*].name}{"\n"}'
+>   -o jsonpath='{range .items[0].spec.initContainers[*]}{.name}{" restartPolicy="}{.restartPolicy}{"\n"}{end}{"--- containers ---\n"}{.items[0].spec.containers[*].name}{"\n"}'
 > ```
 >
 > Expect something like:
 >
 > ```text
-> istio-init
-> web istio-proxy
+> istio-init restartPolicy=
+> istio-proxy restartPolicy=Always
+> --- containers ---
+> web
 > ```
 >
-> `istio-init` already exited — it did its work before your application started, which is the only ordering that works. If the proxy came up after the app, the app's first requests would escape the mesh.
+> Both injected pieces are init containers, and the `restartPolicy` is what separates them. `istio-init` has none, so it runs once and exits. `istio-proxy` has `Always`, which makes it a native sidecar: started in order, before `web`, and never waited on. If the proxy came up after the app, the app's first requests would escape the mesh.
 
 ## How traffic gets redirected into the proxy
 
@@ -129,6 +136,7 @@ Because both ends are injected, a request from `web` to `api` passes through two
 >
 > ```sh
 > kubectl -n mesh-demo exec deploy/web -- curl -s -o /dev/null http://api/
+> sleep 1
 > kubectl -n mesh-demo logs deploy/web -c istio-proxy --tail=1
 > kubectl -n mesh-demo logs deploy/api -c istio-proxy --tail=1
 > ```
@@ -142,6 +150,8 @@ Because both ends are injected, a request from `web` to `api` passes through two
 >
 > The same request, a millisecond apart, from both sides. `outbound` is the caller choosing a destination; `inbound` is the receiver handing it to the application. Those two long tokens are **cluster names**, and decoding them is the next part's subject.
 
+The `sleep 1` is not decoration: the proxy flushes its access log asynchronously, so reading the log in the same breath as the request will often show you the *previous* line and look like nothing happened.
+
 Access logging is on here because the playground installs the `demo` profile, which sets `meshConfig.accessLogFile` to stdout. A production install often does not, which is worth knowing before you go looking for these lines on a real cluster and conclude the mesh is broken.
 
 ## What an uninjected workload changes
@@ -154,17 +164,19 @@ Predict what the logs will show before you run the next checkpoint: there is no 
 > **Try it — a request only one proxy sees**
 >
 > ```sh
-> kubectl -n mesh-legacy exec deploy/legacy -- curl -s -o /dev/null http://api.mesh-demo/
+> kubectl -n mesh-legacy exec deploy/legacy -- curl -s -o /dev/null -w '%{http_code}\n' http://api.mesh-demo/
+> sleep 1
 > kubectl -n mesh-demo logs deploy/api -c istio-proxy --tail=1
 > ```
 >
 > Expect something like:
 >
 > ```text
-> [2026-09-29T09:44:31.702Z] "GET / HTTP/1.1" 200 … inbound|8080|| …
+> 200
+> [2026-09-29T18:19:49.877Z] "GET / HTTP/1.1" 200 … "api.mesh-demo" "10.244.0.11:8080" inbound|8080|| …
 > ```
 >
-> The call succeeded and only the receiving proxy logged it. Nothing you write in this course would have applied to that request on the way out, because there was no proxy on the way out to apply it.
+> The call succeeded and only the receiving proxy logged it — note the authority is `api.mesh-demo`, the name the legacy pod dialled. Nothing you write in this course would have applied to that request on the way out, because there was no proxy on the way out to apply it.
 
 This is the rule that decides what the mesh can and cannot do for you: **a policy takes effect where a proxy exists.** Client-side features — routing, retries, timeouts, circuit breaking, load balancing — need the *caller* injected. A request from outside the mesh gets none of them, no matter how correct your objects are.
 
@@ -176,6 +188,8 @@ It also explains why so much of this course points its diagnostic commands at th
 > **Labelling a namespace and expecting existing pods to change.** Injection happens at pod creation. Label first, then `kubectl rollout restart deployment --all -n <namespace>`.
 >
 > **Reading `2/2` as "healthy" rather than "injected".** It only tells you the proxy container exists. A proxy that is running and holds no useful configuration still reads `2/2`.
+>
+> **Looking for `istio-proxy` under `containers`.** On Kubernetes 1.28+ it is a native sidecar, declared in `initContainers` with `restartPolicy: Always`. It is running the whole time regardless.
 >
 > **Expecting Istio to apply client-side policy to an uninjected caller.** Routing, retries and timeouts live in the caller's proxy. No caller proxy, no policy.
 >

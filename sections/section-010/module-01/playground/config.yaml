@@ -1,4 +1,4 @@
-# Route Requests By Header, URI And Query Parameter (PLAYGROUND) — Playground environment
+# Route Requests Within The Mesh (PLAYGROUND) — Playground environment
 # A clean sandbox: it spins up, runs OS prep, then stays running for free
 # exploration. No task, no grading, no `astrona submit`.
 # Schema: internal/config.LabConfig.

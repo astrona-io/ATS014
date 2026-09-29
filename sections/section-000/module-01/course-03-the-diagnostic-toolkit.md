@@ -60,9 +60,9 @@ The `proxy-config` commands dump configuration. `istioctl experimental describe 
 > Expect something like:
 >
 > ```text
-> Pod: api-6c9f7d8b84-2xq4r
+> Pod: api-f9b4665f4-8ng5p
 >    Pod Revision: default
->    Pod Ports: 8080 (api), 15090 (istio-proxy)
+>    Pod Ports: 8080 (api)
 > --------------------
 > Service: api
 >    Port: http 80/HTTP targets pod port 8080
@@ -117,6 +117,7 @@ Break something deliberately to see one. Scaling `api` to zero replicas leaves t
 > kubectl -n mesh-demo scale deploy/api --replicas=0
 > kubectl -n mesh-demo rollout status deploy/api --timeout=60s
 > kubectl -n mesh-demo exec deploy/web -- curl -s -o /dev/null -w '%{http_code}\n' http://api/
+> sleep 1
 > kubectl -n mesh-demo logs deploy/web -c istio-proxy --tail=1
 > istioctl proxy-config endpoints deploy/web -n mesh-demo \
 >   --cluster "outbound|80||api.mesh-demo.svc.cluster.local"
@@ -127,11 +128,11 @@ Break something deliberately to see one. Scaling `api` to zero replicas leaves t
 >
 > ```text
 > 503
-> [2026-09-29T10:02:11.884Z] "GET / HTTP/1.1" 503 UH … outbound|80||api.mesh-demo.svc.cluster.local …
+> [2026-09-29T18:19:17.972Z] "GET / HTTP/1.1" 503 UH no_healthy_upstream - "delayed_connect_error:_Connection_refused" … outbound|80||api.mesh-demo.svc.cluster.local …
 > ENDPOINT     STATUS     OUTLIER CHECK     CLUSTER
 > ```
 >
-> `UH` in the log and a header row with nothing under it are the same fact seen twice: the destination is known and empty. Compare that with a wrong hostname, which produces `NR` and never reaches a cluster at all. The last line restores the Deployment.
+> `UH` in the log, `no_healthy_upstream` spelled out beside it, and a header row with nothing under it — the same fact seen three times: the destination is known and empty. Compare that with a wrong hostname, which produces `NR` and never reaches a cluster at all. The last line restores the Deployment.
 
 ## Where each tool stops
 

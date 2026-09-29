@@ -57,12 +57,30 @@ Because it is a push over a live stream, an accepted object reaches the proxies 
 > Expect something like:
 >
 > ```text
-> NAME                                CLUSTER      CDS        LDS        EDS        RDS          ISTIOD
-> api-6c9f7d8b84-2xq4r.mesh-demo      Kubernetes   SYNCED     SYNCED     SYNCED     SYNCED       istiod-...
-> web-5f8c6d7b9c-nk82p.mesh-demo      Kubernetes   SYNCED     SYNCED     SYNCED     SYNCED       istiod-...
+> NAME                                                 CLUSTER      ISTIOD                    VERSION   SUBSCRIBED TYPES
+> api-f9b4665f4-8ng5p.mesh-demo                        Kubernetes   istiod-7dc9684c55-9wgcn   1.30.5    4 (CDS,LDS,EDS,RDS)
+> istio-egressgateway-b7dd4655b-zjtth.istio-system     Kubernetes   istiod-7dc9684c55-9wgcn   1.30.5    3 (CDS,LDS,EDS)
+> istio-ingressgateway-7f54444996-f5zmc.istio-system   Kubernetes   istiod-7dc9684c55-9wgcn   1.30.5    3 (CDS,LDS,EDS)
+> web-664dfc4d8c-cjpkc.mesh-demo                       Kubernetes   istiod-7dc9684c55-9wgcn   1.30.5    4 (CDS,LDS,EDS,RDS)
 > ```
 >
-> One row per proxy, one column per xDS channel. `SYNCED` means the proxy has acknowledged the latest version `istiod` sent it. `STALE` means a push is in flight or stuck; `NOT SENT` means `istiod` had nothing of that kind to send. This is the first command to run when an object looks correct and nothing is happening.
+> One row per proxy **currently connected to the control plane**, which `istiod` instance it is connected to, its proxy version, and which of the xDS channels it subscribes to. The two gateways subscribe to three rather than four because nothing has given them routes to hold.
+>
+> Two ways to read it. A workload that should be meshed and is **missing from this list entirely** is not connected — injection, or the proxy itself, is the problem. And a proxy version that differs from the control plane's is the signature of a sidecar left behind by an upgrade.
+
+Naming a single proxy turns the same command into a comparison between what `istiod` last sent and what that proxy acknowledged:
+
+```sh
+istioctl proxy-status web-664dfc4d8c-cjpkc.mesh-demo
+```
+
+```text
+Clusters Match
+Listeners Match
+Routes Match (RDS last loaded at Tue, 29 Sep 2026 20:18:50 CEST)
+```
+
+Three `Match` lines mean the proxy is holding exactly what the control plane believes it sent. Anything other than `Match` is the answer to "my object is correct and nothing is happening".
 
 ## The four layers, and how a request walks down them
 
@@ -102,11 +120,12 @@ Notice the port changes between the last two lines, because the cluster is named
 > Expect something like:
 >
 > ```text
-> ADDRESS   PORT  MATCH                        DESTINATION
-> 0.0.0.0   80    Trans: raw_buffer; App: HTTP Route: 80
+> ADDRESSES PORT MATCH                                DESTINATION
+> 0.0.0.0   80   Trans: raw_buffer; App: http/1.1,h2c Route: 80
+> 0.0.0.0   80   ALL                                  PassthroughCluster
 > ```
 >
-> The columns shift between versions; the structure is the point. The proxy accepts port 80 on any address, recognises the traffic as HTTP, and hands it to a route configuration called `80` — which is the next layer down.
+> The proxy accepts port 80 on any address. When it recognises the traffic as HTTP it hands it to a route configuration called `80` — the next layer down. The second row is the fallback: anything on port 80 that is *not* recognisable HTTP goes to `PassthroughCluster`, which forwards the bytes to their original address without routing them. That fallback is how a mis-declared protocol fails quietly rather than loudly, and it comes back in section 010.
 
 Note what this listener is *not*: it is not per-Service. Every Service in the mesh on port 80 shares it, and the choice between them happens one layer down, by hostname.
 
@@ -122,13 +141,15 @@ Note what this listener is *not*: it is not per-Service. Every Service in the me
 > Expect something like:
 >
 > ```text
-> NAME   VHOST NAME                        DOMAINS                   MATCH   VIRTUAL SERVICE
-> 80     api.mesh-demo.svc.cluster.local   api, api.mesh-demo + 1    /*      404
+> NAME  VHOST NAME                                              DOMAINS                                             MATCH  VIRTUAL SERVICE
+> 80    api.mesh-demo.svc.cluster.local:80                      api.mesh-demo.svc.cluster.local., api + 2 more...   /*
+> 80    istio-egressgateway.istio-system.svc.cluster.local:80   istio-egressgateway.istio-system + 1 more...        /*
+> 80    istio-ingressgateway.istio-system.svc.cluster.local:80  istio-ingressgateway.istio-system + 1 more...       /*
 > ```
 >
-> One virtual host per destination on this port. `DOMAINS` is every name a caller could have used — short, namespaced, and fully qualified all reach the same place. `VIRTUAL SERVICE` reads `404` because no `VirtualService` exists: the route is the default one Istio generates from the Service itself.
+> One virtual host per destination on this port — including the two gateways, because this proxy is configured for the whole mesh. `DOMAINS` is every name a caller could have used: short, namespaced and fully qualified all reach the same place. `MATCH` is `/*` because the generated route accepts every path.
 
-That last column is worth remembering. `404` there does not mean a request would 404 — it is `istioctl` saying "no `VirtualService` is attached to this virtual host". Once you write one in section 010, its name appears in that column, which makes it a fast way to confirm your object bound to the host you meant.
+The `VIRTUAL SERVICE` column is **empty** here, and that is the thing to remember. These routes were generated by Istio from the Service itself; nothing you wrote is attached to them. Once you write a `VirtualService` in section 010, its name appears in that column — which makes it the fastest way to confirm your object bound to the host you meant rather than to some other one.
 
 ### Layers 3 and 4 — clusters and endpoints
 
@@ -194,7 +215,7 @@ One more property, because it shapes a later module. `istiod` does not work out 
 >
 > **Expecting the cluster port and the endpoint port to match.** The cluster carries the Service port, the endpoint carries the container port. Different by design.
 >
-> **Reading `404` in the `VIRTUAL SERVICE` column as an error.** It means no `VirtualService` is attached to that virtual host.
+> **Reading an empty `VIRTUAL SERVICE` column as a problem.** It means the route was generated from the Service and no `VirtualService` is attached to that virtual host.
 >
 > **Assuming a proxy only knows about what it calls.** By default it knows about everything in the mesh.
 

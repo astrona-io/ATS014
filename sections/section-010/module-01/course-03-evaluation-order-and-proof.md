@@ -191,7 +191,7 @@ The control plane accepting an object and the sidecar acting on it are separate 
 
 Foundations covered the full `proxy-config` map and the order to work through it. For this module the relevant subcommand is `routes` — the RDS layer — because that is where a `VirtualService` lands. If the push itself is in doubt, `istioctl proxy-status` answers that first.
 
-Two things to look for in the output. The rule you wrote should appear on the virtual host for your service, and the `VIRTUAL SERVICE` column should name your object rather than reading `404` — `404` there means no `VirtualService` is attached to that host at all, which usually means the namespace or the host name is wrong.
+Two things to look for in the output. The rule you wrote should appear on the virtual host for your service, and the `VIRTUAL SERVICE` column should now **name your object**. An empty column there means no `VirtualService` is attached to that host at all — the route is still the one Istio generated from the Service — which usually means the namespace or the host name is wrong.
 
 > [!TIP]
 > **Try it — the routes as the client proxy holds them**
