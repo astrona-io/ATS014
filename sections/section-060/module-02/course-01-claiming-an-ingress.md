@@ -143,6 +143,17 @@ So an `Ingress` goes to the default gateway, and there is no per-object way to s
 
 > *An `Ingress` no controller claims is a valid object that nothing serves — check the `CLASS` column before debugging anything else.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Leaving `ingressClassName` off.** Nothing claims the `Ingress`, nothing serves it, and there is no error anywhere — only a resource with no address.
+>
+> **Using the deprecated `kubernetes.io/ingress.class` annotation.** It still works in places and is not the field to reach for on a current cluster.
+>
+> **Expecting Istio to serve an `Ingress` claimed by another controller.** Both controllers see the object; only the one named by the class acts on it.
+>
+> **Looking for a `Gateway` object.** Istio synthesises the gateway configuration from the `Ingress`. There is no `Gateway` in your namespace to inspect.
+
 ## Reference
 
 - [Kubernetes Ingress API](https://kubernetes.io/docs/concepts/services-networking/ingress/) — the object, its history, and the class mechanism.

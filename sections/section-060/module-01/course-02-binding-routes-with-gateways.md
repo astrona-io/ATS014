@@ -41,6 +41,14 @@ gateways:
   - mesh          # implicit when the field is absent
 ```
 
+```mermaid
+flowchart TD
+    V["a VirtualService"] --> Q{"what does its gateways field say"}
+    Q -->|"absent, so implicitly mesh"| M["applies to every sidecar<br/>north-south traffic is unaffected: 404"]
+    Q -->|"booking-gateway"| G["applies to that gateway only<br/>in-mesh callers are unaffected"]
+    Q -->|"both listed"| B["applies to both"]
+```
+
 `mesh` is a reserved gateway name meaning **all sidecars**. So the rule is:
 
 > Omit `gateways:` and the routes apply to sidecars only. Name a gateway and they apply to that gateway only.
@@ -167,6 +175,17 @@ This is the same short-name-resolution trap as `hosts` in section 010, in a diff
 > The `Gateway` is in `ingress-demo`, so `istio-system/booking-gateway` names an object that does not exist. Nothing reports the mistake — the routes simply attach to nothing. Getting a feel for this failure now saves a long debugging session later.
 
 > *Omitting `gateways:` means `mesh` — the routes apply to sidecars and the gateway keeps returning 404.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Omitting `gateways:` for north-south routing.** The implicit value is `mesh`, so the routes apply to sidecars and the gateway serves a 404. This is the most common failure in the section, and nothing reports it.
+>
+> **Naming a gateway and expecting in-mesh callers to keep working.** Naming one *replaces* the implicit `mesh`. List `mesh` explicitly if you want both.
+>
+> **A `hosts` entry in the `VirtualService` that the `Gateway` does not serve.** Both objects have a host list and the effective set is the intersection.
+>
+> **Referencing a `Gateway` in another namespace by bare name.** A short name resolves in the `VirtualService`'s own namespace; use `<namespace>/<name>`.
 
 ## Reference
 

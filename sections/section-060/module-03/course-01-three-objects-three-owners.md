@@ -33,14 +33,16 @@ There are sibling route kinds — `GRPCRoute`, `TCPRoute`, `TLSRoute` — for no
 
 The split maps onto organisational boundaries, and the API says so explicitly:
 
-```text
-  infrastructure provider  ──►  GatewayClass   "this is how gateways get implemented here"
-                                      │
-  platform / cluster team  ──►  Gateway        "here is a listener, on port 443, for *.example.com,
-                                      │         and these namespaces may attach routes to it"
-                                      │
-  application team         ──►  HTTPRoute      "my /checkout path goes to my service"
+```mermaid
+flowchart TD
+    I["infrastructure provider"] -->|"owns"| GC["GatewayClass<br/>this is how gateways are implemented here"]
+    P["platform or cluster team"] -->|"owns"| G["Gateway<br/>a listener on 443 for *.example.com,<br/>and who may attach routes to it"]
+    A["application team"] -->|"owns"| R["HTTPRoute<br/>my /checkout path goes to my service"]
+    GC --> G
+    G --> R
 ```
+
+Three objects, three different owners, one chain. `Ingress` mixed all three concerns into a single object, which is why an application team writing one was also making infrastructure decisions.
 
 With `Ingress`, one object mixed all three concerns, so an application team writing an `Ingress` was also making infrastructure decisions — and a platform team had no object to own. With `Gateway` and `HTTPRoute` as separate resources, RBAC can grant a team `HTTPRoute` in its own namespace and nothing else.
 
@@ -93,6 +95,17 @@ Before going further, fix the distinction, because examples on the internet mix 
 **Check the `apiVersion` before reading any example.** If it says `networking.istio.io`, it is module 1's object and none of this module applies to it.
 
 > *Gateway API is three CRDs with three owners — and its `Gateway` shares only a name with Istio's.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Reading "no matches for kind Gateway" as an Istio problem.** It is Kubernetes saying the CRDs are not installed. They ship separately from Istio.
+>
+> **Confusing `gateway.networking.k8s.io/Gateway` with `networking.istio.io/Gateway`.** Same kind name, different API group, different object entirely. Always check the `apiVersion`.
+>
+> **Assuming any installed CRD version will do.** The Gateway API version has to be one the installed Istio supports.
+>
+> **Expecting `GatewayClass` to be namespaced.** It is cluster-scoped, like `IngressClass`.
 
 ## Reference
 

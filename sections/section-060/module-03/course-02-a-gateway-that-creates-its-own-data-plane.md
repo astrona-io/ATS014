@@ -6,17 +6,21 @@ The single biggest behavioural difference from module 1, and the permission mode
 
 ## Creating versus configuring
 
-```text
-  networking.istio.io/Gateway            gateway.networking.k8s.io/Gateway
-  ───────────────────────────            ─────────────────────────────────
-  a pod already exists                   you create the object
-        ▲                                        │
-        │ selector: istio: ingressgateway        │ gatewayClassName: istio
-        │                                        ▼
-  the object CONFIGURES it               Istio CREATES a Deployment + Service
-                                         named <gateway-name>-istio
-                                         IN THE GATEWAY'S OWN NAMESPACE
+```mermaid
+flowchart TD
+    subgraph L["networking.istio.io/Gateway"]
+      A1["a gateway pod already exists"]
+      A2["the object configures it<br/>via selector: istio=ingressgateway"]
+      A2 --> A1
+    end
+    subgraph R["gateway.networking.k8s.io/Gateway"]
+      B1["you create the object<br/>gatewayClassName: istio"]
+      B2["Istio creates a Deployment and Service<br/>named gateway-name-istio,<br/>in the Gateway's OWN namespace"]
+      B1 --> B2
+    end
 ```
+
+The arrows point in opposite directions. In the Istio API the pod comes first and the object points at it; in the Gateway API the object comes first and the pod is a consequence of it.
 
 So there is **no `selector` field**, and looking for your proxy in `istio-system` will not find it. The proxy's lifecycle is tied to the object: delete the `Gateway` and the Deployment goes with it.
 
@@ -140,6 +144,17 @@ allowedRoutes:
 Label a namespace `gateway-access=true` and its teams can attach; unlabel it and they cannot. That is a platform-team control expressed in Kubernetes-native terms rather than in RBAC on a shared object.
 
 > *A Gateway API `Gateway` creates its own proxy in its own namespace, and `allowedRoutes` decides who may attach — closed by default.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Looking for the proxy in `istio-system`.** A Gateway API gateway creates its Deployment in the `Gateway`'s own namespace, named `<gateway-name>-istio`.
+>
+> **Looking for a `selector` field.** There is none. `gatewayClassName` is what ties the object to an implementation.
+>
+> **Forgetting the proxy's lifecycle is tied to the object.** Delete the `Gateway` and the Deployment and Service go with it.
+>
+> **Assuming routes may attach from anywhere.** `allowedRoutes` decides, and the default is the Gateway's own namespace only.
 
 ## Reference
 

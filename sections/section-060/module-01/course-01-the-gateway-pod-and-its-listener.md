@@ -83,14 +83,20 @@ Declaring `TCP` for HTTP traffic gives you a working byte pipe and no routing, w
 
 ## The namespace split that catches everyone
 
-```text
-   ingress-demo                          istio-system
-   ────────────                          ────────────
-   Gateway  booking-gateway   ───────►   Pod  istio-ingressgateway
-     (the configuration)     selector      (the process it configures)
-   VirtualService booking
-   Deployment/Service booking-service
+```mermaid
+flowchart LR
+    subgraph A["namespace ingress-demo"]
+      G["Gateway booking-gateway<br/>the configuration"]
+      V["VirtualService booking"]
+      S["Deployment and Service booking-service"]
+    end
+    subgraph B["namespace istio-system"]
+      P["Pod istio-ingressgateway<br/>the process being configured"]
+    end
+    G -->|"selector: istio=ingressgateway"| P
 ```
+
+The object and the pod it configures are in different namespaces, and that is the normal arrangement. The selector is the only thing joining them.
 
 The `Gateway` **object** lives in your application namespace. The gateway **pod** it configures lives in `istio-system`. That is normal, correct, and the usual arrangement — the object is configuration, and the selector connects it to a pod somewhere else entirely.
 
@@ -136,6 +142,21 @@ A listener with no routes attached serves nothing. This is worth seeing delibera
 > ```
 >
 > Still 404 — but the listener now exists. The gateway is listening on 8080 internally (mapped from port 80 on the Service) and pointing at a route table called `http.8080`, which is currently empty. That is the state a `Gateway` alone produces: somewhere for requests to arrive, and nothing to do with them.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting a `Gateway` to route anything.** It opens a listener. There is no `destination` in the object, and applying one alone still 404s.
+>
+> **A `selector` that matches no pod.** Not an error. The object exists, configures nothing, and everything 404s. `istioctl analyze` reports it.
+>
+> **Declaring the wrong `protocol`.** `TCP` for HTTP traffic gives you a working byte pipe with no host or path routing, which is confusing to debug backwards.
+>
+> **Forgetting that `hosts` filters the `Host` header.** A request whose `Host` is not in the list is not served by that listener.
+>
+> **Looking for the gateway pod in your own namespace.** The object is yours; the pod is usually the shared one in `istio-system`.
+>
+> **Confusing the Service port with the listener port.** The Service publishes 80; the proxy listens on 8080 internally. Both appear in output.
 
 > *`Gateway` opens a listener on pods its `selector` matches; it contains no destination and routes nothing by itself.*
 
