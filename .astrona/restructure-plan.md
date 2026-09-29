@@ -35,8 +35,13 @@ structural audit found content gaps and an ordering problem alongside it.
 ### Ordering
 
 `010-02` (`Sidecar` scoping) is taught before the learner has met the registry.
-**Open question, resolved last:** section-000 may remove the reason to move it. Do the
-move only if it is still justified after foundations exists, and as its own commit.
+**Resolved 2026-09-29: do not move it.** Section 000 part 2 now teaches the registry, the
+xDS push and "every proxy is configured for the whole mesh", and ends by pointing at this
+module by name. The prerequisite is satisfied immediately before section 010 begins, so the
+ordering complaint no longer holds. Moving it would break the curriculum-item mapping the
+root README advertises, renumber modules across the manifest and both READMEs, and change
+lab paths - all for no remaining pedagogical gain. Revisit only if section 000 is ever
+dropped or made optional.
 
 ### Shape
 
@@ -48,14 +53,14 @@ subject needs it; leave thin parts thin when the subject is genuinely small.
 - [x] **P0** — plan written (this file)
 - [x] **P1** — section-000 foundations module: 3 parts + playground (no graded lab: nothing to configure yet)
 - [x] **P2** — section-010 depth pass, incl. new 010-01 parts 4 and 5, module retitle
-- [ ] **P3** — section-020 depth pass
-- [ ] **P4** — section-030 depth pass
-- [ ] **P5** — section-040 depth pass (4 modules)
-- [ ] **P6** — section-050 depth pass
-- [ ] **P7** — section-060 depth pass (3 modules)
-- [ ] **P8** — section-070 depth pass (3 modules)
-- [ ] **P9** — section-080 depth pass (2 modules)
-- [ ] **P10** — manifest + README + section README resync; re-decide the `010-02` move
+- [x] **P3** — section-020 depth pass
+- [x] **P4** — section-030 depth pass
+- [x] **P5** — section-040 depth pass (4 modules)
+- [x] **P6** — section-050 depth pass
+- [x] **P7** — section-060 depth pass (3 modules)
+- [x] **P8** — section-070 depth pass (3 modules)
+- [x] **P9** — section-080 depth pass (2 modules)
+- [x] **P10** — manifest + README + section README resync; `010-02` move re-decided: NOT done, see below
 
 One commit per phase. Each phase re-syncs `astrona.yaml` and the section README if it
 added or renamed a file.
@@ -85,3 +90,6 @@ added or renamed a file.
   retitled "Route Requests Within The Mesh". 010-02 expanded with a fan-out diagram,
   a memory checkpoint, a precedence diagram, a selective-Sidecar checkpoint and two
   pitfalls blocks. Manifest at 165 entries.
+- 2026-09-29 — P3 to P9 complete, one commit per section. Final state: 59 parts, 19 landing
+  pages, 48 Mermaid diagrams, 133 checkpoints, a pitfalls block on every part, 165 manifest
+  entries, zero broken relative links, zero stacked checkpoints.
