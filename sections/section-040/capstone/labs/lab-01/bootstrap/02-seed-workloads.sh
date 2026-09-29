@@ -126,6 +126,12 @@ spec:
     metadata:
       labels:
         app: fortio
+      annotations:
+        # Istio's default stats matcher prunes per-cluster Envoy counters, so
+        # upstream_rq_pending_overflow does not exist on a stock sidecar and the
+        # grader's circuit-breaker check has nothing to read. The module 2 lab
+        # carries the same annotation for the same reason.
+        sidecar.istio.io/statsInclusionPrefixes: "cluster.outbound"
     spec:
       containers:
         - name: fortio

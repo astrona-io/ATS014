@@ -134,3 +134,21 @@ modules well. Three labs added for material that was taught and ungraded:
   grader is now negative-tested against an unsolved cluster.
 - A pod being deleted still reports `phase=Running`, so a grader counting running pods
   fails a correct answer mid-rollout. Graders now skip pods with a `deletionTimestamp`.
+
+### The section-040 capstone was grading nothing
+
+Fixing the `declare -A` bug un-masked this. Under bash 3.2 the grader hit an unbound
+variable at line 32 and exited immediately, and the proctor reported **PASS** anyway —
+so the capstone had never checked a single thing.
+
+With the grader running, its own reference solution then failed check 5:
+`upstream_rq_pending_overflow` never increased. The breaker was working perfectly
+(49x 200, 31x 503 with the `UO` flag in telemetry); the counter simply does not exist.
+Istio's default stats matcher prunes per-cluster Envoy counters, which the module 2
+reader already documents — and the module 2 lab carries
+`sidecar.istio.io/statsInclusionPrefixes: "cluster.outbound"` on its `fortio` pod for
+exactly this reason. The capstone's `fortio` did not. Adding it makes the capstone
+grade all five checks and pass legitimately.
+
+Lesson worth keeping: a grader that cannot fail looks identical to a grader that
+passes. Negative-test every one against an unsolved cluster.
