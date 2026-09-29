@@ -36,11 +36,14 @@ Envoy's name for this feature is **circuit breakers**, and the configured thresh
 
 The limits are enforced in each calling workload's sidecar, over that sidecar's own counters. There is no shared state and no coordination.
 
-```text
-   caller A sidecar   maxConnections: 1  ──┐
-   caller B sidecar   maxConnections: 1  ──┼──►  backend sees up to 3 connections
-   caller C sidecar   maxConnections: 1  ──┘
+```mermaid
+flowchart LR
+    A["caller A sidecar<br/>maxConnections: 1"] --> B["the backend<br/>sees up to 3 connections"]
+    C["caller B sidecar<br/>maxConnections: 1"] --> B
+    D["caller C sidecar<br/>maxConnections: 1"] --> B
 ```
+
+Each caller honours the limit perfectly and the backend still sees three times it. The policy is per client proxy, and there is no shared counter anywhere.
 
 Three consequences worth being able to state:
 
@@ -56,14 +59,16 @@ This is the most valuable idea in the module, because it is a production trap ra
 
 Work through the sequence:
 
-```text
-  1. backend slows down
-  2. caller's pending queue fills
-  3. pool rejects the overflow  →  503 with UO
-  4. retryOn: 5xx sees a 5xx    →  RE-SENDS the request
-  5. the retry occupies the same pool
-  6. more overflow  →  more 503s  →  more retries …
+```mermaid
+flowchart TD
+    A["the backend slows down"] --> B["the caller's pending queue fills"]
+    B --> C["the pool rejects the overflow: 503 with UO"]
+    C --> D["retryOn 5xx sees a 5xx and re-sends"]
+    D --> E["the retry occupies the same full pool"]
+    E --> C
 ```
+
+The arrow from the last box back to the third is the whole problem: the rejection is itself retriable, so the mechanism meant to absorb a transient fault feeds itself.
 
 The mechanism intended to absorb transient failures amplifies a sustained one. Each caller now generates `attempts + 1` times its normal concurrency at exactly the moment the pool is already full, and the pool rejections are themselves retriable under `5xx`.
 

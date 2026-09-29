@@ -10,18 +10,15 @@ One fact remains, and it is the most examinable thing in section 040. Then where
 
 Follow the consequence:
 
-```text
-  an endpoint that is failing every request
-            │
-            ├─ Kubernetes readiness probe passes  →  still a Service endpoint
-            ├─ no outlierDetection configured     →  never marked unhealthy
-            │
-            ▼
-  as far as locality failover is concerned: PERFECTLY HEALTHY
-            │
-            ▼
-  traffic keeps going to the broken locality — no failover, ever
+```mermaid
+flowchart TD
+    E["an endpoint failing every request"] --> P["its readiness probe still passes<br/>so it stays a Service endpoint"]
+    P --> O["no outlierDetection is configured<br/>so nothing ever marks it unhealthy"]
+    O --> H["locality failover sees a perfectly healthy endpoint"]
+    H --> N["traffic keeps going to the broken locality<br/>failover never triggers"]
 ```
+
+Locality failover has no failure detector of its own. It acts on health, and something else has to supply it.
 
 So a working failover configuration always has **two** parts in the same `trafficPolicy`:
 

@@ -86,6 +86,21 @@ Three properties, each with a consequence:
 
 Three clarifications that prevent a category of misunderstanding.
 
+```mermaid
+sequenceDiagram
+    participant C as curl in the tester pod
+    participant P as the tester's proxy
+    participant U as httpbin
+    C->>P: GET /delay/10
+    P->>U: GET /delay/10
+    Note over P: the 5s deadline expires
+    P-->>C: 504, synthesised by the proxy
+    Note over U: still sleeping, still working, still about to reply
+    U-->>P: 200 after 10s, written to an abandoned connection
+```
+
+The deadline lives entirely on the left of that diagram. Nothing about it reaches the upstream.
+
 **It does not stop the upstream.** The `httpbin` pod is still sleeping out its ten seconds, and will finish the work and try to write a response to a connection the proxy has already abandoned. A timeout bounds *your waiting*, not the server's working. On a real service that means a timeout does not reduce load on an overloaded dependency — it just stops you queueing behind it.
 
 **It is not a connection timeout.** `timeout` is the deadline for the whole HTTP exchange. Envoy has separate connection-level settings, and section 040's `connectionPool` has a `tcp.connectTimeout` for establishing the TCP connection. A route timeout of `5s` does not mean "give up if the connection takes more than 5s to establish" — it means the whole thing, connect included, must finish inside five seconds.
@@ -124,6 +139,19 @@ Response flags recur throughout this section, so it is worth collecting them as 
 | `UO` | upstream overflow — a circuit breaker rejected it | module 2 |
 | `UH` | no healthy upstream — every endpoint was ejected or absent | module 3 |
 | `UF` | upstream connection failure | general |
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting a timeout to reduce load on a struggling dependency.** It stops you waiting. The upstream finishes the work anyway.
+>
+> **Reading a 504 as coming from the server.** A timeout 504 is synthesised by the caller's proxy. The `UT` flag is what distinguishes it.
+>
+> **Confusing it with a connection timeout.** `timeout` bounds the whole exchange, connect included. `connectionPool.tcp.connectTimeout` is the separate connection-level setting.
+>
+> **Setting a timeout without checking the retry budget.** Once retries exist the deadline covers every attempt together. That is Part 3, and getting it wrong silently truncates your retries.
+>
+> **Assuming there is a default.** There is no route timeout unless you write one.
 
 > *A route timeout is measured by the caller's own proxy and produces a synthesised 504 — the upstream keeps working regardless.*
 

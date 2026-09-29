@@ -113,6 +113,19 @@ The general shape: **the traffic needed to trigger an ejection grows with the nu
 >
 > The 503s cluster near the beginning and then stop. That transition is the ejection: once the bad endpoint accumulated three consecutive failures and the next analysis interval came round, the client proxy removed it from its own pool. Sixty requests is deliberate — with load balancing diluting the failures, fewer often will not get there.
 
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting it to catch a bad endpoint before it breaks anything.** Passive means it learns from real failed requests. There is no pre-emptive detection.
+>
+> **Assuming an ejection is mesh-wide.** Each client proxy decides independently, from its own traffic. One caller can be avoiding an endpoint that another is still using happily.
+>
+> **Treating it as a replacement for readiness probes.** They answer different questions. A probe removes a pod from the Service for everyone; an ejection removes an endpoint from one proxy's load balancing set.
+>
+> **Expecting `1/1 Running` to mean a pod is serving correctly.** That is exactly the case this module exists for.
+>
+> **Configuring it on a Service with one endpoint.** `maxEjectionPercent` and simple arithmetic mean there is usually nothing it can safely eject.
+
 > *Passive means the evidence is other people's failed requests — nothing is detected until something has already broken.*
 
 ## Reference

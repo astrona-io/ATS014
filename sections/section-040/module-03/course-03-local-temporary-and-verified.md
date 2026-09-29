@@ -8,11 +8,14 @@ Two properties remain, and both surprise people because they follow from *where*
 
 Outlier detection runs inside each client's sidecar, over the responses **that sidecar** received. There is no shared state, no gossip, and no central decision.
 
-```text
-   caller A sidecar   ──► has seen B fail 3 times  ──► B ejected from A's pool
-   caller C sidecar   ──► has seen B fail once     ──► B still in C's pool
-   caller D (no sidecar) ─────────────────────────► talks to B normally
+```mermaid
+flowchart LR
+    A["caller A sidecar<br/>has seen B fail 3 times"] -->|"B ejected from A's pool"| X["endpoint B"]
+    C["caller C sidecar<br/>has seen B fail once"] -->|"B still in C's pool"| X
+    D["caller D, no sidecar<br/>holds no verdict at all"] -->|"talks to B normally"| X
 ```
+
+Three callers, three different opinions about the same endpoint, all of them correct. An ejection is a statement about one proxy's own experience, never about the pod.
 
 So at any moment different callers can hold different opinions about the same endpoint, and all of them are correct — each is a statement about that caller's own experience.
 
