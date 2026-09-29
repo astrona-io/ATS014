@@ -16,11 +16,24 @@ fault:
 
 The proxy returns the status **immediately**, without contacting the upstream at all.
 
-```text
-   delay:                          abort:
-   caller ──► [hold 2s] ──► upstream    caller ──► [return 500] ✗ upstream never contacted
-          ◄──────────────── response            ◄──────────────
+```mermaid
+sequenceDiagram
+    participant C as the caller
+    participant P as the caller's proxy
+    participant U as the upstream
+    Note over C,U: fault.delay
+    C->>P: request
+    Note over P: held for fixedDelay
+    P->>U: forwarded, late
+    U-->>P: a normal response
+    P-->>C: 200, slow
+    Note over C,U: fault.abort
+    C->>P: request
+    P-->>C: 500, produced here
+    Note over U: never contacted, no log line, no metric
 ```
+
+The lower half has no arrow reaching the upstream at all. That missing arrow is why looking for an injected error at the destination finds nothing.
 
 The consequence to internalise: **the upstream has no record of an aborted request.** Its access log is empty for it, its metrics are unmoved, its application never ran. If you go looking for the injected error on the destination you will not find it, and concluding "the fault is not working" is the natural mistake.
 
@@ -105,6 +118,19 @@ fault:
 Read that as: every matching request is held for a second, and 30% of them are then aborted. The delay applies first, so an aborted request is *also* slow — which models a dependency that times out rather than one that fails fast, and is a more realistic shape for most real outages.
 
 The two percentages are independent draws. They do not need to sum to anything.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Hunting for the injected error at the destination.** It never arrived there. The caller's proxy produced the response.
+>
+> **Reading a 5xx without checking for `FI`.** The flag is what separates an injected failure from a real one.
+>
+> **Expecting `abort` to be `delay` plus an error.** An abort is immediate. Combine both on one rule if you want a slow failure.
+>
+> **Expecting the two `percentage` values to be related.** They are independent draws and need not sum to anything.
+>
+> **Leaving `percentage` out while testing.** The default is 100%, which means every matching request — often far more blast radius than intended.
 
 > *`abort` is produced by the caller's proxy and carries the `FI` response flag — the upstream never hears about it.*
 

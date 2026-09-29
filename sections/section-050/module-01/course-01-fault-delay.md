@@ -48,14 +48,15 @@ This is the detail worth being precise about, because getting it wrong produces 
 
 The fault is **enforced by the caller's proxy**, but the object is keyed by the **callee's hostname**. So a `VirtualService` for host `notification-service` injects faults into calls *to* `notification-service`, and the code that runs is inside `booking-service`'s sidecar:
 
-```text
-   curl ──► booking-service ────────────► notification-service
-             │                  ▲
-             │                  │
-             └─ its sidecar enforces the fault here,
-                using the VirtualService whose host is
-                notification-service
+```mermaid
+flowchart LR
+    C["curl"] --> B["booking-service"]
+    B --> P["booking-service's own sidecar<br/>enforces the fault here"]
+    P --> N["notification-service"]
+    V["the VirtualService whose host is<br/>notification-service"] -.->|"configures"| P
 ```
+
+The object names the *callee* and the code runs in the *caller*. Those are two different pods, and mixing them up gives you a working experiment that tests the wrong thing.
 
 Put the fault on `booking-service` instead and you delay the inbound request from curl — a different experiment, testing curl's patience rather than `booking-service`'s timeout handling.
 
@@ -103,6 +104,19 @@ Two clarifications that prevent misreading the mechanism.
 **The upstream never sees the delay.** The proxy holds the request before forwarding it, so `notification-service` receives it two seconds late and responds normally. Its own latency metrics are untouched — which is what makes this a clean test of the *caller*.
 
 **The delay consumes caller resources.** For those two seconds, `booking-service` has a request in flight: a connection, a worker, a slot in any pool. That is not an artefact of the test; it is exactly what a real slow dependency does, and it is why a delay of a few seconds against a tight connection pool (section 040, module 2) will produce overflow rejections as a *side effect*. Worth knowing so you do not misread those 503s.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Putting the fault on the caller's own host.** Name the host you want to pretend is struggling, not the workload you want to observe.
+>
+> **Looking for the delay at the upstream.** The proxy holds the request before forwarding. The upstream sees a normal request, late, and its own latency metrics are untouched.
+>
+> **Forgetting that a held request occupies the caller.** Two seconds of delay is two seconds of a connection and a pool slot. Against a tight connection pool this produces overflow 503s as a side effect.
+>
+> **Assuming an omitted `percentage` means nothing happens.** The default is 100%.
+>
+> **Reading a delayed success as a failure.** `fault.delay` produces a correct response, late. That is the point: it separates slow from broken.
 
 > *`fault.delay` produces a slow success, enforced in the caller's proxy, on the `VirtualService` of the host you want to pretend is struggling.*
 
