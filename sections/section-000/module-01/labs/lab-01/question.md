@@ -25,3 +25,14 @@ Two things worth knowing before you start:
 * On Kubernetes 1.28 and later the proxy is a **native sidecar**: it appears under a pod's `initContainers` with `restartPolicy: Always`, not under `containers`. It still counts toward the `READY` column, so an injected pod with one application container reads `2/2`.
 
 The grader inspects the pods themselves and asks the control plane what it can see, so the workloads have to genuinely be meshed — not merely relabelled.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [Sidecar injection](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/) — the namespace label, the pod annotation, and when injection happens
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

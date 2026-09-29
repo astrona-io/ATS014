@@ -28,8 +28,10 @@ Both versions currently answer callers. The finished state must show only `["EMA
 
 ## Step 2: Define the Subsets
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-notification-service.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -45,6 +47,7 @@ spec:
       labels:
         version: v2
 EOF
+kubectl apply -f destinationrule-notification-service.yaml
 ```
 
 The `v2` subset matters more than usual here. A `mirror` pointing at a subset that does not exist, or at one whose labels select no pod, **silently does nothing** — and the caller cannot tell. Confirm it selects something:
@@ -64,7 +67,7 @@ ENDPOINT            STATUS    OUTLIER CHECK   CLUSTER
 ## Step 3: Route To v1, Mirror To v2
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-notification.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -85,6 +88,7 @@ spec:
       mirrorPercentage:
         value: 100.0
 EOF
+kubectl apply -f virtualservice-notification.yaml
 istioctl analyze -n mirror-demo
 ```
 
@@ -186,3 +190,19 @@ Three states worth remembering:
 - **Grepping for a `-shadow` authority.** Older Istio appended it; 1.30 does not, and the grep silently returns nothing.
 - **Expecting the mirrored response to matter.** It is discarded, along with its latency. Mirroring cannot compare outputs.
 - **Omitting `mirrorPercentage` and assuming nothing is mirrored.** The default is 100%; the task asks you to state it anyway.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPRouteDestination API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRouteDestination) — `destination` plus `weight`, and the rule that weights sum to 100
+- [HTTPMirrorPolicy API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMirrorPolicy) — `mirror`, `mirrors` and `mirrorPercentage`
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

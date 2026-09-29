@@ -4,10 +4,10 @@ Solve this question on: `terminal`
 
 Two namespaces, owned by two different teams:
 
-* **`gwapi-demo`** — the platform team's namespace. Holds `booking-service` on port 80. The `Gateway` will live here.
+* **`gwapi-demo`** — the platform team's namespace. Holds `booking-service` on port 80. The [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/) will live here.
 * **`gwapi-team`** — an application team's namespace. Holds `catalog-service` on port 80.
 
-Istio 1.30.5 is installed, the **Gateway API CRDs are installed**, and Istio has registered a `GatewayClass` named `istio`. There is **no `Gateway` and no `HTTPRoute`**, and therefore no gateway proxy anywhere.
+Istio 1.30.5 is installed, the **Gateway API CRDs are installed**, and Istio has registered a [`GatewayClass`](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) named `istio`. There is **no `Gateway` and no [`HTTPRoute`](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/)**, and therefore no gateway proxy anywhere.
 
 Build a shared gateway that both teams can use.
 
@@ -31,3 +31,16 @@ Build a shared gateway that both teams can use.
 10. `GET /book` with `Host: booking.ica.local` returns **200** through the new gateway.
 11. `GET /items` with `Host: catalog.ica.local` returns **200** through the same gateway.
 12. The `gwapi-team` namespace carries the `gateway-access=true` label.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
+- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Sidecar injection](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/) — the namespace label, the pod annotation, and when injection happens

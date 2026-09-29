@@ -29,7 +29,7 @@ Two constraints and one starting fact: the endpoint refuses plaintext, it report
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
-kubectl apply -f - <<EOF
+cat > serviceentry-partner.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -52,6 +52,7 @@ spec:
   endpoints:
     - address: $PARTNER
 EOF
+kubectl apply -f serviceentry-partner.yaml
 ```
 
 Port 8080 is where the sidecar's plaintext traffic arrives; 8443 is where stage 2 will send it. Both are needed.
@@ -60,8 +61,10 @@ Port 8080 is where the sidecar's plaintext traffic arrives; 8443 is where stage 
 
 ## Step 3: The Gateway Listener And Its Subset
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > egress-gateway-manifests.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -88,6 +91,7 @@ spec:
   subsets:
     - name: partner
 EOF
+kubectl apply -f egress-gateway-manifests.yaml
 ```
 
 The listener is on **8080** — the port the gateway *receives* on. It will *send* on 8443. Those are two directions, and the apparent inconsistency is the thing to get comfortable with.
@@ -97,7 +101,7 @@ The listener is on **8080** — the port the gateway *receives* on. It will *sen
 ## Step 4: The Two-Stage Route
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-partner-through-egress.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -128,6 +132,7 @@ spec:
             port:
               number: 8443
 EOF
+kubectl apply -f virtualservice-partner-through-egress.yaml
 ```
 
 Stage 2's `port: 8443` is the line that matters. Route it to 8080 and the gateway forwards plaintext to a TLS-only endpoint — a failure that looks like a TLS problem and is a routing one.
@@ -151,7 +156,7 @@ The traffic reaches port 8443 — as plaintext. Each object has its own failure,
 ## Step 5: Originate TLS — On the External Host
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-originate-tls-for-partner.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -174,6 +179,7 @@ spec:
           sni: partner.example.com
           insecureSkipVerify: true
 EOF
+kubectl apply -f destinationrule-originate-tls-for-partner.yaml
 sleep 4
 PARTNER=$(cat /tmp/partner-ip)
 kubectl -n egwtls-demo exec deploy/tester -- curl -s --max-time 20 "http://partner.example.com:8080/"
@@ -227,11 +233,31 @@ One and zero — the most compact proof that policy follows the caller. In secti
 
 ## Common Mistakes
 
-- **The origination `DestinationRule` on the gateway Service.** Nothing originates — that is the sidecar's leg, which is plaintext by design.
+- **The origination [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) on the gateway Service.** Nothing originates — that is the sidecar's leg, which is plaintext by design.
 - **Stage 2 routing to port 8080.** Plaintext to a TLS-only endpoint.
-- **Declaring only port 8443 in the `ServiceEntry`.** Stage 2 has nowhere to start from.
+- **Declaring only port 8443 in the [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/).** Stage 2 has nowhere to start from.
 - **`tls` at the top of `trafficPolicy`.** It would apply to 8080 as well.
 - **Omitting `sni` or `insecureSkipVerify`.** The certificate names `partner.example.com` and is self-signed; both are needed here.
 - **Confusing the two `DestinationRule` objects.** One names the gateway Service and holds an empty subset; the other names the external host and holds the TLS settings.
 - **`mesh` missing from the top-level `gateways`.** Stage 1 never reaches sidecars and the call goes direct — which, on this endpoint, fails outright.
 - **Counting gateway log lines without a baseline.** The log accumulates.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
+- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [TrafficPolicy portLevelSettings](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy-PortTrafficPolicy) — attaching policy to one port instead of the whole host
+- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `mode`, `credentialName` and `sni` for origination
+- [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — how `exportTo` and `Sidecar` together decide what a proxy sees
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

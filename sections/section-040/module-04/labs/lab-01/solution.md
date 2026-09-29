@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-One `DestinationRule` with two blocks. The task looks like it is about locality, and the half that actually makes it work is the other one.
+One [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) with two blocks. The task looks like it is about locality, and the half that actually makes it work is the other one.
 
 ---
 
@@ -54,8 +54,10 @@ And `maxEjectionPercent` needs deciding, for module 3's reason: 10% of two endpo
 
 ## Step 3: Apply Both Halves
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-httpbin.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -73,6 +75,7 @@ spec:
       localityLbSetting:
         enabled: true
 EOF
+kubectl apply -f destinationrule-httpbin.yaml
 istioctl proxy-config cluster deploy/tester -n locality-demo \
   --fqdn httpbin.locality-demo.svc.cluster.local -o json | grep -A6 outlierDetection
 ```
@@ -192,3 +195,19 @@ kubectl -n locality-demo exec deploy/tester -- sh -c \
 - **Not checking localities first.** An endpoint with an empty locality makes every setting here a no-op, with no error.
 - **Testing with too few requests.** Passive detection needs the failures to arrive first.
 - **Checking `ejections_active` at the wrong moment.** It drops to 0 when the ejection expires, before the endpoint fails again. `ejections_total` only climbs.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [OutlierDetection API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#OutlierDetection) — `consecutive5xxErrors`, `interval`, `baseEjectionTime`, `maxEjectionPercent`
+- [ConsistentHashLB API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings-ConsistentHashLB) — the four hash sources, `ttl`, and `minimumRingSize`
+- [LoadBalancerSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings) — the `simple` enum and the `consistentHash` alternative
+- [LocalityLoadBalancerSetting API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LocalityLoadBalancerSetting) — `distribute`, `failover` and the health dependency
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

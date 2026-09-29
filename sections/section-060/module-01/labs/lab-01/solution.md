@@ -30,8 +30,10 @@ The pod is `1/1` — a standalone proxy, no application container. It is healthy
 
 ## Step 2: Open the Listener
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > gateway-public-gateway.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -49,6 +51,7 @@ spec:
         - booking.ica.local
         - catalog.ica.local
 EOF
+kubectl apply -f gateway-public-gateway.yaml
 ```
 
 ```text
@@ -61,7 +64,7 @@ Three things the grader checks here:
 - **`protocol: HTTP`** — this is what gives you host and path routing. `TCP` would give a byte pipe that silently ignores every rule you write.
 - **Both hosts listed, and no `*`.** The task requires the listener to reject unknown hosts, so a wildcard fails check 7.
 
-Note the `Gateway` lives in `ingress-demo` while the pod it configures lives in `istio-system`. That split is normal.
+Note the [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/) lives in `ingress-demo` while the pod it configures lives in `istio-system`. That split is normal.
 
 Confirm the listener exists — and that it still serves nothing:
 
@@ -80,7 +83,7 @@ Expected. A listener with no routes attached serves nothing.
 ## Step 3: Attach Both Route Sets
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > booking-manifests.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -121,6 +124,7 @@ spec:
             port:
               number: 80
 EOF
+kubectl apply -f booking-manifests.yaml
 istioctl analyze -n ingress-demo
 ```
 
@@ -130,7 +134,7 @@ virtualservice.networking.istio.io/catalog created
 ✔ No validation issues found when analyzing namespace: ingress-demo.
 ```
 
-**`gateways: [public-gateway]` is the whole exercise.** Omit it and the routes attach to `mesh` — sidecars only — the gateway keeps returning 404, and `istioctl analyze` stays perfectly clean because an unbound `VirtualService` is a valid object.
+**`gateways: [public-gateway]` is the whole exercise.** Omit it and the routes attach to `mesh` — sidecars only — the gateway keeps returning 404, and `istioctl analyze` stays perfectly clean because an unbound [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) is a valid object.
 
 Note also that each `VirtualService` names only its own host. Both attach to the same listener; the listener's host list and the route's host list are what keep them separate.
 
@@ -187,3 +191,19 @@ Both are 404, which is why the route dump in step 4 matters: the status code alo
 - **Forgetting `-H "Host: ..."` when testing.** Without it curl sends `localhost:8080`, which matches no listener host.
 - **Expecting `EXTERNAL-IP` to be assigned.** `<pending>` is correct on `kind`.
 - **Referencing the gateway as `istio-system/public-gateway`.** The `Gateway` object is in `ingress-demo`, so the bare name is right here — a namespace prefix would point at nothing.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

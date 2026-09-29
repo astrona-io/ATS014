@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two halves that interact. Build the routing first and prove it works, then add the scoping — and watch that a `Sidecar` which forgets its own namespace destroys the routing you just finished.
+Two halves that interact. Build the routing first and prove it works, then add the scoping — and watch that a [`Sidecar`](https://istio.io/latest/docs/reference/config/networking/sidecar/) which forgets its own namespace destroys the routing you just finished.
 
 ---
 
@@ -45,8 +45,10 @@ http://coldstore.archive:8000/get -> 200
 
 ## Step 2: Define the Subsets
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-catalog.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -62,6 +64,7 @@ spec:
       labels:
         version: v2
 EOF
+kubectl apply -f destinationrule-catalog.yaml
 istioctl proxy-config cluster deploy/shopper -n storefront | grep catalog
 ```
 
@@ -78,7 +81,7 @@ Three clusters where there was one. Traffic is unchanged — subsets are vocabul
 ## Step 3: Route, Specific Rules First
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-catalog.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -108,6 +111,7 @@ spec:
     - route:
         - destination: { host: catalog, subset: v1 }
 EOF
+kubectl apply -f virtualservice-catalog.yaml
 istioctl analyze -n storefront
 ```
 
@@ -155,7 +159,7 @@ istioctl proxy-config cluster deploy/shopper -n storefront | wc -l
 Now the `Sidecar`. Three entries, no selector:
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > sidecar-default.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: Sidecar
 metadata:
@@ -168,6 +172,7 @@ spec:
         - "istio-system/*"
         - "partners/*"
 EOF
+kubectl apply -f sidecar-default.yaml
 sleep 3
 istioctl proxy-config cluster deploy/shopper -n storefront | wc -l
 istioctl proxy-config cluster deploy/shopper -n storefront | grep -E 'catalog|partners|archive'
@@ -183,7 +188,7 @@ pricing.partners.svc.cluster.local     8000   -    outbound   EDS
 
 `archive` is gone. `catalog` — including both subsets — survived, because `./*` covers the proxy's own namespace.
 
-**This is the interaction the capstone is testing.** Drop `./*` from that list and re-run the routing checks: every request 503s, because the proxy no longer has a `catalog` cluster to route to. The `VirtualService` is still perfect; the proxy was simply never told the destination exists.
+**This is the interaction the capstone is testing.** Drop `./*` from that list and re-run the routing checks: every request 503s, because the proxy no longer has a `catalog` cluster to route to. The [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) is still perfect; the proxy was simply never told the destination exists.
 
 ---
 
@@ -229,3 +234,22 @@ service/coldstore           ClusterIP   8000/TCP
 - **Adding a `workloadSelector`.** The specification says namespace-wide.
 - **Deleting or scaling `coldstore`.** The grader checks it is still running.
 - **Testing immediately after the `Sidecar` apply.** Wait a few seconds for the push before deciding the object is wrong.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Sidecar API](https://istio.io/latest/docs/reference/config/networking/sidecar/) — `workloadSelector`, `egress.hosts` and the `<namespace>/<host>` syntax
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [MeshConfig outboundTrafficPolicy](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-OutboundTrafficPolicy) — `ALLOW_ANY` versus `REGISTRY_ONLY`
+- [Sidecar injection](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/) — the namespace label, the pod annotation, and when injection happens
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

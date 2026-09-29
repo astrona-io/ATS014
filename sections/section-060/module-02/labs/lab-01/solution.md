@@ -29,8 +29,10 @@ Nothing exists yet, and the key pair is waiting.
 
 ## Step 2: Create the IngressClass
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > ingressclass-istio.yaml <<'EOF'
 apiVersion: networking.k8s.io/v1
 kind: IngressClass
 metadata:
@@ -38,6 +40,7 @@ metadata:
 spec:
   controller: istio.io/ingress-controller
 EOF
+kubectl apply -f ingressclass-istio.yaml
 ```
 
 ```text
@@ -53,7 +56,7 @@ The object is cluster-scoped, so there is no namespace on it.
 ## Step 3: Create the Ingress
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > ingress-booking.yaml <<'EOF'
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -84,6 +87,7 @@ spec:
                 port:
                   number: 80
 EOF
+kubectl apply -f ingress-booking.yaml
 kubectl -n k8s-ingress-demo get ingress booking
 ```
 
@@ -161,7 +165,7 @@ done
 
 `/booking` is the interesting one. It starts with the characters `/book` and it does **not** match, because `pathType: Prefix` splits on `/` and compares element by element — the element is `booking`, not `book`.
 
-Write the same rule as an Istio `VirtualService` with `uri: { prefix: /book }` and `/booking` **would** return 200, because Istio's `prefix` is a plain string prefix. Same word, two APIs, different semantics — and it is exactly the kind of thing that breaks quietly during a migration.
+Write the same rule as an Istio [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) with `uri: { prefix: /book }` and `/booking` **would** return 200, because Istio's `prefix` is a plain string prefix. Same word, two APIs, different semantics — and it is exactly the kind of thing that breaks quietly during a migration.
 
 `/status/200/extra` failing confirms `Exact` does not match below itself.
 
@@ -179,7 +183,7 @@ http.8080   booking.ica.local   /book*   booking-service.k8s-ingress-demo
 No resources found in k8s-ingress-demo namespace.
 ```
 
-The route is in the gateway's table and there is no `Gateway` and no `VirtualService` anywhere — `istiod` translated the `Ingress` into the same internal configuration those objects would have produced. Compare that route line with module 1's: nearly identical, arrived at from a different API.
+The route is in the gateway's table and there is no [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/) and no `VirtualService` anywhere — `istiod` translated the `Ingress` into the same internal configuration those objects would have produced. Compare that route line with module 1's: nearly identical, arrived at from a different API.
 
 ---
 
@@ -193,3 +197,18 @@ The route is in the gateway's table and there is no `Gateway` and no `VirtualSer
 - **Creating a `Gateway` or `VirtualService` to "help".** The grader checks neither exists.
 - **Creating the secret with `create secret generic`.** It must be type `kubernetes.io/tls`; use `create secret tls`.
 - **Testing HTTPS without `--resolve`.** The hostname resolves nowhere, and SNI has to match the certificate.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
+- [Istio Kubernetes Ingress task](https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/) — claiming an `Ingress` with `ingressClassName`, and the `pathType` rules
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

@@ -59,8 +59,10 @@ so if retries were going to run, nothing here would truncate them.
 
 ## Step 3: Write All Three Rules
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-notification.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -103,7 +105,8 @@ spec:
         - destination:
             host: notification-service
 EOF
-kubectl apply -f - <<'EOF'
+kubectl apply -f virtualservice-notification.yaml
+cat > virtualservice-booking.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -118,6 +121,7 @@ spec:
         - destination:
             host: booking-service
 EOF
+kubectl apply -f virtualservice-booking.yaml
 istioctl analyze -n orders
 ```
 
@@ -235,3 +239,20 @@ A fault is configuration. Left in place, the `x-chaos` rules are harmless — no
 - **The catch-all placed first.** It matches everything and neither experiment ever runs.
 - **Putting the faults on `booking-service`.** That delays the inbound request and tests the wrong hop.
 - **Reading only the outer status.** The `FI` evidence is in the intermediate service's proxy log, and the `UT` evidence is in the client's.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [HTTPRoute API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) — `timeout` alongside `retries`, `fault` and `mirror` on one rule
+- [HTTPRetry API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRetry) — `attempts`, `perTryTimeout`, `retryOn` and `retriableStatusCodes`
+- [HTTPFaultInjection API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPFaultInjection) — `delay`, `abort` and the percentage fields
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

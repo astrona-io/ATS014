@@ -42,8 +42,10 @@ kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 \
 
 ## Step 2: The DestinationRule, With Policies at Two Levels
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-httpbin.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -66,6 +68,7 @@ spec:
         loadBalancer:
           simple: ROUND_ROBIN
 EOF
+kubectl apply -f destinationrule-httpbin.yaml
 ```
 
 ```text
@@ -83,7 +86,7 @@ Three placement details the grader checks:
 ## Step 3: The VirtualService
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-httpbin.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -106,6 +109,7 @@ spec:
             host: httpbin
             subset: stable
 EOF
+kubectl apply -f virtualservice-httpbin.yaml
 istioctl analyze -n lb-demo
 ```
 
@@ -196,3 +200,21 @@ The policy is unchanged and still `RING_HASH`; these requests simply have nothin
 - **Expecting affinity for requests without the header.** They fall back to spreading, silently.
 - **Putting the default rule above the `x-track` rule.** First match wins; the canary rule never runs.
 - **Reading affinity from the application response.** `go-httpbin` does not report which pod answered — the client proxy's access log does.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [ConsistentHashLB API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings-ConsistentHashLB) — the four hash sources, `ttl`, and `minimumRingSize`
+- [LoadBalancerSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings) — the `simple` enum and the `consistentHash` alternative
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

@@ -147,3 +147,14 @@ astrona submit
 * **Looking only at the namespace.** One of the two faults is on the workload, and a namespace label cannot override a pod-template opt-out.
 * **Looking for `istio-proxy` under `containers`.** On Kubernetes 1.28+ it is in `initContainers` with `restartPolicy: Always`.
 * **Trusting `Running` and `1/1`.** Both faults are perfectly healthy pods. `1/1` where you expected `2/2` is the entire signal.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [Sidecar injection](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/) — the namespace label, the pod annotation, and when injection happens
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

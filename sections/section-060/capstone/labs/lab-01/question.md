@@ -8,9 +8,9 @@ Namespace `edge` holds three identical backends, each on port 80:
 * `legacy-app`
 * `modern-app`
 
-Istio 1.30.5 is installed with the `demo` profile (so `istio-ingressgateway` is running in `istio-system`), and the **Gateway API CRDs are installed** with Istio's `istio` `GatewayClass` registered.
+Istio 1.30.5 is installed with the `demo` profile (so `istio-ingressgateway` is running in `istio-system`), and the **Gateway API CRDs are installed** with Istio's `istio` [`GatewayClass`](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) registered.
 
-There is **no ingress configuration of any kind** — no `Gateway`, no `VirtualService`, no `Ingress`, no `IngressClass`, no `HTTPRoute`.
+There is **no ingress configuration of any kind** — no [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/), no [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/), no `Ingress`, no `IngressClass`, no [`HTTPRoute`](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/).
 
 A self-signed certificate for `legacy.ica.local` is at **`/tmp/legacy.crt`** and **`/tmp/legacy.key`**.
 
@@ -39,3 +39,20 @@ Expose each application through a **different** one of the section's three APIs.
 10. `modern-gw-istio` exists as a Deployment and Service **in `edge`** — the Gateway API object created its own proxy.
 11. Both Gateway API objects report `Accepted=True` / `Programmed=True` and `Accepted=True` / `ResolvedRefs=True`.
 12. `modern.ica.local` is **not** served by `istio-ingressgateway` — the two gateways are separate data planes.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
+- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
+- [Istio Kubernetes Ingress task](https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/) — claiming an `Ingress` with `ingressClassName`, and the `pathType` rules
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

@@ -8,7 +8,7 @@ Solve this question on: `terminal`
 * `outside-mesh` (not injected) — `partner-api`, a bare pod with **no Service** on port **8080**, standing in for an external endpoint. Address in **`/tmp/partner-ip`**.
 * `istio-egressgateway` is running in `istio-system` and currently carries **no traffic**.
 
-There is no `ServiceEntry`, `Gateway`, `DestinationRule` or `VirtualService`. This lab needs no internet access.
+There is no [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/), [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/), [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) or [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/). This lab needs no internet access.
 
 Route calls to the partner endpoint through the egress gateway — and only from the workload that is allowed to.
 
@@ -27,3 +27,21 @@ Route calls to the partner endpoint through the egress gateway — and only from
 8.  `GET http://partner.example.com:8080/get` from **`other-client`** also returns **200**, and produces **no** new gateway log line. It does not match `sourceLabels`, so it takes the direct path — `sourceLabels` narrows the route, not the permission.
 9.  The `Gateway` object's `servers[].hosts` names `partner.example.com`.
 10. The `VirtualService` lists both `mesh` and the gateway in its top-level `gateways`.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
+- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [MeshConfig outboundTrafficPolicy](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-OutboundTrafficPolicy) — `ALLOW_ANY` versus `REGISTRY_ONLY`
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

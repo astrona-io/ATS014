@@ -47,8 +47,10 @@ Nothing authorised any of these. They work because the configuration is there.
 
 Three entries, and each one is there for a reason:
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > sidecar-default.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: Sidecar
 metadata:
@@ -61,6 +63,7 @@ spec:
         - "istio-system/*"
         - "sidecar-other/*"
 EOF
+kubectl apply -f sidecar-default.yaml
 ```
 
 ```text
@@ -148,7 +151,19 @@ The workload is fine. The caller simply has no route to it.
 - **Omitting `istio-system/*`.** Application traffic inside the namespace keeps working, so the mistake survives a casual test. Telemetry and control-plane paths do not.
 - **Adding a `workloadSelector`.** The task asks for namespace-wide. With a selector, `local-backend`'s proxy keeps the full registry and the reduction is not what was asked for.
 - **Using `*/*`.** That is the default written down. Nothing is narrowed.
-- **Creating a second `Sidecar`.** Two namespace-wide resources is undefined behaviour, not a merge. Keep exactly one.
+- **Creating a second [`Sidecar`](https://istio.io/latest/docs/reference/config/networking/sidecar/).** Two namespace-wide resources is undefined behaviour, not a merge. Keep exactly one.
 - **Deleting `sidecar-third` or scaling it to zero.** The grader checks it is still running. The traffic must be stopped by scoping.
 - **Patching `hosts` expecting an append.** A merge patch replaces the list — restate every host you want to keep.
 - **Testing immediately after applying.** The push takes a moment. If the cluster list has not moved, wait a few seconds before assuming the object is wrong.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [Sidecar API](https://istio.io/latest/docs/reference/config/networking/sidecar/) — `workloadSelector`, `egress.hosts` and the `<namespace>/<host>` syntax
+- [MeshConfig outboundTrafficPolicy](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-OutboundTrafficPolicy) — `ALLOW_ANY` versus `REGISTRY_ONLY`
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

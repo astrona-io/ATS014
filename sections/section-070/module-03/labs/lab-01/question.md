@@ -8,7 +8,7 @@ Namespace `vm-demo` holds:
 * `legacy-sa` — a ServiceAccount
 * `legacy-vm-1` and `legacy-vm-2` — two pods **excluded from injection**, running as `legacy-sa`, answering HTTP on **8080**. They have **no Service** and no sidecar, and stand in for two virtual machines. Their addresses are in **`/tmp/vm1-ip`** and **`/tmp/vm2-ip`**.
 
-They are reachable by address and completely unknown to the mesh. No `WorkloadEntry`, `ServiceEntry` or `WorkloadGroup` exists.
+They are reachable by address and completely unknown to the mesh. No [`WorkloadEntry`](https://istio.io/latest/docs/reference/config/networking/workload-entry/), [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/) or [`WorkloadGroup`](https://istio.io/latest/docs/reference/config/networking/workload-group/) exists.
 
 Bring both machines into the mesh as one service.
 
@@ -32,3 +32,17 @@ Bring both machines into the mesh as one service.
 8.  The `tester` proxy's cluster for `legacy.vm-demo.svc` has **two** endpoints, one per machine.
 9.  The `WorkloadGroup` exists with a template whose labels, service account and port match the entries.
 10. Both stand-in pods are still running and no Service was created for them.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
+- [WorkloadEntry API](https://istio.io/latest/docs/reference/config/networking/workload-entry/) — `address`, `labels` and `serviceAccount`
+- [WorkloadGroup API](https://istio.io/latest/docs/reference/config/networking/workload-group/) — the template and probe fields a registering VM uses
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

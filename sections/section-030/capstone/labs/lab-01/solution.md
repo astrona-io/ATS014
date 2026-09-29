@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects again, but this time the `DestinationRule` carries policy at two levels and the `VirtualService` carries two features on one rule. Neither half tells you whether the other worked, so the verification is in four independent pieces.
+Two objects again, but this time the [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) carries policy at two levels and the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) carries two features on one rule. Neither half tells you whether the other worked, so the verification is in four independent pieces.
 
 ---
 
@@ -26,8 +26,10 @@ Write down the two canary IPs — the grader checks no caller response comes fro
 
 ## Step 2: The DestinationRule, Policy at Two Levels
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-httpbin.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -50,6 +52,7 @@ spec:
         loadBalancer:
           simple: LEAST_REQUEST
 EOF
+kubectl apply -f destinationrule-httpbin.yaml
 ```
 
 The `stable` subset deliberately has **no** `trafficPolicy`. That is not laziness — a subset policy *replaces* the host-level one for that subset, so giving `stable` its own would mean restating the consistent hashing there and would silently drop anything else the host policy ever grows.
@@ -59,7 +62,7 @@ The `stable` subset deliberately has **no** `trafficPolicy`. That is not lazines
 ## Step 3: One Rule, Two Features
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-httpbin.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -79,6 +82,7 @@ spec:
       mirrorPercentage:
         value: 100.0
 EOF
+kubectl apply -f virtualservice-httpbin.yaml
 istioctl analyze -n sessions
 ```
 
@@ -174,3 +178,20 @@ Forty of forty, carrying the `-shadow` authority. Note the upstream in that line
 - **Testing affinity without a baseline of which pods are which.** Record the stable and canary IPs first.
 - **Counting shadow log lines without a `BEFORE`.** The log accumulates across attempts.
 - **Omitting `mirrorPercentage`.** The default is 100%, but the specification asks for it explicitly.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMirrorPolicy API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMirrorPolicy) — `mirror`, `mirrors` and `mirrorPercentage`
+- [ConsistentHashLB API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings-ConsistentHashLB) — the four hash sources, `ttl`, and `minimumRingSize`
+- [LoadBalancerSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings) — the `simple` enum and the `consistentHash` alternative
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

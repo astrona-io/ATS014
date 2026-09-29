@@ -31,7 +31,7 @@ Both endpoints reachable directly, the gateway carrying nothing.
 
 ```sh
 PLAIN=$(cat /tmp/plain-ip); SECURE=$(cat /tmp/secure-ip)
-kubectl apply -f - <<EOF
+cat > plain-manifests.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -63,6 +63,7 @@ spec:
   endpoints:
     - address: $SECURE
 EOF
+kubectl apply -f plain-manifests.yaml
 ```
 
 The plain host needs one port; the secure host needs **two** — 8081 where the sidecar's plaintext arrives, 8443 where the gateway will send it.
@@ -71,8 +72,10 @@ The plain host needs one port; the secure host needs **two** — 8081 where the 
 
 ## Step 3: One Gateway, Two Listeners, Two Subsets
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > egress-gateway-manifests.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -98,9 +101,10 @@ spec:
     - name: plain
     - name: secure
 EOF
+kubectl apply -f egress-gateway-manifests.yaml
 ```
 
-One `Gateway` with two servers, each naming its own **external** hostname. A separate listener port per host keeps the two chains distinguishable — and note both server `name` values are unique, which Istio requires.
+One [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/) with two servers, each naming its own **external** hostname. A separate listener port per host keeps the two chains distinguishable — and note both server `name` values are unique, which Istio requires.
 
 Two label-less subsets, one per partner. They narrow nothing; they exist so each chain names a distinct cluster and the proxy configuration stays readable with two partners on one gateway.
 
@@ -109,7 +113,7 @@ Two label-less subsets, one per partner. They narrow nothing; they exist so each
 ## Step 4: Partner A — Plain, Restricted
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-plain-through-egress.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -136,6 +140,7 @@ spec:
             host: plain.partner.example
             port: { number: 8080 }
 EOF
+kubectl apply -f virtualservice-plain-through-egress.yaml
 ```
 
 Module 1's chain exactly, with `sourceLabels` on stage 1.
@@ -145,7 +150,7 @@ Module 1's chain exactly, with `sourceLabels` on stage 1.
 ## Step 5: Partner B — TLS At The Gateway
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > secure-through-egress-manifests.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -192,6 +197,7 @@ spec:
           sni: secure.partner.example
           insecureSkipVerify: true
 EOF
+kubectl apply -f secure-through-egress-manifests.yaml
 ```
 
 Stage 2 goes to **8443** while the listener stays on **8081** — receive port and send port, two directions.
@@ -265,7 +271,7 @@ Reached the endpoint, bypassed the gateway. `sourceLabels` narrowed the route, n
 
 ## Common Mistakes
 
-- **The origination `DestinationRule` on the gateway Service.** Nothing originates.
+- **The origination [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) on the gateway Service.** Nothing originates.
 - **Stage 2 for the secure host routing to 8081.** Plaintext to a TLS-only endpoint.
 - **One listener for both hosts.** Workable, but the task asks for two so the chains stay distinguishable — and duplicate server `name` values are rejected.
 - **Only one subset.** Both chains would share a cluster and the proxy config becomes ambiguous.
@@ -273,3 +279,23 @@ Reached the endpoint, bypassed the gateway. `sourceLabels` narrowed the route, n
 - **`sourceLabels` on the secure chain.** The task puts it only on the plain one.
 - **Expecting `other-client` to be blocked.** It is un-diverted, not denied.
 - **Counting gateway log lines without a baseline.** The log accumulates across both partners.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
+- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [TrafficPolicy portLevelSettings](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy-PortTrafficPolicy) — attaching policy to one port instead of the whole host
+- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `mode`, `credentialName` and `sni` for origination
+- [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — how `exportTo` and `Sidecar` together decide what a proxy sees
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

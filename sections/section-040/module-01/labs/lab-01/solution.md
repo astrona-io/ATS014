@@ -55,8 +55,10 @@ plus headroom for connection setup           →  use 5s
 
 ## Step 3: Write Both Rules, POST First
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-httpbin.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -88,6 +90,7 @@ spec:
         perTryTimeout: 1s
         retryOn: gateway-error
 EOF
+kubectl apply -f virtualservice-httpbin.yaml
 istioctl analyze -n resilience-demo
 ```
 
@@ -192,3 +195,20 @@ kubectl -n resilience-demo logs deploy/tester -c istio-proxy --tail=2
 - **`retryOn: 5xx` instead of `gateway-error`.** Both would pass the attempt count here, but the task names `gateway-error`, and it is the better habit toward a service you might also be pool-limiting.
 - **Counting server attempts without a baseline.** The log accumulates across runs; take a `BEFORE` count.
 - **Checking the caller's output to count retries.** The caller sees one response no matter how many attempts happened. The server's proxy log is the evidence.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [HTTPRoute API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) — `timeout` alongside `retries`, `fault` and `mirror` on one rule
+- [HTTPRetry API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRetry) — `attempts`, `perTryTimeout`, `retryOn` and `retriableStatusCodes`
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

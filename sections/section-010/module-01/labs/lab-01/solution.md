@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects, in this order: the `DestinationRule` first so the subset names exist, then the `VirtualService` that uses them. The last step is the one the grader cares most about — proving the rule order leaves every rule reachable.
+Two objects, in this order: the [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) first so the subset names exist, then the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) that uses them. The last step is the one the grader cares most about — proving the rule order leaves every rule reachable.
 
 ---
 
@@ -41,8 +41,10 @@ kubectl -n routing-demo exec deploy/tester -- sh -c \
 
 ## Step 2: Define the Subsets
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-notification-service.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -58,6 +60,7 @@ spec:
       labels:
         version: v2
 EOF
+kubectl apply -f destinationrule-notification-service.yaml
 ```
 
 ```text
@@ -85,7 +88,7 @@ Re-run the baseline loop now and the split is unchanged. That is correct: subset
 The three match rules go above the default. Envoy evaluates top down and stops at the first match, so a rule with no `match` block can only ever be last.
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-notification-service.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -123,6 +126,7 @@ spec:
             host: notification-service
             subset: v1
 EOF
+kubectl apply -f virtualservice-notification-service.yaml
 ```
 
 ```text
@@ -225,3 +229,19 @@ If a `VirtualService` exists in `kubectl` but its host is absent here, the probl
 - **Subset name typo.** `subset: v3` against a `DestinationRule` defining `v1`/`v2` gives a bare 503; `istioctl analyze` names it as `IST0101`.
 - **Objects in the wrong namespace.** Short host names resolve relative to the object's own namespace, so a `VirtualService` in `default` silently never fires.
 - **Changing the Service selector to split versions.** That defeats the exercise and the grader rejects it — the Service must keep selecting on `app` alone.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

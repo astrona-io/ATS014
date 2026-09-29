@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Four objects. Three are straightforward; the `VirtualService` is the one worth slowing down for, because it configures two different proxies from one document.
+Four objects. Three are straightforward; the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) is the one worth slowing down for, because it configures two different proxies from one document.
 
 ---
 
@@ -30,7 +30,7 @@ The gateway is running. The call works. The gateway logged nothing — the traff
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
-kubectl apply -f - <<EOF
+cat > serviceentry-partner.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -50,6 +50,7 @@ spec:
   endpoints:
     - address: $PARTNER
 EOF
+kubectl apply -f serviceentry-partner.yaml
 ```
 
 Section 070's object, unchanged. Without it neither stage below has a host to route.
@@ -58,8 +59,10 @@ Section 070's object, unchanged. Without it neither stage below has a host to ro
 
 ## Step 3: Open the Gateway Listener
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > egress-gateway-manifests.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -86,6 +89,7 @@ spec:
   subsets:
     - name: partner
 EOF
+kubectl apply -f egress-gateway-manifests.yaml
 ```
 
 Two things that look wrong and are not:
@@ -100,7 +104,7 @@ Note `selector: istio: egressgateway` — the **egress** gateway. Using `ingress
 ## Step 4: The Two-Stage VirtualService
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-partner-through-egress.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -132,6 +136,7 @@ spec:
             port:
               number: 8080
 EOF
+kubectl apply -f virtualservice-partner-through-egress.yaml
 ```
 
 One document, two rule sets, two proxies:
@@ -213,10 +218,28 @@ This is the lesson. `other-client` does not carry `egress-allowed: "true"`, so s
 ## Common Mistakes
 
 - **Expecting the gateway to intercept.** It carries nothing until routed to. The `+0` in step 1 is the proof.
-- **An internal hostname in the `Gateway`'s `servers[].hosts`.** It must be the external host.
+- **An internal hostname in the [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/)'s `servers[].hosts`.** It must be the external host.
 - **`selector: istio: ingressgateway`.** Wrong gateway — that one serves inbound traffic.
 - **The two `match.gateways` values swapped.** Traffic loops or never diverts.
 - **`mesh` missing from the top-level `gateways`.** Stage 1 never reaches sidecars.
-- **No `ServiceEntry`.** Neither stage has a host to route.
+- **No [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/).** Neither stage has a host to route.
 - **Counting gateway log lines without a baseline.** The log accumulates.
 - **Reading `sourceLabels` as an access control.** It is a route filter; non-matching workloads go direct.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
+- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [MeshConfig outboundTrafficPolicy](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-OutboundTrafficPolicy) — `ALLOW_ANY` versus `REGISTRY_ONLY`
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

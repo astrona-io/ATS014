@@ -43,8 +43,10 @@ You need at least 50% for one of two endpoints to be removable. `100` is the rig
 
 ## Step 3: Apply the Policy
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-httpbin.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -59,6 +61,7 @@ spec:
       baseEjectionTime: 30s
       maxEjectionPercent: 100
 EOF
+kubectl apply -f destinationrule-httpbin.yaml
 istioctl proxy-config cluster deploy/tester -n outlier-demo \
   --fqdn httpbin.outlier-demo.svc.cluster.local -o json | grep -A6 outlierDetection
 ```
@@ -184,3 +187,17 @@ done
 - **Looking at `kubectl get endpoints` for proof.** It never changes. Use the proxy's stats and `proxy-config endpoints`.
 - **Checking `ejections_active` at the wrong moment.** It flickers to 0 between ejections. `ejections_total` is the monotonic one.
 - **Setting `minHealthPercent` high.** At 60% on two endpoints, ejecting one would breach the floor and ejection is disabled entirely.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [OutlierDetection API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#OutlierDetection) — `consecutive5xxErrors`, `interval`, `baseEjectionTime`, `maxEjectionPercent`
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

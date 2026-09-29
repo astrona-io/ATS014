@@ -41,8 +41,10 @@ That is kube-proxy round robin, not a weight. It only looks similar to a 50/50 s
 
 ## Step 2: Define the Subsets
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-notification-service.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -58,6 +60,7 @@ spec:
       labels:
         version: v2
 EOF
+kubectl apply -f destinationrule-notification-service.yaml
 ```
 
 ```text
@@ -71,7 +74,7 @@ destinationrule.networking.istio.io/notification-service created
 The header rule goes **first**. Evaluation is top down and stops at the first match, so a rule placed after the catch-all weighted rule would never run.
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-notification.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -99,6 +102,7 @@ spec:
             subset: v2
           weight: 30
 EOF
+kubectl apply -f virtualservice-notification.yaml
 ```
 
 ```text
@@ -136,7 +140,7 @@ istioctl proxy-config routes deploy/tester -n shifting-demo -o json | grep -A12 
     }
 ```
 
-If this block is missing, the `VirtualService` never reached the sidecar and no amount of re-reading the YAML will help — check the namespace and `istioctl proxy-status`.
+If this block is missing, the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) never reached the sidecar and no amount of re-reading the YAML will help — check the namespace and `istioctl proxy-status`.
 
 ---
 
@@ -199,3 +203,20 @@ Scaling `v1` to 7 and `v2` to 3 would not produce a 70/30 split anyway — the w
 - **Measuring with 10 requests.** Each request is an independent draw; small samples are meaningless.
 - **Scaling Deployments to move traffic.** Replica count is capacity, not share — and the grader checks it.
 - **Patching `spec.http` expecting an element edit.** A merge patch replaces the whole list.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [HTTPRouteDestination API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRouteDestination) — `destination` plus `weight`, and the rule that weights sum to 100
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

@@ -37,7 +37,7 @@ Three facts established. The endpoint refuses plaintext. It answers `scheme=http
 
 ```sh
 SECURE=$(cat /tmp/secure-ip)
-kubectl apply -f - <<EOF
+cat > serviceentry-secure-api.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -60,6 +60,7 @@ spec:
   endpoints:
     - address: $SECURE
 EOF
+kubectl apply -f serviceentry-secure-api.yaml
 ```
 
 **Both ports.** 8080 declared `HTTP` is where the application's plaintext request arrives and the reason the proxy can read it; 8443 declared `HTTPS` is where the traffic is going. Declaring only 8443 is the most common first attempt and leaves the redirect in the next step with nothing to match.
@@ -70,8 +71,10 @@ Note the unquoted heredoc so `$SECURE` is substituted.
 
 ## Step 3: Redirect the Port
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-secure-api.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -89,6 +92,7 @@ spec:
             port:
               number: 8443
 EOF
+kubectl apply -f virtualservice-secure-api.yaml
 ```
 
 Ordinary routing with the ports doing the work. The **host is unchanged** — only the port moves.
@@ -105,14 +109,14 @@ kubectl -n tlsorig-demo exec deploy/tester -- \
 without DestinationRule: 503
 ```
 
-The traffic now reaches port 8443 — as plaintext, which the endpoint drops. Each object has a distinct failure, and this is the one for a missing `DestinationRule`.
+The traffic now reaches port 8443 — as plaintext, which the endpoint drops. Each object has a distinct failure, and this is the one for a missing [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/).
 
 ---
 
 ## Step 4: Originate the TLS
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-secure-api.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -129,6 +133,7 @@ spec:
           sni: secure.example.com
           insecureSkipVerify: true
 EOF
+kubectl apply -f destinationrule-secure-api.yaml
 ```
 
 Three details:
@@ -172,7 +177,7 @@ istioctl proxy-config cluster deploy/tester -n tlsorig-demo --fqdn secure.exampl
 
 Compare that log line with step 1's. A method, a path and a status where there were dashes — which means every layer-7 feature in this course now applies to this call. The `transportSocket` on the cluster is the proxy-side confirmation.
 
-Try adding a `timeout` to the `VirtualService` if you want to see that claim demonstrated.
+Try adding a `timeout` to the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) if you want to see that claim demonstrated.
 
 ---
 
@@ -183,6 +188,24 @@ Try adding a `timeout` to the `VirtualService` if you want to see that claim dem
 - **Omitting `sni`.** This endpoint's certificate names `secure.example.com`; without SNI the handshake has nothing to select on.
 - **Omitting `insecureSkipVerify`.** The certificate is self-signed, so verification fails and the handshake is rejected.
 - **Omitting the `VirtualService`.** Traffic stays on 8080, the endpoint never sees a TLS handshake.
-- **Pointing the `VirtualService` at the IP instead of the host.** It must name the `ServiceEntry` host.
+- **Pointing the `VirtualService` at the IP instead of the host.** It must name the [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/) host.
 - **Calling `https://` from the client.** Then the sidecar sees an encrypted stream and none of this applies.
 - **Creating a Service in `outside-mesh`.** That puts the endpoint in the registry through the back door.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [TrafficPolicy portLevelSettings](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy-PortTrafficPolicy) — attaching policy to one port instead of the whole host
+- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `mode`, `credentialName` and `sni` for origination
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

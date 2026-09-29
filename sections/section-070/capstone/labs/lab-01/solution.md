@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Six objects, three outcomes. Two of them are the same `ServiceEntry` kind with opposite values for `location` — which is the distinction the whole section turns on.
+Six objects, three outcomes. Two of them are the same [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/) kind with opposite values for `location` — which is the distinction the whole section turns on.
 
 ---
 
@@ -35,7 +35,7 @@ Everything refused. Note `legacy-vm` is refused too, even though it is in an inj
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
-kubectl apply -f - <<EOF
+cat > serviceentry-partner.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -60,6 +60,7 @@ spec:
   exportTo:
     - "."
 EOF
+kubectl apply -f serviceentry-partner.yaml
 ```
 
 `MESH_EXTERNAL` because this is somebody else's API — you do not issue it an identity. `exportTo: ["."]` because a `ServiceEntry` is exported mesh-wide by default, and on a deny-by-default mesh one team's grant should not silently become everyone's.
@@ -68,8 +69,10 @@ EOF
 
 ## Step 3: A — Redirect And Originate
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > partner-manifests.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -103,6 +106,7 @@ spec:
           sni: partner.example.com
           insecureSkipVerify: true
 EOF
+kubectl apply -f partner-manifests.yaml
 sleep 3
 PARTNER=$(cat /tmp/partner-ip)
 kubectl -n integrations exec deploy/tester -- curl -s --max-time 15 "http://$PARTNER:8080/"
@@ -122,7 +126,7 @@ A plain `http://` call, and the endpoint — which speaks only TLS — reports i
 
 ```sh
 VM=$(cat /tmp/vm-ip)
-kubectl apply -f - <<EOF
+cat > legacy-vm-manifests.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: WorkloadEntry
 metadata:
@@ -152,6 +156,7 @@ spec:
     labels:
       app: legacy
 EOF
+kubectl apply -f legacy-vm-manifests.yaml
 sleep 3
 kubectl -n integrations exec deploy/tester -- \
   curl -s -o /dev/null -w 'by name: %{http_code}\n' --max-time 10 http://legacy.integrations.svc:8080/get
@@ -216,6 +221,27 @@ Three clusters from two hosts — the partner has one per declared port, which i
 - **`tls` at the top of the partner `trafficPolicy`.** Applies to port 8080 too; the whole chain 503s.
 - **Declaring only port 8443 on the partner.** The plaintext request has nowhere to arrive.
 - **Omitting `exportTo` on the partner entry.** The grant becomes mesh-wide.
-- **Omitting `serviceAccount` on the `WorkloadEntry`.** No identity.
+- **Omitting `serviceAccount` on the [`WorkloadEntry`](https://istio.io/latest/docs/reference/config/networking/workload-entry/).** No identity.
 - **Registering `blocked-api`, or relaxing the mesh to `ALLOW_ANY`.** Either fails the third requirement.
 - **Creating a Service in `outside-mesh`, or injecting `legacy-vm`.** Both are back doors the grader checks for.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
+- [WorkloadEntry API](https://istio.io/latest/docs/reference/config/networking/workload-entry/) — `address`, `labels` and `serviceAccount`
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [TrafficPolicy portLevelSettings](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy-PortTrafficPolicy) — attaching policy to one port instead of the whole host
+- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `mode`, `credentialName` and `sni` for origination
+- [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — how `exportTo` and `Sidecar` together decide what a proxy sees
+- [MeshConfig outboundTrafficPolicy](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-OutboundTrafficPolicy) — `ALLOW_ANY` versus `REGISTRY_ONLY`
+- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

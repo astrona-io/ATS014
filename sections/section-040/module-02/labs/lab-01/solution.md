@@ -23,8 +23,10 @@ Fifty requests, five at a time, all successful. Nothing is capping concurrency.
 
 ## Step 2: Apply the Connection Pool
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-notification-service.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -40,6 +42,7 @@ spec:
         http1MaxPendingRequests: 1
         maxRequestsPerConnection: 1
 EOF
+kubectl apply -f destinationrule-notification-service.yaml
 ```
 
 ```text
@@ -48,7 +51,7 @@ destinationrule.networking.istio.io/notification-service created
 
 Note the two-level nesting: `tcp` and `http` are separate groups under `connectionPool`, and `maxConnections` belongs to `tcp` while the other two belong to `http`. Putting `maxConnections` under `http` is a schema error, which at least tells you immediately.
 
-Do **not** add a `VirtualService`. A retry policy would re-send the rejected requests and mask the very behaviour you are demonstrating — the grader checks none exists.
+Do **not** add a [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/). A retry policy would re-send the rejected requests and mask the very behaviour you are demonstrating — the grader checks none exists.
 
 ---
 
@@ -157,3 +160,18 @@ Zero. The backend never heard about any of them, because the caller's proxy reje
 - **Concluding "no breaker" because the counters are zero.** If `pending_overflow` and `cx_overflow` are both flat while you are seeing 503s, the cause is elsewhere — that is useful information, not a failed test.
 - **Expecting the limit to protect the service globally.** Each client enforces its own pool; the backend's exposure is `limit × number of callers`.
 - **Forgetting `http2MaxRequests` for gRPC.** On HTTP/2 one connection carries many streams, so `maxConnections` barely constrains anything.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [TCPRoute and TLSRoute APIs](https://istio.io/latest/docs/reference/config/networking/virtual-service/#TCPRoute) — what a connection-level match can see when there is no request to read
+- [ConnectionPoolSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ConnectionPoolSettings) — `tcp.maxConnections`, `http1MaxPendingRequests`, `http2MaxRequests`
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

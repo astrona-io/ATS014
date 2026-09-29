@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects, four features, and three places where getting one right depends on having got another right. Build the `VirtualService` first, then the `DestinationRule`, then verify each feature separately.
+Two objects, four features, and three places where getting one right depends on having got another right. Build the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) first, then the [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/), then verify each feature separately.
 
 ---
 
@@ -41,8 +41,10 @@ plus headroom                           →  timeout: 4s
 
 ## Step 3: The VirtualService — Writes First
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'EOF'
+cat > virtualservice-ledger.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -74,6 +76,7 @@ spec:
         perTryTimeout: 1s
         retryOn: gateway-error
 EOF
+kubectl apply -f virtualservice-ledger.yaml
 ```
 
 Two details that fail the task if wrong:
@@ -86,7 +89,7 @@ Two details that fail the task if wrong:
 ## Step 4: The DestinationRule — All Three Policies
 
 ```sh
-kubectl apply -f - <<'EOF'
+cat > destinationrule-ledger.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -109,6 +112,7 @@ spec:
       localityLbSetting:
         enabled: true
 EOF
+kubectl apply -f destinationrule-ledger.yaml
 istioctl analyze -n payments
 ```
 
@@ -220,3 +224,28 @@ ledger   10.244.0.22:8080,10.244.0.23:8080,10.244.0.24:8080      18m
 - **Testing the pool sequentially.** `-c 1` never trips a concurrency limit however many requests you send.
 - **Scaling or deleting `ledger-bad`.** The grader checks all three replica counts.
 - **Reading the 503 count alone.** Two different causes are mixed in one run; the `UO` flag is what separates them.
+
+---
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
+- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
+- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
+- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
+- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
+- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
+- [HTTPRoute API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) — `timeout` alongside `retries`, `fault` and `mirror` on one rule
+- [HTTPRetry API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRetry) — `attempts`, `perTryTimeout`, `retryOn` and `retriableStatusCodes`
+- [TCPRoute and TLSRoute APIs](https://istio.io/latest/docs/reference/config/networking/virtual-service/#TCPRoute) — what a connection-level match can see when there is no request to read
+- [ConnectionPoolSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ConnectionPoolSettings) — `tcp.maxConnections`, `http1MaxPendingRequests`, `http2MaxRequests`
+- [OutlierDetection API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#OutlierDetection) — `consecutive5xxErrors`, `interval`, `baseEjectionTime`, `maxEjectionPercent`
+- [ConsistentHashLB API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings-ConsistentHashLB) — the four hash sources, `ttl`, and `minimumRingSize`
+- [LoadBalancerSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings) — the `simple` enum and the `consistentHash` alternative
+- [LocalityLoadBalancerSetting API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LocalityLoadBalancerSetting) — `distribute`, `failover` and the health dependency
+- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
+- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it
