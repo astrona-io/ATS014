@@ -39,14 +39,22 @@ For **ingress**, traffic arrives *at* the gateway's Service because a client res
 
 For **egress**, traffic is headed for `httpbin.org`. The sidecar intercepts it, and then has to decide where to send it. Left alone, it sends it to `httpbin.org`. Nothing about the egress gateway's existence changes that decision — the gateway is just another cluster the sidecar could route to, and something has to tell it to.
 
-```text
-  ingress:   client ──► gateway Service ──► gateway ──► your app
-                        (the destination)
-
-  egress:    app ──► sidecar ──?──► httpbin.org        default: direct
-                              └──► egress gateway ──► httpbin.org
-                                   (only if a VirtualService says so)
+```mermaid
+flowchart LR
+    subgraph I["ingress: the gateway is the destination"]
+      I1["client"] --> I2["the gateway Service"]
+      I2 --> I3["the gateway"]
+      I3 --> I4["your app"]
+    end
+    subgraph E["egress: the gateway is a detour nobody has to take"]
+      E1["app"] --> E2["its sidecar"]
+      E2 -->|"the default: direct"| E4["httpbin.org"]
+      E2 -->|"only if a VirtualService says so"| E3["the egress gateway"]
+      E3 --> E4
+    end
 ```
+
+An ingress gateway is addressed; an egress gateway is chosen. Nothing intercepts outbound traffic on its behalf, which is why an idle egress gateway is the normal state.
 
 ## The `Gateway` object
 
@@ -101,6 +109,17 @@ It is there so that the two stages in Part 2 can name a distinct cluster per ext
 It is a naming device, not a filter. Recognise it; you do not have to be impressed by it.
 
 > *A deployed egress gateway is evidence of nothing — until a `VirtualService` routes traffic to it, it carries zero bytes.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting the egress gateway to capture outbound traffic.** Nothing routes through it until a `VirtualService` sends traffic there. Deploying one changes nothing on its own.
+>
+> **Assuming a gateway that is running is a gateway that is used.** An idle egress gateway looks identical to a working one from `kubectl`.
+>
+> **Reading it as a security boundary.** It is a routing hop. A workload that bypasses its sidecar, or has none, never sees it. Section 010's `Sidecar` caveat applies again.
+>
+> **Forgetting the conventional `DestinationRule`.** The sidecar needs a subset to send traffic to the gateway with, and it is easy to leave out because it looks like boilerplate.
 
 ## Reference
 

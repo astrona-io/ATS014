@@ -42,15 +42,14 @@ spec:
 
 The journey, with the owning proxy named at each step:
 
-```text
-  app ──► tester's sidecar            stage 1 runs here
-             │  route → istio-egressgateway.istio-system.svc
-             ▼
-        egress gateway pod            stage 2 runs here
-             │  route → httpbin.org
-             ▼
-        httpbin.org
+```mermaid
+flowchart TD
+    A["app"] --> S["the tester's sidecar<br/>STAGE 1 runs here"]
+    S -->|"route to istio-egressgateway.istio-system.svc"| G["the egress gateway pod<br/>STAGE 2 runs here"]
+    G -->|"route to httpbin.org"| H["httpbin.org"]
 ```
+
+One document, two proxies. Which stage a rule lands in is decided entirely by the `gateways` list on that rule.
 
 ## `mesh` — the name you have been using all along
 
@@ -183,6 +182,17 @@ The structural change is visible in the sidecar's own configuration: its destina
 > The sidecar's destination for `httpbin.org` is an **in-cluster Service**. The `|httpbin|` in the middle is the subset from the otherwise-pointless `DestinationRule` — the same cluster-naming format from section 020's weighted routing, which is a reminder that none of this is special machinery. Stage 1 did exactly what it said.
 
 > *One `VirtualService`, two rule sets, two proxies — `match.gateways` decides which proxy each rule is programmed into.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Writing one rule and expecting both hops.** Each `http` rule belongs to one stage. A rule for `mesh` does not configure the gateway, and a rule for the gateway does not redirect the sidecar.
+>
+> **Omitting `mesh` from the `gateways` list.** Naming the gateway alone replaces the implicit `mesh`, so sidecars keep going direct and the gateway is never used.
+>
+> **Dropping the `ServiceEntry`.** It is still required. The external host has to be in the registry for either stage to resolve it.
+>
+> **Putting the two stages in the wrong order.** Stage 1 sends to the gateway, stage 2 sends to the external host. Reversing them produces a loop or a dead end.
 
 ## Reference
 

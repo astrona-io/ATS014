@@ -128,6 +128,17 @@ which is both the design you want and the thing you can point at to prove it.
 
 > *`transportSocket` on the gateway and not on the sidecar — that one comparison proves the policy followed the caller.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Attaching the TLS `DestinationRule` to the gateway's own Service.** It attaches to the external host. The gateway Service is a hop, not the destination being secured.
+>
+> **Checking the sidecar for the TLS context.** The handshake happens at the gateway. The sidecar's half only proves the traffic was sent there.
+>
+> **Treating one working half as the whole chain.** Traffic reaching the gateway and TLS being originated are two independent facts, and either can be true without the other.
+>
+> **Leaving the origination rule visible to sidecars.** Without scoping, every sidecar also learns to originate TLS for that host, which defeats the point of consolidating it.
+
 ## Reference
 
 - [Egress gateway TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/) — the verification steps in the upstream task.
