@@ -45,6 +45,17 @@ Naming the namespace-wide resource `default` is convention, not syntax. It is wo
 
 Read `./*` as "this namespace, all hosts" — the same `.`-means-here convention as a shell path, applied to namespaces.
 
+What the list actually does is act as a filter between the registry and one proxy:
+
+```mermaid
+flowchart LR
+    R["the mesh registry<br/>every Service, ServiceEntry and WorkloadEntry"] --> F{"egress.hosts<br/>does this entry match"}
+    F -->|"matches"| K["kept: pushed to this proxy as a cluster"]
+    F -->|"no match"| D["dropped: this proxy is never told it exists"]
+```
+
+Nothing is deleted and no other proxy is affected. The registry is unchanged; one proxy is simply told less of it.
+
 Two details that decide whether an entry matches anything:
 
 - **The host part is matched against the registry's name for the host**, which for a Kubernetes Service is its fully qualified name. Short names work when unambiguous, but the fully qualified form is what the entry is compared against, so prefer it when you are being specific rather than using `*`.
@@ -128,6 +139,19 @@ Re-run the cluster count and `sidecar-other` is back, within seconds and with no
 ## Multiple `egress` entries
 
 `egress` is a list, and each entry can carry a `port` alongside its `hosts`. Two entries with different ports let you say "these hosts on 80, those hosts on 8000". In practice most `Sidecar` resources have exactly one `egress` entry with no `port` — a single list of hosts — and multi-entry forms are worth recognising in a task rather than reaching for by default.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Leaving `istio-system/*` out.** The proxy loses the destinations it needs for its own operation. The failure is partial and points nowhere near the `Sidecar` you wrote.
+>
+> **Forgetting `./*`.** A namespace-wide `Sidecar` without it scopes away the proxy's own namespace — including the services its workload most likely calls.
+>
+> **Reading the namespace half as "where the `Sidecar` lives".** It names where the *target* host lives.
+>
+> **Patching the `hosts` list with `--type merge` and expecting an append.** A merge patch replaces the whole list. Restate every entry you want to keep.
+>
+> **Expecting a narrower `Sidecar` to block inbound traffic.** `egress` is about what this proxy can be told about, not about who may call it.
 
 > *`egress.hosts` entries are `<namespace>/<host>`, `./*` means this namespace, and `istio-system/*` belongs in the list unless you have a specific reason to leave it out.*
 

@@ -45,9 +45,9 @@ subject needs it; leave thin parts thin when the subject is genuinely small.
 
 ## Phases
 
-- [ ] **P0** — plan written (this file)
-- [ ] **P1** — section-000 foundations module: 3 parts + playground + graded lab
-- [ ] **P2** — section-010 depth pass, incl. new 010-01 parts 4 and 5, module retitle
+- [x] **P0** — plan written (this file)
+- [x] **P1** — section-000 foundations module: 3 parts + playground (no graded lab: nothing to configure yet)
+- [x] **P2** — section-010 depth pass, incl. new 010-01 parts 4 and 5, module retitle
 - [ ] **P3** — section-020 depth pass
 - [ ] **P4** — section-030 depth pass
 - [ ] **P5** — section-040 depth pass (4 modules)
@@ -60,8 +60,28 @@ subject needs it; leave thin parts thin when the subject is genuinely small.
 One commit per phase. Each phase re-syncs `astrona.yaml` and the section README if it
 added or renamed a file.
 
+## Known follow-ups
+
+- Landing pages carry 7 to 9 learning objectives. The generic chapter validator wants
+  3 to 6 and flags 14 of the 18 pre-existing pages. Repo convention wins; do not trim
+  real objectives to satisfy the linter.
+- Part files fail `validate_chapter.py --module` on `## Learning objectives` and
+  `## Before you start` by design — those live on the landing page. Only landing pages
+  are meaningfully validated.
+- **P2 must de-duplicate `010-01` against section-000.** Part 1 currently teaches
+  injection, iptables, the xDS acronyms and the four-layer chain, all of which moved to
+  foundations. Trim to a recap plus a link, and keep only the subset-specific material.
+  Same for the `proxy-config` subcommand table in `010-01` part 3.
+
 ## Progress log
 
 - 2026-09-29 — `010-01` part 1 expanded (194 to ~380 lines, 7 checkpoints, 3 Mermaid).
 - 2026-09-29 — `010-01` part 2 expanded (206 to ~300 lines, 3 checkpoints, 2 Mermaid,
   new `VirtualService` object section, new pitfalls block).
+- 2026-09-29 — P1 committed (`da9ee75`): section-000 added, manifest at 163 entries,
+  all paths verified, root README resynced.
+- 2026-09-29 — P2: 010-01 de-duplicated against section-000 and given parts 4 and 5
+  (rewrite/redirect/headers/CORS; tcp/tls routing and protocol selection). Module
+  retitled "Route Requests Within The Mesh". 010-02 expanded with a fan-out diagram,
+  a memory checkpoint, a precedence diagram, a selective-Sidecar checkpoint and two
+  pitfalls blocks. Manifest at 165 entries.

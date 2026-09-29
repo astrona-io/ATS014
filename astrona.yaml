@@ -58,7 +58,7 @@ modules:
         path: sections/section-010/README.md
 
       - type: reading
-        title: "Route Requests By Header, URI And Query Parameter"
+        title: "Route Requests Within The Mesh"
         path: sections/section-010/module-01/course.md
       - type: reading
         title: "Subsets And The Destination Vocabulary"
@@ -69,6 +69,12 @@ modules:
       - type: reading
         title: "Evaluation Order, Name Resolution And Proof"
         path: sections/section-010/module-01/course-03-evaluation-order-and-proof.md
+      - type: reading
+        title: "Rewriting, Redirecting And Headers"
+        path: sections/section-010/module-01/course-04-rewriting-redirecting-and-headers.md
+      - type: reading
+        title: "Routing Non-HTTP Traffic"
+        path: sections/section-010/module-01/course-05-routing-non-http-traffic.md
 
       - type: reading
         title: Question

@@ -8,20 +8,18 @@ Two questions remain, and both cause real outages. When several `Sidecar` resour
 
 There are three ways a `Sidecar` can reach a workload, and they form a precedence ladder:
 
-```text
-  most specific
-        │
-        │   1. a Sidecar in the workload's namespace WITH a matching workloadSelector
-        │
-        │   2. a Sidecar in the workload's namespace with NO workloadSelector
-        │      (the "namespace default")
-        │
-        │   3. a Sidecar in the ROOT namespace (istio-system by default) with no
-        ▼      workloadSelector — the mesh-wide default for namespaces that have none
-  least specific
-        │
-        └─► no Sidecar anywhere: the proxy gets the whole registry (Part 1)
+```mermaid
+flowchart TD
+    W["a workload needs its egress scope"] --> S1{"a Sidecar in its own namespace<br/>with a matching workloadSelector"}
+    S1 -->|"yes"| U1["that one wins"]
+    S1 -->|"no"| S2{"a Sidecar in its own namespace<br/>with no workloadSelector"}
+    S2 -->|"yes"| U2["the namespace default wins"]
+    S2 -->|"no"| S3{"a Sidecar in the root namespace<br/>istio-system by default"}
+    S3 -->|"yes"| U3["the mesh-wide default wins"]
+    S3 -->|"no"| U4["no scoping: the whole registry, as in Part 1"]
 ```
+
+Evaluation stops at the first "yes". Nothing below that point contributes anything.
 
 The nearest applicable rung wins, and **it replaces the one below rather than merging with it**. A selective `Sidecar` that lists only `./*` does not inherit `istio-system/*` from the namespace default; whatever it lists is the complete list for the workloads it selects.
 
@@ -31,6 +29,42 @@ Two rules follow, and both are worth stating as rules because they are how tasks
 - **Selective resources must not overlap.** Two `Sidecar` objects whose selectors both match the same pod is likewise undefined. Do not rely on whichever behaviour you happen to observe.
 
 The supported shape is therefore: one namespace default, plus non-overlapping selective refinements for the workloads that need something different.
+
+"Replaces rather than merges" is the claim worth testing, because it is the one that breaks namespaces. Add a selective `Sidecar` that lists *only* `./*` on top of the namespace default from Part 2, and watch `istio-system` disappear from the proxy even though the namespace default still lists it.
+
+> [!TIP]
+> **Try it — a selective `Sidecar` that inherits nothing**
+>
+> ```sh
+> istioctl proxy-config cluster deploy/tester -n sidecar-demo | grep -c istio-system
+> kubectl apply -f - <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: Sidecar
+> metadata:
+>   name: tester-only
+>   namespace: sidecar-demo
+> spec:
+>   workloadSelector:
+>     labels:
+>       app: tester
+>   egress:
+>     - hosts:
+>         - "./*"
+> EOF
+> sleep 3
+> istioctl proxy-config cluster deploy/tester -n sidecar-demo | grep -c istio-system
+> kubectl -n sidecar-demo delete sidecar tester-only
+> ```
+>
+> Expect something like:
+>
+> ```text
+> 3
+> sidecar.networking.istio.io/tester-only created
+> 0
+> ```
+>
+> The exact counts depend on what is installed. What matters is that the second number is zero: the namespace default still says `istio-system/*`, and the selected workload got none of it. A selective `Sidecar` is the complete list for the pods it matches, and the last line removes it again.
 
 ## Removing configuration removes reachability
 
