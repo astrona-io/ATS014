@@ -40,6 +40,26 @@ The cleanest demonstration is the access log, because for an HTTP request it rec
 >
 > The call worked — and the log line has `"- - -"` where the method, path and protocol would be, and no status code. The proxy moved 705 bytes up and 5923 down to an IP on port 443, and has nothing else to say. That is the whole problem in one line.
 
+The contrast is what makes the point, so run the same call over plain HTTP and put the two log lines side by side. Nothing about the mesh changed between them — only whether the proxy was able to read what was inside the connection.
+
+> [!TIP]
+> **Try it — the same destination, in the clear**
+>
+> ```sh
+> kubectl -n tlsorig-demo exec deploy/tester -- \
+>   curl -s -o /dev/null -w 'http:  %{http_code}\n' --max-time 15 http://httpbin.org/get
+> kubectl -n tlsorig-demo logs deploy/tester -c istio-proxy --tail=1
+> ```
+>
+> Expect something like:
+>
+> ```text
+> http:  200
+> [2026-09-27T12:32:11.108Z] "GET /get HTTP/1.1" 200 - via_upstream - "-" 0 3421 198 - "-" "curl/8.5.0" ... "httpbin.org" ...
+> ```
+>
+> `"GET /get HTTP/1.1"`, a `200`, and the authority — everything the encrypted line was missing. Every feature in sections 010 to 050 operates on exactly these fields, which is why the next section is about getting them back without sending plaintext across the network.
+
 ## What that costs
 
 Everything in this course that operates on a request is unavailable:
@@ -62,21 +82,25 @@ Everything else does.
 
 Being able to name these keeps the next part straight:
 
-```text
-1. APPLICATION ORIGINATES (the problem)
-   app ──TLS──────────────────────────────────► external:443
-       proxy sees an opaque stream
-
-2. SIDECAR ORIGINATES (this module)
-   app ──HTTP──► sidecar ──TLS───────────────► external:443
-       proxy reads the request, then encrypts
-
-3. EGRESS GATEWAY ORIGINATES (section 080 module 2)
-   app ──HTTP──► sidecar ──HTTP──► gateway ──TLS──► external:443
-       one place holds the certificate
+```mermaid
+flowchart LR
+    subgraph A["1. the application originates: the problem"]
+      A1["app"] -->|"TLS, opaque to the proxy"| A2["external:443"]
+    end
+    subgraph B["2. the sidecar originates: this module"]
+      B1["app"] -->|"HTTP"| B2["its sidecar"]
+      B2 -->|"TLS"| B3["external:443"]
+    end
+    subgraph C["3. an egress gateway originates: section 080"]
+      C1["app"] -->|"HTTP"| C2["its sidecar"]
+      C2 -->|"HTTP"| C3["egress gateway<br/>holds the certificate"]
+      C3 -->|"TLS"| C4["external:443"]
+    end
 ```
 
-In arrangement 2 and 3 the only plaintext hop is **inside the pod**, between the application container and its own sidecar, over the loopback interface. Nothing crosses the node boundary unencrypted, which is the answer to the reasonable first objection that this sounds like a downgrade.
+In arrangements 2 and 3 the only plaintext hop is inside the pod, over loopback — which is the answer to the reasonable first objection that this sounds like a downgrade.
+
+To be precise about that: the plaintext hop is between the application container and its own sidecar, over the loopback interface inside the same pod. Nothing crosses the node boundary unencrypted.
 
 ## The application must cooperate in one respect
 
@@ -85,6 +109,17 @@ Origination is transparent to the application in every way except one: **the app
 If the code keeps calling `https://`, the sidecar sees an encrypted stream and none of this applies — you get arrangement 1 again, with a `ServiceEntry` and a `DestinationRule` sitting there doing nothing. That is a one-line change in the application's configuration, and it is the one prerequisite you cannot work around from the mesh side.
 
 > *An application that originates its own TLS reduces its sidecar to a byte counter — the log line with `"- - -"` in it is the signature.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting routing or telemetry on application-originated TLS.** The proxy sees encrypted bytes. It can act on SNI and nothing else.
+>
+> **Reading the plaintext first hop as a downgrade.** It is inside the pod, over loopback. Nothing unencrypted leaves the node.
+>
+> **Forgetting the application has to cooperate.** It must call `http://` on the declared port and let the proxy originate TLS. An application that insists on `https://` is back to arrangement 1.
+>
+> **Assuming TLS origination changes what the destination sees.** It receives an ordinary HTTPS request, exactly as if the application had made it.
 
 ## Reference
 

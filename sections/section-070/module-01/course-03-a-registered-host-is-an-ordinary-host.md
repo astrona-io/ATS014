@@ -135,16 +135,20 @@ Section 010's `Sidecar` resource limits which registry entries a proxy is progra
 
 The result is a 502, exactly as if the host had never been registered.
 
-```text
-  external call fails with 502
-            │
-            ├─ ServiceEntry exists?  ── no ──► create it
-            │        yes
-            ├─ exportTo allows this namespace? ── no ──► widen it
-            │        yes
-            └─ a Sidecar in this namespace? ── yes ──► is the host in egress.hosts?
-                                                            no ──► that is the cause
+```mermaid
+flowchart TD
+    F["an external call fails with 502"] --> A{"does a ServiceEntry for the host exist"}
+    A -->|"no"| A1["create it"]
+    A -->|"yes"| B{"does its exportTo allow this namespace"}
+    B -->|"no"| B1["widen exportTo"]
+    B -->|"yes"| C{"is there a Sidecar in this namespace"}
+    C -->|"no"| C1["look elsewhere: resolution, ports, protocol"]
+    C -->|"yes"| D{"is the host listed in its egress.hosts"}
+    D -->|"no"| D1["that is the cause"]
+    D -->|"yes"| C1
 ```
+
+Two of those gates belong to other people's objects, which is why a `ServiceEntry` that works in one namespace can fail in another with nothing wrong in the `ServiceEntry` itself.
 
 The rule of thumb: **when a `ServiceEntry` works from one namespace and not another, look for a `Sidecar` before re-reading the `ServiceEntry`.**
 

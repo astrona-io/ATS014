@@ -32,6 +32,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need `VirtualService` from section 010 and the `timeout` field from section 040 — the last part of this module reuses both against an external host. Section 010's `Sidecar` resource matters for the final pitfall.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile, so `outboundTrafficPolicy.mode` is at its `ALLOW_ANY` default) and the namespace **`egress-demo`**, injected, containing a `tester` client pod with `curl`. No `ServiceEntry` exists.

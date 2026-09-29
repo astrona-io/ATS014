@@ -150,6 +150,19 @@ spec:
 
 > *The declared `protocol` decides how much of Istio applies to an external host; `TCP` gets you a working connection and nothing else.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Naming the port wrong.** `protocol` on a `ServiceEntry` port decides whether you get HTTP routing or an opaque byte stream, exactly as a Service port name does in section 010.
+>
+> **Choosing the wrong `resolution`.** `DNS` makes the proxy resolve the name itself; `STATIC` requires `endpoints`; `NONE` passes through to whatever address the caller used. They are not interchangeable.
+>
+> **Leaving `location` at the default when the host is in-mesh.** `MESH_EXTERNAL` and `MESH_INTERNAL` differ in whether mTLS and identity apply, which module 3 depends on.
+>
+> **Assuming a `ServiceEntry` is private to its namespace.** It is exported mesh-wide unless `exportTo` says otherwise.
+>
+> **Expecting a wildcard host to work like a DNS name.** A `*.example.com` entry cannot be resolved by the proxy, so it needs `resolution: NONE` or a gateway in front of it.
+
 ## Reference
 
 - [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — every field, including `endpoints`, `exportTo` and `workloadSelector`.

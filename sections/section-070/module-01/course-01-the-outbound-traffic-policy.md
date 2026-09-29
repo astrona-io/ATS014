@@ -111,6 +111,19 @@ That is the practical migration path: turn the mesh default to `REGISTRY_ONLY` e
 
 > *Under `REGISTRY_ONLY` a 502 from the sidecar means "not in the registry" — DNS and the network are fine.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Assuming the default denies external traffic.** `ALLOW_ANY` is the install default: anything not in the registry is passed through unexamined.
+>
+> **Reading `ALLOW_ANY` as "no policy needed".** Traffic leaving under it is opaque to the mesh — no routing, no telemetry, no policy, and no record of where it went.
+>
+> **Switching to `REGISTRY_ONLY` without an inventory.** Every undeclared external dependency starts failing at once, and the failures look like the application's.
+>
+> **Expecting a clear error on refusal.** The signature is a connection failure or a 502, not a message naming the policy.
+>
+> **Setting the mesh-wide value when one namespace needs it.** A `Sidecar` carries its own `outboundTrafficPolicy` for exactly this.
+
 ## Reference
 
 - [Accessing external services](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-control/) — the task page covering both modes.

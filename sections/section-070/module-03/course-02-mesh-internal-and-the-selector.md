@@ -156,6 +156,17 @@ That is the shape you would use for a small, stable fleet. For a fleet that chan
 
 > *`MESH_INTERNAL` plus a `workloadSelector` turns declared machines into an ordinary mesh service, with identity attached.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Leaving `location` at `MESH_EXTERNAL` for a workload you own.** `MESH_INTERNAL` is what makes mTLS and identity apply; without it the instance is treated as a third-party endpoint.
+>
+> **Writing `endpoints` and a `workloadSelector` on the same `ServiceEntry`.** They are alternative ways of supplying the same thing.
+>
+> **Expecting the selector to match pods.** It matches `WorkloadEntry` labels, in the same namespace.
+>
+> **Assuming adding an instance needs a new `ServiceEntry`.** A second `WorkloadEntry` with matching labels joins the same service automatically.
+
 ## Reference
 
 - [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `location`, `resolution` and `workloadSelector`.
