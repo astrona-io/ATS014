@@ -2,7 +2,7 @@
 
 A Kubernetes Service load balances over pods. It cannot look at a request, and it cannot be told that some requests matter differently from others. Istio's answer is a proxy beside every pod plus two objects that describe, declaratively, what that proxy should do with the traffic it sees.
 
-This section covers both ends of that idea. Module 1 is the request's journey: how a rule matches, which destination it picks, and how to prove the rule reached the proxy. Module 2 is the opposite direction — how much the proxy should be told about in the first place, and how to cut a full service registry down to the handful of hosts a workload actually calls.
+This section covers both ends of that idea. Module 1 is the request's journey: how a rule matches, which destination it picks, what else a matched rule can do to it, and how to prove the rule reached the proxy. Module 2 is the opposite direction — how much the proxy should be told about in the first place, and how to cut a full service registry down to the handful of hosts a workload actually calls.
 
 **Curriculum item covered:** Configuring Routing within a Service Mesh
 
@@ -22,17 +22,22 @@ This section covers both ends of that idea. Module 1 is the request's journey: h
 - Narrowing with `Sidecar` and `egress[].hosts` in `<namespace>/<host>` form, and why `istio-system/*` is boilerplate.
 - `Sidecar` precedence: selective beats namespace default beats root namespace, and each replaces rather than merges.
 - Why `Sidecar` is a configuration control rather than a security boundary, and what to combine it with.
+- Using `redirect`, `rewrite`, `headers` and `corsPolicy` on a matched rule, and which of them ends the request.
+- How a Service port's name or `appProtocol` decides the protocol — and the silent fallback to plain TCP that disables every HTTP feature.
+- What a `tcp` or `tls` rule can match on when there is no request to read, and what per-connection balancing costs you.
 - Reading a proxy's live configuration with `istioctl proxy-config routes`, `cluster`, `endpoints` and `listener`.
 
 ---
 
 ## The Learning Path
 
-### 1. Route Requests By Header, URI And Query Parameter
-*   **Module Reader:** **[Route Requests By Header, URI And Query Parameter](./module-01/course.md)**
+### 1. Route Requests Within The Mesh
+*   **Module Reader:** **[Route Requests Within The Mesh](./module-01/course.md)**
     1. [Subsets And The Destination Vocabulary](./module-01/course-01-subsets-and-destination-vocabulary.md)
     2. [Matching A Request](./module-01/course-02-matching-a-request.md)
     3. [Evaluation Order, Name Resolution And Proof](./module-01/course-03-evaluation-order-and-proof.md)
+    4. [Rewriting, Redirecting And Headers](./module-01/course-04-rewriting-redirecting-and-headers.md)
+    5. [Routing Non-HTTP Traffic](./module-01/course-05-routing-non-http-traffic.md)
 *   **Hands-on Playground:** `sections/section-010/module-01/playground` — a kind cluster with Istio installed and namespace `routing-demo` holding two versions of one service plus a client pod. No routing configured.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-010/module-01/playground
@@ -43,6 +48,11 @@ This section covers both ends of that idea. Module 1 is the request's journey: h
     astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-01
     ```
 *   **Hands-on Objective:** Split one Service into `v1` and `v2` subsets and route by header, URI prefix and query parameter, with a default that catches everything else — then prove with live traffic that all three specific rules are still reachable and a near-miss falls through.
+*   **Second Practice Lab:** **`sections/section-010/module-01/labs/lab-02`** — the fields beside `route`.
+    ```bash
+    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-02
+    ```
+*   **Hands-on Objective:** Redirect a legacy prefix without touching a pod, rewrite a path family onto a backend that has never heard of it, stamp a response header, strip an internal request header, and allow exactly one CORS origin — then prove the rewrite from the compiled route, because no access log will show it to you.
 
 ### 2. Scope Proxy Configuration With The Sidecar Resource
 *   **Module Reader:** **[Scope Proxy Configuration With The Sidecar Resource](./module-02/course.md)**

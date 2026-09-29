@@ -1,0 +1,24 @@
+# How A Request Moves Through The Mesh (PLAYGROUND) — Playground environment
+# A clean sandbox: it spins up, runs OS prep, then stays running for free
+# exploration. No task, no grading, no `astrona submit`.
+# Schema: internal/config.LabConfig.
+
+metadata:
+  name: "ats-014-playground-000-01"
+  docs:
+    guide: "docs/overview.md"
+
+bootstrap:
+  init:
+    - name: "prepare"
+      description: "Install istioctl, install the Istio control plane, and seed one injected and one uninjected namespace."
+      type: "file"
+      source: "bootstrap/prepare.sh"
+  manifests:
+    - name: "lab-start"
+      description: "Starting workloads (an injected namespace with a client and an API, plus an uninjected namespace for contrast)."
+      type: "file"
+      source: "manifests/lab-start.yaml"
+
+teardown:
+  keepCluster: false

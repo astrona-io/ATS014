@@ -39,6 +39,11 @@ This section covers the endpoint-selection half of that field, and the precedenc
     astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-030/module-01/labs/lab-01
     ```
 *   **Hands-on Objective:** Pin users to endpoints with host-level consistent hashing, override that policy for one subset only, and prove from the proxy's own cluster dump that the two subsets really are using different algorithms.
+*   **Second Practice Lab:** **`sections/section-030/module-01/labs/lab-02`** — affinity for clients that carry no identifier.
+    ```bash
+    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-030/module-01/labs/lab-02
+    ```
+*   **Hands-on Objective:** Pin browser sessions with a cookie Istio issues itself, attached through `portLevelSettings` rather than to the whole host — then show that a client which sends no cookie is deliberately not pinned.
 
 ### 2. Section Capstone Challenge
 *   **Comprehensive Challenge:** **`sections/section-030/capstone/labs/lab-01` (Sticky Sessions With A Shadowed Canary)**

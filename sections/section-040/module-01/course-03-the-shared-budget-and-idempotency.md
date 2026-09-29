@@ -87,6 +87,19 @@ The compiled route holds both numbers, which makes this the fastest way to check
 
 ## Retries are not free, and not always safe
 
+Before the detail, the decision in one picture — because the mesh will happily retry anything you tell it to, including things that must not be repeated:
+
+```mermaid
+flowchart TD
+    R["you are considering a retry policy for this route"] --> I{"is the operation idempotent<br/>does running it twice equal running it once"}
+    I -->|"no, for example a payment or a POST that creates"| N["do not retry blindly<br/>require an idempotency key, or set attempts: 0"]
+    I -->|"yes, a read or an idempotent write"| T{"is the failure transient"}
+    T -->|"no, a deterministic 500 or a 4xx"| N2["retrying only multiplies load"]
+    T -->|"yes, connect-failure, reset, a busy upstream"| Y["retry, within a budget the timeout can afford"]
+```
+
+Istio has no way to answer the first question. It sees an HTTP request, not what the request means.
+
 Two consequences that Istio cannot decide for you.
 
 **A retried `POST` is a second `POST`.** Istio retries at the HTTP layer with no knowledge of what the request does. If the first attempt reached the server, did its work, and then the *response* was lost, the retry performs the work again. Deduplication is an application concern — an idempotency key, a unique constraint, a conditional write.

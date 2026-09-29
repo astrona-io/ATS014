@@ -95,6 +95,17 @@ That ServiceAccount is a real Kubernetes object. It does not need to be used by 
 
 > *`address` makes it reachable, `labels` make it selectable, and `serviceAccount` makes it governable.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting a `WorkloadEntry` alone to be reachable by name.** It describes one instance. A `ServiceEntry` with a `workloadSelector` is what puts a name and ports in front of it.
+>
+> **Leaving `serviceAccount` out.** The workload stays anonymous: no SPIFFE identity, so no `AuthorizationPolicy` or `PeerAuthentication` can name it.
+>
+> **Creating it in the wrong namespace.** The identity it receives encodes the namespace, so the object's location is part of its meaning.
+>
+> **Treating it as a substitute for network reachability.** The address still has to be routable from the mesh.
+
 ## Reference
 
 - [WorkloadEntry API](https://istio.io/latest/docs/reference/config/networking/workload-entry/) — every field, including `network`, `locality` and `weight`.

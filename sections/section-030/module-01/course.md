@@ -35,6 +35,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need `DestinationRule` from section 010 — this module adds a second field to the object you already use for subsets. No new object is introduced, which is why this section has one module rather than three.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`lb-demo`**, injected, containing:

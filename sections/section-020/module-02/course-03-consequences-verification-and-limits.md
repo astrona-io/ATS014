@@ -10,19 +10,17 @@ This is the sentence to carry out of the module.
 
 Istio duplicates the request at the network layer and dispatches it. The shadow service then runs its **full handler**: it writes rows, publishes messages, increments counters, charges cards, sends email. The mesh drops the *response*. Nothing about that drops the side effects.
 
-```text
-  mirrored POST /orders
-        │
-        ▼
-  shadow service handler runs COMPLETELY
-        │
-        ├──► INSERT INTO orders …        ← really happens
-        ├──► publish to the message bus  ← really happens
-        ├──► call the payment provider   ← really happens
-        │
-        ▼
-    response  ──►  discarded by the proxy
+```mermaid
+flowchart TD
+    M["a mirrored POST /orders arrives at the shadow"] --> H["the shadow's full handler runs"]
+    H --> DB["INSERT INTO orders: really happens"]
+    H --> Q["publish to the message bus: really happens"]
+    H --> PAY["call the payment provider: really happens"]
+    H --> R["the response"]
+    R --> X["discarded by the proxy"]
 ```
+
+Only the last box is a mesh concern. Everything above it is your application doing exactly what it was written to do, because nothing told it otherwise.
 
 The `-shadow` authority older Istio releases added was only ever a **hint the application could act on**, never a guard rail Istio enforced — and 1.30 does not add it at all. Nothing in the copy tells the shadow it is a copy.
 
@@ -101,7 +99,7 @@ It is the right shape when you are shadowing two candidate versions at once. `mi
 >
 > **Assuming the shadow can tell it is a shadow.** Istio 1.30 sends the copy unchanged, and even the old `-shadow` authority was only a header the application might read. Istio enforces nothing.
 >
-> **Looking only at application logs for proof.** The authority rewrite is in the proxy access log (`-c istio-proxy`).
+> **Looking only at application logs for proof.** The evidence is in the shadow's *proxy* access log (`-c istio-proxy`), where every line is a copy because the route sends that subset nothing of its own. It is not an authority suffix — Istio 1.30 does not add one.
 >
 > **Indenting `mirror` as an entry of `route`.** It is a sibling of `route` on the same rule, and a single destination rather than a list.
 >

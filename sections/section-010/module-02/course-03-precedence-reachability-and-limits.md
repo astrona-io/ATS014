@@ -8,20 +8,18 @@ Two questions remain, and both cause real outages. When several `Sidecar` resour
 
 There are three ways a `Sidecar` can reach a workload, and they form a precedence ladder:
 
-```text
-  most specific
-        │
-        │   1. a Sidecar in the workload's namespace WITH a matching workloadSelector
-        │
-        │   2. a Sidecar in the workload's namespace with NO workloadSelector
-        │      (the "namespace default")
-        │
-        │   3. a Sidecar in the ROOT namespace (istio-system by default) with no
-        ▼      workloadSelector — the mesh-wide default for namespaces that have none
-  least specific
-        │
-        └─► no Sidecar anywhere: the proxy gets the whole registry (Part 1)
+```mermaid
+flowchart TD
+    W["a workload needs its egress scope"] --> S1{"a Sidecar in its own namespace<br/>with a matching workloadSelector"}
+    S1 -->|"yes"| U1["that one wins"]
+    S1 -->|"no"| S2{"a Sidecar in its own namespace<br/>with no workloadSelector"}
+    S2 -->|"yes"| U2["the namespace default wins"]
+    S2 -->|"no"| S3{"a Sidecar in the root namespace<br/>istio-system by default"}
+    S3 -->|"yes"| U3["the mesh-wide default wins"]
+    S3 -->|"no"| U4["no scoping: the whole registry, as in Part 1"]
 ```
+
+Evaluation stops at the first "yes". Nothing below that point contributes anything.
 
 The nearest applicable rung wins, and **it replaces the one below rather than merging with it**. A selective `Sidecar` that lists only `./*` does not inherit `istio-system/*` from the namespace default; whatever it lists is the complete list for the workloads it selects.
 
@@ -31,6 +29,63 @@ Two rules follow, and both are worth stating as rules because they are how tasks
 - **Selective resources must not overlap.** Two `Sidecar` objects whose selectors both match the same pod is likewise undefined. Do not rely on whichever behaviour you happen to observe.
 
 The supported shape is therefore: one namespace default, plus non-overlapping selective refinements for the workloads that need something different.
+
+"Replaces rather than merges" is the claim worth testing, because it is the one that breaks namespaces. Add a selective `Sidecar` that lists *only* `./*` on top of the namespace default from Part 2, and watch `istio-system` disappear from the proxy even though the namespace default still lists it.
+
+> [!TIP]
+> **Try it — a selective `Sidecar` that inherits nothing**
+>
+> ```sh
+> istioctl proxy-config cluster deploy/tester -n sidecar-demo | grep -c istio-system
+> kubectl apply -f - <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: Sidecar
+> metadata:
+>   name: tester-only
+>   namespace: sidecar-demo
+> spec:
+>   workloadSelector:
+>     labels:
+>       app: tester
+>   egress:
+>     - hosts:
+>         - "./*"
+> EOF
+> sleep 3
+> istioctl proxy-config cluster deploy/tester -n sidecar-demo | grep -c istio-system
+> kubectl -n sidecar-demo delete sidecar tester-only
+> ```
+>
+> Expect something like:
+>
+> ```text
+> 3
+> sidecar.networking.istio.io/tester-only created
+> 0
+> ```
+>
+> The exact counts depend on what is installed. What matters is that the second number is zero: the namespace default still says `istio-system/*`, and the selected workload got none of it. A selective `Sidecar` is the complete list for the pods it matches, and the last line removes it again.
+
+### The mesh-wide default
+
+Rung 3 is worth a worked example, because it is how a platform team applies scoping to namespaces that have never heard of `Sidecar`. A `Sidecar` with no `workloadSelector`, created in the **root namespace** — `istio-system` unless `meshConfig.rootNamespace` says otherwise — becomes the default for every namespace that has no `Sidecar` of its own:
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  egress:
+    - hosts:
+        - "./*"
+        - "istio-system/*"
+```
+
+Read that `./*` carefully: it is evaluated per proxy, so it means "each workload's own namespace", not "istio-system". One object, a different effective host list for every namespace it lands on.
+
+This is a high-blast-radius change — it silently narrows every unscoped namespace in the mesh at once, and the symptom in each is a call that used to work. It belongs to whoever owns the mesh, and it is the reason a namespace default that "does nothing" may still be worth writing: it stops the mesh-wide one from applying to you.
 
 ## Removing configuration removes reachability
 
@@ -91,6 +146,22 @@ Because `egress.hosts` selects over the whole registry — Part 1 noted it inclu
 The case to remember is section 070: you write a `ServiceEntry` for an external host, it is valid, it is exported mesh-wide, and calls from one particular namespace still fail with a 502. The cause is a `Sidecar` in that namespace whose `hosts` list never mentioned the external host. When a `ServiceEntry` works from one namespace and not another, check for a `Sidecar` before re-reading the `ServiceEntry`.
 
 The same applies to gateways and to `MESH_INTERNAL` workloads. If a host is in the registry but absent from a given proxy's clusters, something scoped it away.
+
+## Diagnosing a missing host
+
+Putting the module together, here is the order to work through when a host that should be reachable is not in a proxy's clusters:
+
+```mermaid
+flowchart TD
+    A["host missing from istioctl proxy-config cluster"] --> B{"is there a Sidecar in the workload's namespace"}
+    B -->|"yes, with a matching selector"| C["that object's hosts list is the whole answer"]
+    B -->|"yes, namespace-wide"| D["check its hosts list, including ./* and istio-system/*"]
+    B -->|"no"| E{"is there a Sidecar in the root namespace"}
+    E -->|"yes"| F["the mesh-wide default applies to this namespace"]
+    E -->|"no"| G["not a scoping problem: check exportTo, then the registry itself"]
+```
+
+Each branch ends at exactly one object to read. That is the value of the precedence rules: there is never more than one `Sidecar` to blame.
 
 ## Common pitfalls
 

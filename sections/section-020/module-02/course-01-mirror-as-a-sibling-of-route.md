@@ -30,24 +30,21 @@ A mirror is therefore never part of the weighted split. The weights in `route` a
 
 ## What the proxy actually does
 
-```text
-  client request
-        │
-        ▼
-  match the http rule
-        │
-        ├──────────────────────────────┐
-        │                              │
-        ▼ PRIMARY                      ▼ SHADOW
-  route → subset v1              mirror → subset v2
-        │                              │
-        │ response                     │ response
-        ▼                              ▼
-  returned to the caller          DISCARDED
-        │                         (and its latency with it)
-        ▼
-     caller
+```mermaid
+sequenceDiagram
+    participant C as the caller
+    participant P as the caller's proxy
+    participant V1 as subset v1, the primary
+    participant V2 as subset v2, the shadow
+    C->>P: POST /notify
+    P->>V1: the real request
+    P->>V2: a fire-and-forget copy
+    V1-->>P: 200
+    P-->>C: 200, always from the primary
+    V2-->>P: whatever it returns, discarded
 ```
+
+The copy is dispatched and forgotten. Its response never reaches the caller and neither does its latency, which is what makes it safe to mirror at something slow or broken.
 
 Three properties follow, and all three are examinable:
 
@@ -137,6 +134,19 @@ One honest limitation, because it decides whether the feature fits a given quest
 Istio discards the shadow's response, so mirroring **cannot compare outputs**. It will tell you that `v2` crashed, timed out, leaked memory or fell over under real load. It will not tell you that `v2` returned a subtly wrong answer, because nothing ever looked at the answer.
 
 Response comparison ("diff testing") needs a component that receives both responses and compares them — an application-level concern that sits outside the mesh. If a task asks how to verify a new version returns *the same results*, mirroring is not the answer; weighted routing plus real observation is.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Putting `mirror` inside the `route` list.** It is a sibling of `route` on the `http` rule, and it is a single destination with no `weight`.
+>
+> **Expecting the mirror to be part of the 100.** It is extra traffic on top. A full mirror doubles the requests inside the cluster.
+>
+> **Mirroring to a subset no `DestinationRule` defines.** No copy is sent and the caller sees nothing wrong. Silent, and the most common cause of a quiet shadow.
+>
+> **Expecting the shadow's failures to surface at the caller.** The response is discarded. A shadow returning 500 to everything looks identical to a healthy one from the client side.
+>
+> **Expecting mirroring to compare responses.** Nothing looks at the shadow's answer. It finds crashes and load problems, never wrong results.
 
 > *`mirror` is a sibling of `route`, not an entry in it — the copy is extra traffic whose response and latency are both thrown away.*
 

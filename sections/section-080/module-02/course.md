@@ -34,6 +34,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need both predecessors: TLS origination (section 070, module 2) and the two-stage egress `VirtualService` (module 1 of this section). This module assumes you can write each from memory.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile, including `istio-egressgateway`) and the namespace **`egwtls-demo`**, injected, with a `tester` client pod. No Istio configuration exists, and the mesh is at its `ALLOW_ANY` default.

@@ -58,23 +58,17 @@ The four settings worth naming:
 
 The two settings that form the actual breaker for HTTP/1 traffic are `maxConnections` and `http1MaxPendingRequests`, and they describe a two-stage queue:
 
-```text
-   requests from the application
-              │
-              ▼
-   ┌──────────────────────┐
-   │  PENDING QUEUE       │   http1MaxPendingRequests: 1
-   │  [ 1 slot ]          │   ── full? → reject immediately, 503 UO
-   └──────────┬───────────┘
-              │ a connection frees up
-              ▼
-   ┌──────────────────────┐
-   │  CONNECTION POOL     │   tcp.maxConnections: 1
-   │  [ 1 connection ]    │
-   └──────────┬───────────┘
-              ▼
-          the backend
+```mermaid
+flowchart TD
+    A["a request from the application"] --> C{"is a connection free<br/>tcp.maxConnections"}
+    C -->|"yes"| U["sent to the backend"]
+    C -->|"no"| Q{"is there room in the pending queue<br/>http1MaxPendingRequests"}
+    Q -->|"yes"| W["wait here until a connection frees up"]
+    W --> U
+    Q -->|"no"| R["rejected immediately: 503 with the UO flag"]
 ```
+
+Note that the reject path has no delay on it. A request that cannot be served promptly is failed promptly — that immediacy is the feature, not a side effect.
 
 So with both set to 1: one request can be in flight, one more can wait, and a third simultaneous request has nowhere to go. It is rejected **on the spot** — not queued, not delayed. That immediacy is the feature. A request that cannot be served promptly is failed promptly, so the caller can shed it, serve a degraded response, or fail fast to *its* caller, rather than accumulating work.
 
@@ -142,6 +136,19 @@ Raise the concurrency above the pool and the rejections appear immediately.
 > ```
 >
 > Your split will differ — it depends on timing, and on a fast local cluster requests complete quickly enough that many still get through. The 503s are the circuit breaker: requests that arrived with the one connection busy and the one pending slot already taken. Note the run finished in roughly the same wall-clock time as the successful one — rejection is not a delay.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Treating the limit as server-side capacity.** It is enforced in the *caller's* proxy, per client workload. Ten callers with `maxConnections: 1` each give the backend up to ten connections.
+>
+> **Setting `http2MaxRequests` for HTTP/1 traffic.** It governs concurrent streams on one HTTP/2 connection and does nothing for HTTP/1.
+>
+> **Expecting rejected requests to be retried into success.** A pool rejection is a `503`, and `retryOn: 5xx` will retry it straight back into the same full pool. That is module 1's warning, made concrete.
+>
+> **Testing with a sequential client.** A pool limits *concurrency*. One request at a time never overflows anything, whatever the numbers say.
+>
+> **Reading `connectTimeout` as the circuit breaker.** It bounds connection establishment, not concurrency.
 
 > *`connectionPool` caps concurrent outstanding work per client, so a sequential test never trips it however many requests you send.*
 

@@ -41,22 +41,17 @@ The mechanism matters because it explains every measurement surprise in Part 2.
 
 Istio compiles the route entries into a single Envoy route with a **weighted cluster** list. When a request matches that route, the proxy makes an independent, pseudo-random draw against the weights — for *that request*, then forgets it:
 
-```text
-  request arrives
-        │
-        ▼
-  match the http rule           (section 010: first match wins)
-        │
-        ▼
-  weighted cluster selection    draw once, per request, independent of
-        │                       every previous request
-        ├── 80% ──► cluster  outbound|8084|v1|notification-service...
-        └── 20% ──► cluster  outbound|8084|v2|notification-service...
-                                      │
-                                      ▼
-                             endpoint load balancing within that cluster
-                                (section 030 — a separate decision)
+```mermaid
+flowchart TD
+    R["a request arrives at the client proxy"] --> M["match the http rule<br/>section 010: first match wins"]
+    M --> W["weighted cluster selection<br/>one pseudo-random draw, for this request only"]
+    W -->|"80"| C1["the v1 cluster"]
+    W -->|"20"| C2["the v2 cluster"]
+    C1 --> E["endpoint load balancing inside the chosen cluster<br/>section 030, a separate decision"]
+    C2 --> E
 ```
+
+The draw happens once per request and nothing remembers it. That single property explains every measurement surprise in Part 2.
 
 Two consequences follow immediately, and both are examinable:
 
@@ -156,6 +151,27 @@ Two clarifications that prevent a whole category of misreading later:
 **A weight is not a rate limit.** It divides whatever traffic arrives; it does not cap it. At `weight: 20` under ten times the load, `v2` receives ten times as many requests as before.
 
 **A weight is not a guarantee about any individual user.** Consecutive requests from the same client can land on different subsets, because each draw is independent. If a user must stay on one version for the duration of a session, weights are the wrong tool — that is either a header match from section 010 or the session affinity from section 030.
+
+## `weight: 0` is a useful state
+
+A destination weighted `0` is legal and receives nothing. It looks pointless and is not: it keeps the destination *in the object*, so advancing or reversing a rollout is a change to a number rather than an edit to the shape of the list.
+
+That matters more than it sounds under time pressure. Adding a destination means getting indentation, `host` and `subset` right while something is wrong in production; changing `0` to `10` does not.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Nesting `weight` inside `destination`.** It is a sibling of `destination`, not a field of it. The schema catches this immediately.
+>
+> **Weights that do not sum to 100.** Rejected at admission, with the total named in the error.
+>
+> **Weighting a subset no `DestinationRule` defines.** The sum check passes and the requests 503. `istioctl analyze` is what catches it.
+>
+> **Expecting a rota.** The draw is independent per request. Five requests at 80/20 can all land on `v1`.
+>
+> **Reading a weight as a rate limit.** It divides the traffic that arrives; it does not cap it.
+>
+> **Expecting a user to stay on one version.** Consecutive requests from one client are independent draws. Use a header match or `consistentHash` instead.
 
 > *A weight is a per-request draw, made by the client proxy, before any endpoint is chosen.*
 

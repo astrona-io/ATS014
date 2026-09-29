@@ -6,24 +6,17 @@ Marking an endpoint is half the story. This part covers what happens next: when 
 
 ## The timeline
 
-```text
-  t=0     failures begin accumulating on endpoint B
-          (each success resets B's counter to zero)
-            │
-            │  consecutive5xxErrors: 3 reached
-            ▼
-  interval boundary (every `interval`, default 10s)
-          ANALYSIS RUNS  →  B is ejected
-            │
-            ├──── baseEjectionTime: 30s ────┤
-            │                               │
-            ▼                               ▼
-     B receives no traffic            B returns to the pool
-                                             │
-                                      still broken? 3 more failures
-                                             ▼
-                                      ejected again — for 2 × 30s
+```mermaid
+stateDiagram-v2
+    [*] --> Serving
+    Serving --> Accumulating: a 5xx is observed
+    Accumulating --> Serving: a success resets the counter to zero
+    Accumulating --> Ejected: consecutive5xxErrors reached, at the next interval boundary
+    Ejected --> Serving: baseEjectionTime elapsed, the endpoint returns to the pool
+    Serving --> Ejected: it fails again, and is ejected for a multiple of baseEjectionTime
 ```
+
+Two transitions are the ones people forget. A single success takes the endpoint straight back to `Serving` with a clean counter, and re-ejection is not a fresh 30 seconds — the penalty grows each time.
 
 Three things to take from that.
 
@@ -91,6 +84,19 @@ A short guide, since tasks tend to specify behaviour rather than values:
 | "it must actually eject on a small service" | raise `maxEjectionPercent` above the 10% default |
 | "never remove more than half the pool" | `maxEjectionPercent: 50` |
 | "stop ejecting if the service is mostly down" | `minHealthPercent` |
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting ejection the instant the threshold is hit.** Analysis runs at `interval` boundaries. Up to a full interval can pass between the last failure and the ejection.
+>
+> **Forgetting that a success resets the counter.** `consecutive5xxErrors` means consecutive. An endpoint failing half the time may never trip it.
+>
+> **Reading `baseEjectionTime` as the ejection length.** It is the base. Repeat offenders are ejected for a growing multiple of it.
+>
+> **Setting `maxEjectionPercent` too low to help.** With the default, a two-endpoint Service may be unable to eject anything without breaching the limit.
+>
+> **Assuming an ejected endpoint is gone.** It returns automatically when its time expires, whether or not anything was fixed.
 
 > *`maxEjectionPercent` defaults to 10%, which on a two- or three-endpoint service means nothing can ever be ejected.*
 

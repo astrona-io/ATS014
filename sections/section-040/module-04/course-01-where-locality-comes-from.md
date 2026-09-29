@@ -101,6 +101,17 @@ So "prefer local" is meaningful only if the calling workload has a locality too.
 >
 > The `tester` pod has no `istio-locality` label of its own, so its locality comes from the node — `local/zone-a` here. That makes `zone-a` the "local" zone from its point of view, which is what the preference in Part 2 will act on. Both endpoints are `HEALTHY` and `OK` right now; module 3's `OUTLIER CHECK` column is the one Part 3 depends on.
 
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting locality to be configured per pod.** It is inherited from the node's `topology.kubernetes.io` labels. `istio-locality` is the override for when those are missing or wrong.
+>
+> **Setting `istio-locality` on the Deployment rather than the pod template.** It has to land on the pods; a label on the Deployment's own metadata does nothing.
+>
+> **Assuming subzone is always present.** Most clusters set region and zone only, and `region/zone` with an empty subzone is normal.
+>
+> **Changing the label and expecting running pods to update.** Locality is read when the pod is registered. Existing pods keep the locality they started with.
+
 > *Locality comes from node labels, `istio-locality` overrides it per pod, and an endpoint with no locality makes every setting in this module a no-op.*
 
 ## Reference

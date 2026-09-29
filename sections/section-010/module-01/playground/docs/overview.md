@@ -1,4 +1,4 @@
-# Overview: Route Requests By Header, URI And Query Parameter (Playground)
+# Overview: Route Requests Within The Mesh (Playground)
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 

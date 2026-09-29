@@ -32,6 +32,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need module 1 of this section: the ingress gateway pod, the port-forward pattern, and the 404-versus-503 distinction all carry over unchanged.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile, including the ingress gateway) and the namespace **`k8s-ingress-demo`**, injected, containing `booking-service` on port 80. No `Ingress` and no `IngressClass` exist yet.

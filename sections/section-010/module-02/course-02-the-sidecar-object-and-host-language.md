@@ -30,6 +30,31 @@ The omission-means-whole-namespace behaviour of `workloadSelector` is the normal
 
 Naming the namespace-wide resource `default` is convention, not syntax. It is worth following: "is there a namespace default here?" becomes a one-line check.
 
+### Selecting workloads instead of a whole namespace
+
+`workloadSelector` takes pod labels, exactly like a Service selector:
+
+```yaml
+spec:
+  workloadSelector:
+    labels:
+      app: tester
+  egress:
+    - hosts:
+        - "./*"
+        - "istio-system/*"
+```
+
+That applies to the pods labelled `app: tester` in the `Sidecar`'s own namespace, and to nothing else. A `Sidecar` never reaches across namespaces to select workloads — the object lives where the workloads live.
+
+Use a selector when one workload genuinely needs a different list from the rest of its namespace. Use the namespace-wide form otherwise, because two overlapping selectors is a shape Istio does not define, as Part 3 covers.
+
+### The `ingress` field, and why you can ignore it
+
+`egress` describes what this proxy may be told about. `ingress` is the opposite direction: it overrides how the proxy captures traffic *arriving* for the workload — the port it listens on and where it forwards to locally.
+
+It exists for workloads that cannot be handled by the normal inbound capture, and it is rare enough that a task naming it is unusual. The thing to carry forward is only that **`egress` and `ingress` are unrelated controls**: narrowing `egress` never restricts who may call the workload.
+
 ## The host language
 
 `egress[].hosts` entries are always `<namespace>/<host>`. Both halves accept `*`, and `.` is a shorthand for the proxy's own namespace:
@@ -44,6 +69,17 @@ Naming the namespace-wide resource `default` is convention, not syntax. It is wo
 | `*/httpbin.sidecar-other.svc.cluster.local` | that host, found in whichever namespace exports it |
 
 Read `./*` as "this namespace, all hosts" — the same `.`-means-here convention as a shell path, applied to namespaces.
+
+What the list actually does is act as a filter between the registry and one proxy:
+
+```mermaid
+flowchart LR
+    R["the mesh registry<br/>every Service, ServiceEntry and WorkloadEntry"] --> F{"egress.hosts<br/>does this entry match"}
+    F -->|"matches"| K["kept: pushed to this proxy as a cluster"]
+    F -->|"no match"| D["dropped: this proxy is never told it exists"]
+```
+
+Nothing is deleted and no other proxy is affected. The registry is unchanged; one proxy is simply told less of it.
 
 Two details that decide whether an entry matches anything:
 
@@ -128,6 +164,40 @@ Re-run the cluster count and `sidecar-other` is back, within seconds and with no
 ## Multiple `egress` entries
 
 `egress` is a list, and each entry can carry a `port` alongside its `hosts`. Two entries with different ports let you say "these hosts on 80, those hosts on 8000". In practice most `Sidecar` resources have exactly one `egress` entry with no `port` — a single list of hosts — and multi-entry forms are worth recognising in a task rather than reaching for by default.
+
+## Two directions of scoping
+
+`Sidecar` is the **consumer** side: one proxy declaring what it wants to be told about. There is a producer side too, and the two meet in the middle.
+
+Most Istio objects — `VirtualService`, `DestinationRule`, `ServiceEntry` — carry an `exportTo` list that says which namespaces may see them at all. Omitted, it means every namespace.
+
+```mermaid
+flowchart LR
+    O["an object in namespace A<br/>exportTo decides who MAY see it"] --> V{"is this proxy's namespace<br/>allowed by exportTo"}
+    V -->|"no"| X["never offered to the proxy"]
+    V -->|"yes"| S{"does this proxy's Sidecar<br/>egress.hosts ask for it"}
+    S -->|"no"| X2["offered, but not requested: dropped"]
+    S -->|"yes"| K["configured on the proxy"]
+```
+
+Both gates have to open. That is the single most useful thing to know when a host is missing from a proxy and the object looks perfect: there are two independent places it can be filtered out, one written by the object's owner and one written by the consumer's namespace. Section 070 covers `exportTo` on a `ServiceEntry`, where it matters most.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Leaving `istio-system/*` out.** The proxy loses the destinations it needs for its own operation. The failure is partial and points nowhere near the `Sidecar` you wrote.
+>
+> **Forgetting `./*`.** A namespace-wide `Sidecar` without it scopes away the proxy's own namespace — including the services its workload most likely calls.
+>
+> **Reading the namespace half as "where the `Sidecar` lives".** It names where the *target* host lives.
+>
+> **Patching the `hosts` list with `--type merge` and expecting an append.** A merge patch replaces the whole list. Restate every entry you want to keep.
+>
+> **Expecting a narrower `Sidecar` to block inbound traffic.** `egress` is about what this proxy can be told about, not about who may call it. `ingress` is a different field and a different direction.
+>
+> **Selecting workloads in another namespace.** `workloadSelector` only ever matches pods in the `Sidecar`'s own namespace.
+>
+> **Forgetting the producer side.** A host can be absent because `exportTo` never offered it, not because your `hosts` list omitted it.
 
 > *`egress.hosts` entries are `<namespace>/<host>`, `./*` means this namespace, and `istio-system/*` belongs in the list unless you have a specific reason to leave it out.*
 

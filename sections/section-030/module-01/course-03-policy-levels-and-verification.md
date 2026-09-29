@@ -26,7 +26,16 @@ spec:
   # 3. PORT level lives under portLevelSettings, at host or subset scope
 ```
 
-The precedence is what you would expect — port beats subset beats host — but the combination rule is not:
+```mermaid
+flowchart TD
+    R["a client proxy needs the policy for one cluster"] --> P{"is there a portLevelSettings entry<br/>for this port"}
+    P -->|"yes"| U1["use it, and nothing else"]
+    P -->|"no"| S{"does this subset have its own trafficPolicy"}
+    S -->|"yes"| U2["use it, and nothing else"]
+    S -->|"no"| H["use the host-level trafficPolicy"]
+```
+
+Note what every "use it" box says: *and nothing else*. The precedence is what you would expect — port beats subset beats host — but the combination rule is not:
 
 > A more specific `trafficPolicy` **replaces** the less specific one for the scope it covers. It does not merge field by field.
 

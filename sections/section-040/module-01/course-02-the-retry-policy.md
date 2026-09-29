@@ -37,6 +37,20 @@ The `attempts` off-by-one is worth fixing in memory now, because it is easy to m
 | `retriable-status-codes` | the status appears in a `retriableStatusCodes` list you supply |
 | `retriable-headers` | the response carries a header you listed in `retriableRequestHeaders` |
 
+```mermaid
+flowchart TD
+    A["an attempt fails"] --> Q{"does the failure match retryOn"}
+    Q -->|"no, for example a 404"| S["give the caller the failure as-is"]
+    Q -->|"yes"| B{"any attempts left"}
+    B -->|"no"| S
+    B -->|"yes"| T{"is the route timeout still unspent"}
+    T -->|"no"| X["504 to the caller, remaining retries never happen"]
+    T -->|"yes"| R["retry, and evaluate the result the same way"]
+    R --> A
+```
+
+Three gates, in that order — and the third one is the reason Part 3 exists.
+
 Note what is absent: **4xx**. A `400` or `404` is the client's problem, and retrying produces the same answer more slowly. `retryOn: 5xx` will not touch them, by design. If you genuinely need a specific non-5xx code retried, that is what `retriable-status-codes` is for:
 
 ```yaml
@@ -136,6 +150,19 @@ retries:
 > ```
 >
 > Exactly one. Compare with the four from the previous checkpoint and with what you would get from a route carrying no `retries` block at all — the latter would show retries for connection-level failures even though you wrote nothing. `attempts: 0` is the only way to mean "do not retry".
+
+## Common pitfalls
+
+> [!WARNING]
+> **Reading `attempts` as total requests.** It counts retries *after* the first try. `attempts: 3` sends up to four requests.
+>
+> **Believing that removing the `retries` block disables retries.** The implicit default still retries twice on connection-level failures. Only `attempts: 0` turns it off.
+>
+> **Using `5xx` on a route that is also connection-pool limited.** A pool rejection is a `503`, so `5xx` retries it and deepens the overload. `gateway-error` is the safer choice there.
+>
+> **Expecting to see retries from the caller.** The caller gets one response. Count attempts in the *server's* proxy log.
+>
+> **Retrying a deterministic failure.** Retries fix flaky, not broken. `/status/503` fails identically every time.
 
 > *`attempts` counts retries after the first try, and a route with no `retries` block still retries twice on connection-level failures.*
 

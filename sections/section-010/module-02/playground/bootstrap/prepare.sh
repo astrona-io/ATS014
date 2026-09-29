@@ -71,7 +71,7 @@ done
 # before the webhook was in place, then wait for each namespace to settle.
 for NAMESPACE in $NAMESPACES; do
   echo "[playground] Ensuring every workload in $NAMESPACE has a sidecar..."
-  kubectl -n "$NAMESPACE" rollout restart deployment --all >/dev/null 2>&1 || true
+  kubectl -n "$NAMESPACE" rollout restart deployment >/dev/null 2>&1 || true
   for d in $(kubectl -n "$NAMESPACE" get deployment -o name); do
     kubectl -n "$NAMESPACE" rollout status "$d" --timeout=300s
   done

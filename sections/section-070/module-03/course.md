@@ -34,6 +34,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need `ServiceEntry` from module 1. This module reuses it with a different `location` and a selector.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`vm-demo`**, injected, containing:

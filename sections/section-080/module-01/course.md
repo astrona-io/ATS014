@@ -37,6 +37,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need `ServiceEntry` from section 070 module 1, and the `Gateway` plus `VirtualService` pairing from section 060 module 1. This module is those two ideas joined, which is why it comes after both.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile, which includes **`istio-egressgateway`** in `istio-system`) and the namespace **`egwgw-demo`**, injected, with a `tester` client pod. The mesh is at its `ALLOW_ANY` default. No `ServiceEntry`, `Gateway` or `VirtualService` exists.

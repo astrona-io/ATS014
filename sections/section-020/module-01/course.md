@@ -37,6 +37,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need section 010's two objects in your head: `DestinationRule` defines subsets, `VirtualService` routes to them. Weighted routing adds nothing conceptually new to that pair — it only puts numbers on the destinations — so if subsets are still shaky, re-read Module 1 Part 1 first.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`shifting-demo`**, injected, containing `notification-service-v1`, `notification-service-v2`, a `notification-service` Service in front of both, and a `tester` client pod. `v1` answers `["EMAIL"]` and `v2` answers `["EMAIL","SMS"]`, which is what lets you count a split from the responses alone. No `VirtualService` or `DestinationRule` exists yet.

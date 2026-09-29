@@ -6,21 +6,15 @@ Three objects, each doing exactly one thing. Leaving any one out produces a dist
 
 ## The division of labour
 
-```text
-  app calls http://httpbin.org/get        (plain HTTP, port 80)
-        │
-        │  ① ServiceEntry — declares the host with BOTH ports
-        │      80 as HTTP   ← where the app arrives
-        │      443 as HTTPS ← where the traffic is going
-        ▼
-  ② VirtualService — matches port 80, routes to port 443 on the same host
-        │
-        ▼
-  ③ DestinationRule — portLevelSettings for port 443, tls.mode: SIMPLE
-        │      the proxy performs the TLS handshake here
-        ▼
-  external service, over HTTPS
+```mermaid
+flowchart TD
+    A["the app calls http://httpbin.org/get<br/>plain HTTP, port 80"] --> S["1. ServiceEntry<br/>declares the host with BOTH ports:<br/>80 as HTTP, where the app arrives<br/>443 as HTTPS, where it is going"]
+    S --> V["2. VirtualService<br/>matches port 80, routes to port 443<br/>on the same host"]
+    V --> D["3. DestinationRule<br/>portLevelSettings for 443, tls.mode SIMPLE<br/>the handshake happens here"]
+    D --> E["the external service, over HTTPS"]
 ```
+
+Each object does one job and none of them works alone. The most common failure is having two of the three.
 
 | Omit | Symptom |
 | --- | --- |
@@ -210,6 +204,17 @@ Worth doing once, because the failure is instructive and the fix is not obvious 
 > The `DestinationRule` is valid, `istioctl analyze` is clean, and the call fails — because the proxy is now trying to originate TLS toward port 80 as well, where the redirect starts. Re-apply the `portLevelSettings` version from the previous checkpoint before moving on. A 503 with a plausible-looking `DestinationRule` is the signature of this mistake.
 
 > *`tls` belongs under `portLevelSettings` for port 443 — at the top level it applies to the plaintext port too and breaks the whole arrangement.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Declaring only one port on the `ServiceEntry`.** Both are needed: 80 is where the application arrives, 443 is where the traffic goes.
+>
+> **Putting the `tls` block at the top level of the `trafficPolicy`.** It has to be under `portLevelSettings` for 443, or it applies to port 80 as well and breaks the arrival hop.
+>
+> **Forgetting the `VirtualService`.** Without the port redirect nothing ever reaches 443, and the `DestinationRule` is never consulted.
+>
+> **Using `tls.mode: ISTIO_MUTUAL` for an external host.** That is mesh identity. An external service wants `SIMPLE`, or `MUTUAL` with your own client certificate.
 
 ## Reference
 

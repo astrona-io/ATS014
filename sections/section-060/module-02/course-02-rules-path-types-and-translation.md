@@ -44,25 +44,17 @@ The nesting is deeper than Istio's for the same information: `rules[].http.paths
 
 The one to be careful with is `Prefix`, because it is **element-wise, not a string prefix**:
 
-```text
-  pathType: Prefix, path: /book
+Side by side against Istio's own `uri.prefix` from section 010, which **is** a plain string prefix, for the same configured value `/book`:
 
-    /book          ✓ matches
-    /book/         ✓ matches
-    /book/123      ✓ matches   (element "book" then more)
-    /booking       ✗ NO MATCH  (element is "booking", not "book")
-    /bookings/1    ✗ NO MATCH
-```
+| Request path | `Ingress` `pathType: Prefix` | Istio `uri: { prefix: /book }` |
+| --- | --- | --- |
+| `/book` | matches | matches |
+| `/book/` | matches | matches |
+| `/book/123` | matches — element `book`, then more | matches |
+| `/booking` | **no match** — the element is `booking` | **matches** |
+| `/bookings/1` | **no match** | **matches** |
 
-Now compare with Istio's own `uri.prefix` from section 010, which **is** a plain string prefix:
-
-```text
-  uri: { prefix: /book }   (Istio VirtualService)
-
-    /book          ✓
-    /book/123      ✓
-    /booking       ✓ MATCHES  ← the difference
-```
+The last two rows are the whole difference: `Ingress` compares path *elements*, Istio compares *characters*.
 
 Same word, different semantics, in two APIs you will translate between. When converting an `Ingress` to a `VirtualService`, a `pathType: Prefix` of `/book` becomes `uri: { prefix: /book/ }` plus an `exact` match on `/book` if you want to be faithful — or you accept that the Istio version is slightly broader.
 
@@ -146,6 +138,17 @@ Note what is **not** here: any way to express ordering. Istio's `VirtualService`
 For non-overlapping paths that is fine. For overlapping ones it means the behaviour is defined by the implementation rather than by your YAML, which is a real reason to prefer an API where you can see the ordering.
 
 > *`pathType: Prefix` is element-wise and Istio's `uri.prefix` is a string prefix — the same word means two different things in the two APIs.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Reading `Prefix` as a string prefix.** It is element-wise. `/book` does not match `/booking`, which is the opposite of Istio's `uri.prefix`.
+>
+> **Translating a `pathType: Prefix` to `uri.prefix` verbatim.** The Istio version is broader. Use `prefix: /book/` plus an `exact` match on `/book` to be faithful.
+>
+> **Assuming `ImplementationSpecific` behaves consistently.** Its meaning is up to the controller, so a manifest that worked on another ingress controller may not behave the same here.
+>
+> **Expecting rule order to decide precedence.** `Ingress` has no first-match-wins list; longest path wins, which is a different model from the `VirtualService` you translate it into.
 
 ## Reference
 

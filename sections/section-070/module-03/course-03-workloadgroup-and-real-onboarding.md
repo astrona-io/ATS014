@@ -35,13 +35,12 @@ It describes what instances of a service **look like** — labels, service accou
 
 The relationships are worth stating plainly, because the three object names blur together:
 
-```text
-  WorkloadGroup   is to   WorkloadEntry    as   Deployment  is to  Pod
-      (template + lifecycle)                        (template + lifecycle)
+| In the mesh, for a VM | Is to | As, in Kubernetes | Is to |
+| --- | --- | --- | --- |
+| `WorkloadGroup` | `WorkloadEntry` | `Deployment` | `Pod` |
+| `ServiceEntry` with a `workloadSelector` | the entries it selects | `Service` | the pods it selects |
 
-  ServiceEntry with workloadSelector       as   Service     is to  Pods
-      (a name and ports in front of whatever matches)
-```
+Read the first row as template-plus-lifecycle and the second as a name and ports in front of whatever matches.
 
 So a fully automated setup has **two** hand-written objects — the `WorkloadGroup` and the `ServiceEntry` — and zero per-instance objects.
 

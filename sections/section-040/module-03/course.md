@@ -33,6 +33,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need `DestinationRule` and `trafficPolicy` from section 030. This module adds a key beside `connectionPool` — Istio's documentation groups the two together as "circuit breaking", and they are frequently configured together.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`outlier-demo`**, injected, containing:

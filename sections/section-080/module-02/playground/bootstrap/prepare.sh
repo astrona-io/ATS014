@@ -67,7 +67,7 @@ kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || {
 # Every pod must carry the istio-proxy sidecar. Restart anything that started
 # before the webhook was in place, then wait for the namespace to settle.
 echo "[playground] Ensuring every workload in $NAMESPACE has a sidecar..."
-kubectl -n "$NAMESPACE" rollout restart deployment --all >/dev/null 2>&1 || true
+kubectl -n "$NAMESPACE" rollout restart deployment >/dev/null 2>&1 || true
 for d in $(kubectl -n "$NAMESPACE" get deployment -o name); do
   kubectl -n "$NAMESPACE" rollout status "$d" --timeout=300s
 done

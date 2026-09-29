@@ -1,0 +1,33 @@
+metadata:
+  name: "ats-014-lab-030-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-030-02-setup"
+      description: "Creates the lb-demo namespace with a three-replica stable version, a two-replica canary version behind the same Service, and a tester client"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-cookie-affinity-at-port-level"
+      description: "Confirms the affinity policy is attached through portLevelSettings for port 8000, that Istio issues the session cookie itself, that a client returning that cookie is pinned to one endpoint, and that a client without it is not"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

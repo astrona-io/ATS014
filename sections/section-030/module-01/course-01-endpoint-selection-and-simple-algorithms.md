@@ -8,21 +8,15 @@ This part establishes where the endpoint decision sits in the request path, give
 
 Three decisions happen in order inside the calling proxy, and keeping them apart makes the rest of the course easier:
 
-```text
-  request
-     │
-     │  1. ROUTE MATCH            section 010 — which http rule applies
-     ▼
-  the rule's route block
-     │
-     │  2. CLUSTER SELECTION      section 020 — weights pick a subset,
-     ▼                            or there is only one destination
-  one cluster  (outbound|8000|<subset>|httpbin…)
-     │
-     │  3. ENDPOINT SELECTION     THIS MODULE — pick one pod from the
-     ▼                            cluster's endpoint list
-  10.244.0.12:8080
+```mermaid
+flowchart TD
+    R["a request leaves the application"] --> S1["1. route match<br/>section 010: which http rule applies"]
+    S1 --> S2["2. cluster selection<br/>section 020: weights pick a subset"]
+    S2 --> S3["3. endpoint selection<br/>THIS MODULE: pick one pod from the cluster"]
+    S3 --> O["one endpoint, for example 10.244.0.12 on 8080"]
 ```
+
+Only step 3 changes in this module, and it happens after the cluster is already fixed — which is why the number of endpoints in a cluster can never influence which cluster was chosen.
 
 Step 3 is the only one this module changes. It happens per request, inside the client's sidecar, over the endpoints the control plane pushed for that cluster. Nothing about it involves the server.
 
@@ -118,6 +112,19 @@ spec:
 > ```
 >
 > Still all three, now slightly uneven because `LEAST_REQUEST` reacts to in-flight requests rather than counting turns. Switch `simple` to `ROUND_ROBIN` and run it again: with a sequential loop you should see a much flatter 4/4/4. Every `simple` value distributes — that is what they are for.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting `LEAST_REQUEST` to distribute perfectly evenly.** It samples two endpoints and picks the less loaded of them. A slightly uneven count is the algorithm working, not failing.
+>
+> **Reading `PASSTHROUGH` as an algorithm.** It opts out of endpoint selection entirely and connects to the original address.
+>
+> **Setting `simple` and `consistentHash` together.** They are mutually exclusive and the object is rejected.
+>
+> **Looking for the decision on the server.** Endpoint selection happens in the *caller's* proxy. The server has no part in it.
+>
+> **Judging a distribution from a handful of requests.** The same sampling caution as section 020 applies here.
 
 > *Endpoint selection is the third decision in the path, made per request by the client proxy, and every `simple` algorithm spreads traffic across the cluster's endpoints.*
 

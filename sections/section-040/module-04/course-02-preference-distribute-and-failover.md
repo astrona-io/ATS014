@@ -10,13 +10,16 @@ Istio **prefers the caller's own locality by default**, with no `localityLbSetti
 
 The matching is hierarchical and most-specific-first: same region *and* zone *and* subzone beats same region and zone, which beats same region, which beats anything.
 
-```text
-   caller in  local/zone-a
-        │
-        ├─ 1. endpoints in local/zone-a       ← all traffic, while any are healthy
-        ├─ 2. endpoints in local/<other zone> ← only when zone-a has none
-        └─ 3. endpoints in <other region>     ← only when the region has none
+```mermaid
+flowchart TD
+    C["a caller in region local, zone a"] --> Z{"any healthy endpoints in local/zone-a"}
+    Z -->|"yes"| U1["all traffic stays in zone a"]
+    Z -->|"no"| R{"any healthy endpoints elsewhere in region local"}
+    R -->|"yes"| U2["spill to the other zones in the region"]
+    R -->|"no"| U3["spill to another region"]
 ```
+
+Each level is used only when the one above it has nothing healthy left. "Keep traffic in the zone, fall back if the zone dies" is therefore the default, with no configuration at all.
 
 So the common requirement — "keep traffic in the zone, fall back if the zone dies" — needs **no configuration at all**. What `localityLbSetting` adds is *control* over that preference: explicit proportions, or an explicit fallback order.
 
@@ -134,6 +137,19 @@ There is also `failoverPriority`, a list of label keys (such as `topology.kubern
 | "if this region is down, use that one" | `failover` |
 | "rank fallbacks by how similar the locality is" | `failoverPriority` |
 | "fail over between zones in the same region" | the default already does this |
+
+## Common pitfalls
+
+> [!WARNING]
+> **Configuring `distribute` to get zone preference.** Preference is already the default. `distribute` is for overriding it with explicit proportions.
+>
+> **Writing `distribute` weights that do not sum to 100.** Same rule as section 020's route weights, and the same admission rejection.
+>
+> **Mixing `distribute` and `failover` for the same locality.** They are alternative ways of answering the same question; pick one.
+>
+> **Expecting failover without health information.** Nothing spills over until endpoints are marked unhealthy, which is Part 3's subject and needs `outlierDetection`.
+>
+> **Testing locality on a single-node cluster.** Every pod shares the node's locality, so there is no second locality to prefer or fail over to.
 
 > *The default already prefers the caller's locality and spills over — `localityLbSetting` exists to change that default, not to create it.*
 

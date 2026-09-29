@@ -8,23 +8,16 @@ One idea remains, and it is the single most reliably examined thing in this modu
 
 Part 1's diagram had the answer in it. Expand the bottom half:
 
-```text
-  client proxy (in the CALLING pod)
-        │
-        │  1. WEIGHTED CLUSTER SELECTION
-        │     draw against the weights  →  picks a SUBSET
-        │     80 / 20
-        ├────────────────┐
-        │                │
-        ▼                ▼
-   cluster …|v1|…   cluster …|v2|…
-   10 endpoints      1 endpoint
-        │                │
-        │  2. ENDPOINT LOAD BALANCING
-        │     spread within the chosen cluster  →  picks a POD
-        ▼                ▼
-   ~8% each         100% of v2's share
+```mermaid
+flowchart TD
+    P["client proxy in the CALLING pod"] --> W["step 1: weighted cluster selection<br/>draw against the weights, picks a SUBSET"]
+    W -->|"50"| C1["the v1 cluster<br/>10 endpoints"]
+    W -->|"50"| C2["the v2 cluster<br/>1 endpoint"]
+    C1 --> L1["step 2: load balancing<br/>each v1 pod gets about 5 percent of all traffic"]
+    C2 --> L2["step 2: load balancing<br/>the single v2 pod gets the whole 50 percent"]
 ```
+
+Step 2 cannot influence step 1, because step 1 already finished. That ordering is the entire answer to "why does scaling not change the split".
 
 The weight decides **which cluster**. Load balancing then decides **which endpoint inside it**. The second decision has no way to influence the first, because the first already happened.
 

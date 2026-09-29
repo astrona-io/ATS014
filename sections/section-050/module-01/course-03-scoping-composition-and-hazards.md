@@ -8,6 +8,15 @@ Everything so far affects every caller of the host. In a shared cluster that is 
 
 The fix uses matching you already know: put the fault on a rule that only your test requests match, and leave a normal rule below it for everyone else. Rules are evaluated top down and first match wins, so the scoped rule goes **first** and the plain route goes last.
 
+```mermaid
+flowchart TD
+    R["a request to notification-service"] --> M{"does it carry end-user: tester"}
+    M -->|"yes, your test traffic"| F["rule 1: the fault fires"]
+    M -->|"no, everyone else"| N["rule 2: routed normally, no fault"]
+```
+
+Everything the fault can reach is on the left branch, and you control what goes down it. An unmatched fault has no left branch — every caller of the host is your blast radius.
+
 ```yaml
 http:
   - match:

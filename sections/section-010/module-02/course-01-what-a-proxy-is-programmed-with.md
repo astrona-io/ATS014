@@ -29,25 +29,55 @@ Start by counting.
 
 ## How it got there
 
-The delivery mechanism matters, because it explains both the cost and the fact that changes need no restart.
+Section 000 covered the delivery mechanism: `istiod` watches Kubernetes, builds a model of the mesh, and pushes it to every proxy over the xDS streams. What this module cares about is the **fan-out** — not how one proxy is configured, but how many proxies one change reaches.
 
-`istiod` watches the Kubernetes API, builds a model of the mesh, and pushes configuration to every proxy over **xDS** — a set of gRPC streams, one resource type each:
-
-```text
-   Kubernetes API                    istiod                         every sidecar
-   ──────────────                    ──────                         ─────────────
-   Services, Endpoints,        ┌── builds the mesh model      ┌── LDS  listeners
-   Pods, Istio CRDs      ─────►│   (registry + your config)  ─┤    RDS  routes
-        (watch)                │                              │    CDS  clusters
-                               └── computes each proxy's ─────┤    EDS  endpoints
-                                   config and PUSHES it       └──  SDS  secrets
-                                        (long-lived gRPC stream, no polling)
+```mermaid
+flowchart TD
+    C["one Service added anywhere in the cluster"] --> I["istiod recomputes<br/>the configuration for every proxy"]
+    I --> P1["proxy in pod 1"]
+    I --> P2["proxy in pod 2"]
+    I --> P3["proxy in pod 3"]
+    I --> PN["...every other proxy in the mesh"]
 ```
+
+Every proxy is a recipient, whether or not the workload beside it will ever call the new Service. That is the default this module exists to change.
 
 Two consequences follow directly:
 
 - **A running proxy is updated in place.** The stream is long-lived; `istiod` sends the new state and Envoy swaps it in. Nothing about this involves recreating a pod, which is why every `Sidecar` change in Part 3 takes effect in seconds on pods that never restarted.
 - **Every proxy is a recipient of every relevant change.** Add one Service anywhere and `istiod` recomputes and re-pushes to the proxies that need to know — which, by default, is all of them.
+
+## What the dump is made of
+
+"Configuration" is not one thing. The proxy holds all four of the xDS layers from section 000, and a `Sidecar` moves all four together — so it is worth seeing the shape of the whole thing once before you start shrinking it.
+
+> [!TIP]
+> **Try it — all four layers, counted**
+>
+> ```sh
+> for L in listener route cluster endpoint; do
+>   printf '%-10s %s\n' "$L" "$(istioctl proxy-config $L deploy/tester -n sidecar-demo 2>/dev/null | tail -n +2 | wc -l)"
+> done
+> ```
+>
+> Expect something like:
+>
+> ```text
+> listener   16
+> route      9
+> cluster    27
+> endpoint   34
+> ```
+>
+> The numbers depend entirely on what is installed in your cluster — record yours, because the point of this module is watching them fall. Clusters and endpoints dominate, which is why the cluster count is the usual shorthand for "how much is this proxy carrying".
+
+## Why Istio does not work this out for itself
+
+The obvious question is why the control plane does not simply infer which services a workload calls and send only those.
+
+It cannot, and the reason is worth understanding rather than memorising: the call graph is a runtime property. A workload can resolve a name it has never used before, on any request, from a configuration file or a user-supplied value. `istiod` sees Kubernetes objects, not application intent. Sending everything is the only default that cannot break a working application.
+
+So scoping is a declaration *you* make — you are telling the mesh something it has no other way to learn. That also explains why getting it wrong breaks things: you have asserted a call graph, and anything outside your assertion stops resolving.
 
 ## Why the default scales badly
 
@@ -62,6 +92,34 @@ At ten services this is free. At a thousand services and a thousand pods it is t
 | Proxy memory | each sidecar's RSS, multiplied by every pod in the mesh |
 | Control plane CPU | `istiod` recomputing configuration on every registry change |
 | Push latency | the time between a change and every proxy having it — and a "push storm" when many changes land together |
+
+The first of those three is measurable from inside the pod. Envoy exposes its own statistics on the proxy's admin interface, and `pilot-agent` — the supervisor process that shares the `istio-proxy` container — can query it without any network access from outside.
+
+> [!TIP]
+> **Try it — what the configuration costs in memory**
+>
+> ```sh
+> kubectl -n sidecar-demo exec deploy/tester -c istio-proxy -- \
+>   pilot-agent request GET memory
+> ```
+>
+> Expect something like:
+>
+> ```text
+> 2026/09/29 18:28:27 INFO GOMEMLIMIT is already set, skipping ... GOMEMLIMIT=1073741824
+> {
+>  "allocated": "8800120",
+>  "heap_size": "14680064",
+>  "pageheap_unmapped": "0",
+>  "pageheap_free": "3850240",
+>  "total_thread_cache": "913056",
+>  "total_physical_bytes": "17754942"
+> }
+> ```
+>
+> The `GOMEMLIMIT` line is `pilot-agent` talking about itself; the JSON below it is Envoy. `allocated` is the figure to note down.
+>
+> Be honest with yourself about the scale, though. Re-run this after the `Sidecar` in Part 2 and the number falls — on this two-namespace playground by a few percent, because configuration is a small part of a mostly-idle proxy's heap. The mechanism is real and the direction is right; the *size* of the win is a function of how many services the mesh has, which is exactly the point the next section makes with arithmetic rather than with one proxy.
 
 The fix is not a bigger control plane. It is telling proxies about less, which is the rest of this module.
 
@@ -101,6 +159,17 @@ The mesh registry is not only Kubernetes Services. It holds:
 
 All three are "hosts in a namespace" as far as scoping is concerned, and all three are subject to the `egress.hosts` list. That is why a `Sidecar` can hide a correctly-written `ServiceEntry` from a workload — they are the same kind of entry to this machinery.
 
+## Common pitfalls
+
+> [!WARNING]
+> **Assuming a proxy only knows about what its workload calls.** By default it knows about every Service in the mesh. The `wc -l` above is the proof.
+>
+> **Reading the cluster count as a problem in itself.** At small scale it costs nothing. It becomes a problem as a product of mesh size and change rate, not as an absolute number.
+>
+> **Confusing reachability with authorization.** Every workload being able to address every other is a side effect of the default configuration, not a policy decision — and narrowing configuration is not the same as denying access. Part 3 is explicit about this.
+>
+> **Expecting a restart to be needed.** Configuration is swapped in over a live stream. If a change has not taken effect, the reason is not that the pod needs recreating.
+
 > *`istiod` pushes the whole registry to every proxy by default, so configuration cost grows with the size of the cluster, not the size of your application.*
 
 ## Reference
@@ -108,4 +177,4 @@ All three are "hosts in a namespace" as far as scoping is concerned, and all thr
 - [Performance and scalability](https://istio.io/latest/docs/ops/deployment/performance-and-scalability/) — Istio's own numbers for proxy memory and push cost, and the levers that move them.
 - [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — the operational guide this module's object exists to serve.
 - [xDS protocol overview](https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol) — what the discovery services are and how a push works.
-- `istioctl proxy-status` — one line per proxy showing whether each is `SYNCED` with the control plane; the first command to run when a push seems not to have landed.
+- `istioctl proxy-status` — one line per proxy currently connected to the control plane, with the xDS channels it subscribes to; naming a single proxy prints a `Match` line per resource type instead. The first command to run when a push seems not to have landed.

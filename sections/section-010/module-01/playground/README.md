@@ -1,4 +1,4 @@
-# Route Requests By Header, URI And Query Parameter — Playground
+# Route Requests Within The Mesh — Playground
 
 - **ID:** PLAYGROUND
 - **Slug:** ats-014-playground-010-01

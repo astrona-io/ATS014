@@ -37,7 +37,9 @@ After this module you can:
 
 ## Before you start
 
-You should be comfortable with `kubectl`, and it helps to have the `VirtualService` / `DestinationRule` pair from Module 1 fresh — not because this object depends on them, but because "the proxy was never told about that host" is a failure mode you will now be able to tell apart from "the routing rule did not match".
+This module leans harder on [section 000](../../section-000/module-01/course.md) than any other in this section: the service registry, the xDS push, and reading a proxy's cluster and listener dumps are not background here — they are the thing being changed. If `istioctl proxy-config cluster` is not yet a command you can read, start there.
+
+It also helps to have the `VirtualService` / `DestinationRule` pair from Module 1 fresh — not because this object depends on them, but because "the proxy was never told about that host" is a failure mode you will now be able to tell apart from "the routing rule did not match".
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and two injected namespaces, which is the minimum for scoping to have anything visible to do:
 

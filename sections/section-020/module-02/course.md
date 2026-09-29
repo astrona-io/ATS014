@@ -35,6 +35,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need `VirtualService` and `DestinationRule` subsets from section 010, and it helps to have done weighted shifting first — mirroring is best understood as the thing weighted shifting is not.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`mirror-demo`**, injected, holding `notification-service-v1` and `notification-service-v2` behind one `notification-service` Service, plus a `tester` client pod. `v1` answers `["EMAIL"]`, `v2` answers `["EMAIL","SMS"]`. No Istio traffic configuration exists yet.

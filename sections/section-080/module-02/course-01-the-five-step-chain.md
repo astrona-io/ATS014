@@ -6,22 +6,16 @@ Five steps, each owned by one object. Two of them are where every mistake in thi
 
 ## The path
 
-```text
-  1. app          calls http://httpbin.org/get                   plain HTTP, port 80
-                       │
-  2. sidecar      matches gateways:[mesh], forwards to the        VirtualService, stage 1
-                  egress gateway Service on port 80
-                       │
-  3. gateway      accepts it for host httpbin.org on port 80      Gateway listener
-                       │
-  4. gateway      routes it to httpbin.org on port 443            VirtualService, stage 2
-                       │
-  5. gateway      originates TLS to port 443                      DestinationRule on httpbin.org
-                       ▼
-                  external service, over HTTPS
+```mermaid
+flowchart TD
+    S1["1. the app calls http://httpbin.org/get<br/>plain HTTP, port 80"] --> S2["2. the sidecar matches gateways: mesh<br/>and forwards to the egress gateway on port 80<br/>VirtualService, stage 1"]
+    S2 --> S3["3. the gateway accepts it for host httpbin.org on port 80<br/>Gateway listener"]
+    S3 --> S4["4. the gateway routes it to httpbin.org on port 443<br/>VirtualService, stage 2"]
+    S4 --> S5["5. the gateway originates TLS to port 443<br/>DestinationRule on httpbin.org"]
+    S5 --> S6["the external service, over HTTPS"]
 ```
 
-Compare that with section 070 module 2's three-step version, where the sidecar did steps 3 to 5 itself. Everything is the same except that the work has moved one hop outward.
+Compare with section 070 module 2's three-step version, where the sidecar did steps 3 to 5 itself. Nothing new happens — the same work has moved one hop outward.
 
 ## Step 4 — the route targets 443, the listener stays on 80
 
@@ -201,6 +195,17 @@ Two `DestinationRule` objects pointing at two different hosts, doing two unrelat
 > A plain `http://` call from an application that knows nothing about any of this, answered over a TLS connection made two hops away. As in module 1, the response alone proves nothing — Part 2 is the evidence.
 
 > *The gateway receives on 80 and sends on 443 — the two port numbers are the two directions, not an inconsistency.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting the gateway listener port and the route's target port to match.** The listener stays on 80 because that is where traffic arrives; the route targets 443 because that is where it is going. Both numbers are correct.
+>
+> **Declaring one port on the `ServiceEntry`.** Both 80 and 443 are needed, for the same reason as section 070.
+>
+> **Attaching the TLS `DestinationRule` to the gateway Service.** It attaches to the *external host*, because that is the destination whose connection is being secured.
+>
+> **Losing track of which of the five steps failed.** Each step has its own object and its own proxy. Part 2's diagnostic order exists for this.
 
 ## Reference
 

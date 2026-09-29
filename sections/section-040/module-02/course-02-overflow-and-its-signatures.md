@@ -117,6 +117,19 @@ The two counters answer different questions, and the ratio tells you which limit
 
 That last line is the useful one on an exam. A 503 with no `UO` and no overflow counter movement is somebody else's problem.
 
+## Common pitfalls
+
+> [!WARNING]
+> **Diagnosing an overflow 503 at the backend.** The backend never saw the request. The evidence is entirely in the caller's proxy log and counters.
+>
+> **Reading a bare 503 as a circuit breaker.** Without the `UO` flag it is something else — an application error, an unready pod, or a route with no endpoints.
+>
+> **Relying on access logs after the fact.** They roll over. `upstream_rq_pending_overflow` accumulates and is the counter to quote.
+>
+> **Confusing `upstream_cx_overflow` with `upstream_rq_pending_overflow`.** The first is the connection limit, the second the pending queue. They point at different settings.
+>
+> **Expecting counters to exist before any traffic.** A cluster's statistics appear once the proxy has had a reason to create them.
+
 > *`UO` in the access log and `upstream_rq_pending_overflow` in the stats are what distinguish a breaker rejection from an application 503 — and the backend's silence confirms it.*
 
 ## Reference

@@ -33,6 +33,8 @@ After this module you can:
 
 ## Before you start
 
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+
 You need `VirtualService` from section 010. Everything you know about `http` rules, matching and routing applies unchanged — the only new thing is that the rules now hang off a listener instead of applying inside the mesh.
 
 The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile, which includes the ingress gateway) and the namespace **`ingress-demo`**, injected, containing `booking-service` on port 80. No `Gateway` and no `VirtualService` exist yet.
