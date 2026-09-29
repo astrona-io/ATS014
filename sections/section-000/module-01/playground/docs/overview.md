@@ -31,7 +31,7 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 - Send the same request from `legacy` and notice there is no proxy log anywhere,
   because nothing intercepted it.
 - Count what one proxy is configured with: `istioctl proxy-config cluster deploy/web -n mesh-demo | wc -l`.
-- Run `istioctl proxy-status` and watch every proxy report `SYNCED`.
+- Run `istioctl proxy-status` to see every connected proxy and the xDS channels it subscribes to, then name one of them to get a `Match` line per resource type.
 - Run `istioctl x describe pod <a web pod> -n mesh-demo` and read what it says
   about the pod before any Istio object exists.
 - Delete the `api` Deployment and watch the endpoint list for its cluster empty

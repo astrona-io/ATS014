@@ -106,14 +106,20 @@ The first of those three is measurable from inside the pod. Envoy exposes its ow
 > Expect something like:
 >
 > ```text
+> 2026/09/29 18:28:27 INFO GOMEMLIMIT is already set, skipping ... GOMEMLIMIT=1073741824
 > {
->  "allocated": "9216824",
->  "heap_size": "37748736",
->  ...
+>  "allocated": "8800120",
+>  "heap_size": "14680064",
+>  "pageheap_unmapped": "0",
+>  "pageheap_free": "3850240",
+>  "total_thread_cache": "913056",
+>  "total_physical_bytes": "17754942"
 > }
 > ```
 >
-> Numbers vary with what is installed, so treat them as a baseline to compare against rather than a target. Run the same command again after Part 3's `Sidecar` narrows this proxy and the allocated figure should fall — the clearest evidence that scoping is a resource decision and not just tidiness.
+> The `GOMEMLIMIT` line is `pilot-agent` talking about itself; the JSON below it is Envoy. `allocated` is the figure to note down.
+>
+> Be honest with yourself about the scale, though. Re-run this after the `Sidecar` in Part 2 and the number falls — on this two-namespace playground by a few percent, because configuration is a small part of a mostly-idle proxy's heap. The mechanism is real and the direction is right; the *size* of the win is a function of how many services the mesh has, which is exactly the point the next section makes with arithmetic rather than with one proxy.
 
 The fix is not a bigger control plane. It is telling proxies about less, which is the rest of this module.
 
@@ -171,4 +177,4 @@ All three are "hosts in a namespace" as far as scoping is concerned, and all thr
 - [Performance and scalability](https://istio.io/latest/docs/ops/deployment/performance-and-scalability/) — Istio's own numbers for proxy memory and push cost, and the levers that move them.
 - [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — the operational guide this module's object exists to serve.
 - [xDS protocol overview](https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol) — what the discovery services are and how a push works.
-- `istioctl proxy-status` — one line per proxy showing whether each is `SYNCED` with the control plane; the first command to run when a push seems not to have landed.
+- `istioctl proxy-status` — one line per proxy currently connected to the control plane, with the xDS channels it subscribes to; naming a single proxy prints a `Match` line per resource type instead. The first command to run when a push seems not to have landed.

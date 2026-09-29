@@ -99,7 +99,7 @@ It is the right shape when you are shadowing two candidate versions at once. `mi
 >
 > **Assuming the shadow can tell it is a shadow.** Istio 1.30 sends the copy unchanged, and even the old `-shadow` authority was only a header the application might read. Istio enforces nothing.
 >
-> **Looking only at application logs for proof.** The authority rewrite is in the proxy access log (`-c istio-proxy`).
+> **Looking only at application logs for proof.** The evidence is in the shadow's *proxy* access log (`-c istio-proxy`), where every line is a copy because the route sends that subset nothing of its own. It is not an authority suffix — Istio 1.30 does not add one.
 >
 > **Indenting `mirror` as an entry of `route`.** It is a sibling of `route` on the same rule, and a single destination rather than a list.
 >
