@@ -23,16 +23,15 @@ The name "consistent hashing" is not decoration — it describes a specific algo
 
 Envoy builds a **ring**: a circular space of hash values. Each endpoint is placed at many points around that ring (hundreds, controlled by `minimumRingSize`). To route a request, the proxy hashes the chosen property, finds that position on the ring, and walks clockwise to the first endpoint marker it meets.
 
-```text
-        hash("alice")
-              │
-              ▼
-   ┌───────────────────────────┐
-   │  ●B    ●A   ●C  ●A   ●B   │   ring positions, many per endpoint
-   │        ▲                  │
-   │        └── first marker clockwise → endpoint A
-   └───────────────────────────┘
+```mermaid
+flowchart LR
+    V["the value being hashed<br/>for example the string alice"] --> H["hash it to a position on the ring"]
+    H --> W["walk clockwise to the first endpoint marker"]
+    W --> E["that marker's endpoint serves the request"]
+    E --> N["nothing is stored:<br/>the next request repeats the same walk"]
 ```
+
+Each endpoint owns hundreds of markers scattered around the ring, not one — that is what makes the arcs small enough that losing an endpoint disturbs only a fraction of them.
 
 Two properties fall straight out of that picture, and both are examinable:
 
@@ -122,6 +121,19 @@ trafficPolicy:
 The important detail is what `ttl` does. **Setting `ttl` makes Istio generate the cookie** if the request does not already carry one: the proxy issues a `Set-Cookie` on the response, and the browser returns it on every subsequent request. That closes the "nothing to hash" gap for a client that arrives with no identifier.
 
 Leave `ttl` out and Istio will only hash a cookie the client already sends — which is the right choice when some other component owns the session cookie and a second one would cause confusion.
+
+## Common pitfalls
+
+> [!WARNING]
+> **Treating affinity as a guarantee.** Changing the endpoint set moves roughly `1/N` of sessions. An application that breaks when a session moves needs shared session state.
+>
+> **Hashing a property the client does not always send.** Requests with nothing to hash fall back to ordinary load balancing, silently and per request.
+>
+> **Reading a collision as a bug.** With three endpoints, two different values landing on the same pod is ordinary. Try a third value before changing anything.
+>
+> **Expecting `httpCookie` to create a cookie without `ttl`.** Without `ttl` Istio only hashes a cookie the client already sends.
+>
+> **Using `useSourceIp` behind a gateway or NAT.** Every caller arrives with the same address, so every request hashes identically and one pod takes all of it.
 
 > *The ring means a hash maps to an endpoint without storing anything, and that changing the endpoint set moves a small share of sessions rather than all of them.*
 
