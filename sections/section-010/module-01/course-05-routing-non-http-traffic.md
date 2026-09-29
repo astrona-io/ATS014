@@ -45,14 +45,23 @@ Prove it on the playground's own Service, which is named `http` today.
 > Expect something like:
 >
 > ```text
-> ADDRESS   PORT  MATCH                        DESTINATION
-> 0.0.0.0   80    Trans: raw_buffer; App: HTTP Route: 80
-> ADDRESS   PORT  MATCH        DESTINATION
-> 0.0.0.0   80    ALL          Cluster: outbound|80||notification-service.routing-demo.svc.cluster.local
-> NAME     VHOST NAME     DOMAINS     MATCH     VIRTUAL SERVICE
+> ADDRESSES PORT MATCH                                DESTINATION
+> 0.0.0.0   80   Trans: raw_buffer; App: http/1.1,h2c Route: 80
+> 0.0.0.0   80   ALL                                  PassthroughCluster
+>
+> ADDRESSES    PORT MATCH                                DESTINATION
+> 0.0.0.0      80   Trans: raw_buffer; App: http/1.1,h2c Route: 80
+> 0.0.0.0      80   ALL                                  PassthroughCluster
+> 10.96.62.184 80   ALL                                  Cluster: outbound|80||notification-service.routing-demo.svc.cluster.local
+>
+> NAME  VHOST NAME                                              DOMAINS                             MATCH  VIRTUAL SERVICE
+> 80    istio-egressgateway.istio-system.svc.cluster.local:80   istio-egressgateway.istio-system…   /*
+> 80    istio-ingressgateway.istio-system.svc.cluster.local:80  istio-ingressgateway.istio-system…  /*
 > ```
 >
-> The listener stopped handing traffic to a route table and started sending the whole connection straight to a cluster. The route listing is empty — there is no HTTP layer left for a `VirtualService` to attach to. Nothing errored, and `istioctl analyze` stays clean.
+> Read the middle block carefully, because the change is an **addition**, not a replacement. The generic `0.0.0.0:80` HTTP listener is still there — other services still use port 80 — but `notification-service` has been given a listener of its own, on its ClusterIP, matching `ALL` and sending the whole connection straight to a cluster. That per-VIP listener is what an opaque port looks like.
+>
+> The third block is the decisive one: `notification-service` has **vanished from the route table for port 80**, leaving only the two gateways. There is no HTTP layer left for a `VirtualService` to attach to. Nothing errored, and `istioctl analyze` stays clean.
 
 Leave the Service on `tcp` for the next section; the last checkpoint in this part restores it.
 

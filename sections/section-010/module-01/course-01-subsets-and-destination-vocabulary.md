@@ -189,13 +189,14 @@ Predict the output before you run it. Three clusters where there was one, and a 
 >
 > ```text
 > notification-service.routing-demo.svc.cluster.local   80   -    outbound   EDS
-> notification-service.routing-demo.svc.cluster.local   80   v1   outbound   EDS
-> notification-service.routing-demo.svc.cluster.local   80   v2   outbound   EDS
+> notification-service.routing-demo.svc.cluster.local   80   -    outbound   EDS   notification-service.routing-demo
+> notification-service.routing-demo.svc.cluster.local   80   v1   outbound   EDS   notification-service.routing-demo
+> notification-service.routing-demo.svc.cluster.local   80   v2   outbound   EDS   notification-service.routing-demo
 >   10 ["EMAIL"]
 >   10 ["EMAIL","SMS"]
 > ```
 >
-> The `SUBSET` column goes from one `-` row to three rows. The response split is unchanged, because no rule has told anything to *use* those subsets. `EDS` in the last column is the discovery type: the proxy is told the endpoint list dynamically rather than holding fixed addresses.
+> The first line is the "before"; the next three are the "after". Two things changed. The `SUBSET` column goes from one `-` row to three rows, and the last column — `DESTINATION RULE` — now names the object responsible, on the subset-less cluster as well as the new ones. An empty last column after you have applied a `DestinationRule` means it did not attach to the host you thought. The response split is unchanged, because no rule has told anything to *use* those subsets. `EDS` in the last column is the discovery type: the proxy is told the endpoint list dynamically rather than holding fixed addresses.
 
 Two details in that output are worth keeping. The `sleep 2` is there because the push is asynchronous — `kubectl apply` returns when the object is stored, not when Envoy has it. And the subset-less row did not disappear: requests that name no subset still have somewhere to go, which is what makes a default route possible in Part 3.
 

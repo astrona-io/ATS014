@@ -110,10 +110,14 @@ The semantics depend on how the rule matched, and this is the part that surprise
 
 `rewrite.authority` does the same job for the `Host` header, which matters when the destination serves several virtual hosts and expects its own name.
 
-Proving a rewrite needs care, because the caller cannot see it — the response looks identical either way. The evidence is on the receiving side: the destination's own proxy logs the path it was actually given.
+Proving a rewrite needs more care than it looks, and the obvious method does not work.
+
+The caller cannot see it — the response is identical either way. The natural next thought is to read the destination's access log, since that is where the delivered path should appear. It does not. Istio's default log format is `%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%`: when Envoy rewrites a path it records the original one in `x-envoy-original-path`, and the log prefers that header. **A working rewrite therefore logs the path the caller asked for, on both sides.** Reading that as "my rewrite is not working" is the trap.
+
+What is unambiguous is the compiled route. Envoy's name for the field is `prefixRewrite`, and its presence is the proof.
 
 > [!TIP]
-> **Try it — the path the application really received**
+> **Try it — the rewrite as Envoy compiled it**
 >
 > ```sh
 > kubectl -n routing-demo patch virtualservice notification-service --type merge -p '
@@ -130,18 +134,21 @@ Proving a rewrite needs care, because the caller cannot see it — the response 
 >     - route:
 >         - destination:
 >             host: notification-service'
-> sleep 2
-> kubectl -n routing-demo exec deploy/tester -- curl -s -o /dev/null http://notification-service/beta/notify
-> kubectl -n routing-demo logs -l app=notification-service -c istio-proxy --tail=1 --prefix
+> sleep 3
+> istioctl proxy-config routes deploy/tester -n routing-demo -o json \
+>   | grep -E '"/beta"|prefixRewrite'
 > ```
 >
 > Expect something like:
 >
 > ```text
-> [pod/notification-service-v1-.../istio-proxy] [2026-09-29T11:04:18.220Z] "GET /notify HTTP/1.1" 200 …
+> "prefix": "/beta",
+> "prefixRewrite": "/",
 > ```
 >
-> The caller asked for `/beta/notify`; the application was handed `/notify`. Only the matched prefix was replaced — the rest of the path came along unchanged.
+> The matched prefix and its replacement, on the same route entry. `/beta/notify` reaches the application as `/notify` — only the matched prefix is replaced, and the rest of the path comes along unchanged.
+
+If you do need to observe a rewritten path end to end, the evidence has to come from the application itself — a backend that echoes the path it received — because every proxy in the chain reports the original.
 
 ## `headers` — two scopes, three operations
 
@@ -261,7 +268,7 @@ Restore the module's four-rule object from Part 3 before moving on; the patches 
 >
 > **Expecting `rewrite` to replace the whole path after a `prefix` match.** It replaces only the matched prefix. `/beta/notify` with `prefix: /beta` and `rewrite.uri: /` becomes `/notify`, not `/`.
 >
-> **Looking for a rewrite in the caller's log.** The caller logs what it sent. The rewritten path appears in the *destination's* access log.
+> **Looking for a rewrite in any access log.** Istio's log format prefers `x-envoy-original-path`, so a *working* rewrite logs the original path at both ends. Check `prefixRewrite` in the compiled route instead.
 >
 > **Putting `headers` at the wrong level.** Aligned with `route` it applies to the whole rule; inside a `route[]` entry it applies to that destination only.
 >
