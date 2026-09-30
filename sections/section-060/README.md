@@ -1,4 +1,4 @@
-# Configuring Ingress Traffic
+# Configuring Ingress And Egress Traffic — Ingress
 
 Everything up to here was east-west: one meshed workload calling another. This section is north-south — requests arriving from outside the cluster, from clients with no sidecar and no membership in the mesh.
 

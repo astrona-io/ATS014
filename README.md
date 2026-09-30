@@ -18,6 +18,22 @@ Read a module's parts, run its playground alongside, then take the module lab wi
 
 ---
 
+## What The Domain Covers
+
+The Traffic Management domain is seven topics. Every section below is named after the one it teaches, so the curriculum and the repository read the same way:
+
+| # | Exam topic | Section |
+| --- | --- | --- |
+| 1 | Configuring Ingress and Egress Traffic | [060 — ingress](sections/section-060) and [080 — egress](sections/section-080) |
+| 2 | Configuring Routing within a Service Mesh | [010](sections/section-010) |
+| 3 | Defining Traffic Policies with Destination Rules | [030](sections/section-030) |
+| 4 | Configuring Traffic Shifting | [020](sections/section-020) |
+| 5 | Connecting In-Mesh Workloads to External Workloads and Services | [070](sections/section-070) |
+| 6 | Using Resilience Features (circuit breaking, failover, outlier detection, timeouts, retries) | [040](sections/section-040) |
+| 7 | Using Fault Injection | [050](sections/section-050) |
+
+Section [000](sections/section-000) is not an exam topic. It is the prerequisite the other seven assume — what a sidecar is, how `istiod` programs it, and how to read a proxy's live configuration.
+
 ## Sections
 
 | Section | Title | Modules | Curriculum item |
@@ -26,11 +42,11 @@ Read a module's parts, run its playground alongside, then take the module lab wi
 | [010](sections/section-010) | Configuring Routing Within A Service Mesh | 2 | Configuring Routing within a Service Mesh |
 | [020](sections/section-020) | Configuring Traffic Shifting | 2 | Configuring Traffic Shifting |
 | [030](sections/section-030) | Defining Traffic Policies With Destination Rules | 1 | Defining Traffic Policies with Destination Rules |
-| [040](sections/section-040) | Using Resilience Features | 4 | Using Resilience Features |
+| [040](sections/section-040) | Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries) | 4 | Using Resilience Features |
 | [050](sections/section-050) | Using Fault Injection | 1 | Using Fault Injection |
-| [060](sections/section-060) | Configuring Ingress Traffic | 3 | Configuring Ingress and Egress Traffic |
+| [060](sections/section-060) | Configuring Ingress And Egress Traffic — Ingress | 3 | Configuring Ingress and Egress Traffic |
 | [070](sections/section-070) | Connecting In-Mesh Workloads To External Workloads And Services | 3 | Connecting In-Mesh Workloads to External Workloads and Services |
-| [080](sections/section-080) | Egress Gateways | 2 | Configuring Ingress and Egress Traffic |
+| [080](sections/section-080) | Configuring Ingress And Egress Traffic — Egress | 2 | Configuring Ingress and Egress Traffic |
 
 **19 modules · 59 deep-dive parts · 21 graded labs · 8 capstones · 19 playgrounds.**
 
