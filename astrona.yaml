@@ -54,6 +54,7 @@ modules:
       - type: lab
         title: "Which Workloads Are Actually In The Mesh Lab"
         path: sections/section-000/module-01/labs/lab-01
+        difficulty: intermediate
 
   - id: module-010
     title: "Configuring Routing Within A Service Mesh"
@@ -95,6 +96,7 @@ modules:
       - type: lab
         title: "Route Requests By Header, URI And Query Parameter Lab"
         path: sections/section-010/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -105,6 +107,7 @@ modules:
       - type: lab
         title: "Reshape A Request Lab"
         path: sections/section-010/module-01/labs/lab-02
+        difficulty: intermediate
 
       - type: reading
         title: "Scope Proxy Configuration With The Sidecar Resource"
@@ -128,6 +131,7 @@ modules:
       - type: lab
         title: "Scope Proxy Configuration With The Sidecar Resource Lab"
         path: sections/section-010/module-02/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -138,6 +142,7 @@ modules:
       - type: lab
         title: "Route And Scope A Storefront Capstone Lab"
         path: sections/section-010/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-020
     title: "Configuring Traffic Shifting"
@@ -174,6 +179,7 @@ modules:
       - type: lab
         title: "Shift Traffic With Weighted Routing Lab"
         path: sections/section-020/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Mirror Live Traffic To A Shadow Service"
@@ -197,6 +203,7 @@ modules:
       - type: lab
         title: "Mirror Live Traffic To A Shadow Service Lab"
         path: sections/section-020/module-02/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -207,6 +214,7 @@ modules:
       - type: lab
         title: "Canary And Shadow At The Same Time Capstone Lab"
         path: sections/section-020/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-030
     title: "Defining Traffic Policies With Destination Rules"
@@ -243,6 +251,7 @@ modules:
       - type: lab
         title: "Load Balancer Policy And Session Affinity Lab"
         path: sections/section-030/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -253,6 +262,7 @@ modules:
       - type: lab
         title: "Session Affinity For Browsers Lab"
         path: sections/section-030/module-01/labs/lab-02
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -263,6 +273,7 @@ modules:
       - type: lab
         title: "Sticky Sessions With A Shadowed Canary Capstone Lab"
         path: sections/section-030/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-040
     title: "Using Resilience Features"
@@ -298,6 +309,7 @@ modules:
       - type: lab
         title: "Timeouts And Retries Lab"
         path: sections/section-040/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Circuit Breaking With Connection Pool Limits"
@@ -321,6 +333,7 @@ modules:
       - type: lab
         title: "Circuit Breaking With Connection Pool Limits Lab"
         path: sections/section-040/module-02/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Outlier Detection And Endpoint Ejection"
@@ -344,6 +357,7 @@ modules:
       - type: lab
         title: "Outlier Detection And Endpoint Ejection Lab"
         path: sections/section-040/module-03/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Locality Load Balancing And Failover"
@@ -367,6 +381,7 @@ modules:
       - type: lab
         title: "Locality Load Balancing And Failover Lab"
         path: sections/section-040/module-04/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -377,6 +392,7 @@ modules:
       - type: lab
         title: "A Resilient Payment Path Capstone Lab"
         path: sections/section-040/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-050
     title: "Using Fault Injection"
@@ -412,6 +428,7 @@ modules:
       - type: lab
         title: "Fault Injection With Delays And Aborts Lab"
         path: sections/section-050/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -422,6 +439,7 @@ modules:
       - type: lab
         title: "A Controlled Chaos Experiment Capstone Lab"
         path: sections/section-050/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-060
     title: "Configuring Ingress Traffic"
@@ -457,6 +475,7 @@ modules:
       - type: lab
         title: "Expose A Service With An Istio Ingress Gateway Lab"
         path: sections/section-060/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Expose A Service With A Kubernetes Ingress"
@@ -480,6 +499,7 @@ modules:
       - type: lab
         title: "Expose A Service With A Kubernetes Ingress Lab"
         path: sections/section-060/module-02/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Ingress With The Kubernetes Gateway API"
@@ -503,6 +523,7 @@ modules:
       - type: lab
         title: "Ingress With The Kubernetes Gateway API Lab"
         path: sections/section-060/module-03/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -513,6 +534,7 @@ modules:
       - type: lab
         title: "Three APIs, One Edge Capstone Lab"
         path: sections/section-060/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-070
     title: "Connecting In-Mesh Workloads To External Workloads And Services"
@@ -548,6 +570,7 @@ modules:
       - type: lab
         title: "Control External Access With ServiceEntry Lab"
         path: sections/section-070/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "TLS Origination For External Services"
@@ -571,6 +594,7 @@ modules:
       - type: lab
         title: "TLS Origination For External Services Lab"
         path: sections/section-070/module-02/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "Add External Workloads With WorkloadEntry"
@@ -594,6 +618,7 @@ modules:
       - type: lab
         title: "Add External Workloads With WorkloadEntry Lab"
         path: sections/section-070/module-03/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -604,6 +629,7 @@ modules:
       - type: lab
         title: "A Deny-By-Default Integration Layer Capstone Lab"
         path: sections/section-070/capstone/labs/lab-01
+        difficulty: advanced
 
   - id: module-080
     title: "Egress Gateways"
@@ -640,6 +666,7 @@ modules:
       - type: lab
         title: "Route External Traffic Through An Egress Gateway Lab"
         path: sections/section-080/module-01/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: "TLS Origination At The Egress Gateway"
@@ -663,6 +690,7 @@ modules:
       - type: lab
         title: "TLS Origination At The Egress Gateway Lab"
         path: sections/section-080/module-02/labs/lab-01
+        difficulty: intermediate
 
       - type: reading
         title: Question
@@ -673,3 +701,4 @@ modules:
       - type: lab
         title: "One Exit, Two Partners Capstone Lab"
         path: sections/section-080/capstone/labs/lab-01
+        difficulty: advanced
