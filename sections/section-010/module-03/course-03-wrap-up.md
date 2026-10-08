@@ -11,7 +11,7 @@ This module was about *when* your rules reach the fleet, not what they say. The 
 - The `VirtualService` and the `DestinationRule` run in the sidecar of the app that **makes** the call. At the edge of the mesh, a gateway does that job instead.
 - Apply in this order: `ServiceEntry`, then `DestinationRule`, then `Gateway`, then `VirtualService`. A `Sidecar` can go in any time, but check its `egress.hosts` list afterwards.
 - "Make before break": if a `VirtualService` reaches a sidecar before the `DestinationRule` that defines its subset, the sidecar answers **`503 NC`** ("no cluster") by itself.
-- `kubectl apply` returns when the object is stored, not when the proxies have it. Check `istioctl proxy-status` (every proxy `SYNCED`) and `istioctl analyze -n starfleet` before you test.
+- `kubectl apply` returns when the object is stored, not when the proxies have it. Before you test, check that the sender's proxy has the new subset (`istioctl proxy-config clusters`) and run `istioctl analyze -n starfleet`.
 - Remove in the reverse order: `VirtualService`, `Gateway`, `DestinationRule`, `ServiceEntry`. Remove the pointer first.
 
 **From [One Object Per Host, And The Defaults](./course-02-one-object-per-host-and-the-defaults.md):**
@@ -28,7 +28,7 @@ Try to answer each question before you open the answer.
 <details>
 <summary>1. You add subset <code>v2</code> and route traffic to it. Which object do you apply first?</summary>
 
-The `DestinationRule` that defines `v2`. Wait until `istioctl proxy-status` shows every proxy as `SYNCED`, then apply the `VirtualService` that routes to `v2`.
+The `DestinationRule` that defines `v2`. Wait until the `v2` subset shows up in the sender's `istioctl proxy-config clusters`, then apply the `VirtualService` that routes to `v2`.
 </details>
 
 <details>

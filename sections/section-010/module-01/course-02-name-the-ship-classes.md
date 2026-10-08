@@ -174,8 +174,7 @@ scout.starfleet.svc.cluster.local          9080      v3         outbound      ED
 
 The row with `-` did not go away. Signals that ask for no subset still have somewhere to go.
 
-> [!TIP]
-> `kubectl apply` returns as soon as Kubernetes has stored the object, not when the proxy has its new orders. If a listing still looks old, wait a second and run it again before you start debugging.
+`kubectl apply` returns as soon as Kubernetes has stored the object, not when the proxy has its new orders. If a listing still looks old, wait a second and run it again before you start debugging.
 
 ## Which pods landed in which cluster
 
@@ -279,8 +278,7 @@ Error [IST0173] (DestinationRule starfleet/scout) The Subset v1 defined in the D
 
 The subset **exists**, so the `v1` destination exists too: you can see its name in the log line. But no ship has `version=v9`, so the destination is empty. The flight log marks this with **`UH`**, "no healthy upstream": there was nowhere to deliver the signal.
 
-> [!TIP]
-> If you still get `200`, or the log line is an older one, the new orders have not reached the communications officer yet. Wait a second and run the `curl` and `kubectl logs` lines again.
+If you still get `200`, or the log line is an older one, the new orders have not reached the communications officer yet. Wait a second and run the `curl` and `kubectl logs` lines again.
 
 ### Put it back
 

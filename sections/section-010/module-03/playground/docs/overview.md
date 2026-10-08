@@ -28,8 +28,8 @@ no pass or fail. Explore, break things, `astrona destroy`, start over.
 - Apply the "all to v1" route in [`../examples/`](../examples/) **before** the
   `DestinationRule`, then call `scout` straight away. Read the `503` and the
   `NC` flag in the flight log. Then apply the `DestinationRule` and call again.
-- Run `istioctl proxy-status` after each change and wait for every proxy to
-  show `SYNCED` before you test.
+- After each change, check that the shuttle's proxy has the new subset with
+  `istioctl proxy-config clusters deploy/shuttle -n starfleet` before you test.
 - Delete the `DestinationRule` while the `VirtualService` still uses it.
   That is "break before make" in reverse. Then do it the right way round.
 - Apply the same `VirtualService` file twice with a different subset. See that

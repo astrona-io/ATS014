@@ -83,8 +83,12 @@ Strict guidelines:
   content, not boxes: a short `###` subsection (for example "See it in your
   playground") with one sentence saying what to do, the command, the real
   output, and one or two sentences saying what it shows. A `> [!TIP]` box is
-  only for a genuinely useful tip (a habit, a shortcut, how to spot a
-  problem), never for a command snippet, and never two in a row. Each part ends with a
+  only for a real tip: advice the reader can reuse beyond this one step (a
+  habit, a shortcut, how to spot a problem, an exam habit). Everything else
+  is a normal sentence: notes about the current step ("if the log line is
+  old, run it again"), background facts, optional extra steps, and plain
+  information. Never a command snippet, never two in a row, and most pages
+  need zero or one tip. Each part ends with a
   `## Common pitfalls` `> [!WARNING]` block for that part only. Use a Mermaid
   diagram for a flow, an order or a state change, keep it under about 12
   boxes, and follow it with one sentence that says what it shows.

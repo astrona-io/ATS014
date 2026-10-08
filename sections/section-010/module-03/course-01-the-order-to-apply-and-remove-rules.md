@@ -140,20 +140,21 @@ In a real cluster the gap is short, so the wrong order may *look* fine when you 
 > Then check the result:
 >
 > ```sh
-> istioctl proxy-status
+> istioctl proxy-config clusters deploy/shuttle -n starfleet | grep scout
 > kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://scout:9080/reviews/0
 > ```
 >
-> Once `proxy-status` shows every proxy as `SYNCED`, the call returns `200`. Nothing was wrong with either object. Only the order was.
+> Once the `v2` row shows up in the shuttle's cluster list, the call returns `200`. Nothing was wrong with either object. Only the order was.
 
 ## Check the push before you test
 
-`istioctl proxy-status` lists every proxy and whether it has the latest configuration from `istiod`. Every proxy should show `SYNCED`. If one does not, its orders have not arrived yet, and testing now tells you nothing about your YAML.
+`istioctl proxy-status` lists every proxy that is connected to mission control (`istiod`). A ship missing from that list gets no orders at all. To see whether a new subset has reached the sender, look at its cluster list with `istioctl proxy-config clusters`: the subset must be there before any route can use it. Testing earlier tells you nothing about your YAML.
 
 `istioctl analyze -n starfleet` is the other quick check. It finds missing subsets, missing gateways, unknown hosts and rules hidden behind a catch-all. Run both after every change:
 
 ```bash
-istioctl proxy-status          # every proxy should show SYNCED
+istioctl proxy-status          # every proxy is listed and connected to istiod
+istioctl proxy-config clusters deploy/shuttle -n starfleet | grep scout   # the new subset has arrived
 istioctl analyze -n starfleet  # finds missing subsets, gateways, hosts, shadowed rules
 ```
 

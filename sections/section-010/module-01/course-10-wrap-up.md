@@ -44,21 +44,27 @@ This module was about the two objects that steer signals inside the mesh: the `D
 - With no catch-all, a signal that fits no rule gets `404` with the flag `NR`, and `istioctl analyze` stays quiet.
 - Keep one `VirtualService` per host.
 
-**From [Find Out Why A Rule Does Nothing](./course-06-find-out-why-a-rule-does-nothing.md):**
+**From [Put The Flight Plan On The Right Planet](./course-06-put-the-flight-plan-on-the-right-planet.md):**
 
-- Short host names are filled in from the namespace of the **object** they appear in. Use the full name (FQDN) when the object and the service live in different namespaces.
-- The response flag in the flight log tells the failures apart: `NR` (no route), `NC` (no cluster, a subset no `DestinationRule` defines, `IST0101`) and `UH` (a cluster with no pods, `IST0173`).
+- Short host names are filled in from the namespace of the **object** they appear in. A flight plan in the wrong namespace is accepted and does nothing.
+- `kubectl get virtualservice -A` shows where an object lives. `istioctl analyze -n <namespace>` only checks the namespace you name; `IST0101 Referenced host not found` is the wrong-planet signature.
+- Full names (FQDN) work from any namespace.
+
+**From [Read The Flight Log And The Proxy's Orders](./course-07-read-the-flight-log-and-the-proxys-orders.md):**
+
+- The sender's flight log shows the status code, the response flag, the chosen ship and the cluster for every signal.
+- The flag tells the failures apart: `NR` (no route), `NC` (no cluster, a subset no `DestinationRule` defines, `IST0101`) and `UH` (a cluster with no pods, `IST0173`).
 - Apply the `DestinationRule` before the `VirtualService` that uses it ("make before break").
-- `istioctl proxy-config routes` shows the route table the proxy actually holds.
+- `istioctl proxy-status` lists every connected proxy; `istioctl proxy-config routes` shows the route table the proxy actually holds.
 
-**From [Rewriting, Redirecting And Headers](./course-07-rewriting-redirecting-and-headers.md):**
+**From [Rewriting, Redirecting And Headers](./course-08-rewriting-redirecting-and-headers.md):**
 
 - `redirect` answers the caller with a `3xx` and ends the request. No pod is reached. `redirect` and `route` cannot be on the same rule.
 - `rewrite` changes the path or `Host` before the request is sent on. After a `prefix` match, only the matched prefix is replaced.
 - `headers` can add, set or remove request and response headers, either for the whole rule or for one destination. `remove` is a plain list of names.
 - `corsPolicy` lets the proxy answer browser preflight checks. CORS is a browser rule, not a security control.
 
-**From [Routing Non-HTTP Traffic](./course-08-routing-non-http-traffic.md):**
+**From [Routing Non-HTTP Traffic](./course-09-routing-non-http-traffic.md):**
 
 - Istio decides a port's protocol from `appProtocol` first, then the port's `name`, and otherwise by protocol sniffing.
 - An HTTP port named `tcp` turns off every HTTP feature for that Service, with no error. The service disappears from the route table.
@@ -118,8 +124,7 @@ astrona list
 
 `ats-014-playground-010-01` should no longer be in the list.
 
-> [!TIP]
-> You can start the playground again at any time with the same `astrona run` command from the module's landing page. It always starts clean, so nothing you broke carries over.
+You can start the playground again at any time with the same `astrona run` command from the module's landing page. It always starts clean, so nothing you broke carries over.
 
 ## Your next missions
 
@@ -147,4 +152,4 @@ astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/m
 astrona submit -c sections/section-010/module-01/labs/lab-02
 ```
 
-Try each one on your own first. Keep [Put Your Rules In Order](./course-05-put-your-rules-in-order.md) and [Find Out Why A Rule Does Nothing](./course-06-find-out-why-a-rule-does-nothing.md) open next to you: most failed submissions come down to rule order or a host name.
+Try each one on your own first. Keep [Put Your Rules In Order](./course-05-put-your-rules-in-order.md) and [Read The Flight Log And The Proxy's Orders](./course-07-read-the-flight-log-and-the-proxys-orders.md) open next to you: most failed submissions come down to rule order or a host name.

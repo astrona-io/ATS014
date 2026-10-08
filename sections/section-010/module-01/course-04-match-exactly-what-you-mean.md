@@ -188,8 +188,7 @@ You should see:
 
 Signals that ask for `?canary=true` fly to v3; the others fly to v1. A query parameter is useful when the sender cannot add headers, for example a link someone clicks in a browser.
 
-> [!TIP]
-> Want to see the quoting trap for yourself? Remove the quotes around `"true"` in `virtualservice-scout.yaml` and apply it again. Istio rejects the object before it ever reaches a proxy.
+To see the quoting trap for yourself, remove the quotes around `"true"` in `virtualservice-scout.yaml` and apply it again. Istio rejects the object before it ever reaches a proxy.
 
 ## AND or OR: the rule that depends on one dash
 
@@ -332,26 +331,101 @@ Now jason gets v2 on any path, and anyone on `/reviews/1` gets v2. Only a signal
 
 ## Reading a compiled match
 
-Indentation is easy to misread. The proxy's own copy of the rule is not. Each match becomes an Envoy route entry, and you can print it: AND conditions sit side by side in one `match` object, while OR choices become separate entries in the `routes` list.
+Indentation is easy to misread. The proxy's own copy of your flight plan is not. Mission control turns every rule into one or more **route entries**, and you can list them. When a rule does not behave the way you read it, this list is the judge: it is what the communications officer actually runs.
 
-When a rule does not behave the way you read it, the compiled route is the judge. It is what actually runs.
+### Count the route entries
 
-### See the test as Envoy stores it
-
-Put the AND version back, since it is still in `virtualservice-scout.yaml`:
+Put the AND version back first. It is still in `virtualservice-scout.yaml`:
 
 ```sh
 kubectl apply -f virtualservice-scout.yaml
 ```
 
-Then print the route table the shuttle holds, filtered to the match fields:
+Then list the route entries the shuttle holds for port 9080:
 
 ```sh
-istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080 -o json \
-  | grep -E '"prefix"|"exact"|"name": "end-user"' | head -12
+istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080
 ```
 
-Look for the path prefix `/reviews/1` and the header name `end-user` with the `exact` value `jason` inside the **same** match object: that is the AND. Further down is a `"prefix": "/"`: that is the catch-all rule, which matches every path. The exact field names can change between Envoy versions; the structure is what matters.
+You should see (trimmed to the `scout` rows):
+
+```text
+NAME     VHOST NAME                                  DOMAINS                                                     MATCH           VIRTUAL SERVICE
+9080     scout.starfleet.svc.cluster.local:9080      scout.starfleet.svc.cluster.local., scout + 2 more...       /reviews/1*     scout.starfleet
+9080     scout.starfleet.svc.cluster.local:9080      scout.starfleet.svc.cluster.local., scout + 2 more...       /*              scout.starfleet
+```
+
+Each row is one route entry, checked from the top. Two rules in your YAML, two rows:
+
+- **Row 1** is the jason rule. The `MATCH` column only shows the path, `/reviews/1*`. The header test is there too, just not in this column.
+- **Row 2** is the catch-all. `/*` means "every path".
+
+Now apply the OR version:
+
+```sh
+kubectl apply -f virtualservice-scout-or.yaml
+```
+
+Then list the route entries again:
+
+```sh
+istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080
+```
+
+You should see (trimmed to the `scout` rows):
+
+```text
+NAME     VHOST NAME                                  DOMAINS                                                     MATCH           VIRTUAL SERVICE
+9080     scout.starfleet.svc.cluster.local:9080      scout.starfleet.svc.cluster.local., scout + 2 more...       /*              scout.starfleet
+9080     scout.starfleet.svc.cluster.local:9080      scout.starfleet.svc.cluster.local., scout + 2 more...       /reviews/1*     scout.starfleet
+9080     scout.starfleet.svc.cluster.local:9080      scout.starfleet.svc.cluster.local., scout + 2 more...       /*              scout.starfleet
+```
+
+Three rows now, from the same two rules. The OR rule became **two** route entries, one per `-` item: the first is "jason on any path" (`/*` plus the header test), the second is "anyone on `/reviews/1`". Both send to v2. The last row is still the catch-all.
+
+So the count tells you how the proxy read your `match`. One entry for the rule means AND. One entry per `-` item means OR.
+
+### Look inside one entry
+
+The table hides the header test. To see it, print the same route table as JSON. Put the AND version back first:
+
+```sh
+kubectl apply -f virtualservice-scout.yaml
+```
+
+Then print the route table as JSON:
+
+```sh
+istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080 -o json
+```
+
+The output is long. These are the two `scout` entries in it, trimmed to the parts that matter:
+
+```text
+{
+  "match": {
+    "prefix": "/reviews/1",
+    "caseSensitive": true,
+    "headers": [
+      {
+        "name": "end-user",
+        "stringMatch": {
+          "exact": "jason"
+        }
+      }
+    ]
+  },
+  "cluster": "outbound|9080|v2|scout.starfleet.svc.cluster.local"
+}
+{
+  "match": {
+    "prefix": "/"
+  },
+  "cluster": "outbound|9080|v1|scout.starfleet.svc.cluster.local"
+}
+```
+
+The first entry has the path `/reviews/1` **and** the header `end-user` with the exact value `jason` inside **one** `match`: both must fit. It sends to the v2 cluster. The second entry is the catch-all to v1. The exact field names can change between Envoy versions, but this shape stays the same.
 
 ## Common pitfalls
 
