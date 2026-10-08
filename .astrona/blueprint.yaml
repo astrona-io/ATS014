@@ -1,0 +1,1137 @@
+# Curriculum blueprint — written by /astrona-course-domain-plan, consumed by
+# /astrona-course-domain-scaffold and /astrona-course-domain-build.
+#
+# This file is the design record for the course. Commit it. Edit it by hand and
+# re-run scaffold/build; both are idempotent and will not overwrite written prose.
+#
+# Decided 2026-10-01: ATS014 is restructured so its spine is the Istio concepts page
+#   https://istio.io/latest/docs/concepts/traffic-management/
+# Sections follow that page's headings top to bottom. Exam topics the page does not
+# cover stay in the course as modules flagged `beyond_the_page: true`, so ICA
+# coverage is not lost. Every section still carries its exam `curriculum_item`.
+#
+# This is a RESTRUCTURE of an existing course, not an append. `mode: new` describes
+# the target tree; `migration:` at the bottom maps every existing module to its new
+# home so scaffold can `git mv` and keep history instead of rewriting from scratch.
+#
+# Sample app: Bookinfo (reviews v1/v2/v3, ratings, details, productpage), applied from
+# the Istio 1.30.5 release's samples/bookinfo — the same YAML the docs page uses.
+# Where the docs themselves use another sample for a topic (httpbin + fortio for
+# circuit breaking, an external host for service entries), that sample is used.
+#
+# Grading signal for Bookinfo routing: call reviews:9080/reviews/0 from a client pod
+# and read the JSON — no `ratings` object = v1, `"color": "black"` = v2,
+# `"color": "red"` = v3. Build must confirm this against the 1.30.5 sample images
+# before any validation script relies on it.
+#
+# Schema: references/blueprint-schema.md in the astrona-course-domain-plan skill.
+
+version: 1
+mode: new
+
+course:
+  id: ATS014
+  title: "ICA: Traffic Management"
+  git_url: ssh://git@github.com/astrona-io/ATS014.git
+  description: >
+    Training material for the Istio Certified Associate (ICA) Traffic Management
+    domain, organised around the Istio traffic management concepts page and taught
+    on Bookinfo — virtual services, destination rules, gateways, service entries,
+    sidecars, network resilience and testing — with every exam topic the page leaves
+    out (mirroring, outlier detection, locality failover, Kubernetes Ingress, Gateway
+    API, TLS origination, WorkloadEntry, egress gateways) taught alongside the heading
+    it extends. Each module pairs a layered reader with an ungraded Bookinfo
+    playground, a graded lab and an unguided challenge; each section closes with an
+    integration capstone and a quiz. Built and verified against Istio 1.30.5.
+  certification:
+    name: Istio Certified Associate
+    code: ICA
+    provider: CNCF / Linux Foundation
+    domain: Traffic Management
+    weight: 35
+  environment:
+    runtime: kind
+    istio: "1.30.5"
+    istio_profile: demo
+    sample_app: "Bookinfo (samples/bookinfo from the Istio 1.30.5 release)"
+  source_page: https://istio.io/latest/docs/concepts/traffic-management/
+
+defaults:
+  playground: true
+  module_lab: true          # existing course already has a graded lab per module
+  module_challenge: true    # new: one unguided challenge per module (astrona-course-create-challenge)
+  capstone: true
+  section_quiz: true
+  final_quiz: true
+
+sections:
+
+  # ---------------------------------------------------------------------------
+  - id: section-000
+    title: Introducing Istio Traffic Management
+    docs_anchor: "#introducing-istio-traffic-management"
+    curriculum_item: "prerequisite — not an exam item"
+    description: >
+      What the concepts page assumes before its first heading: an Envoy proxy beside
+      every Bookinfo pod, istiod programming it from the service registry, and the
+      default least-requests load balancing that happens before any Istio object
+      exists. Everything after this section configures one of these pieces.
+    modules:
+      - id: module-01
+        title: How A Request Moves Through The Mesh
+        objectives:
+          - Name what sidecar injection adds to a Bookinfo pod and prove it with kubectl
+          - Trace a productpage-to-reviews request through both sidecars, naming the inbound and outbound listeners
+          - Name which xDS resource (LDS, RDS, CDS, EDS) carries a listener, a route, a cluster and an endpoint
+          - Use istioctl proxy-status, proxy-config and x describe pod to read what a proxy currently holds
+          - Diagnose a workload that is outside the mesh from its pod spec and proxy-status output
+        outline:
+          - Bookinfo installed with and without injection — what changes in the pod
+          - The data path — iptables redirect, outbound then inbound sidecar
+          - How istiod builds and pushes listeners, routes, clusters and endpoints
+          - The diagnostic toolkit — proxy-status, proxy-config, describe
+        diagrams:
+          - type: sequence
+            shows: productpage calling reviews through the outbound and inbound sidecars
+          - type: flowchart
+            shows: Kubernetes API and service registry feeding istiod, istiod pushing xDS to every proxy
+        playground_env: >
+          kind cluster, Istio 1.30.5 demo profile, namespace `bookinfo` injected with
+          full Bookinfo (productpage, details, ratings, reviews v1/v2/v3) and a `curl`
+          client pod; namespace `legacy` NOT injected with one more `curl` pod for
+          contrast. No VirtualService, DestinationRule, Gateway or ServiceEntry.
+        lab_title: Which Workloads Are Actually In The Mesh
+        lab_objective: >
+          Given a Bookinfo install where some pods are injected and some are not,
+          identify the out-of-mesh workloads, fix injection, and prove every Bookinfo
+          pod is SYNCED in proxy-status.
+        challenge: >
+          A reviews pod has no proxy and nobody knows why — find the cause
+          (namespace label vs pod annotation) without being told where to look.
+        notes: >
+          Existing material: section-000/module-01 (3 parts). Port the examples to
+          Bookinfo; keep the diagnostic toolkit part intact.
+
+      - id: module-02
+        title: Read The Service Registry And Default Load Balancing
+        objectives:
+          - Name the sources istiod merges into its service registry (Kubernetes Services, ServiceEntry, WorkloadEntry)
+          - List the registry entries a given proxy can see and the endpoints behind each
+          - State Istio's default load-balancing algorithm and predict how calls spread over reviews v1/v2/v3 with no Istio config
+          - Prove from live traffic that a plain Service gives roughly one third of requests to each reviews version
+          - Name which traffic-management capabilities need an Istio object and which happen by default
+        outline:
+          - "The service registry — what the docs mean by 'populates its own service registry'"
+          - Envoy's default least-requests pool, and why it is not round robin
+          - Measuring the spread across reviews v1/v2/v3 before any VirtualService
+          - The five CRDs the rest of the page introduces, and which proxy each one programs
+        diagrams:
+          - type: flowchart
+            shows: Registry sources merged by istiod into one cluster per service with an endpoint pool
+        playground_env: >
+          Same Bookinfo install as module-01, all pods injected, plus one ServiceEntry
+          for an external host already applied so the reader can see a non-Kubernetes
+          registry entry. No VirtualService or DestinationRule.
+        lab_title: Measure Bookinfo Before Istio Touches It
+        lab_objective: >
+          Show with proxy-config and a scripted burst of requests that reviews traffic
+          is spread across all three versions under the default policy, and record the
+          endpoint pool the productpage proxy holds for reviews.
+        challenge: >
+          A teammate claims "the mesh round-robins". Produce evidence that confirms or
+          refutes it from the proxy's own cluster configuration.
+        notes: New module — the docs' introduction section has no current home.
+    capstone:
+      title: Introducing Istio Traffic Management Capstone
+      objective: >
+        Take a half-injected Bookinfo with one stale proxy, bring every workload into
+        the mesh, prove each proxy is SYNCED, and report the reviews endpoint pool and
+        default algorithm the productpage proxy is using.
+
+  # ---------------------------------------------------------------------------
+  - id: section-010
+    title: Virtual Services — The Example, Hosts, Rules And Precedence
+    docs_anchor: "#virtual-services"
+    curriculum_item: Configuring Routing within a Service Mesh
+    description: >
+      The concepts page's VirtualService example taken apart line by line on the
+      Bookinfo reviews service it was written for: why virtual services exist, what
+      the hosts field accepts, how a routing rule's match and destination work, and
+      the top-down precedence that decides which rule wins. This is the section the
+      rest of the course is built on.
+    modules:
+      - id: module-01
+        title: Read The Virtual Service Example Line By Line
+        docs_anchor: "#virtual-service-example"
+        objectives:
+          - Apply the docs' reviews VirtualService exactly as written and prove jason reaches v2 and everyone else v3
+          - Name every field in the example and state what it does
+          - Explain why the example fails until a DestinationRule defines subsets v2 and v3, and produce the 503 that shows it
+          - Name the problems virtual services solve that a Kubernetes Service cannot (version routing, canary, one address for many services)
+          - Find the route the example compiles to in the productpage proxy's RDS output
+        outline:
+          - "Why use virtual services — decoupling where clients send requests from the workloads that serve them"
+          - The example applied on Bookinfo — log in as jason, compare black and red stars
+          - "Field by field — apiVersion networking.istio.io/v1, hosts, http, match, route, destination, subset"
+          - The missing DestinationRule — the NC 503 and how to fix it
+          - What Envoy built — proxy-config routes for reviews.bookinfo.svc.cluster.local:9080
+        diagrams:
+          - type: flowchart
+            shows: "Request from productpage evaluated against the example: end-user header jason to subset v2, else subset v3"
+          - type: sequence
+            shows: jason's browser request through productpage, which forwards end-user, through the sidecar route to reviews-v2
+        playground_env: >
+          Full Bookinfo in `bookinfo`, injected, productpage reachable by
+          `kubectl port-forward`, `curl` client pod. The docs' DestinationRule for
+          reviews (subsets v1, v2, v3) provided in a file but NOT applied, so the first
+          checkpoint is the 503. No VirtualService.
+        lab_title: Route Jason To Reviews v2
+        lab_objective: >
+          Reproduce the concepts-page example from an empty namespace: subsets for
+          reviews, jason to v2, everyone else to v3 — graded by live requests with and
+          without the end-user header.
+        challenge: >
+          The example is applied and jason still sees red stars. Find out why (header
+          value case, DestinationRule labels, or VirtualService in the wrong namespace).
+        notes: >
+          Anchor module of the whole course. Quote the docs YAML verbatim, then build
+          the variations. Absorbs the overview half of current 010-01 course.md.
+
+      - id: module-02
+        title: Choose Hosts For A Virtual Service
+        docs_anchor: "#the-hosts-field"
+        objectives:
+          - Write the hosts field with a short name, an FQDN, a wildcard and an IP, and predict which requests each one captures
+          - Resolve a short host name to the FQDN Istio will use, based on the VirtualService's namespace
+          - Configure a virtual host that is not in the service registry and route it to a real service through a gateway
+          - Diagnose a VirtualService whose hosts never match any request
+          - Name the conflicts that arise when two VirtualServices claim the same host
+        outline:
+          - "What 'user-addressable destination' means — the Host/authority header the proxy matches on"
+          - Short names, FQDNs, wildcards and IPs — what each captures
+          - "Virtual hosts — 'hosts don't actually have to be part of the Istio service registry'"
+          - Two VirtualServices for one host — merge rules and why to avoid it
+          - Proving host matching with proxy-config routes and istioctl analyze
+        diagrams:
+          - type: flowchart
+            shows: How the proxy picks a virtual host in RDS from the request's authority header
+        playground_env: >
+          Bookinfo in `bookinfo` plus a second namespace `frontend` with a `curl` pod,
+          so short-name resolution across namespaces can be observed. Istio ingress
+          gateway available (demo profile). No VirtualService.
+        lab_title: Address Bookinfo By Host
+        lab_objective: >
+          Configure VirtualServices so reviews is routed correctly when called by short
+          name from its own namespace and by FQDN from another, and expose a virtual
+          host bookinfo.example.com that exists only in the VirtualService.
+        challenge: >
+          A VirtualService written in `frontend` with host `reviews` routes nothing.
+          Find and fix it without moving the workloads.
+        notes: Expands current 010-01 part 3 "short host names resolve to the object's namespace".
+
+      - id: module-03
+        title: Write Routing Rules With Match Conditions And Destinations
+        docs_anchor: "#routing-rules"
+        objectives:
+          - Write match conditions on headers, uri, queryParams, method and port with exact, prefix and regex
+          - State whether two conditions are ANDed or ORed from their position in the YAML
+          - Write a destination with host, subset and port, and name the registry requirement it must satisfy
+          - Explain why short destination host names only work within one namespace and replace them with FQDNs
+          - Read a compiled match in proxy-config routes and confirm it is the condition you meant
+        outline:
+          - The shape of a rule — match conditions plus a destination
+          - "Match types — headers, uri, queryParams, method, port, sourceLabels"
+          - The three string forms and the YAML quoting trap
+          - "AND or OR — same block vs separate match blocks"
+          - "The destination — must be a real registry entry; host, subset, port"
+          - "The namespace caveat — 'use fully qualified host names' in production"
+        diagrams:
+          - type: flowchart
+            shows: Two conditions in one match block (AND) versus two match blocks (OR), each evaluated against one request
+        playground_env: >
+          Bookinfo in `bookinfo`, the reviews DestinationRule (v1/v2/v3) already
+          applied, `curl` client pod able to send arbitrary headers, paths and query
+          strings to reviews:9080. No VirtualService.
+        lab_title: Route Reviews On Header, Path And Query
+        lab_objective: >
+          Route reviews traffic to v2 on one header, to v3 on a path prefix combined
+          with a query parameter (AND), and everything else to v1 — graded with live
+          requests for each case.
+        challenge: >
+          A rule meant to require both a header and a path matches requests with only
+          one of them. Fix the indentation bug and prove it.
+        notes: Built from current 010-01 parts 1–2; subset vocabulary moves to section-030 module-01.
+
+      - id: module-04
+        title: Predict Which Routing Rule Wins
+        docs_anchor: "#routing-rule-precedence"
+        objectives:
+          - Predict the winning rule for a given request from top-to-bottom evaluation
+          - Place a default rule correctly and explain why the docs recommend it as the last rule
+          - Produce and read the 404 NR response when no rule matches
+          - Diagnose a default route placed first that silently swallows every specific rule
+          - Prove precedence with proxy-config routes ordering and access-log response flags
+        outline:
+          - "First match wins — 'evaluated in sequential order from top to bottom'"
+          - Why there is no most-specific-wins rule
+          - "The default rule — no match or weight-only, placed last"
+          - "Failure signatures — 404 NR with no default, unreachable rules with an early default"
+          - Reading rule order in the compiled route and in access logs
+        diagrams:
+          - type: flowchart
+            shows: One request walked down an ordered rule list until the first match, including the fall-through to 404 NR
+        playground_env: >
+          Bookinfo in `bookinfo`, reviews DestinationRule applied, access logging
+          enabled in mesh config, `curl` client pod. A file with three deliberately
+          misordered VirtualServices provided but not applied.
+        lab_title: Order Reviews Rules So Each One Is Reachable
+        lab_objective: >
+          Given four required routing behaviours for reviews, order the rules so that
+          every one is reachable and a default catches the rest; the grader proves each
+          rule is hit at least once.
+        challenge: >
+          Production has a rule nobody's request ever hits. Use the proxy's route dump
+          and access logs to find which earlier rule shadows it.
+        notes: Built from current 010-01 part 3 "first match wins".
+    capstone:
+      title: Virtual Services Capstone
+      objective: >
+        From an empty Bookinfo namespace, write the reviews VirtualService and
+        DestinationRule the concepts page describes, extend it with header, path and
+        query rules addressed by FQDN from a second namespace, order them so every rule
+        is reachable, and expose a virtual host — graded by live traffic and the proxy's
+        route dump.
+
+  # ---------------------------------------------------------------------------
+  - id: section-020
+    title: Virtual Services — More About Routing Rules
+    docs_anchor: "#more-about-routing-rules"
+    curriculum_item: "Configuring Routing within a Service Mesh; Configuring Traffic Shifting"
+    description: >
+      The concepts page's "more about routing rules": one virtual service fronting
+      several services, weighted destinations for canary rollouts, and the actions a
+      matched rule can take beyond forwarding. Mirroring and non-HTTP routing extend
+      the same object and close the section.
+    modules:
+      - id: module-01
+        title: Shift Traffic With Weighted Destinations
+        docs_anchor: "#more-about-routing-rules"
+        objectives:
+          - Write the docs' 75/25 weighted route for reviews v1/v2 and measure the split from live traffic
+          - Combine a match rule with a weighted default, so testers get v3 and everyone else is split
+          - Run a staged canary rollout 100/0 to 0/100 and roll back
+          - Explain why weight is independent of replica count, and prove it
+          - Route several services through one VirtualService by URI prefix (/reviews, /ratings)
+        outline:
+          - "Weights on destinations — the docs' 75/25 example"
+          - Weights combined with match rules
+          - Running a rollout and a rollback
+          - Weight versus replica count — the proof
+          - "One VirtualService, many services — routing by URI prefix as the docs describe"
+        diagrams:
+          - type: flowchart
+            shows: One rule fanning out to two subsets by weight, beside the replica counts that do not affect it
+          - type: timeline
+            shows: Staged canary rollout from 100/0 to 0/100 with a rollback point
+        playground_env: >
+          Bookinfo in `bookinfo` with reviews v1 scaled to 3 replicas and v2 to 1 (the
+          deliberate variation), reviews DestinationRule applied, a `curl` pod with a
+          loop script that counts versions from reviews/0. An extra `bookinfo-api`
+          host provided for the URI-prefix exercise. No VirtualService.
+        lab_title: Canary Reviews v2 At 25 Percent
+        lab_objective: >
+          Split reviews 75/25 between v1 and v2 regardless of replica count, send
+          header-tagged testers to v3, and front reviews and ratings through one host by
+          URI prefix — graded by measured distribution.
+        challenge: >
+          The canary is "at 25%" but v2 receives about half the traffic. Find out why.
+        notes: Built from current 020-01 (3 parts). Exam topic Configuring Traffic Shifting.
+
+      - id: module-02
+        title: Rewrite, Redirect And Change Headers On A Matched Rule
+        docs_anchor: "#more-about-routing-rules"
+        objectives:
+          - Answer a request with a redirect instead of forwarding it, and prove nothing reached a pod
+          - Rewrite a path prefix before forwarding, and predict the path the application receives
+          - Add, set and remove request and response headers at route and destination scope
+          - Configure corsPolicy for one origin and read the preflight response
+          - Name which of these actions ends the request at the proxy
+        outline:
+          - "What the docs mean by 'append or remove headers, rewrite the URL'"
+          - redirect versus rewrite
+          - headers — two scopes, three operations
+          - corsPolicy — preflights handled by the proxy
+        diagrams:
+          - type: sequence
+            shows: Redirect answered by the client sidecar versus rewrite forwarded with a changed path
+        playground_env: >
+          Bookinfo in `bookinfo`, DestinationRules for reviews and ratings applied,
+          `curl` pod, plus an httpbin pod (echoes request headers and path) so header
+          and rewrite effects are visible. No VirtualService.
+        lab_title: Move The Bookinfo API Without Redeploying It
+        lab_objective: >
+          Redirect a legacy path, rewrite a new path prefix onto the existing one,
+          strip an internal header, add a response header, and allow one CORS origin —
+          graded by live requests.
+        challenge: >
+          A rewrite produces a double slash in the upstream path. Diagnose it from the
+          echoed request.
+        notes: Built from current 010-01 part 4 and lab-02.
+
+      - id: module-03
+        title: Mirror Live Traffic To A Shadow Version
+        beyond_the_page: true
+        objectives:
+          - Mirror reviews traffic to v3 while every response still comes from v1
+          - Set a mirror percentage and measure it from the shadow's access log
+          - Name what the proxy changes on a mirrored request (Host suffix -shadow) and why responses are discarded
+          - Choose between mirroring and a weighted canary for a given rollout risk
+        outline:
+          - What mirroring is and is not — fire-and-forget copies
+          - mirror and mirrorPercentage on a route
+          - Proving it — shadow access logs and the -shadow authority
+          - Mirroring versus canary
+        diagrams:
+          - type: sequence
+            shows: One request served by v1 while a copy goes to v3 and its response is dropped
+        playground_env: >
+          Bookinfo with reviews DestinationRule applied and access logging enabled so
+          the shadow version's log shows mirrored requests. No VirtualService.
+        lab_title: Shadow Reviews v3 Behind v1
+        lab_objective: >
+          Serve all reviews traffic from v1 while mirroring 50% to v3, proven by v3's
+          access log and by every client response coming from v1.
+        challenge: >
+          Mirroring is configured but v3 logs nothing. Find the missing piece.
+        notes: Built from current 020-02. Exam topic Configuring Traffic Shifting.
+
+      - id: module-04
+        title: Route TCP And TLS Traffic
+        beyond_the_page: true
+        docs_anchor: "#routing-rules"
+        objectives:
+          - Explain how a Service port's name or appProtocol decides whether HTTP routing applies
+          - Diagnose the silent fallback to plain TCP caused by a misnamed port
+          - Write a tcp route with weights for a non-HTTP service
+          - Write a tls route that matches on sniHosts
+          - Name which match fields are unavailable when the proxy cannot read a request
+        outline:
+          - "The docs' 'tcp and tls sections' — what changes when there is no HTTP request"
+          - Protocol selection — port name and appProtocol
+          - tcp routes
+          - tls routes by SNI
+          - What non-HTTP routing costs you
+        diagrams:
+          - type: flowchart
+            shows: Protocol detection decision from port name and appProtocol to http, tcp or tls route block
+        playground_env: >
+          Bookinfo plus a TCP echo service with two versions (v1, v2) and one
+          deliberately misnamed Service port, and a TLS server with two SNI names.
+        lab_title: Route A TCP Service Between Versions
+        lab_objective: >
+          Fix a misnamed port, split a TCP echo service 80/20 between versions, and route
+          TLS traffic by SNI — graded by live connections.
+        challenge: >
+          Header-based routing works for ratings in one namespace and not another.
+          Find the port naming difference.
+        notes: Built from current 010-01 part 5.
+    capstone:
+      title: More About Routing Rules Capstone
+      objective: >
+        Roll out a new reviews version: a 90/10 weighted canary for users, testers
+        pinned by header, v3 shadowed by mirroring, the API reachable on a new path via
+        rewrite with the old one redirected, and one TCP service split by weight.
+
+  # ---------------------------------------------------------------------------
+  - id: section-030
+    title: Destination Rules
+    docs_anchor: "#destination-rules"
+    curriculum_item: Defining Traffic Policies with Destination Rules
+    description: >
+      What happens to traffic after a virtual service has routed it: the docs'
+      DestinationRule example, subsets as pod-label selectors, default and per-subset
+      traffic policies, and every load-balancing option the page lists.
+    modules:
+      - id: module-01
+        title: Define Subsets And Traffic Policy Levels
+        docs_anchor: "#destination-rule-example"
+        objectives:
+          - Apply the docs' my-destination-rule example and name which policy applies to each subset
+          - Define subsets over pod labels and predict what happens when a subset matches no pod
+          - Prove a subset-level trafficPolicy overrides the destination-level one
+          - Name the Envoy cluster a subset becomes and find it with proxy-config clusters
+          - Explain why applying a DestinationRule alone moves no traffic
+        outline:
+          - "'Virtual services route, destination rules configure what happens next'"
+          - The docs' example on Bookinfo reviews — RANDOM default, ROUND_ROBIN on v2
+          - Subsets are pod labels — and the empty subset
+          - Policy precedence — subset over destination level
+          - The subset in the cluster name — outbound|9080|v2|reviews.bookinfo.svc.cluster.local
+        diagrams:
+          - type: flowchart
+            shows: VirtualService choosing a subset, DestinationRule mapping it to a cluster and its policy
+          - type: er
+            shows: DestinationRule to subsets to pod labels to endpoints, with policy inheritance
+        playground_env: >
+          Bookinfo with reviews v1/v2/v3, plus a reviews-v4 Deployment that is NOT
+          deployed, so a subset v4 can be defined and found empty. No DestinationRule.
+        lab_title: Write The Reviews DestinationRule
+        lab_objective: >
+          Write a reviews DestinationRule with a default policy and one subset override,
+          and prove from cluster configuration which policy each subset received.
+        challenge: >
+          A subset is defined but its cluster has no endpoints. Find the label mismatch.
+        notes: Built from current 010-01 part 1 and 030-01 part 3.
+
+      - id: module-02
+        title: Choose A Load Balancing Algorithm
+        docs_anchor: "#load-balancing-options"
+        objectives:
+          - Configure LEAST_REQUEST, RANDOM and ROUND_ROBIN and identify each from proxy-config output
+          - Explain what the docs' "weighted" option means in Istio and where weights are actually configured
+          - Configure consistent hashing with ringHash and maglev and name the difference
+          - Predict endpoint selection for a given algorithm under uneven load
+        outline:
+          - "The page's list — least requests, random, weighted, round robin, consistent hash, ring hash, Maglev"
+          - simple algorithms and how Envoy chooses an endpoint
+          - "'Weighted' — VirtualService weights and locality weights, not a simple value"
+          - consistentHash — ringHash versus maglev
+        diagrams:
+          - type: flowchart
+            shows: Decision tree from DestinationRule loadBalancer field to the Envoy lb_policy it produces
+        playground_env: >
+          Bookinfo with reviews v1 scaled to 3 replicas and a `curl` pod that reports
+          which pod answered (via reviews pod name in an added response header). No
+          DestinationRule.
+        lab_title: Set The Reviews Load Balancer
+        lab_objective: >
+          Configure a per-subset load balancer for reviews and prove each algorithm from
+          the proxy's cluster dump and from request distribution.
+        challenge: >
+          The team wants "weighted load balancing" on a DestinationRule. Deliver the
+          behaviour they actually need.
+        notes: Built from current 030-01 parts 1–2.
+
+      - id: module-03
+        title: Pin Users To An Endpoint With Session Affinity
+        docs_anchor: "#load-balancing-options"
+        objectives:
+          - Configure consistent-hash affinity on an HTTP header, a cookie and the source IP
+          - Prove the same user reaches the same reviews pod across requests
+          - Predict what happens to affinity when an endpoint is added or removed
+          - Explain why consistent hash is "soft" affinity, as the docs describe it
+        outline:
+          - "Soft session affinity — what 'based on HTTP headers, cookies' guarantees and does not"
+          - httpHeaderName, httpCookie and useSourceIp
+          - The ring when endpoints change
+        diagrams:
+          - type: flowchart
+            shows: Hash key from a request mapped onto the ring to one endpoint, and remapping after a pod is removed
+        playground_env: >
+          Bookinfo with reviews v1 at 3 replicas so affinity is observable, `curl` pod.
+        lab_title: Keep A User On One Reviews Pod
+        lab_objective: >
+          Pin users to a reviews pod by the end-user header, and fall back to a cookie
+          for anonymous users — graded by repeated requests.
+        challenge: >
+          Affinity "works" in a test of one replica. Prove whether it really works.
+        notes: Built from current 030-01 lab-02.
+    capstone:
+      title: Destination Rules Capstone
+      objective: >
+        Write DestinationRules for reviews and ratings with destination- and
+        subset-level policies, a hashed affinity on reviews v2 and a different
+        algorithm on v3, and prove each from the proxy's cluster dump and traffic.
+
+  # ---------------------------------------------------------------------------
+  - id: section-040
+    title: Gateways
+    docs_anchor: "#gateways"
+    curriculum_item: Configuring Ingress and Egress Traffic
+    description: >
+      Traffic entering the mesh: the docs' Gateway example with HTTPS SIMPLE and a
+      credentialName, bound to a virtual service for L7 routing, then the two other
+      ingress APIs the exam tests.
+    modules:
+      - id: module-01
+        title: Expose Bookinfo Through An Istio Gateway
+        docs_anchor: "#gateway-example"
+        objectives:
+          - Configure a Gateway for a host on port 80 and bind a VirtualService to it with the gateways field
+          - Explain why "a gateway doesn't specify any routing" and produce the 404 that proves it
+          - Terminate TLS with mode SIMPLE and a credentialName secret, as in the docs' example
+          - Choose the selector that binds a Gateway to the ingress gateway deployment
+          - Route requests arriving at the gateway versus inside the mesh with the reserved mesh gateway
+        outline:
+          - "Gateways are standalone Envoys at the edge, not sidecars"
+          - "The docs' ext-host-gwy example adapted to bookinfo.example.com"
+          - Binding a VirtualService — gateways, hosts, and the 404 without one
+          - HTTPS SIMPLE and credentialName
+          - "gateways: [mesh] — one VirtualService for edge and internal callers"
+        diagrams:
+          - type: sequence
+            shows: External client to ingress gateway (L4–6 from Gateway, L7 from VirtualService) to productpage sidecar
+        playground_env: >
+          Bookinfo in `bookinfo`, istio-ingressgateway from the demo profile reachable
+          via a kind port mapping, a self-signed cert and key for bookinfo.example.com
+          provided as files but no Secret created. No Gateway, no VirtualService.
+        lab_title: Serve Bookinfo Over HTTPS At The Edge
+        lab_objective: >
+          Expose productpage on https://bookinfo.example.com through the ingress
+          gateway with a credentialName secret, redirect HTTP to HTTPS, and route
+          /productpage and /static only.
+        challenge: >
+          The Gateway exists, the VirtualService exists, curl returns 404. Find the
+          binding error.
+        notes: Built from current 060-01.
+
+      - id: module-02
+        title: Expose Bookinfo With A Kubernetes Ingress
+        beyond_the_page: true
+        objectives:
+          - Configure a Kubernetes Ingress handled by Istio with ingressClassName istio
+          - Name what the Ingress API cannot express that a Gateway plus VirtualService can
+          - Prove the Ingress was translated into gateway configuration with proxy-config
+          - Diagnose an Ingress Istio ignores because of its class
+        outline:
+          - Istio as an Ingress controller
+          - Ingress fields and their gateway translation
+          - Limits of the Ingress API
+        diagrams:
+          - type: flowchart
+            shows: Ingress object translated by istiod into gateway listener and route
+        playground_env: >
+          Bookinfo plus ingress gateway as in module-01, IngressClass istio present. No
+          Ingress, Gateway or VirtualService.
+        lab_title: Route Bookinfo With An Ingress
+        lab_objective: >
+          Expose productpage through a Kubernetes Ingress on the Istio class, path-routed,
+          graded by external requests.
+        challenge: >
+          An Ingress with no ingressClassName is ignored. Make Istio serve it without
+          editing the Ingress spec routing.
+        notes: Built from current 060-02.
+
+      - id: module-03
+        title: Expose Bookinfo With The Gateway API
+        beyond_the_page: true
+        objectives:
+          - Install the Gateway API CRDs and create a Gateway with gatewayClassName istio
+          - Route to productpage with an HTTPRoute and parentRefs
+          - Split traffic between reviews versions with HTTPRoute backendRefs weights
+          - Map each Gateway API object to the Istio object it replaces
+        outline:
+          - Gateway API versus Istio Gateway — role-oriented objects
+          - Gateway, HTTPRoute and automated deployment
+          - Weights and matches in HTTPRoute
+        diagrams:
+          - type: er
+            shows: GatewayClass to Gateway to HTTPRoute to Service, beside Istio Gateway to VirtualService
+        playground_env: >
+          Bookinfo, Gateway API CRDs NOT installed (first checkpoint), Istio 1.30.5
+          demo profile.
+        lab_title: Route Bookinfo With HTTPRoute
+        lab_objective: >
+          Install the Gateway API CRDs, expose productpage through a Gateway API
+          Gateway, and split reviews 80/20 with an HTTPRoute.
+        challenge: >
+          An HTTPRoute is Accepted=False. Read the status conditions and fix it.
+        notes: Built from current 060-03. Bookinfo ships samples/bookinfo/gateway-api.
+    capstone:
+      title: Gateways Capstone
+      objective: >
+        Expose Bookinfo three ways on three hostnames — Istio Gateway with HTTPS,
+        Kubernetes Ingress and Gateway API — each routing only productpage paths, graded
+        by external requests.
+
+  # ---------------------------------------------------------------------------
+  - id: section-050
+    title: Service Entries
+    docs_anchor: "#service-entries"
+    curriculum_item: Connecting In-Mesh Workloads to External Workloads and Services
+    description: >
+      Adding entries to the service registry the mesh did not discover itself: the
+      docs' ServiceEntry example and its companion DestinationRule, the passthrough
+      default versus REGISTRY_ONLY, TLS origination for an external API, and virtual
+      machines as mesh workloads.
+    modules:
+      - id: module-01
+        title: Register An External Service With ServiceEntry
+        docs_anchor: "#service-entry-example"
+        objectives:
+          - Apply the docs' ServiceEntry example (MESH_EXTERNAL, DNS) for an external host and prove the registry gained it
+          - Explain the passthrough default and switch the mesh to REGISTRY_ONLY, reading the 502 that results
+          - Apply a companion DestinationRule (connectTimeout) and a VirtualService timeout to the external host
+          - Choose resolution DNS, STATIC or NONE and location MESH_EXTERNAL or MESH_INTERNAL for a given destination
+          - Prove Istio features apply only to registered destinations
+        outline:
+          - "'Envoy passes through requests to unknown services' — ALLOW_ANY"
+          - The docs' svc-entry example and what it adds to the registry
+          - REGISTRY_ONLY — the outbound policy that makes ServiceEntry mandatory
+          - "The companion ext-res-dr DestinationRule and a VirtualService on an external host"
+          - resolution and location choices
+        diagrams:
+          - type: flowchart
+            shows: Outbound request decision — registered host to its cluster, unknown host to PassthroughCluster or BlackHoleCluster by policy
+        playground_env: >
+          Bookinfo plus a `curl` pod in `bookinfo`, mesh at ALLOW_ANY, outbound internet
+          to httpbin.org and example.com (documented requirement). No ServiceEntry.
+        lab_title: Lock Bookinfo Down To Approved External Hosts
+        lab_objective: >
+          Switch to REGISTRY_ONLY, register exactly one external API with a ServiceEntry,
+          and apply a connect timeout and a request timeout to it.
+        challenge: >
+          After REGISTRY_ONLY one external call works and one 502s. Explain and fix.
+        notes: Built from current 070-01.
+
+      - id: module-02
+        title: Originate TLS For An External Service
+        beyond_the_page: true
+        objectives:
+          - Configure a ServiceEntry and DestinationRule so the sidecar upgrades plain HTTP to HTTPS
+          - Explain why the application should send plain HTTP when the proxy originates TLS
+          - Prove origination happened from the external response and proxy stats
+          - Diagnose double encryption when the app already uses HTTPS
+        outline:
+          - Why originate TLS at the proxy
+          - port mapping (80 to 443) and tls mode SIMPLE on the DestinationRule
+          - Proving it
+        diagrams:
+          - type: sequence
+            shows: App sends HTTP to sidecar, sidecar opens TLS to the external host
+        playground_env: >
+          Same as module-01 with the ServiceEntry for httpbin.org already applied on
+          port 80 only.
+        lab_title: Upgrade An External Call To HTTPS
+        lab_objective: >
+          Make plain-HTTP calls from the curl pod reach an external host over TLS
+          originated by the sidecar.
+        challenge: >
+          Calls fail with a TLS error when the app uses https://. Explain why.
+        notes: Built from current 070-02.
+
+      - id: module-03
+        title: Add A Virtual Machine Workload With WorkloadEntry
+        beyond_the_page: true
+        docs_anchor: "#service-entries"
+        objectives:
+          - Represent a non-Kubernetes workload with a WorkloadEntry and select it from a ServiceEntry with workloadSelector
+          - Mix Kubernetes pods and WorkloadEntries behind one service
+          - Prove the WorkloadEntry endpoint appears in a caller's EDS
+          - Name what MESH_INTERNAL implies for mTLS and identity
+        outline:
+          - "'Run mesh services on virtual machines' — the docs' third use case"
+          - WorkloadEntry plus workloadSelector
+          - Mixed endpoints and proof
+        diagrams:
+          - type: er
+            shows: ServiceEntry selecting WorkloadEntries and pods into one endpoint set
+        playground_env: >
+          Bookinfo plus a ratings instance running outside the mesh (a plain container
+          with a fixed IP standing in for a VM). No WorkloadEntry.
+        lab_title: Serve Ratings From A Virtual Machine
+        lab_objective: >
+          Add the out-of-mesh ratings instance as a WorkloadEntry behind ratings and
+          prove both kinds of endpoint receive traffic.
+        challenge: >
+          The WorkloadEntry exists but EDS lists no endpoint for it. Find the selector bug.
+        notes: Built from current 070-03.
+    capstone:
+      title: Service Entries Capstone
+      objective: >
+        Lock Bookinfo to REGISTRY_ONLY, register two external APIs (one with TLS
+        origination, one with a connect timeout), and add a VM-hosted ratings endpoint.
+
+  # ---------------------------------------------------------------------------
+  - id: section-060
+    title: Sidecars
+    docs_anchor: "#sidecars"
+    curriculum_item: Configuring Routing within a Service Mesh
+    description: >
+      The docs' Sidecar resource: narrowing the ports a proxy accepts and the
+      services it can reach, per namespace or per workload, and why it matters in a
+      large mesh.
+    modules:
+      - id: module-01
+        title: Scope Proxy Configuration With The Sidecar Resource
+        docs_anchor: "#sidecars"
+        objectives:
+          - Apply the docs' default Sidecar (./*, istio-system/*) and measure the cluster count before and after
+          - Write egress hosts in namespace/dnsName form and predict which services stay reachable
+          - Scope a Sidecar to one workload with workloadSelector and name the precedence over a namespace default
+          - Configure ingress listeners and outboundTrafficPolicy on a Sidecar
+          - Diagnose a call that broke because its destination was scoped out
+        outline:
+          - "'By default every proxy can reach every service' — what that costs"
+          - The docs' example in bookinfo
+          - The host language — ./*, ~/*, ns/*, */host
+          - workloadSelector and precedence (workload, namespace, root namespace)
+          - ingress and outboundTrafficPolicy
+        diagrams:
+          - type: flowchart
+            shows: Sidecar precedence from workload-selected to namespace default to root-namespace default
+        playground_env: >
+          Bookinfo in `bookinfo`, plus namespaces `partners` (one service bookinfo
+          legitimately calls) and `archive` (one it must not), mesh at REGISTRY_ONLY so
+          scoped-out services are truly unreachable. No Sidecar.
+        lab_title: Shrink The Bookinfo Proxies
+        lab_objective: >
+          Limit every Bookinfo proxy to its own namespace, istio-system and one partner
+          service, give productpage one extra host, and prove archive is unreachable.
+        challenge: >
+          After a Sidecar rollout, reviews can no longer reach ratings. Find the host
+          entry that broke it.
+        notes: Built from current 010-02 (3 parts).
+    capstone:
+      title: Sidecars Capstone
+      objective: >
+        Scope a multi-namespace Bookinfo mesh with namespace defaults, one
+        workload-specific Sidecar and a root-namespace default, proven by cluster
+        counts and live reachability.
+
+  # ---------------------------------------------------------------------------
+  - id: section-070
+    title: Egress Gateways
+    beyond_the_page: true
+    docs_anchor: "#gateways"
+    curriculum_item: Configuring Ingress and Egress Traffic
+    description: >
+      The page names istio-egressgateway beside the ingress gateway; this section
+      teaches it. It needs both Gateways and Service Entries, which is why it follows
+      them.
+    modules:
+      - id: module-01
+        title: Route External Traffic Through An Egress Gateway
+        objectives:
+          - Route calls to an external host from the sidecar to the egress gateway and on to the host
+          - Write the Gateway, DestinationRule and two-hop VirtualService the pattern needs
+          - Prove traffic left via the gateway from its access log
+          - Explain why an egress gateway alone does not enforce egress without network policy
+        outline:
+          - Why a dedicated exit point
+          - The two hops — mesh to gateway, gateway to host
+          - Proving the path
+        diagrams:
+          - type: sequence
+            shows: curl pod sidecar to egress gateway to external host, with the VirtualService rule used at each hop
+        playground_env: >
+          Bookinfo plus `curl` pod, egress gateway from demo profile, access logging on,
+          ServiceEntry for an external host applied. No egress Gateway or VirtualService.
+        lab_title: Send External Calls Through The Egress Gateway
+        lab_objective: >
+          Route all calls from bookinfo to one external host through the egress gateway,
+          proven by the gateway's access log.
+        challenge: >
+          Calls succeed but bypass the gateway. Find which hop is missing.
+        notes: Built from current 080-01.
+
+      - id: module-02
+        title: Originate TLS At The Egress Gateway
+        objectives:
+          - Configure the egress gateway to originate TLS to the external host
+          - Use ISTIO_MUTUAL between sidecar and gateway and SIMPLE from gateway to host
+          - Prove where each TLS session starts and ends
+          - Diagnose the port mismatch that produces 404 at the gateway
+        outline:
+          - Moving origination from the sidecar to the gateway
+          - Two DestinationRules, two TLS modes
+          - Proof and failure signatures
+        diagrams:
+          - type: sequence
+            shows: HTTP from app, mTLS sidecar to gateway, TLS gateway to external host
+        playground_env: >
+          Same as module-01 with the plain egress routing already in place.
+        lab_title: Upgrade To HTTPS At The Egress Gateway
+        lab_objective: >
+          Make plain-HTTP calls from bookinfo leave through the egress gateway as HTTPS.
+        challenge: >
+          The gateway returns 404 for the external host. Fix the Gateway/VirtualService port pair.
+        notes: Built from current 080-02.
+    capstone:
+      title: Egress Gateways Capstone
+      objective: >
+        Under REGISTRY_ONLY, route Bookinfo's calls to two external APIs through the
+        egress gateway, one originating TLS at the gateway.
+
+  # ---------------------------------------------------------------------------
+  - id: section-080
+    title: Network Resilience
+    docs_anchor: "#network-resilience-and-testing"
+    curriculum_item: Using Resilience Features (circuit breaking, failover, outlier detection, timeouts, retries)
+    description: >
+      The page's failure-recovery features — timeouts, retries, circuit breakers —
+      on Bookinfo's reviews-to-ratings path, followed by the two the exam adds:
+      outlier detection and locality failover.
+    modules:
+      - id: module-01
+        title: Set Timeouts And Retries On A Route
+        docs_anchor: "#timeouts"
+        objectives:
+          - Apply the docs' 10s ratings timeout and prove the HTTP timeout is disabled by default
+          - Apply the docs' retries example (attempts 3, perTryTimeout 2s) and count attempts in the access log
+          - Name the default retry policy and the conditions that trigger it (retryOn)
+          - Predict total latency from timeout, attempts and perTryTimeout together
+          - Choose timeout and retry values that do not amplify load
+        outline:
+          - "Timeouts — 'disabled by default for HTTP requests' and the docs' ratings example"
+          - Retries — the default of two, the 25ms+ interval, the docs' example
+          - retryOn and perTryTimeout
+          - How timeout and retries combine
+        diagrams:
+          - type: sequence
+            shows: Request to ratings with perTryTimeout expiring, retry, and the overall timeout cutting it off
+        playground_env: >
+          Bookinfo with DestinationRules applied, reviews pinned to v2 (which calls
+          ratings), and a ratings variant that can be told to delay or fail; access
+          logging on. No timeout or retry config.
+        lab_title: Bound The Reviews To Ratings Call
+        lab_objective: >
+          Give ratings a request timeout and a retry policy that recovers from one
+          injected failure but not two, graded by measured latency and attempt counts.
+        challenge: >
+          Requests take 3× longer than the timeout. Explain from the config and fix.
+        notes: Built from current 040-01.
+
+      - id: module-02
+        title: Trip A Circuit Breaker With Connection Pool Limits
+        docs_anchor: "#circuit-breakers"
+        objectives:
+          - Apply the docs' maxConnections circuit breaker and trip it with fortio
+          - Configure http1MaxPendingRequests and maxRequestsPerConnection and read UO 503s
+          - Read circuit-breaker overflow counters from the proxy's stats
+          - Explain why circuit breakers apply to real hosts, not virtual destinations
+        outline:
+          - "Circuit breakers — 'limits for calls to individual hosts'"
+          - The docs' reviews v1 maxConnections example
+          - Connection pool fields
+          - Tripping it and reading the evidence
+        diagrams:
+          - type: state
+            shows: Connection pool state from normal to pending queue full to overflow 503 and back
+        playground_env: >
+          httpbin plus fortio client (the docs' own circuit-breaking sample) in an
+          injected namespace beside Bookinfo. No DestinationRule for httpbin.
+        lab_title: Protect Ratings With A Circuit Breaker
+        lab_objective: >
+          Configure a connection pool on ratings that rejects excess concurrent load
+          with 503 UO, proven by fortio output and overflow stats.
+        challenge: >
+          The breaker never trips under load. Find why (limits too high or DR not applied to the subset in use).
+        notes: Built from current 040-02. Uses httpbin/fortio as the Istio docs do.
+
+      - id: module-03
+        title: Eject Failing Endpoints With Outlier Detection
+        beyond_the_page: true
+        objectives:
+          - Configure consecutive5xxErrors, interval, baseEjectionTime and maxEjectionPercent
+          - Eject a failing reviews pod and watch traffic move to healthy pods
+          - Read ejection from the proxy's endpoint health
+          - Predict ejection duration growth on repeat failures
+        outline:
+          - Outlier detection versus circuit breaking
+          - The fields and their timing
+          - Watching ejection
+        diagrams:
+          - type: state
+            shows: Endpoint lifecycle healthy to ejected to returned, with ejection time growing
+        playground_env: >
+          Bookinfo with ratings scaled to 3 replicas, one of which can be switched to
+          return 500s. No outlier detection.
+        lab_title: Eject A Failing Ratings Pod
+        lab_objective: >
+          Configure outlier detection so a ratings pod returning 500s is ejected and
+          traffic stays healthy, graded by error rate and endpoint state.
+        challenge: >
+          maxEjectionPercent stops ejection of a second bad pod. Explain the trade-off.
+        notes: Built from current 040-03.
+
+      - id: module-04
+        title: Fail Over Between Localities
+        beyond_the_page: true
+        objectives:
+          - Configure locality-aware load balancing so callers prefer their own zone
+          - Configure failover with outlier detection as its required trigger
+          - Prove failover with endpoint priorities in proxy-config
+          - Explain why failover does nothing without outlier detection
+        outline:
+          - Locality and how a proxy learns it
+          - failover and distribute settings
+          - Proving priorities
+        diagrams:
+          - type: flowchart
+            shows: Endpoint priorities by locality and the fallback when the local zone is ejected
+        playground_env: >
+          Bookinfo with reviews in two simulated zones via the istio-locality pod label
+          (kind single node), curl client in zone-a.
+        lab_title: Fail Reviews Over To Another Zone
+        lab_objective: >
+          Keep reviews traffic in zone-a while healthy and fail over to zone-b when
+          zone-a endpoints are ejected.
+        challenge: >
+          Failover is configured and nothing fails over. Find the missing field.
+        notes: Built from current 040-04 — keep its istio-locality label approach.
+    capstone:
+      title: Network Resilience Capstone
+      objective: >
+        Harden reviews-to-ratings with a timeout, a bounded retry policy, a circuit
+        breaker, outlier detection and zone failover, each proven by a separate failure
+        scenario.
+
+  # ---------------------------------------------------------------------------
+  - id: section-090
+    title: Testing With Fault Injection
+    docs_anchor: "#fault-injection"
+    curriculum_item: Using Fault Injection
+    description: >
+      The page's fault injection and "working with your applications": injecting
+      delays and aborts on Bookinfo, and the timeout interaction between application
+      and proxy that the Bookinfo fault-injection task is famous for.
+    modules:
+      - id: module-01
+        title: Inject Delays And Aborts
+        docs_anchor: "#fault-injection"
+        objectives:
+          - Apply the docs' ratings delay example and measure the injected delay
+          - Inject an HTTP abort with a status code and percentage for one user only
+          - Scope a fault to a match so it affects jason and nobody else
+          - Explain the docs' rule that fault injection cannot be combined with retry or timeout on the same VirtualService, and design around it
+          - Read the DI and FI response flags in access logs
+        outline:
+          - "Faults at the application layer — delays and aborts"
+          - The docs' ratings example (percentage 0.1, fixedDelay 5s)
+          - Abort faults and percentages
+          - Scoping faults with match
+          - Fault plus timeout or retry — the docs' restriction
+        diagrams:
+          - type: sequence
+            shows: Request delayed or aborted by the caller sidecar's fault filter before it reaches ratings
+        playground_env: >
+          Bookinfo with the docs' request-routing applied (jason to reviews v2, others
+          v1) so faults on ratings are visible only to jason. Access logging on.
+        lab_title: Break Ratings For Jason Only
+        lab_objective: >
+          Inject a 7s delay and then a 500 abort on ratings for jason only, while other
+          users are unaffected — graded by timed requests with and without the header.
+        challenge: >
+          A fault on 100% of requests shows up only sometimes. Explain why.
+        notes: Built from current 050-01.
+
+      - id: module-02
+        title: Find Timeout Bugs With Fault Injection
+        docs_anchor: "#working-with-your-applications"
+        objectives:
+          - Explain why Istio failure recovery is transparent to the application
+          - Predict the outcome when application and proxy timeouts disagree, using the docs' 2s vs 3s example
+          - Reproduce the Bookinfo bug where a 7s ratings delay breaks productpage despite reviews' 10s timeout
+          - Name the application's responsibility when the proxy returns 503 for an exhausted pool
+          - Fix a timeout mismatch by changing the right layer
+        outline:
+          - "'Applications must handle errors appropriately' — 503 fallback"
+          - "The docs' conflict example — app 2s timeout versus VirtualService 3s and retry"
+          - The Bookinfo hardcoded timeouts and the 6s productpage budget
+          - Fixing it in config versus in code
+        diagrams:
+          - type: gantt
+            shows: Nested timeout budgets productpage to reviews to ratings against a 7s injected delay
+        playground_env: >
+          Bookinfo with jason routed to reviews v2, a ratings delay VirtualService
+          provided but not applied, access logging on.
+        lab_title: Make Bookinfo Survive A Slow Ratings Service
+        lab_objective: >
+          Use fault injection to reveal Bookinfo's timeout mismatch, then change mesh
+          configuration so jason's page loads with an error for ratings rather than
+          failing entirely.
+        challenge: >
+          Retries on reviews make the outage worse. Prove it and choose a fix.
+        notes: >
+          New module from the page's "working with your applications". Build must
+          verify Bookinfo 1.30.5 sample hardcoded timeouts (productpage→reviews,
+          reviews v2→ratings) before stating numbers.
+    capstone:
+      title: Testing With Fault Injection Capstone
+      objective: >
+        Run a resilience test plan against Bookinfo: inject a delay and an abort for a
+        test user, find and fix one timeout mismatch, and prove regular users never
+        saw a fault.
+
+# -----------------------------------------------------------------------------
+# Traceability: every heading on the concepts page and where it is taught.
+docs_coverage:
+  "#introducing-istio-traffic-management": section-000/module-01, section-000/module-02
+  "#virtual-services": section-010
+  "#why-use-virtual-services": section-010/module-01
+  "#virtual-service-example": section-010/module-01
+  "#the-hosts-field": section-010/module-02
+  "#routing-rules": section-010/module-03
+  "#match-condition": section-010/module-03
+  "#destination": section-010/module-03
+  "#routing-rule-precedence": section-010/module-04
+  "#more-about-routing-rules": section-020/module-01, section-020/module-02
+  "#destination-rules": section-030/module-01
+  "#load-balancing-options": section-030/module-02, section-030/module-03
+  "#destination-rule-example": section-030/module-01
+  "#gateways": section-040/module-01, section-070
+  "#gateway-example": section-040/module-01
+  "#service-entries": section-050/module-01, section-050/module-03
+  "#service-entry-example": section-050/module-01
+  "#sidecars": section-060/module-01
+  "#network-resilience-and-testing": section-080, section-090
+  "#timeouts": section-080/module-01
+  "#retries": section-080/module-01
+  "#circuit-breakers": section-080/module-02
+  "#fault-injection": section-090/module-01
+  "#working-with-your-applications": section-090/module-02
+
+# Exam topic to section map (for the root README).
+exam_coverage:
+  "Configuring Ingress and Egress Traffic": [section-040, section-070]
+  "Configuring Routing within a Service Mesh": [section-010, section-020, section-060]
+  "Defining Traffic Policies with Destination Rules": [section-030]
+  "Configuring Traffic Shifting": [section-020/module-01, section-020/module-03]
+  "Connecting In-Mesh Workloads to External Workloads and Services": [section-050]
+  "Using Resilience Features": [section-080]
+  "Using Fault Injection": [section-090]
+
+# Old module to new module. Scaffold uses `git mv` for these, then build ports
+# examples and labs to Bookinfo. `split` means the old module's parts are divided.
+migration:
+  section-000/module-01: section-000/module-01
+  section-010/module-01:
+    split:
+      course-01-subsets-and-destination-vocabulary: section-030/module-01
+      course-02-matching-a-request: section-010/module-03
+      course-03-evaluation-order-and-proof: [section-010/module-02, section-010/module-04]
+      course-04-rewriting-redirecting-and-headers: section-020/module-02
+      course-05-routing-non-http-traffic: section-020/module-04
+      labs/lab-01: section-010/module-03
+      labs/lab-02: section-020/module-02
+  section-010/module-02: section-060/module-01
+  section-020/module-01: section-020/module-01
+  section-020/module-02: section-020/module-03
+  section-030/module-01:
+    split:
+      course-01-endpoint-selection-and-simple-algorithms: section-030/module-02
+      course-02-consistent-hash-and-the-ring: [section-030/module-02, section-030/module-03]
+      course-03-policy-levels-and-verification: section-030/module-01
+      labs/lab-01: section-030/module-02
+      labs/lab-02: section-030/module-03
+  section-040/module-01: section-080/module-01
+  section-040/module-02: section-080/module-02
+  section-040/module-03: section-080/module-03
+  section-040/module-04: section-080/module-04
+  section-050/module-01: section-090/module-01
+  section-060/module-01: section-040/module-01
+  section-060/module-02: section-040/module-02
+  section-060/module-03: section-040/module-03
+  section-070/module-01: section-050/module-01
+  section-070/module-02: section-050/module-02
+  section-070/module-03: section-050/module-03
+  section-080/module-01: section-070/module-01
+  section-080/module-02: section-070/module-02
+  new_modules:
+    - section-000/module-02
+    - section-010/module-01
+    - section-010/module-02
+    - section-010/module-04
+    - section-090/module-02
+  capstones: "All nine existing capstones are rewritten against Bookinfo; none map one-to-one."
