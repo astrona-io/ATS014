@@ -1,288 +1,274 @@
 # Rewriting, Redirecting And Headers
 
-> Prerequisite: [Evaluation Order, Name Resolution And Proof](./course-03-evaluation-order-and-proof.md). Next: [Routing Non-HTTP Traffic](./course-05-routing-non-http-traffic.md).
+So far a matched rule has done one thing: chosen a destination. That is the most common job of a rule, but not the only one. Astronaut, a communications officer can do more than point a signal somewhere. A rule can also answer the signal itself with a redirect. It can change the path before sending the request on. It can add or remove headers in both directions. And it can handle browser CORS checks without the app knowing CORS exists.
 
-So far a matched rule has done exactly one thing: chosen a destination. That is the most common thing a rule does and it is not the only one. A rule can also answer the request itself with a redirect, change the path before forwarding it, add or strip headers in either direction, and handle browser CORS preflights without the application knowing CORS exists.
+These are extra fields on the same `http` rule you have been writing since Part 2. The object, the matching and the order all work exactly as before.
 
-These are separate fields on the same `http` entry you have been writing since Part 2. Nothing new is introduced — the object, the matching and the ordering all work exactly as before.
+This part uses **`probe`** instead of `scout`. `probe` is a test app in the playground (port `8000`) that echoes back what it receives: `/headers` shows the request headers, and `/anything` shows the path and headers it got. That makes the proxy's changes visible. The rules below send to the `probe` Service without a subset, so they need no `DestinationRule`.
 
 ## What a matched rule can do
 
-Once a rule matches, its fields are applied in a fixed order, and the first thing to know is that one of them ends the request immediately:
+Once a rule matches, its fields are applied in a fixed order. The first thing to know is that one of them ends the request at once.
 
 ```mermaid
-flowchart TD
-    M["a rule matched"] --> RD{"does the rule have redirect"}
-    RD -->|"yes"| R["reply 301 to the caller<br/>nothing is forwarded, the request ends"]
-    RD -->|"no"| RW["apply rewrite<br/>change the path or the authority"]
-    RW --> H["apply headers<br/>add, set or remove on the request"]
-    H --> F["forward to the destination in route"]
-    F --> HR["apply headers on the response<br/>then hand it back to the caller"]
+flowchart TB
+    M["rule matched"] --> RD{"redirect?"}
+    RD -->|"yes"| R["reply 301"]
+    RD -->|"no"| RW["rewrite"]
+    RW -->|"request headers"| F["destination"]
+    F -->|"response headers"| C["caller"]
 ```
 
-Take from this that `redirect` and `route` are alternatives, not companions: a rule that redirects never reaches a destination, and Istio rejects an object that tries to do both.
+Once a rule matches, the proxy first checks for `redirect`. If it is there, the proxy replies `301` to the caller itself, nothing is sent on, and the request ends. If not, it applies `rewrite` (the path or the authority), then the request `headers`, sends the request to the route's destination, and finally applies the response `headers` before handing the answer back. `redirect` and `route` are alternatives, not partners. A rule that redirects never reaches a destination, and Istio rejects an object that tries to do both.
 
-The fields available on one `http` entry, and where each is taught:
+The fields on one `http` rule, and which of them this module teaches:
 
 | Field | Does | Covered |
 | --- | --- | --- |
 | `route` | choose a destination | Part 2 |
-| `redirect` | answer the caller with a 3xx instead of forwarding | here |
-| `rewrite` | change the path or `Host` before forwarding | here |
-| `headers` | add / set / remove request and response headers | here |
-| `corsPolicy` | answer preflights and add CORS response headers | here |
-| `timeout`, `retries` | give up, or try again | section 040 |
-| `fault` | inject a delay or an error on purpose | section 050 |
-| `mirror` | send a copy elsewhere | section 020 |
+| `redirect` | answer the caller with a 3xx instead of sending the request on | here |
+| `rewrite` | change the path or `Host` before sending the request on | here |
+| `headers` | add, set or remove request and response headers | here |
+| `corsPolicy` | answer browser preflight checks and add CORS response headers | here |
+| `timeout`, `retries` | give up, or try again | not in this module |
+| `fault` | inject a delay or an error on purpose | not in this module |
+| `mirror` | send a copy elsewhere | not in this module |
 
-That last group is worth noticing now: they are fields on the object you already know. Most of the rest of this course is this table filling up.
+The last group are fields on the object you already know. Most of the rest of this course is this table filling up.
 
-## `redirect` — answer instead of forwarding
+## `redirect`: answer instead of sending on
 
 ```yaml
 - match:
-    - uri:
-        prefix: /old
+  - uri:
+      prefix: /old
   redirect:
-    uri: /notify
+    uri: /get
     redirectCode: 301
 ```
 
-The proxy replies to the caller with a `301` and a `Location` header. Nothing reaches any pod. `redirectCode` defaults to `301` — set it to `302` for a temporary move, and prefer `308` when the method must be preserved, because a `301` allows a client to turn a `POST` into a `GET`.
+The proxy replies to the caller with a `301` and a `Location` header. Nothing reaches any pod. It is like a spaceport gate that tells an arriving ship "wrong gate, go to gate 7" without letting it dock.
 
-`redirect.authority` rewrites the host in the `Location` header as well, which is how you move a path to a different hostname.
+`redirectCode` defaults to `301`. Set it to `302` for a temporary move. Prefer `308` when the method must stay the same, because a `301` allows a client to turn a `POST` into a `GET`. `redirect.authority` also changes the host in the `Location` header, which is how you move a path to a different host name.
 
 > [!TIP]
-> **Try it — a rule that never reaches a pod**
+> **Try it: a rule that never reaches a pod**
 >
 > ```sh
-> kubectl apply -f - <<'EOF'
+> cat > virtualservice-probe-redirect.yaml <<'EOF'
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
->   name: notification-service
->   namespace: routing-demo
+>   name: probe
+>   namespace: starfleet
 > spec:
 >   hosts:
->     - notification-service
+>   - probe
 >   http:
->     - match:
->         - uri:
->             prefix: /old
->       redirect:
->         uri: /notify
->     - route:
->         - destination:
->             host: notification-service
+>   - match:
+>     - uri:
+>         prefix: /old
+>     redirect:
+>       uri: /get
+>   - route:
+>     - destination:
+>         host: probe
 > EOF
-> kubectl -n routing-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w 'status=%{http_code} location=%{redirect_url}\n' http://notification-service/old
+> kubectl apply -f virtualservice-probe-redirect.yaml
+> kubectl exec -n starfleet deploy/shuttle -- \
+>   curl -s -o /dev/null -w 'status=%{http_code} location=%{redirect_url}\n' http://probe:8000/old
 > ```
 >
-> Expect something like:
->
-> ```text
-> status=301 location=http://notification-service/notify
-> ```
->
-> The proxy produced that response itself. No pod was involved, nothing appears in either application's log, and the caller now has to make a second request.
+> You should see `status=301` and a location that ends in `/get`. The proxy made that answer itself. No `probe` pod was involved, and the caller now has to make a second request.
 
-## `rewrite` — change the path before forwarding
+## `rewrite`: change the path before sending on
 
-Where `redirect` tells the caller to go somewhere else, `rewrite` quietly changes the request on its way to the destination. The caller never learns that the path it asked for is not the path the application received.
+`redirect` tells the caller to go somewhere else. `rewrite` quietly re-addresses the signal in flight, on its way to the destination. The caller never learns that the app received a different path.
 
 ```yaml
 - match:
-    - uri:
-        prefix: /beta
+  - uri:
+      prefix: /beta
   rewrite:
-    uri: /
+    uri: /anything
   route:
-    - destination:
-        host: notification-service
-        subset: v2
+  - destination:
+      host: probe
 ```
 
-The semantics depend on how the rule matched, and this is the part that surprises people:
+How much is replaced depends on how the rule matched. This is the part that surprises people:
 
-- If the match was a **`prefix`**, `rewrite.uri` replaces **just the matched prefix**. `/beta/notify` matched on prefix `/beta` and rewritten to `/` becomes `/notify`.
-- If the match was **`exact`**, the whole path is replaced.
+- After a **`prefix`** match, `rewrite.uri` replaces **only the matched prefix**. `/beta/test`, matched on prefix `/beta` and rewritten to `/anything`, becomes `/anything/test`.
+- After an **`exact`** match, the whole path is replaced.
 
-`rewrite.authority` does the same job for the `Host` header, which matters when the destination serves several virtual hosts and expects its own name.
+`rewrite.authority` does the same job for the `Host` header. That matters when the destination serves several host names and expects its own.
 
-Proving a rewrite needs more care than it looks, and the obvious method does not work.
+Proving a rewrite needs care, because the obvious place to look misleads you. The caller sees nothing. You might then read the access log, but Istio's default log format records the path in `x-envoy-original-path` when it exists, and Envoy sets that header when it rewrites. **So a working rewrite logs the path the caller asked for, at both ends.** Reading that as "my rewrite is broken" is the trap.
 
-The caller cannot see it — the response is identical either way. The natural next thought is to read the destination's access log, since that is where the delivered path should appear. It does not. Istio's default log format is `%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%`: when Envoy rewrites a path it records the original one in `x-envoy-original-path`, and the log prefers that header. **A working rewrite therefore logs the path the caller asked for, on both sides.** Reading that as "my rewrite is not working" is the trap.
-
-What is unambiguous is the compiled route. Envoy's name for the field is `prefixRewrite`, and its presence is the proof.
+Two things do prove it. The compiled route shows the rewrite as a field called `prefixRewrite`. And an echo app like `probe` shows the path it actually received.
 
 > [!TIP]
-> **Try it — the rewrite as Envoy compiled it**
+> **Try it: the rewrite, seen from both sides**
 >
 > ```sh
-> kubectl -n routing-demo patch virtualservice notification-service --type merge -p '
+> cat > virtualservice-probe-rewrite.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: probe
+>   namespace: starfleet
 > spec:
+>   hosts:
+>   - probe
 >   http:
->     - match:
->         - uri:
->             prefix: /beta
->       rewrite:
->         uri: /
->       route:
->         - destination:
->             host: notification-service
->     - route:
->         - destination:
->             host: notification-service'
-> sleep 3
-> istioctl proxy-config routes deploy/tester -n routing-demo -o json \
+>   - match:
+>     - uri:
+>         prefix: /beta
+>     rewrite:
+>       uri: /anything
+>     route:
+>     - destination:
+>         host: probe
+>   - route:
+>     - destination:
+>         host: probe
+> EOF
+> kubectl apply -f virtualservice-probe-rewrite.yaml
+> istioctl proxy-config routes deploy/shuttle -n starfleet --name 8000 -o json \
 >   | grep -E '"/beta"|prefixRewrite'
+> kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/beta/test | grep '"url"'
 > ```
 >
-> Expect something like:
->
-> ```text
-> "prefix": "/beta",
-> "prefixRewrite": "/",
-> ```
->
-> The matched prefix and its replacement, on the same route entry. `/beta/notify` reaches the application as `/notify` — only the matched prefix is replaced, and the rest of the path comes along unchanged.
+> In the route dump, look for `"prefix": "/beta"` and `"prefixRewrite": "/anything"` on the same route entry. In the `probe` answer, the `url` field ends in `/anything/test`: only the matched prefix was replaced, and the rest of the path came along.
 
-If you do need to observe a rewritten path end to end, the evidence has to come from the application itself — a backend that echoes the path it received — because every proxy in the chain reports the original.
+## `headers`: two scopes, three operations
 
-## `headers` — two scopes, three operations
-
-Header manipulation exists at two levels, and choosing the wrong one is the usual mistake:
+Header changes can apply at two levels. Choosing the wrong one is the usual mistake.
 
 ```yaml
 http:
-  - route:
-      - destination:
-          host: notification-service
-          subset: v2
-        headers:                  # ← per DESTINATION: only requests sent to v2
-          request:
-            set:
-              x-served-by: v2
-    headers:                      # ← per RULE: every request this rule handles
-      response:
-        add:
-          x-routed-by: istio
+- route:
+  - destination:
+      host: probe
+    headers:                  # ← per DESTINATION: only requests sent here
+      request:
+        set:
+          x-served-by: probe
+  headers:                    # ← per RULE: every request this rule handles
+    response:
+      add:
+        x-routed-by: istio
 ```
 
-The indentation tells you the scope. A `headers` block aligned with `route` applies to everything the rule handles; a `headers` block inside a `route[]` entry applies only to the requests actually sent to that destination — which is what you want when two destinations need to be told apart, as in the weighted routing of section 020.
+The indentation tells you the scope. A `headers` block lined up with `route` applies to everything the rule handles. A `headers` block inside a `route` item applies only to requests sent to that destination. You want the second when two destinations must be told apart, for example when a weighted route splits traffic between two versions.
 
 Each scope takes `request` and `response`, and each of those takes three operations:
 
 | Operation | Effect |
 | --- | --- |
-| `set` | replace the header, creating it if absent |
-| `add` | append a value, keeping any existing one |
-| `remove` | drop the named headers — a list of names, not a map |
+| `set` | replace the header, creating it if it is missing |
+| `add` | add a value, keeping any value already there |
+| `remove` | drop the named headers. A list of names, not a map |
 
-`remove` is the odd one out in shape: it is a plain list (`remove: ["x-internal-token"]`), because there is no value to give.
+`remove` has a different shape from the others: it is a plain list (`remove: ["x-internal-token"]`), because there is no value to give.
 
 > [!TIP]
-> **Try it — a header the application never sent**
+> **Try it: headers the app never sent, and one it never sees**
 >
 > ```sh
-> kubectl -n routing-demo patch virtualservice notification-service --type merge -p '
+> cat > virtualservice-probe-headers.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: probe
+>   namespace: starfleet
 > spec:
+>   hosts:
+>   - probe
 >   http:
->     - headers:
->         response:
->           set:
->             x-routed-by: istio
->       route:
->         - destination:
->             host: notification-service'
-> sleep 2
-> kubectl -n routing-demo exec deploy/tester -- \
->   curl -s -D - -o /dev/null http://notification-service/notify | grep -i 'x-routed-by\|^HTTP'
+>   - headers:
+>       request:
+>         set:
+>           x-flight-plan: istio
+>         remove:
+>         - x-internal-token
+>       response:
+>         set:
+>           x-routed-by: istio
+>     route:
+>     - destination:
+>         host: probe
+> EOF
+> kubectl apply -f virtualservice-probe-headers.yaml
+> kubectl exec -n starfleet deploy/shuttle -- \
+>   curl -s -H "x-internal-token: secret" http://probe:8000/headers
+> kubectl exec -n starfleet deploy/shuttle -- \
+>   curl -s -D - -o /dev/null http://probe:8000/get | grep -i 'x-routed-by'
 > ```
 >
-> Expect something like:
->
-> ```text
-> HTTP/1.1 200 OK
-> x-routed-by: istio
-> ```
->
-> nginx has no idea that header exists. The caller's proxy added it on the way back, which is the same mechanism that lets you stamp a version, strip an internal token, or force a `Host` without redeploying anything.
+> In the echoed request headers, `X-Flight-Plan: istio` is there and `X-Internal-Token` is gone. The `shuttle` pod's proxy changed the request on the way out. The second command shows `x-routed-by: istio` on the response, added on the way back. `probe` knows nothing about either change.
 
-## `corsPolicy` — preflights handled by the proxy
+## `corsPolicy`: browser checks handled by the proxy
 
-A browser calling an API on another origin first sends an `OPTIONS` **preflight** request and refuses to proceed unless the answer carries the right `access-control-allow-*` headers. Implementing that correctly in every service is exactly the kind of cross-cutting work a mesh is meant to absorb.
+A browser that calls an API on another site first sends an `OPTIONS` request, called a **preflight**. It only goes ahead if the answer carries the right `access-control-allow-*` headers. Building that correctly into every service is the kind of shared work a mesh is meant to take over.
 
 ```yaml
 - corsPolicy:
     allowOrigins:
-      - exact: https://shop.example.com
+    - exact: https://shop.example.com
     allowMethods: ["GET", "POST"]
     allowHeaders: ["content-type"]
     maxAge: "24h"
   route:
-    - destination:
-        host: notification-service
+  - destination:
+      host: probe
 ```
 
-`allowOrigins` takes the same string-match forms as everything else in Part 2 — `exact`, `prefix` or `regex` — so a wildcard is `regex: ".*"` rather than a literal `*`. The proxy answers preflights itself and adds the response headers to ordinary cross-origin requests.
+`allowOrigins` takes the same string match forms as Part 2: `exact`, `prefix` or `regex`. So a wildcard is `regex: ".*"`, not a plain `*`. The proxy answers preflights itself and adds the response headers to normal cross-site requests.
 
-The important limit: **CORS is not a security control.** It is a browser convention, enforced by the browser. A `corsPolicy` will not stop `curl`, a script, or any non-browser client from calling the service — that is what authorization policy is for.
+The important limit: **CORS is not a security control.** It is a browser rule, enforced by the browser. A `corsPolicy` does not stop `curl`, a script or any other non-browser client. That is what authorization policy is for.
 
 > [!TIP]
-> **Try it — the headers a browser would look for**
+> **Try it: the header a browser looks for**
 >
 > ```sh
-> kubectl -n routing-demo patch virtualservice notification-service --type merge -p '
+> cat > virtualservice-probe-cors.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: probe
+>   namespace: starfleet
 > spec:
+>   hosts:
+>   - probe
 >   http:
->     - corsPolicy:
->         allowOrigins:
->           - exact: https://shop.example.com
->         allowMethods: ["GET", "POST"]
->       route:
->         - destination:
->             host: notification-service'
-> sleep 2
-> kubectl -n routing-demo exec deploy/tester -- \
->   curl -s -D - -o /dev/null -H "Origin: https://shop.example.com" http://notification-service/notify \
->   | grep -i 'access-control\|^HTTP'
+>   - corsPolicy:
+>       allowOrigins:
+>       - exact: https://shop.example.com
+>       allowMethods: ["GET", "POST"]
+>     route:
+>     - destination:
+>         host: probe
+> EOF
+> kubectl apply -f virtualservice-probe-cors.yaml
+> kubectl exec -n starfleet deploy/shuttle -- \
+>   curl -s -D - -o /dev/null -H "Origin: https://shop.example.com" http://probe:8000/get \
+>   | grep -i 'access-control'
 > ```
 >
-> Expect something like:
->
-> ```text
-> HTTP/1.1 200 OK
-> access-control-allow-origin: https://shop.example.com
-> ```
->
-> Send the same request with a different `Origin` and the header is absent — the request still succeeds, because it is the browser, not the proxy, that would refuse to use the response.
+> You should see `access-control-allow-origin: https://shop.example.com`. Send the same request with a different `Origin` and the header is missing. The request still succeeds: it is the browser, not the proxy, that would refuse to use the answer.
 
-Restore the module's four-rule object from Part 3 before moving on; the patches above replaced it.
+When you are done, remove the test rule with `kubectl delete virtualservice probe -n starfleet`.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Putting `redirect` and `route` on the same rule.** They are alternatives. Istio rejects the object rather than guessing.
->
-> **Expecting `rewrite` to replace the whole path after a `prefix` match.** It replaces only the matched prefix. `/beta/notify` with `prefix: /beta` and `rewrite.uri: /` becomes `/notify`, not `/`.
->
-> **Looking for a rewrite in any access log.** Istio's log format prefers `x-envoy-original-path`, so a *working* rewrite logs the original path at both ends. Check `prefixRewrite` in the compiled route instead.
->
-> **Putting `headers` at the wrong level.** Aligned with `route` it applies to the whole rule; inside a `route[]` entry it applies to that destination only.
->
-> **Writing `remove` as a map.** It is a list of header names.
->
-> **Using `allowOrigins: ["*"]`.** The field takes string matches, not literals. A wildcard is `regex: ".*"`.
->
-> **Treating `corsPolicy` as access control.** It only shapes what a browser is willing to do. Non-browser clients ignore it entirely.
+> - **`redirect` and `route` on the same rule.** They are alternatives. Istio rejects the object.
+> - **Expecting `rewrite` to replace the whole path after a `prefix` match.** It replaces only the matched prefix.
+> - **Looking for a rewrite in the access log.** A *working* rewrite logs the original path at both ends. Check `prefixRewrite` in the compiled route, or use an echo app.
+> - **`headers` at the wrong level.** Lined up with `route`, it applies to the whole rule. Inside a `route` item, it applies to that destination only.
+> - **Writing `remove` as a map.** It is a list of header names.
+> - **`allowOrigins: ["*"]`.** The field takes string matches. A wildcard is `regex: ".*"`.
+> - **Treating `corsPolicy` as access control.** It only shapes what a browser is willing to do.
 
-> *`redirect` ends the request, `rewrite` changes it on the way, `headers` annotates it in either direction — all of them fields on the same rule that already chose the destination.*
-
-## Reference
-
-- [HTTPRedirect API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRedirect) — `uri`, `authority`, `redirectCode` and the port/scheme fields.
-- [HTTPRewrite API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRewrite) — the prefix-replacement semantics, stated upstream.
-- [Headers API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#Headers) — the request/response and set/add/remove matrix, at both scopes.
-- [CorsPolicy API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#CorsPolicy) — every field, including `exposeHeaders`, `maxAge` and `allowCredentials`.
+> *`redirect` ends the request, `rewrite` changes it on the way, and `headers` changes it in either direction. All of them are fields on the same rule that already chose the destination.*

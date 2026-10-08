@@ -1,0 +1,20 @@
+# Allow pods in the mesh to call https://httpbin.org.
+# Adds httpbin.org to Istio's service registry, so REGISTRY_ONLY lets it out.
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: httpbin-org
+  # In bookinfo, so the Sidecar's "./*" includes it.
+  namespace: bookinfo
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  - number: 443
+    name: https
+    # HTTPS: the sidecar does not decrypt it; it routes by TLS SNI only.
+    protocol: HTTPS
+  # Outside the mesh: no sidecar there, no mTLS.
+  location: MESH_EXTERNAL
+  # Sidecar looks up httpbin.org's IPs with DNS.
+  resolution: DNS

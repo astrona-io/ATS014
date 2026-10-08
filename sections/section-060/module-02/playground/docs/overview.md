@@ -2,10 +2,13 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab. The environment starts clean, runs
+Welcome, astronaut. This is a **playground**, a training solar system, not a lab. The environment starts clean, runs
 `bootstrap/prepare.sh`, applies the starting workloads, and then waits. There is
 no task, no `astrona submit`, and no pass/fail. Explore, break things,
 `astrona destroy`, start over.
+
+Here you open the solar system to outside signals through the older
+`Ingress` API, which Istio's gateway still accepts.
 
 ## What's in the box
 
@@ -47,4 +50,4 @@ export GATEWAY_URL=localhost:8080
 astrona destroy ats-014-playground-060-02
 ```
 
-(`astrona destroy` takes the environment name, not the config path.)
+(`astrona destroy` takes the environment name, not the configuration path.)

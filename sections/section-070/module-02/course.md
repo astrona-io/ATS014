@@ -2,18 +2,18 @@
 
 <!-- astrona:playground -->
 > [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS014/tree/main/sections/section-070/module-02/playground)
+> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
 >
 > ```sh
 > astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-070/module-02/playground
 > astrona destroy ats-014-playground-070-02
 > ```
 
-Module 1 registered an external host and immediately got timeouts, retries and routing for it. That worked because the traffic was plain HTTP on port 80, so the sidecar could read it.
+Astronaut, module 1 charted a planet from another solar system and immediately got timeouts, retries and routing for it. That worked because the signals were plain HTTP on port 80, so the communications officer (the sidecar) could read them.
 
-Most real external services are HTTPS. When an application calls `https://api.example.com/`, the sidecar sees an encrypted TCP stream and nothing else: no method, no path, no headers, no status codes. Every layer-7 feature in this course is unavailable, and the access log has one line saying bytes moved.
+Most real external services are HTTPS. When an application calls `https://api.example.com/`, the crew seals the signal before the communications officer ever sees it. The sidecar sees an encrypted TCP stream and nothing else: no method, no path, no headers, no status codes. Every layer-7 feature in this course is unavailable, and the access log has one line saying bytes moved.
 
-TLS origination moves the encryption boundary. The application speaks plain HTTP to its own sidecar; the sidecar applies layer-7 rules in the clear; and **the sidecar** performs the TLS handshake with the external service. The bytes leaving the node are still HTTPS — nothing is less secure on the wire — but the mesh can now see and govern the request.
+TLS origination moves the encryption boundary. The crew hands the communications officer an open message: the application speaks plain HTTP to its own sidecar. The sidecar applies layer-7 rules in the clear. Then **the sidecar** seals the signal, performing the TLS handshake with the external service, before it leaves the ship. The bytes leaving the node are still HTTPS — nothing is less secure on the wire — but the mesh can now see and govern the request.
 
 > TLS origination lets the app speak plain HTTP while the sidecar upgrades the connection to HTTPS.
 

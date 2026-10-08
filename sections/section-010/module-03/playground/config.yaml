@@ -1,0 +1,35 @@
+# Apply And Remove Traffic Rules Safely — Playground environment
+# A clean sandbox: it spins up, installs Istio and the Starfleet, then stays running
+# for free exploration. No task, no grading, no `astrona submit`.
+#   astrona run -c .                          new kind cluster "astro-ats-014-playground-010-03"
+#   astrona destroy ats-014-playground-010-03  delete the cluster again
+metadata:
+  name: "ats-014-playground-010-03"
+  docs:
+    guide: "docs/overview.md"
+
+# Port forwards: astrona keeps these running on 127.0.0.1 (astrona port-forward list).
+runtime:
+  type: kind
+  portForwards:
+    - name: bridge-ui
+      resource: svc/bridge
+      namespace: starfleet
+      hostPort: 9080
+      targetPort: 9080
+      scheme: http
+      description: "The bridge – open /productpage, refresh to see the stars change"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Istio 1.30.5 (istio-base + istiod) with Helm"
+      type: "file"
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Namespace starfleet, access logs, the Starfleet (bridge, cargo, scout v1-v3, navcom), shuttle and probe v1/v2"
+      type: "file"
+      source: "bootstrap/deploy.sh"
+
+teardown:
+  keepCluster: false

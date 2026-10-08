@@ -1,6 +1,6 @@
 # Capstone: One Exit, Two Partners
 
-This is the Section 080 integration challenge, and the last practical exercise in the course. One egress gateway carries traffic to two different external hosts: one plain HTTP, one TLS-only with the handshake performed at the gateway. Only one of your two workloads is routed through it.
+This is the Section 080 final mission, astronaut, and the last practical exercise in the course. One departure gate (egress gateway) carries signals to two planets outside the solar system: one over plain HTTP, one TLS-only, with the handshake done at the gate. Only one of your two spaceships (workloads) is routed through it.
 
 Everything composes here — a `ServiceEntry` from section 070, a `Gateway` and two-stage `VirtualService` objects from module 1, `portLevelSettings` precedence from section 030, and `sourceLabels` matching from section 010. Five objects per host, two hosts, one gateway.
 

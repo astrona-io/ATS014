@@ -1,6 +1,6 @@
 # Outlier Detection And Endpoint Ejection Sandbox
 
-Welcome to the Module 3 targeted practice sandbox. In this lab you'll make a client proxy notice, on its own, that one endpoint keeps failing — and stop using it, while Kubernetes goes on insisting that pod is perfectly ready.
+Welcome to the Module 3 training mission, astronaut. In this lab you'll make a ship's communications officer (the client proxy) notice, on its own, that one ship in the squadron keeps failing, and pull it out of formation, while Kubernetes goes on insisting that pod is perfectly ready.
 
 ## Launching the Lab
 Run the following command in your terminal to boot the kind Kubernetes cluster:

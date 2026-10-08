@@ -1,26 +1,20 @@
 # A Gateway That Creates Its Own Data Plane
 
-> Prerequisite: [Three Objects, Three Owners](./course-01-three-objects-three-owners.md). Next: [`HTTPRoute`, Status And What Stays In Istio](./course-03-httproute-status-and-what-stays-in-istio.md).
-
 The single biggest behavioural difference from module 1, and the permission model that follows from the three-owner split.
 
 ## Creating versus configuring
 
 ```mermaid
-flowchart TD
-    subgraph L["networking.istio.io/Gateway"]
-      A1["a gateway pod already exists"]
-      A2["the object configures it<br/>via selector: istio=ingressgateway"]
-      A2 --> A1
+flowchart TB
+    subgraph L["Istio Gateway"]
+      A2["Gateway object"] -->|"selector"| A1["existing pod"]
     end
-    subgraph R["gateway.networking.k8s.io/Gateway"]
-      B1["you create the object<br/>gatewayClassName: istio"]
-      B2["Istio creates a Deployment and Service<br/>named gateway-name-istio,<br/>in the Gateway's OWN namespace"]
-      B1 --> B2
+    subgraph R["Gateway API Gateway"]
+      B1["Gateway object"] -->|"Istio creates"| B2["Deployment and Service"]
     end
 ```
 
-The arrows point in opposite directions. In the Istio API the pod comes first and the object points at it; in the Gateway API the object comes first and the pod is a consequence of it.
+In the Gateway API, a `Gateway` with `gatewayClassName: istio` makes Istio create a Deployment and Service in the `Gateway`'s namespace. The arrows point in opposite directions. In the Istio API the pod comes first and the object points at it, like writing orders for a spaceport that is already built. In the Gateway API the object comes first and the pod is a consequence of it: the order itself builds the spaceport.
 
 So there is **no `selector` field**, and looking for your proxy in `istio-system` will not find it. The proxy's lifecycle is tied to the object: delete the `Gateway` and the Deployment goes with it.
 
@@ -118,7 +112,7 @@ The lifecycle coupling is worth confirming once, because it is unlike anything e
 
 ## `allowedRoutes` — deny by default
 
-Because the `Gateway` and the `HTTPRoute` can belong to different teams, the Gateway's owner has to say who may attach:
+Because the `Gateway` and the `HTTPRoute` can belong to different teams, the Gateway's owner has to say who may dock. Think of it as a spaceport that only lets ships from approved planets land:
 
 | `allowedRoutes.namespaces.from` | Routes may attach from |
 | --- | --- |
@@ -155,10 +149,3 @@ Label a namespace `gateway-access=true` and its teams can attach; unlabel it and
 > **Forgetting the proxy's lifecycle is tied to the object.** Delete the `Gateway` and the Deployment and Service go with it.
 >
 > **Assuming routes may attach from anywhere.** `allowedRoutes` decides, and the default is the Gateway's own namespace only.
-
-## Reference
-
-- [Gateway API: Gateway](https://gateway-api.sigs.k8s.io/api-types/gateway/) — listeners, `allowedRoutes` and the attachment model.
-- [Istio Gateway API deployment methods](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/#automated-deployment) — automated versus manual proxy deployment.
-- [Gateway API: cross-namespace routing](https://gateway-api.sigs.k8s.io/guides/multiple-ns/) — the `Same` / `All` / `Selector` choices with worked examples.
-- `kubectl get deploy -l gateway.networking.k8s.io/gateway-name=<name>` — finding the proxy a `Gateway` created.

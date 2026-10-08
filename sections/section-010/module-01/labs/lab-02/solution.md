@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects again, and the same ordering discipline as lab 1 — but this time most of the work is on fields *beside* `route` rather than inside it. The one genuinely awkward step is proving the rewrite, because no access log will show it to you.
+Two objects again, and the same ordering discipline as lab 1 — but this time most of the work is on fields *beside* `route` rather than inside it. The one genuinely awkward step is proving the rewrite, because no flight log (access log) will show it to you.
 
 ---
 
@@ -52,13 +52,13 @@ kubectl apply -f destinationrule-notification-service.yaml
 astrona submit
 ```
 
-Expect a failure naming the missing [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the subsets alone move no traffic, exactly as the module said.
+Expect a failure naming the missing `VirtualService` — the subsets alone move no traffic, exactly as the module said.
 
 ---
 
 ## Step 3: The Redirect Rule, First
 
-`/legacy` must be answered, not forwarded. A rule with `redirect` has **no** `route` — Istio rejects an object that has both.
+`/legacy` must be answered by the communications officer, not forwarded. A rule with `redirect` has **no** `route` — Istio rejects an object that has both.
 
 ```yaml
 - match:
@@ -232,22 +232,3 @@ astrona submit
 * **`allowOrigins: ["https://shop.example.com"]`.** The field takes string matches — use `exact:`.
 * **Putting `headers` on only one serving rule.** Every response leaving the service must carry the header, so both serving rules need it.
 * **Assuming `rewrite.uri: /` replaces the whole path.** After a `prefix` match it replaces only the matched prefix.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [HTTPRedirect API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRedirect) — `uri`, `authority` and `redirectCode`
-- [HTTPRewrite API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRewrite) — prefix-replacement semantics after a `prefix` match
-- [CorsPolicy API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#CorsPolicy) — `allowOrigins`, `allowMethods`, `maxAge` and friends
-- [Headers API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#Headers) — the request/response and set/add/remove matrix, at both scopes
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

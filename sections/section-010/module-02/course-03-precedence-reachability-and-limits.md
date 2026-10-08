@@ -1,7 +1,5 @@
 # Precedence, Reachability And What It Is Not
 
-> Prerequisite: [The Sidecar Object And Its Host Language](./course-02-the-sidecar-object-and-host-language.md). Next: [the module landing page](./course.md).
-
 Two questions remain, and both cause real outages. When several `Sidecar` resources could apply to a pod, which one does? And what exactly have you prevented when you scope a host away — is it a routing change, or is it a permission? This part answers both, and ends with the module's consolidated pitfalls.
 
 ## Which `Sidecar` applies
@@ -9,17 +7,17 @@ Two questions remain, and both cause real outages. When several `Sidecar` resour
 There are three ways a `Sidecar` can reach a workload, and they form a precedence ladder:
 
 ```mermaid
-flowchart TD
-    W["a workload needs its egress scope"] --> S1{"a Sidecar in its own namespace<br/>with a matching workloadSelector"}
+flowchart TB
+    W["workload"] --> S1{"selector Sidecar?"}
     S1 -->|"yes"| U1["that one wins"]
-    S1 -->|"no"| S2{"a Sidecar in its own namespace<br/>with no workloadSelector"}
-    S2 -->|"yes"| U2["the namespace default wins"]
-    S2 -->|"no"| S3{"a Sidecar in the root namespace<br/>istio-system by default"}
-    S3 -->|"yes"| U3["the mesh-wide default wins"]
-    S3 -->|"no"| U4["no scoping: the whole registry, as in Part 1"]
+    S1 -->|"no"| S2{"namespace Sidecar?"}
+    S2 -->|"yes"| U2["namespace default wins"]
+    S2 -->|"no"| S3{"root namespace Sidecar?"}
+    S3 -->|"yes"| U3["mesh-wide default wins"]
+    S3 -->|"no"| U4["whole registry"]
 ```
 
-Evaluation stops at the first "yes". Nothing below that point contributes anything.
+A selector `Sidecar` sits in the workload's namespace with a `workloadSelector` that matches it. A namespace `Sidecar` has no `workloadSelector`. The root namespace is `istio-system` by default. Evaluation stops at the first "yes". Nothing below that point contributes anything.
 
 The nearest applicable rung wins, and **it replaces the one below rather than merging with it**. A selective `Sidecar` that lists only `./*` does not inherit `istio-system/*` from the namespace default; whatever it lists is the complete list for the workloads it selects.
 
@@ -85,13 +83,13 @@ spec:
 
 Read that `./*` carefully: it is evaluated per proxy, so it means "each workload's own namespace", not "istio-system". One object, a different effective host list for every namespace it lands on.
 
-This is a high-blast-radius change — it silently narrows every unscoped namespace in the mesh at once, and the symptom in each is a call that used to work. It belongs to whoever owns the mesh, and it is the reason a namespace default that "does nothing" may still be worth writing: it stops the mesh-wide one from applying to you.
+This is a high-blast-radius change, a Death Star of a setting: one object, and every unscoped namespace in the mesh is narrowed at once, and the symptom in each is a call that used to work. It belongs to whoever owns the mesh, and it is the reason a namespace default that "does nothing" may still be worth writing: it stops the mesh-wide one from applying to you.
 
 ## Removing configuration removes reachability
 
 Part 1 ended with `tester` calling `httpbin.sidecar-other:8000` and getting a `200`, with nothing having authorised it. Part 2 scoped that namespace away and the cluster disappeared from the proxy.
 
-The consequence is not subtle: the proxy now has nowhere to route that name to, so the call fails. This is what makes `Sidecar` a real control rather than a memory optimisation — and it is also the source of the most common self-inflicted outage with this object, because the blast radius of a namespace-wide resource is the whole namespace.
+The consequence is not subtle: the planet is gone from this ship's star chart, so the proxy has nowhere to route that name to, and the call fails. This is what makes `Sidecar` a real control rather than a memory optimisation — and it is also the source of the most common self-inflicted outage with this object, because the blast radius of a namespace-wide resource is the whole namespace.
 
 > [!TIP]
 > **Try it — the same call, now scoped out**
@@ -132,12 +130,12 @@ So the honest description is: a configuration control with a useful side effect 
 
 | Goal | Object |
 | --- | --- |
-| Shrink proxy config and push cost | `Sidecar` — this module |
+| Shrink proxy configuration and push cost | `Sidecar` — this module |
 | Deny a call inside the mesh, enforced on the **server** side | `AuthorizationPolicy` |
 | Deny traffic at the pod network layer, proxy or not | Kubernetes `NetworkPolicy` |
 | Refuse destinations not in the registry | `outboundTrafficPolicy: REGISTRY_ONLY` (section 070) |
 
-The mental model: `Sidecar` decides what a proxy *knows*; `AuthorizationPolicy` decides what a server *accepts*; `NetworkPolicy` decides what the network *carries*.
+The mental model: `Sidecar` decides what a proxy *knows* (its star chart); `AuthorizationPolicy` decides what a server *accepts*; `NetworkPolicy` decides what the network *carries*.
 
 ## Interaction with the rest of the course
 
@@ -152,16 +150,16 @@ The same applies to gateways and to `MESH_INTERNAL` workloads. If a host is in t
 Putting the module together, here is the order to work through when a host that should be reachable is not in a proxy's clusters:
 
 ```mermaid
-flowchart TD
-    A["host missing from istioctl proxy-config cluster"] --> B{"is there a Sidecar in the workload's namespace"}
-    B -->|"yes, with a matching selector"| C["that object's hosts list is the whole answer"]
-    B -->|"yes, namespace-wide"| D["check its hosts list, including ./* and istio-system/*"]
-    B -->|"no"| E{"is there a Sidecar in the root namespace"}
-    E -->|"yes"| F["the mesh-wide default applies to this namespace"]
-    E -->|"no"| G["not a scoping problem: check exportTo, then the registry itself"]
+flowchart TB
+    A["host missing"] --> B{"Sidecar in namespace?"}
+    B -->|"yes, selector"| C["its hosts list"]
+    B -->|"yes, namespace"| D["namespace hosts list"]
+    B -->|"no"| E{"root namespace Sidecar?"}
+    E -->|"yes"| F["mesh-wide default"]
+    E -->|"no"| G["not scoping"]
 ```
 
-Each branch ends at exactly one object to read. That is the value of the precedence rules: there is never more than one `Sidecar` to blame.
+Start when a host is missing from `proxy-config cluster`. For a namespace `Sidecar`, check that `./*` and `istio-system/*` are listed. If no `Sidecar` applies, check `exportTo`, then the registry. Each branch ends at exactly one object to read. That is the value of the precedence rules: there is never more than one `Sidecar` to blame.
 
 ## Common pitfalls
 
@@ -183,10 +181,3 @@ Each branch ends at exactly one object to read. That is the value of the precede
 > **Debugging a `ServiceEntry` that works elsewhere.** A `Sidecar` in the failing namespace is the usual answer, and the symptom is identical to the host never having been registered.
 
 > *`Sidecar` decides what a proxy knows; `AuthorizationPolicy` decides what a server accepts; `NetworkPolicy` decides what the network carries.*
-
-## Reference
-
-- [Sidecar API](https://istio.io/latest/docs/reference/config/networking/sidecar/) — including the root-namespace behaviour and the precedence notes.
-- [Mesh configuration: root namespace](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig) — where `rootNamespace` is set and what it means for mesh-wide defaults.
-- [Authorization policy](https://istio.io/latest/docs/reference/config/security/authorization-policy/) — the object to combine with this one when a task says "must not be able to".
-- `istioctl proxy-config cluster <workload> | wc -l` — the one-line measurement this whole module is about.

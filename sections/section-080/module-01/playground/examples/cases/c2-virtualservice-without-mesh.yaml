@@ -1,0 +1,36 @@
+# Case 2 (mistake): "mesh" missing from gateways. Hop 1 never applies to the
+# sidecars, so traffic goes straight out (bypassing the egress gateway).
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: httpbin-org-via-egress
+  namespace: bookinfo
+spec:
+  hosts:
+  - httpbin.org
+  gateways:
+  - egress-gateway
+  tls:
+  - match:
+    - gateways:
+      - mesh
+      port: 443
+      sniHosts:
+      - httpbin.org
+    route:
+    - destination:
+        host: istio-egress.istio-egress.svc.cluster.local
+        subset: httpbin-org
+        port:
+          number: 443
+  - match:
+    - gateways:
+      - egress-gateway
+      port: 443
+      sniHosts:
+      - httpbin.org
+    route:
+    - destination:
+        host: httpbin.org
+        port:
+          number: 443

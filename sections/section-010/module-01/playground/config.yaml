@@ -1,5 +1,5 @@
 # Route Requests Within The Mesh — Playground environment
-# A clean sandbox: it spins up, installs Istio and Bookinfo, then stays running
+# A clean sandbox: it spins up, installs Istio and the Starfleet, then stays running
 # for free exploration. No task, no grading, no `astrona submit`.
 #   astrona run -c .                          new kind cluster "astro-ats-014-playground-010-01"
 #   astrona destroy ats-014-playground-010-01  delete the cluster again
@@ -12,13 +12,13 @@ metadata:
 runtime:
   type: kind
   portForwards:
-    - name: bookinfo-ui
-      resource: svc/productpage
-      namespace: bookinfo
+    - name: bridge-ui
+      resource: svc/bridge
+      namespace: starfleet
       hostPort: 9080
       targetPort: 9080
       scheme: http
-      description: "Bookinfo UI – open /productpage, refresh to see the stars change"
+      description: "The bridge – open /productpage, refresh to see the stars change"
 
 bootstrap:
   init:
@@ -27,7 +27,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace bookinfo, access logs, Bookinfo, curl client and httpbin v1/v2"
+      description: "Namespace starfleet, access logs, the Starfleet (bridge, cargo, scout v1-v3, navcom), shuttle and probe v1/v2"
       type: "file"
       source: "bootstrap/deploy.sh"
 

@@ -1,0 +1,24 @@
+# Circuit breaker part 1: connection pool limits for httpbin.
+# Very low limits on purpose, so a small load test trips them.
+# When the limits are full, the caller's sidecar fails extra requests fast
+# with HTTP 503 (response flag UO = upstream overflow) instead of queueing
+# them and overloading httpbin.
+# Limits are per caller sidecar, not a total for the service.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  host: httpbin
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        # Max open TCP connections to all httpbin pods.
+        maxConnections: 1
+      http:
+        # Max requests waiting for a free connection. More = 503 at once.
+        http1MaxPendingRequests: 1
+        # Close the connection after each request (no keep-alive), so every
+        # request needs a free connection slot.
+        maxRequestsPerConnection: 1

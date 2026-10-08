@@ -1,0 +1,14 @@
+# Baseline: all probe traffic to v1. v2 gets nothing.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - route:
+    - destination:
+        host: probe
+        subset: v1

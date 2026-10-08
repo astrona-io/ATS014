@@ -1,0 +1,25 @@
+# Mirror: v1 still answers every request, and a COPY is sent to v2.
+# The copy is "fire and forget": v2's response is thrown away, so errors or
+# slowness in v2 never reach the caller. Safe way to test a new version with
+# real production traffic.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - route:
+    - destination:
+        host: probe
+        subset: v1
+      weight: 100
+    # Where to send the copy.
+    mirror:
+      host: probe
+      subset: v2
+    # Share of requests to copy, in percent. 100 = all.
+    mirrorPercentage:
+      value: 100.0

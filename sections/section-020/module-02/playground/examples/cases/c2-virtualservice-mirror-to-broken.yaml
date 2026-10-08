@@ -1,0 +1,20 @@
+# Case 2: mirror everything into the broken version. Callers still get 200 –
+# mirrored responses (even 503) are thrown away.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - route:
+    - destination:
+        host: probe
+        subset: v1
+    mirror:
+      host: probe
+      subset: broken
+    mirrorPercentage:
+      value: 100.0

@@ -2,6 +2,8 @@
 
 Solve this question on: `terminal`
 
+Astronaut, your mission: pull a damaged ship out of formation, even though Kubernetes says it is fine.
+
 Namespace `outlier-demo` has one Service with two endpoints, one of which is poison:
 
 * `httpbin-good` — 1 replica, answers normally
@@ -9,7 +11,7 @@ Namespace `outlier-demo` has one Service with two endpoints, one of which is poi
 * `httpbin` — one Service on port 8000 in front of **both**
 * `tester` — a client pod with `curl`
 
-Istio is installed, every pod is injected, and there is no [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/). Roughly half of all traffic currently fails.
+Istio is installed, every pod is injected, and there is no `DestinationRule`. Roughly half of all traffic currently fails.
 
 Make the client proxy notice the bad endpoint and stop using it.
 
@@ -19,7 +21,7 @@ Make the client proxy notice the bad endpoint and stop using it.
     *   `interval` to **`5s`**
     *   `baseEjectionTime` to **`30s`**
     *   `maxEjectionPercent` to a value that lets an ejection **actually happen on a two-endpoint service**. Think about what the default does here before you pick a number.
-3.  Do **not** add a [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/), do not scale or delete `httpbin-bad`, and do not change the Service selector. The bad endpoint must be removed by the proxy's own judgement, not by you removing it.
+3.  Do **not** add a `VirtualService`, do not scale or delete `httpbin-bad`, and do not change the Service selector. The bad endpoint must be removed by the proxy's own judgement, not by you removing it.
 
 **What the grader checks**
 
@@ -29,17 +31,3 @@ Make the client proxy notice the bad endpoint and stop using it.
 7.  `istioctl proxy-config endpoints` shows one endpoint with `OUTLIER CHECK: FAILED`.
 8.  `kubectl get endpoints httpbin` still lists **both** addresses, and `httpbin-bad` is still running. The ejection is the proxy's opinion, not a change to the Kubernetes object.
 9.  Traffic measured after the ejection is substantially healthier than the 50% failure rate you started with.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [OutlierDetection API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#OutlierDetection) — `consecutive5xxErrors`, `interval`, `baseEjectionTime`, `maxEjectionPercent`
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

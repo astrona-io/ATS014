@@ -1,10 +1,10 @@
 # Using Fault Injection
 
-Section 040 configured resilience. This section is how you find out whether any of it works.
+Astronaut, in section 040 you fitted your ships with resilience: abort windows, re-sent signals and shields. This section is your simulation drill. It is how you find out whether any of it works.
 
-A timeout you have never seen fire is a guess, and a retry policy you have never watched retry is a guess. Fault injection lets the mesh fabricate the failure — a two-second delay, a 500 that never reaches the upstream — with no change to any application. The service under test cannot tell an injected failure from a real one, which is what makes the result worth anything.
+A timeout you have never seen fire is a guess. A retry policy you have never watched retry is a guess. Fault injection lets the mesh fake the failure: a two-second delay, or a 500 that never reaches the ship it was meant for. No application changes. The service under test cannot tell a fake failure from a real one, and that is what makes the result worth anything.
 
-The same feature answers a second question that is harder to test any other way: what does your application actually do when a dependency is down? Usually something less graceful than anyone expects.
+The same feature answers a second question that is hard to test any other way: what does your crew actually do when a ship they depend on goes dark? Usually something less graceful than anyone expects.
 
 **Curriculum item covered:** Using Fault Injection
 
@@ -29,12 +29,14 @@ The same feature answers a second question that is harder to test any other way:
 
 ## The Learning Path
 
+Work through the modules in this order, astronaut. For each one: read the parts with its playground open next to you, clean up the playground, then take its graded mission. Finish with the capstone, which brings the whole section together.
+
 ### 1. Fault Injection With Delays And Aborts
 *   **Module Reader:** **[Fault Injection With Delays And Aborts](./module-01/course.md)**
     1. [`fault.delay`](./module-01/course-01-fault-delay.md)
     2. [`fault.abort`](./module-01/course-02-fault-abort.md)
     3. [Scoping, Composition And Hazards](./module-01/course-03-scoping-composition-and-hazards.md)
-*   **Hands-on Playground:** `sections/section-050/module-01/playground` — a kind cluster with Istio installed and namespace `fault-demo` holding a two-hop chain, `booking-service` calling `notification-service`, with no routing configured.
+*   **Hands-on Playground:** `sections/section-050/module-01/playground` — a kind cluster with Istio 1.30.5 (Helm) and Bookinfo in namespace `bookinfo`, with the `reviews` and `ratings` subsets already defined and a `curl` client. No VirtualService yet.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-050/module-01/playground
     ```
@@ -55,4 +57,4 @@ The same feature answers a second question that is harder to test any other way:
 
 ---
 
-The playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear it down with `astrona destroy <name>` when you are finished — the name is printed in the module's playground callout.
+The playground is your training solar system in the simulator. It is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear it down with `astrona destroy <name>` when you are finished — the name is printed in the module's playground callout.

@@ -1,8 +1,6 @@
 # The `ServiceEntry` Object
 
-> Prerequisite: [The Outbound Traffic Policy](./course-01-the-outbound-traffic-policy.md). Next: [A Registered Host Is An Ordinary Host](./course-03-a-registered-host-is-an-ordinary-host.md).
-
-Four fields, each answering one question. This part is what each decides, and why one of them gates everything the rest of the course can do with an external host.
+A `ServiceEntry` adds a planet from another solar system to the star chart (the service registry). It has four fields, each answering one question. This part is what each decides, and why one of them gates everything the rest of the course can do with an external host.
 
 ## The object
 
@@ -10,15 +8,15 @@ Four fields, each answering one question. This part is what each decides, and wh
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
-  name: httpbin-ext
-  namespace: egress-demo
+  name: httpbin-org
+  namespace: bookinfo
 spec:
   hosts:
     - httpbin.org
   ports:
-    - number: 80
-      name: http
-      protocol: HTTP
+    - number: 443
+      name: https
+      protocol: HTTPS
   location: MESH_EXTERNAL
   resolution: DNS
 ```
@@ -38,7 +36,7 @@ One subtlety: for `resolution: DNS`, the host must be a name the **proxy** can r
 
 ## `ports` — and why `protocol` is the important word
 
-Each entry is a number, a name, and a **protocol**. The protocol is what decides how much of Istio applies:
+Each entry is a number (think of it as a radio channel), a name, and a **protocol**. The protocol tells the communications officer what language the signals on that channel speak, and that decides how much of Istio applies:
 
 | `protocol` | The proxy will |
 | --- | --- |
@@ -59,7 +57,7 @@ The `name` matters too, though less obviously: Istio uses the port name as a fal
 | `MESH_EXTERNAL` | not part of the mesh | a third party's API — this module |
 | `MESH_INTERNAL` | part of the mesh, just not in Kubernetes | a VM you run — module 3 |
 
-The difference is not cosmetic. `MESH_INTERNAL` tells Istio to treat the endpoints as mesh members, which brings mutual TLS and workload identity into play. `MESH_EXTERNAL` gives you routing and policy but no identity — which is correct, because you do not issue certificates to somebody else's API.
+The difference is not cosmetic. `MESH_INTERNAL` tells Istio to treat the endpoints as mesh members, which brings mutual TLS and workload identity into play. `MESH_EXTERNAL` gives you routing and policy but no identity — which is correct, because you do not issue certificates to somebody else's API. mTLS (mutual TLS) is a secret handshake that both ships check before they talk, and a planet in another solar system does not know Istio's handshake.
 
 For a third-party service, `MESH_EXTERNAL` is the answer, and it is the default.
 
@@ -75,78 +73,108 @@ For a third-party service, `MESH_EXTERNAL` is the answer, and it is the default.
 `DNS` is right for nearly every public API. `NONE` is what you use with a wildcard host, because there is nothing concrete to resolve.
 
 > [!TIP]
-> **Try it — register one host, leave the rest blocked**
+> **Try it — `httpbin.org` allowed over HTTPS only**
+>
+> This builds on the `REGISTRY_ONLY` `Sidecar` from Part 1.
 >
 > ```sh
-> kubectl apply -f - <<'EOF'
+> cat > serviceentry-httpbin-org.yaml <<'EOF'
 > apiVersion: networking.istio.io/v1
 > kind: ServiceEntry
 > metadata:
->   name: httpbin-ext
->   namespace: egress-demo
+>   name: httpbin-org
+>   namespace: bookinfo
 > spec:
 >   hosts:
 >     - httpbin.org
 >   ports:
->     - number: 80
->       name: http
->       protocol: HTTP
+>     - number: 443
+>       name: https
+>       protocol: HTTPS
 >   location: MESH_EXTERNAL
 >   resolution: DNS
 > EOF
-> sleep 3
-> kubectl -n egress-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w 'httpbin.org:  %{http_code}\n' --max-time 10 http://httpbin.org/get
-> kubectl -n egress-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w 'example.com:  %{http_code}\n' --max-time 10 http://example.com/
+> kubectl apply -f serviceentry-httpbin-org.yaml
+> call_external https://httpbin.org/get
+> call_external http://httpbin.org/get
+> kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=2
 > ```
 >
-> Expect something like:
->
-> ```text
-> serviceentry.networking.istio.io/httpbin-ext created
-> httpbin.org:  200
-> example.com:  502
-> ```
->
-> One host allowed, everything else still refused. That pair of results is the whole point of `REGISTRY_ONLY` plus `ServiceEntry`: egress becomes a list you maintain rather than an assumption you inherit.
+> Expect `200`, then `000`, because only port `443` is listed. The log now names a real cluster for the HTTPS call: `outbound|443||httpbin.org`. One port allowed, everything else still refused. That pair of results is the whole point of `REGISTRY_ONLY` plus `ServiceEntry`: egress becomes a list of charted planets you maintain, rather than an assumption you inherit.
 
 ## Confirming registration
 
-A registered external host gets a cluster in every proxy allowed to see it, exactly like an in-cluster Service. This is the check that answers "is this host registered for this workload?" without sending traffic.
+A registered external host gets a cluster in every proxy allowed to see it, exactly like an in-cluster Service. The new planet is now on every ship's star chart. This is the check that answers "is this host registered for this workload?" without sending traffic.
 
 > [!TIP]
 > **Try it — the external host in the proxy's cluster list**
 >
 > ```sh
-> istioctl proxy-config cluster deploy/tester -n egress-demo | grep -iE 'httpbin.org|example.com' || echo "(no match)"
+> istioctl proxy-config cluster deploy/curl -n bookinfo | grep -iE 'httpbin.org|wikipedia' || echo "(no match)"
 > ```
 >
-> Expect something like:
->
-> ```text
-> httpbin.org     80     -     outbound     STRICT_DNS
-> ```
->
-> `STRICT_DNS` is Envoy's discovery type for `resolution: DNS` — the proxy resolves the name itself and refreshes it. `example.com` is absent, which is exactly why it 502s. Compare the discovery type here with the `EDS` you saw for in-cluster Services in section 010: different mechanisms, same cluster abstraction.
+> Expect one line for `httpbin.org` on port `443`, direction `outbound`, with the type `STRICT_DNS`, and no line for Wikipedia yet. `STRICT_DNS` is Envoy's discovery type for `resolution: DNS` — the proxy resolves the name itself and refreshes it. Compare it with the `EDS` you saw for in-cluster Services in section 010: different mechanisms, same cluster abstraction.
 
 ## Wildcards
 
-For a service whose hostnames you cannot list — a CDN, an object store with per-bucket names — a wildcard plus `resolution: NONE` is the shape:
+For a service whose hostnames you cannot list — a CDN, an object store with per-bucket names, every language edition of a website — a wildcard plus `resolution: NONE` is the shape. A wildcard is a pattern that matches many names, so `*.wikipedia.org` matches every subdomain: a whole star cluster charted with one entry.
 
 ```yaml
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: wikipedia
+  namespace: bookinfo
 spec:
   hosts:
-    - "*.amazonaws.com"
+    - "*.wikipedia.org"
   ports:
     - number: 443
       name: https
-      protocol: TLS
+      protocol: HTTPS
   location: MESH_EXTERNAL
   resolution: NONE
 ```
 
-`NONE` because there is no single name to resolve; the proxy forwards to whatever address the client already determined. `TLS` because SNI is the only thing it can meaningfully inspect. This is broad — it permits every host under that suffix — so it is a deliberate trade of precision for practicality, not a default.
+`NONE` because DNS cannot look up a wildcard — which name should it look up? The proxy forwards to the address the application already resolved itself. This is broad — it permits every host under that suffix — so it is a deliberate trade of precision for practicality, not a default. (`protocol: TLS` works here too; with no TLS origination the proxy can only read the SNI name either way.)
+
+> [!TIP]
+> **Try it — a whole domain with one entry**
+>
+> ```sh
+> cat > serviceentry-wikipedia.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: ServiceEntry
+> metadata:
+>   name: wikipedia
+>   namespace: bookinfo
+> spec:
+>   hosts:
+>     - "*.wikipedia.org"
+>   ports:
+>     - number: 443
+>       name: https
+>       protocol: HTTPS
+>   location: MESH_EXTERNAL
+>   resolution: NONE
+> EOF
+> kubectl apply -f serviceentry-wikipedia.yaml
+> call_external https://de.wikipedia.org/
+> call_external https://en.wikipedia.org/wiki/Istio
+> kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=1 | grep wikipedia
+> ```
+>
+> Expect:
+>
+> ```text
+> 301 ...
+>   exit=0
+> 404 ...
+>   exit=0
+> ... outbound|443||*.wikipedia.org ... de.wikipedia.org
+> ```
+>
+> (Times trimmed.) Any HTTP status code means the connection got out — the code is Wikipedia's own answer, and `404` only means that page does not exist. The log names the wildcard cluster. Remove it again with `kubectl delete -f serviceentry-wikipedia.yaml`.
 
 > *The declared `protocol` decides how much of Istio applies to an external host; `TCP` gets you a working connection and nothing else.*
 
@@ -162,10 +190,5 @@ spec:
 > **Assuming a `ServiceEntry` is private to its namespace.** It is exported mesh-wide unless `exportTo` says otherwise.
 >
 > **Expecting a wildcard host to work like a DNS name.** A `*.example.com` entry cannot be resolved by the proxy, so it needs `resolution: NONE` or a gateway in front of it.
-
-## Reference
-
-- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — every field, including `endpoints`, `exportTo` and `workloadSelector`.
-- [Accessing external services](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-control/) — the upstream walkthrough this module follows.
-- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how Istio decides a port's protocol, including the port-name convention.
-- `istioctl proxy-config cluster <workload>` — the one command that confirms a host is registered for a given proxy.
+>
+> **Registering HTTPS and calling plain HTTP.** A `ServiceEntry` with only port `443` does nothing for `http://` on port `80`. Every port the application uses must be listed.

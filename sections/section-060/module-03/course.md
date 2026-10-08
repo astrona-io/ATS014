@@ -2,16 +2,16 @@
 
 <!-- astrona:playground -->
 > [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS014/tree/main/sections/section-060/module-03/playground)
+> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
 >
 > ```sh
 > astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-060/module-03/playground
 > astrona destroy ats-014-playground-060-03
 > ```
 
-Module 2 ended on a complaint: the `Ingress` API can express a host and a path and nothing else, so every controller invented its own annotations and none of them are portable.
+Astronaut, module 2 ended on a complaint: the `Ingress` API can express a host and a path and nothing else, so every controller invented its own annotations and none of them are portable.
 
-The **Gateway API** is the Kubernetes project's answer. It is a set of CRDs — not part of core Kubernetes — and Istio implements it. It has real fields for the things `Ingress` needed annotations for, it separates cluster infrastructure from application routing so different teams can own different objects, and it makes cross-namespace attachment explicit instead of assumed.
+The **Gateway API** is the Kubernetes project's answer: a new standard for building spaceports. It is a set of CRDs — not part of core Kubernetes — and Istio implements it. It has real fields for the things `Ingress` needed annotations for, it separates cluster infrastructure from application routing so different crews can own different objects (one crew builds the spaceport, another writes the flight plans), and it makes cross-namespace attachment explicit instead of assumed.
 
 One warning before any YAML: this module's `Gateway` is **not** module 1's `Gateway`. Same kind name, different API group, genuinely different behaviour. Keeping them apart is half the work.
 
@@ -45,4 +45,4 @@ The CRD version the playground pins is set in `playground/bootstrap/prepare.sh`.
 
 ## Where this fits
 
-This is the third and last of the section's three ingress APIs, and the one to reach for in new work where it is available. It does not replace Istio's own objects wholesale: everything on the `DestinationRule` side — subsets, load balancer policy, connection pools, outlier detection — and Istio's retries, timeouts, mirroring and fault injection remain Istio objects and continue to apply to traffic routed by an `HTTPRoute`. Part 3 draws that line explicitly.
+This is the third and last of the section's three ways into the solar system, and the one to reach for in new work where it is available. It does not replace Istio's own objects wholesale: everything on the `DestinationRule` side — subsets, load balancer policy, connection pools, outlier detection — and Istio's retries, timeouts, mirroring and fault injection remain Istio objects and continue to apply to traffic routed by an `HTTPRoute`. Part 3 draws that line explicitly.

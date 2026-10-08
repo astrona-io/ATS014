@@ -1,0 +1,21 @@
+# Same ServiceEntry, now also with plain HTTP on port 80.
+# Plain HTTP is readable by the sidecar, so HTTP features (timeouts, retries,
+# fault injection, header routing) can be used for this external host.
+# Same name as 02, so applying this replaces it.
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: httpbin-org
+  namespace: bookinfo
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  - number: 443
+    name: https
+    protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: DNS

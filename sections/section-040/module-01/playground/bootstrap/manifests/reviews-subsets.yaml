@@ -1,0 +1,21 @@
+# Prerequisite: subsets v1, v2, v3 of reviews (from example 01).
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: reviews
+  namespace: bookinfo
+spec:
+  host: reviews
+  subsets:
+  # Pods labelled version=v1: no star ratings.
+  - name: v1
+    labels:
+      version: v1
+  # Pods labelled version=v2: black stars.
+  - name: v2
+    labels:
+      version: v2
+  # Pods labelled version=v3: red stars.
+  - name: v3
+    labels:
+      version: v3

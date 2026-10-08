@@ -1,0 +1,24 @@
+# Case 2 helper: a broken pod (always 503), labelled version=broken.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-broken
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      version: broken
+  template:
+    metadata:
+      labels:
+        app: probe
+        version: broken
+    spec:
+      containers:
+      - name: http-echo
+        image: hashicorp/http-echo:1.0
+        args: ["-listen=:8080", "-status-code=503", "-text=broken"]
+        ports:
+        - containerPort: 8080

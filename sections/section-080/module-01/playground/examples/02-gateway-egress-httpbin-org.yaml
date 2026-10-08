@@ -1,0 +1,24 @@
+# Open port 443 on the egress gateway pods for httpbin.org.
+# PASSTHROUGH: the gateway does not decrypt; it forwards the TLS stream as-is,
+# choosing where to send it by the SNI host name.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: egress-gateway
+  namespace: bookinfo
+spec:
+  # Egress gateway pods, by label. Check with:
+  #   kubectl get pods -A -l 'istio in (egress,egressgateway)' --show-labels
+  # Helm "gateway" chart as istio-egress   -> istio: egress
+  # istioctl install --set profile=demo    -> istio: egressgateway
+  selector:
+    istio: egress
+  servers:
+  - port:
+      number: 443
+      name: tls
+      protocol: TLS
+    hosts:
+    - httpbin.org
+    tls:
+      mode: PASSTHROUGH

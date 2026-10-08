@@ -2,11 +2,11 @@
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: reviews
-  namespace: bookinfo
+  name: scout
+  namespace: starfleet
 spec:
   hosts:
-  - reviews
+  - scout
   http:
   - match:
     - queryParams:
@@ -14,9 +14,9 @@ spec:
           exact: "true"
     route:
     - destination:
-        host: reviews
+        host: scout
         subset: v3
   - route:
     - destination:
-        host: reviews
+        host: scout
         subset: v1

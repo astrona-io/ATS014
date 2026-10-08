@@ -1,8 +1,8 @@
 # Connecting In-Mesh Workloads To External Workloads And Services
 
-The mesh boundary is not the same as the application boundary. Real systems call payment APIs, object stores and partner endpoints, and they talk to databases and legacy services that were never going to be containerised.
+Astronaut, your solar system does not fly alone. The edge of the mesh is not the edge of your application. Real systems send signals to payment APIs, object stores and partner endpoints: planets in other solar systems. They also talk to databases and legacy services that were never going to be containerised: old ships that fly outside the fleet's signal network.
 
-This section is about both kinds of "outside". Modules 1 and 2 deal with services somebody else runs: registering them so the mesh can govern the traffic, and moving the TLS boundary so it can actually see it. Module 3 deals with a workload **you** run that is not in Kubernetes, which needs more than routing — it needs an identity, so one policy model covers pods and machines alike.
+This section is about both kinds of "outside". Modules 1 and 2 deal with services somebody else runs. You add them to the star chart (the service registry) so the mesh can govern the signals, and you move the TLS boundary so the communications officer can actually read them. Module 3 deals with a workload **you** run that is not in Kubernetes. It needs more than routing. It needs an identity, so one set of rules covers spaceships (pods) and old machines alike.
 
 The order matters. `ServiceEntry` is the object all three modules use, so it comes first; TLS origination is a use of it; `WorkloadEntry` is the same object with `MESH_INTERNAL` and a selector. Section 080 then moves the egress work off the sidecars and onto a dedicated gateway.
 
@@ -30,12 +30,14 @@ The order matters. `ServiceEntry` is the object all three modules use, so it com
 
 ## The Learning Path
 
+Work through the modules in this order, astronaut. For each one: read the parts with its playground open next to you, clean up the playground, then take its graded mission. Finish with the capstone, which brings the whole section together.
+
 ### 1. Control External Access With ServiceEntry
 *   **Module Reader:** **[Control External Access With ServiceEntry](./module-01/course.md)**
     1. [The Outbound Traffic Policy](./module-01/course-01-the-outbound-traffic-policy.md)
     2. [The `ServiceEntry` Object](./module-01/course-02-the-serviceentry-object.md)
     3. [A Registered Host Is An Ordinary Host](./module-01/course-03-a-registered-host-is-an-ordinary-host.md)
-*   **Hands-on Playground:** `sections/section-070/module-01/playground` — namespace `egress-demo` with a client pod, the mesh at its `ALLOW_ANY` default and no `ServiceEntry`.
+*   **Hands-on Playground:** `sections/section-070/module-01/playground` — a kind cluster with Istio 1.30.5 (Helm), namespace `bookinfo` with `curl` and `httpbin`, the mesh at its `ALLOW_ANY` default and no ServiceEntry. Needs outbound internet.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-070/module-01/playground
     ```
@@ -76,7 +78,7 @@ The order matters. `ServiceEntry` is the object all three modules use, so it com
     ```bash
     astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-03/labs/lab-01
     ```
-*   **Hands-on Objective:** Give two machines outside Kubernetes a hostname, a mesh identity and two endpoints under one service — then write the `WorkloadGroup` a real fleet would register against.
+*   **Hands-on Objective:** Give two machines outside Kubernetes a hostname, a mesh identity and two endpoints under one service — then write the `WorkloadGroup` a real fleet of machines would register against.
 
 ### 4. Section Capstone Challenge
 *   **Comprehensive Challenge:** **`sections/section-070/capstone/labs/lab-01` (A Deny-By-Default Integration Layer)**
@@ -84,7 +86,7 @@ The order matters. `ServiceEntry` is the object all three modules use, so it com
     ```bash
     astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/capstone/labs/lab-01
     ```
-*   **Hands-on Objective:** Three outcomes on a closed mesh at once — a partner's TLS-only API reached over plain HTTP, one of your own machines brought in with identity, and a third endpoint left firmly refused. Two `ServiceEntry` objects, opposite `location` values.
+*   **Hands-on Objective:** Three outcomes on a closed mesh (one where ships may signal only charted planets) at once — a partner's TLS-only API reached over plain HTTP, one of your own machines brought in with identity, and a third endpoint left firmly refused. Two `ServiceEntry` objects, opposite `location` values.
 
 ---
 

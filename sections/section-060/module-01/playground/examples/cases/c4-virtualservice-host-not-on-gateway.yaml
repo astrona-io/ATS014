@@ -1,0 +1,18 @@
+# Case 4 (mistake): VirtualService host shop.example.com is not in the
+# Gateway's hosts (bookinfo.example.com). The route is ignored by the gateway.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bookinfo
+  namespace: bookinfo
+spec:
+  hosts:
+  - shop.example.com
+  gateways:
+  - bookinfo-gateway
+  http:
+  - route:
+    - destination:
+        host: productpage
+        port:
+          number: 9080

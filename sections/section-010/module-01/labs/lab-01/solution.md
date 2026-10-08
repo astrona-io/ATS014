@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Two objects, in this order: the [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) first so the subset names exist, then the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) that uses them. The last step is the one the grader cares most about — proving the rule order leaves every rule reachable.
+Two objects, in this order: the `DestinationRule` first so the subset names exist, then the `VirtualService` that uses them. The last step is the one the grader cares most about — proving the rule order leaves every rule reachable.
 
 ---
 
 ## Step 1: Read the Starting State
 
-Confirm what you have before changing anything. This is the habit the exam rewards.
+Confirm what you have before changing anything, the way a pilot runs the pre-flight check. This is the habit the exam rewards.
 
 ```sh
 kubectl -n routing-demo get pods --show-labels
@@ -79,7 +79,7 @@ notification-service.routing-demo.svc.cluster.local   80   v1   outbound   EDS
 notification-service.routing-demo.svc.cluster.local   80   v2   outbound   EDS
 ```
 
-Re-run the baseline loop now and the split is unchanged. That is correct: subsets are vocabulary, not behaviour.
+Re-run the baseline loop now and the split is unchanged. That is correct: subsets are docking instructions, not a flight plan. They name ship classes but steer no signal.
 
 ---
 
@@ -217,7 +217,7 @@ istioctl proxy-config routes deploy/tester -n routing-demo | grep notification
 80     notification-service, notification-service.routing-demo + 1 more...     /*
 ```
 
-If a `VirtualService` exists in `kubectl` but its host is absent here, the problem is between the control plane and the sidecar — not in your YAML.
+If a `VirtualService` exists in `kubectl` but its host is absent here, the problem is between mission control and the communications officer (the control plane and the sidecar) — not in your YAML.
 
 ---
 
@@ -229,19 +229,3 @@ If a `VirtualService` exists in `kubectl` but its host is absent here, the probl
 - **Subset name typo.** `subset: v3` against a `DestinationRule` defining `v1`/`v2` gives a bare 503; `istioctl analyze` names it as `IST0101`.
 - **Objects in the wrong namespace.** Short host names resolve relative to the object's own namespace, so a `VirtualService` in `default` silently never fires.
 - **Changing the Service selector to split versions.** That defeats the exercise and the grader rejects it — the Service must keep selecting on `app` alone.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

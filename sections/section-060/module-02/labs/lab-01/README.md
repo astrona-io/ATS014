@@ -1,6 +1,6 @@
 # Expose A Service With A Kubernetes Ingress Sandbox
 
-Welcome to the Module 2 targeted practice sandbox. In this lab you'll have Istio's gateway serve a plain Kubernetes `Ingress` — including the TLS secret whose namespace catches almost everybody the first time.
+Welcome aboard, astronaut. This is the Module 2 training mission. You'll have Istio's gateway serve a plain Kubernetes `Ingress` — including the TLS secret whose namespace catches almost everybody the first time.
 
 ## Launching the Lab
 Run the following command in your terminal to boot the kind Kubernetes cluster:

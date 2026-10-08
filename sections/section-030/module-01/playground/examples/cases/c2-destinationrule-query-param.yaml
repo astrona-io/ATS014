@@ -1,0 +1,12 @@
+# Case 2: sticky by query parameter ?user=...
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  host: httpbin
+  trafficPolicy:
+    loadBalancer:
+      consistentHash:
+        httpQueryParameterName: user

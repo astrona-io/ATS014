@@ -1,6 +1,6 @@
 # Timeouts And Retries Sandbox
 
-Welcome to the Module 1 targeted practice sandbox. In this lab you'll bound a request with a deadline, retry the read path, and deliberately *not* retry the write path — then prove from the server's own log how many attempts each one really made.
+Welcome to the Module 1 training mission, astronaut. In this lab you'll give a signal an abort window (a deadline), retry the read path, and deliberately *not* retry the write path — then prove from the server's own log how many attempts each one really made.
 
 ## Launching the Lab
 Run the following command in your terminal to boot the kind Kubernetes cluster:

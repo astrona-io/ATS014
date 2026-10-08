@@ -1,8 +1,6 @@
 # Mutual TLS And The Consolidation Argument
 
-> Prerequisite: [Where The `DestinationRule` Attaches](./course-02-where-the-destinationrule-attaches.md). Next: [the module landing page](./course.md).
-
-With `SIMPLE`, moving origination to the gateway is mostly about consolidation. With `MUTUAL` it becomes the reason the feature exists. This part is that case, and the module's pitfalls.
+With `SIMPLE`, moving origination to the gateway is mostly about keeping things in one place. With `MUTUAL` (mutual TLS: a secret handshake both sides check before they talk), it becomes the reason the feature exists. This part covers that case, and the module's pitfalls.
 
 ## `MUTUAL` at the gateway
 
@@ -32,9 +30,9 @@ This is the detail that matters operationally and is the most likely thing to be
 
 `credentialName` names a Kubernetes secret. **It is read from the namespace of the proxy that loads it** — which for gateway origination means the **gateway's** namespace, `istio-system` for the default egress gateway.
 
-That is the same rule as the `Ingress` TLS secret in section 060 module 2, and for the same reason: a pod can only read secrets from its own namespace, and the pod doing the reading is the gateway.
+That is the same rule as the `Ingress` TLS secret in section 060 module 2, and for the same reason. A spaceship can only read secrets stored on its own planet (namespace), and the ship doing the reading is the gateway.
 
-The failure mode is quiet. A `credentialName` pointing at a secret that is not there produces a listener that does not come up, calls that fail, and **no message naming the cause**. When gateway TLS "just does not work", check which namespace the secret is in before anything else.
+The failure is silent, like a signal lost in deep space. A `credentialName` pointing at a secret that is not there gives you a listener that never comes up, calls that fail, and **no message naming the cause**. When gateway TLS "just does not work", check which namespace the secret is in before anything else.
 
 The secret itself is an ordinary TLS secret plus, for `MUTUAL`, the CA to verify the server:
 
@@ -80,7 +78,7 @@ Here is the argument for the whole section, in one table:
 | Objects per external host | 3 | 5 |
 | Component on the critical path | none | the gateway |
 
-The first four rows are the case for the gateway. The last three are the case against it. For a `SIMPLE` external API with no credentials, section 070's three objects are simpler and perfectly good. For a partner API with a client certificate, the first row usually decides it on its own.
+The first four rows are the case for the gateway. The last three are the case against it: an extra hop, more objects, and one gate that every signal depends on — the Death Star risk, if you run it with too few replicas. For a `SIMPLE` external API with no credentials, section 070's three objects are simpler and perfectly good. For a partner API with a client certificate, the first row usually decides it on its own.
 
 ## Where this leaves the course
 
@@ -94,7 +92,7 @@ The five objects in this module use something from almost every section:
 | section 070 | `ServiceEntry`, `location`, `resolution`, protocol selection |
 | section 080 module 1 | the two-stage `VirtualService` and the reserved `mesh` name |
 
-If that composition reads naturally, the traffic-management domain is done.
+If that combination reads naturally, astronaut, your traffic-management training is complete.
 
 ## Common pitfalls
 
@@ -116,10 +114,3 @@ If that composition reads naturally, the traffic-management domain is done.
 > **Confusing the two `DestinationRule` objects.** One names the gateway Service and carries an empty subset; the other names the external host and carries the TLS settings. They do unrelated jobs.
 
 > *The client certificate lives wherever the proxy that presents it lives — which is the entire operational argument for doing this at the gateway.*
-
-## Reference
-
-- [Egress gateway TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/) — including the mutual TLS section.
-- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `MUTUAL`, `credentialName` and the certificate fields.
-- [Secret discovery for gateways](https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/) — how a gateway loads credentials, and from where.
-- [Egress TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/) — the sidecar alternative this module is compared against.

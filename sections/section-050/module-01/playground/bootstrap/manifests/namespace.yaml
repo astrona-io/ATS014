@@ -1,0 +1,12 @@
+# Namespace for the Bookinfo playground.
+# The istio-injection=enabled label makes Istio add an Envoy sidecar to every
+# pod created here (sidecar mode). All VirtualService/DestinationRule features
+# in these examples run in that sidecar.
+# Pods created BEFORE the label was added get no sidecar; restart them with
+# "kubectl rollout restart deploy -n bookinfo".
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bookinfo
+  labels:
+    istio-injection: enabled

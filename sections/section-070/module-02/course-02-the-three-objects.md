@@ -1,17 +1,15 @@
 # The Three Objects
 
-> Prerequisite: [Why HTTPS Is Opaque](./course-01-why-https-is-opaque.md). Next: [Proving It, And Mutual TLS](./course-03-proving-it-and-mutual-tls.md).
-
-Three objects, each doing exactly one thing. Leaving any one out produces a distinct failure, so it is worth being able to name which does what before writing them.
+Three objects, each doing exactly one thing, like three crew stations on one ship. Leaving any one out produces a distinct failure, so it is worth being able to name which does what before writing them.
 
 ## The division of labour
 
 ```mermaid
-flowchart TD
-    A["the app calls http://httpbin.org/get<br/>plain HTTP, port 80"] --> S["1. ServiceEntry<br/>declares the host with BOTH ports:<br/>80 as HTTP, where the app arrives<br/>443 as HTTPS, where it is going"]
-    S --> V["2. VirtualService<br/>matches port 80, routes to port 443<br/>on the same host"]
-    V --> D["3. DestinationRule<br/>portLevelSettings for 443, tls.mode SIMPLE<br/>the handshake happens here"]
-    D --> E["the external service, over HTTPS"]
+flowchart TB
+    A["app: plain HTTP on 80"] --> S["1. ServiceEntry"]
+    S -->|"ports 80 and 443"| V["2. VirtualService"]
+    V -->|"port 80 to 443"| D["3. DestinationRule"]
+    D -->|"TLS SIMPLE"| E["httpbin.org over HTTPS"]
 ```
 
 Each object does one job and none of them works alone. The most common failure is having two of the three.
@@ -69,7 +67,7 @@ spec:
               number: 443
 ```
 
-This is ordinary routing — the same object from section 010 — with the ports doing the work. `match: [{port: 80}]` selects traffic arriving on the plaintext port; the `route` sends it to 443 on the same host.
+This is ordinary routing — the same flight plan object from section 010 — with the ports (the radio channels) doing the work. `match: [{port: 80}]` selects traffic arriving on the plaintext port; the `route` sends it to 443 on the same host.
 
 Note the destination host is unchanged. Only the port moves.
 
@@ -102,7 +100,7 @@ The setting belongs to port 443 specifically, which is what `portLevelSettings` 
 
 ### `sni`
 
-**Server Name Indication** is the hostname the client announces during the TLS handshake, before any HTTP is exchanged. It exists because one IP address commonly serves many certificates, and the server must know which to present.
+**Server Name Indication** is the hostname the client announces during the TLS handshake, before any HTTP is exchanged. It is like calling out which planet you want when one space station serves many planets: one IP address commonly serves many certificates, and the server must know which to present.
 
 Since the proxy is now the TLS client, **the proxy must send it**. If it does not, a shared-hosting endpoint hands back the wrong certificate or rejects the handshake outright. Set it to the external hostname.
 
@@ -215,10 +213,3 @@ Worth doing once, because the failure is instructive and the fix is not obvious 
 > **Forgetting the `VirtualService`.** Without the port redirect nothing ever reaches 443, and the `DestinationRule` is never consulted.
 >
 > **Using `tls.mode: ISTIO_MUTUAL` for an external host.** That is mesh identity. An external service wants `SIMPLE`, or `MUTUAL` with your own client certificate.
-
-## Reference
-
-- [Egress TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/) — the three-object walkthrough.
-- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `mode`, `sni`, `credentialName` and the certificate fields.
-- [TrafficPolicy `portLevelSettings`](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy-PortTrafficPolicy) — the per-port scope this module depends on.
-- [RFC 6066 §3 (SNI)](https://www.rfc-editor.org/rfc/rfc6066#section-3) — what the field is, in two paragraphs.

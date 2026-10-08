@@ -1,163 +1,285 @@
 # The Route Timeout
 
-> Prerequisite: [the module landing page](./course.md). Next: [The Retry Policy](./course-02-the-retry-policy.md).
+> **Before you start:** define the helper functions from [the landing page](./course.md#before-you-start).
 
-One field, and three properties worth being precise about: where it is measured, what the caller gets, and what it does not do. This part settles all three before retries complicate the picture.
+Astronaut, a timeout is your signal's abort window. It is one field. But there are three things to get exactly right about it: which proxy measures it, what the caller gets back, and what it does not do. This part settles all three, and shows you how to test a timeout properly, before retries make the picture harder.
 
-## The unbounded default
+## No timeout by default
 
-There is **no route-level timeout by default**. A slow response is simply a long wait, and the mesh does not object.
+Istio sets **no** HTTP timeout unless you write one. A request to a service that takes 3 seconds simply takes 3 seconds. A request that hangs keeps on hanging.
 
 > [!TIP]
-> **Try it — a slow call with nothing bounding it**
+> **Try it — the caller waits as long as it takes**
 >
 > ```sh
-> kubectl -n resilience-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' http://httpbin:8000/delay/1
-> kubectl -n resilience-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' http://httpbin:8000/delay/10
+> status_and_time http://httpbin:8000/delay/3
 > ```
 >
-> Expect something like:
->
-> ```text
-> 200 1.014s
-> 200 10.021s
-> ```
->
-> Ten seconds, and the caller waited every one of them. That is the behaviour a deadline replaces — and note that in a real system those ten seconds are ten seconds of a connection, a thread and a request slot held open in *every* service between the user and this one.
+> Expect a `200` after about `3.0s`. Nothing stopped the slow request. In a real system, those 3 seconds are 3 seconds of an open connection and a busy request slot in *every* service between the user and this one.
 
 ## The field
 
-`timeout` sits on the HTTP rule, alongside `route`. It is a duration string:
+`timeout` sits on a rule of a `VirtualService`, next to `route:`. Its value is a duration such as `500ms`, `0.5s`, `2s` or `1m`:
 
 ```yaml
 http:
-  - route:
-      - destination:
-          host: httpbin
-          port:
-            number: 8000
-    timeout: 5s
+- route:
+  - destination:
+      host: httpbin
+  timeout: 1s
 ```
 
-Three properties, each with a consequence:
+Three facts about it, each with a consequence:
 
-**It is measured by the client's proxy.** The deadline lives in the calling workload's sidecar, not on the server. So it protects the caller even if the upstream never responds at all — including when the upstream is wedged, unreachable, or has no endpoints.
+**The caller's proxy measures it.** Every pod in the mesh has a sidecar proxy beside it. Think of it as the ship's communications officer: every signal in or out goes through them. The timeout lives in the communications officer of the workload that **makes** the call, not on the server. So it protects the caller even when the server never answers at all: when it is stuck, unreachable, or has no pods.
 
-**The caller receives HTTP 504.** When the deadline expires the sidecar synthesises a `504 Gateway Timeout` and returns it. The upstream never gets a chance to answer, and the response did not come from it.
+**The caller gets HTTP 504.** When time runs out, the caller's sidecar cancels the request and answers `504 Gateway Timeout` by itself. The server never got to answer, and the 504 did not come from it.
 
-**It covers the entire request as the caller experiences it.** Once retries exist, that means all attempts together — which is Part 3's subject. Hold the thought.
+**It covers the whole request.** Once retries exist, that means all tries together. That is Part 3's subject, so hold the thought.
+
+A timeout belongs to a **rule**, not to the whole VirtualService. So one VirtualService can give different paths different limits. Here only the `/delay` rule has a 2-second limit, and the catch-all rule below it has none:
+
+```yaml
+http:
+- match:
+  - uri:
+      prefix: /delay
+  route:
+  - destination:
+      host: httpbin
+  timeout: 2s
+- route:
+  - destination:
+      host: httpbin
+```
+
+A typical use is a long limit for a slow report page and a short one for everything else.
+
+## Reading the result in the access log
+
+The status code tells you *that* a request failed. The access log tells you *who* failed it. Think of it as the ship's black box flight log: each sidecar writes one line per request, with short codes for anything that went wrong. These codes are called **response flags**.
+
+The flag for a timeout is **`UT`**, short for "upstream timeout". "Upstream" is the word Envoy, the program inside the sidecar, uses for the service being called. A 504 with `UT` was made by the caller's own sidecar. A 504 without it came from somewhere else, which is worth knowing before you debug the wrong hop.
 
 > [!TIP]
-> **Try it — the same slow call under a 5-second deadline**
+> **Try it — give up after 1 second**
 >
 > ```sh
-> kubectl apply -f - <<'EOF'
+> cat > virtualservice-httpbin-timeout.yaml <<'EOF'
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
 >   name: httpbin
->   namespace: resilience-demo
+>   namespace: bookinfo
 > spec:
 >   hosts:
->     - httpbin
+>   - httpbin
 >   http:
->     - route:
->         - destination:
->             host: httpbin
->             port:
->               number: 8000
->       timeout: 5s
+>   - route:
+>     - destination:
+>         host: httpbin
+>     timeout: 1s
 > EOF
-> kubectl -n resilience-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' http://httpbin:8000/delay/10
+> kubectl apply -f virtualservice-httpbin-timeout.yaml
+> status_and_time http://httpbin:8000/delay/3
+> status_and_time http://httpbin:8000/delay/0
+> kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=2
 > ```
 >
-> Expect something like:
+> Expect `504` after about `1.0s`, then `200` almost at once, and in the log (trimmed):
 >
 > ```text
-> 504 5.009s
+> "GET /delay/3 HTTP/1.1" 504 UT response_timeout ...
 > ```
 >
-> The caller gave up at five seconds with a 504 rather than waiting ten. Note the time is the *timeout*, not the delay — which is how you tell a fired deadline from a slow success.
+> Slow requests are cut off at 1 second. Fast ones are not affected. The time shown is the *timeout*, not the delay, which is how you tell a fired deadline from a slow success. The same file is `examples/04-timeouts/01-virtualservice-httpbin-timeout.yaml` in the playground.
 
-## What a timeout does not do
+Response flags come up all through this section, so collect them as you go:
 
-Three clarifications that prevent a category of misunderstanding.
+| Flag | Meaning | Where |
+| --- | --- | --- |
+| `UT` | upstream timeout: a deadline fired | this part |
+| `DI` | delay injected: a fault added a delay | this part |
+| `URX` | upstream retry limit exceeded: the retries are used up | Part 2 |
+| `UO` | upstream overflow: a circuit breaker said no | module 2 |
+| `UH` | no healthy upstream: every endpoint was removed or missing | module 3 |
+| `UF` | upstream connection failure | general |
+
+## Testing a timeout across two services
+
+To test a timeout, you need a service that is slow on purpose. The usual way is **fault injection**: a mission simulation drill where Istio adds a fake delay, so you can see how the crew copes. It has its own module in section 050. Here it is only a tool.
+
+The rule that makes this work: **the delay goes on the service being called, and the timeout goes on the caller.** In Bookinfo the calls go `curl → reviews v2 → ratings`. So you make `ratings` slow, and you give `reviews` the short limit.
 
 ```mermaid
 sequenceDiagram
-    participant C as curl in the tester pod
-    participant P as the tester's proxy
-    participant U as httpbin
-    C->>P: GET /delay/10
-    P->>U: GET /delay/10
-    Note over P: the 5s deadline expires
-    P-->>C: 504, synthesised by the proxy
-    Note over U: still sleeping, still working, still about to reply
-    U-->>P: 200 after 10s, written to an abandoned connection
+    participant C as curl sidecar
+    participant RV as reviews-v2 sidecar
+    participant RT as ratings
+    C->>RV: GET /reviews/0 (timeout 0.5s)
+    RV->>RV: fault: delay 2s
+    Note over C: 0.5s gone: 504 UT
+    RV->>RT: GET /ratings/0 (after 2s)
+    RT-->>RV: 200
 ```
 
-The deadline lives entirely on the left of that diagram. Nothing about it reaches the upstream.
-
-**It does not stop the upstream.** The `httpbin` pod is still sleeping out its ten seconds, and will finish the work and try to write a response to a connection the proxy has already abandoned. A timeout bounds *your waiting*, not the server's working. On a real service that means a timeout does not reduce load on an overloaded dependency — it just stops you queueing behind it.
-
-**It is not a connection timeout.** `timeout` is the deadline for the whole HTTP exchange. Envoy has separate connection-level settings, and section 040's `connectionPool` has a `tcp.connectTimeout` for establishing the TCP connection. A route timeout of `5s` does not mean "give up if the connection takes more than 5s to establish" — it means the whole thing, connect included, must finish inside five seconds.
-
-**It is not a guarantee of promptness.** A 504 at exactly the deadline is the well-behaved case. If the proxy itself is saturated the response may be later; the deadline bounds intent, not scheduler latency.
-
-## Reading the result in the access log
-
-The caller's status code tells you *that* a timeout fired. The access log tells you *the proxy did it*, which matters when you are distinguishing a synthesised 504 from one a gateway upstream produced.
-
-Envoy stamps each access log line with **response flags** — short codes describing how the request ended. The one for a route timeout is `UT`, upstream timeout.
+Two sidecars each do one job. The `reviews-v2` sidecar adds the delay, because the delay sits on the route to `ratings` and `reviews` is the one calling `ratings`. The `curl` sidecar applies the timeout, because the timeout sits on the route to `reviews`.
 
 > [!TIP]
-> **Try it — the `UT` flag in the caller's own log**
+> **Try it — make ratings slow**
 >
 > ```sh
-> kubectl -n resilience-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' http://httpbin:8000/delay/10
-> kubectl -n resilience-demo logs deploy/tester -c istio-proxy --tail=2
+> cat > destinationrule-ratings.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: DestinationRule
+> metadata:
+>   name: ratings
+>   namespace: bookinfo
+> spec:
+>   host: ratings
+>   subsets:
+>   - name: v1
+>     labels:
+>       version: v1
+> EOF
+> cat > virtualservice-ratings-delay.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: ratings
+>   namespace: bookinfo
+> spec:
+>   hosts:
+>   - ratings
+>   http:
+>   - fault:
+>       delay:
+>         percentage:
+>           value: 100
+>         fixedDelay: 2s
+>     route:
+>     - destination:
+>         host: ratings
+>         subset: v1
+> EOF
+> kubectl apply -f destinationrule-ratings.yaml -f virtualservice-ratings-delay.yaml
+> status_and_time -H "end-user: jason" http://reviews:9080/reviews/0
 > ```
 >
-> Expect something like:
+> Expect a `200` after about `2.0s`. jason's request goes to `reviews` v2, and v2 waits 2 seconds for `ratings`.
+
+Now add the limit on `reviews`. This VirtualService sends everyone to v2, with a half-second timeout.
+
+> [!TIP]
+> **Try it — reviews gives up after 0.5 seconds**
+>
+> ```sh
+> cat > virtualservice-reviews-timeout.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: reviews
+>   namespace: bookinfo
+> spec:
+>   hosts:
+>   - reviews
+>   http:
+>   - route:
+>     - destination:
+>         host: reviews
+>         subset: v2
+>     timeout: 0.5s
+> EOF
+> kubectl apply -f virtualservice-reviews-timeout.yaml
+> status_and_time http://reviews:9080/reviews/0
+> kubectl logs -n bookinfo deploy/reviews-v2 -c istio-proxy --tail=2 | grep ratings
+> ```
+>
+> Expect `504` after about `0.5s`, and in the `reviews-v2` sidecar log (trimmed):
 >
 > ```text
-> 504 5.011s
-> [2026-09-27T11:02:44.118Z] "GET /delay/10 HTTP/1.1" 504 UT upstream_response_timeout - "-" 0 24 5001 - "-" "curl/8.5.0" ... "httpbin:8000" ...
+> "GET /ratings/0 HTTP/1.1" 200 DI via_upstream ... 2001 ...
 > ```
 >
-> `504 UT` and `upstream_response_timeout` in one line, in the **client's** proxy log. A 504 with no `UT` came from somewhere else and means something different — worth knowing before you debug the wrong hop.
+> `DI` means "delay injected". `2001` is the duration in milliseconds: `reviews` still waited the full 2 seconds. The timeout freed **curl**. It did not stop the work further down the chain.
 
-Response flags recur throughout this section, so it is worth collecting them as you go:
+If you set the timeout *longer* than the delay, for example `timeout: 3s`, the request succeeds after about 2 seconds. A timeout only fires when the request takes longer than the limit. In an exam, check both sides: "slow but fine" and "too slow, so 504".
 
-| Flag | Meaning | Module |
-| --- | --- | --- |
-| `UT` | upstream timeout — a deadline fired | this one |
-| `UO` | upstream overflow — a circuit breaker rejected it | module 2 |
-| `UH` | no healthy upstream — every endpoint was ejected or absent | module 3 |
-| `UF` | upstream connection failure | general |
+## What a timeout does not do
+
+That `2001` in the log is the first of three things a timeout does not do.
+
+```mermaid
+sequenceDiagram
+    participant C as curl
+    participant P as curl's sidecar
+    participant U as reviews-v2
+    C->>P: GET /reviews/0
+    P->>U: GET /reviews/0
+    Note over P: 0.5s deadline runs out
+    P-->>C: 504 from the sidecar
+    Note over U: still waiting on ratings
+    U-->>P: 200 after 2s, unheard
+```
+
+The deadline lives entirely on the left of that picture. Nothing about it reaches the server.
+
+**It does not stop the server.** Giving up on a signal does not recall it. `reviews` keeps waiting on `ratings`, finishes its work, and tries to answer on a connection the sidecar already gave up on. A timeout limits *your waiting*, not the server's working. So a timeout does not reduce the load on a service that is overloaded. It just stops you queueing behind it.
+
+**It is not a connection timeout.** `timeout` limits the whole HTTP exchange. Making the TCP connection is a separate setting, `connectionPool.tcp.connectTimeout` on a DestinationRule (module 2). A route timeout of `1s` means the whole thing, connecting included, must finish within one second.
+
+**It is not a promise of speed.** A 504 at exactly the deadline is the normal case. If the proxy itself is overloaded, the answer may come later.
+
+## The trap: delay and timeout on the same route
+
+It is tempting to test a timeout with one VirtualService that has both the delay and the timeout. It does not work. The VirtualService reference says it: when a route has a `fault`, timeouts and retries are not switched on for that route.
+
+> [!TIP]
+> **Try it — the timeout that never fires**
+>
+> ```sh
+> cat > virtualservice-ratings-delay-and-timeout.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: ratings
+>   namespace: bookinfo
+> spec:
+>   hosts:
+>   - ratings
+>   http:
+>   - fault:
+>       delay:
+>         percentage:
+>           value: 100
+>         fixedDelay: 2s
+>     route:
+>     - destination:
+>         host: ratings
+>         subset: v1
+>     timeout: 0.5s
+> EOF
+> kubectl apply -f virtualservice-ratings-delay-and-timeout.yaml
+> status_and_time http://ratings:9080/ratings/0
+> ```
+>
+> Expect a `200` after about `2.0s`, **not** a 504 after half a second. The route has a `fault`, so its own `timeout` is ignored. That is why the official Istio task uses two VirtualServices: the delay on `ratings` and the timeout on `reviews`.
+>
+> To go back, apply `virtualservice-ratings-delay.yaml` again (delay only).
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Expecting a timeout to reduce load on a struggling dependency.** It stops you waiting. The upstream finishes the work anyway.
+> **Putting the delay and the timeout on the same route.** A route with `fault` ignores its own `timeout` and `retries`. Put the delay on the service being called and the timeout on the caller.
 >
-> **Reading a 504 as coming from the server.** A timeout 504 is synthesised by the caller's proxy. The `UT` flag is what distinguishes it.
+> **Expecting a timeout to reduce load on a struggling service.** It stops you waiting. The server finishes the work anyway.
 >
-> **Confusing it with a connection timeout.** `timeout` bounds the whole exchange, connect included. `connectionPool.tcp.connectTimeout` is the separate connection-level setting.
+> **Reading a 504 as coming from the server.** A timeout 504 is made by the caller's own sidecar. The `UT` flag tells them apart.
 >
-> **Setting a timeout without checking the retry budget.** Once retries exist the deadline covers every attempt together. That is Part 3, and getting it wrong silently truncates your retries.
+> **Confusing it with a connection timeout.** `timeout` limits the whole exchange, connecting included. `connectionPool.tcp.connectTimeout` is the separate connection setting.
+>
+> **Forgetting the app's own timeout.** An app can have its own limit that is shorter than Istio's, and the shorter one wins. Bookinfo's `productpage`, for example, has its own timeout and retry for calls to `reviews`, whatever Istio says.
 >
 > **Assuming there is a default.** There is no route timeout unless you write one.
 
-> *A route timeout is measured by the caller's own proxy and produces a synthesised 504 — the upstream keeps working regardless.*
-
-## Reference
-
-- [Request timeouts task](https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/) — the upstream walkthrough for this field.
-- [HTTPRoute API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) — `timeout` alongside `retries`, `fault` and `mirror` on the same rule.
-- [Envoy response flags](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#config-access-log-format-response-flags) — the full list, including `UT`, `UO` and `UH`.
-- [Istio access logs](https://istio.io/latest/docs/tasks/observability/logs/access-log/) — enabling and reading them, if a cluster does not have them on.
+> *A route timeout is measured by the caller's own sidecar and produces a 504 it makes itself. The server keeps working regardless.*

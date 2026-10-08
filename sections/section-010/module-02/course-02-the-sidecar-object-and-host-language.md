@@ -1,8 +1,6 @@
 # The Sidecar Object And Its Host Language
 
-> Prerequisite: [What A Proxy Is Programmed With](./course-01-what-a-proxy-is-programmed-with.md). Next: [Precedence, Reachability And What It Is Not](./course-03-precedence-reachability-and-limits.md).
-
-Part 1 established that a proxy holds the whole registry. This part is the object that narrows it: four fields, one of which is a small host-selection language worth memorising because it is exam material and because getting it wrong fails silently.
+Part 1 established that a proxy holds the whole registry: the full star chart. This part is the object that narrows it: four fields, one of which is a small host-selection language worth memorising because it is exam material and because getting it wrong fails silently.
 
 ## The four fields
 
@@ -68,18 +66,18 @@ It exists for workloads that cannot be handled by the normal inbound capture, an
 | `sidecar-other/httpbin.sidecar-other.svc.cluster.local` | exactly one host |
 | `*/httpbin.sidecar-other.svc.cluster.local` | that host, found in whichever namespace exports it |
 
-Read `./*` as "this namespace, all hosts" — the same `.`-means-here convention as a shell path, applied to namespaces.
+Read `./*` as "this namespace (this planet), all hosts" — the same `.`-means-here convention as a shell path, applied to namespaces.
 
 What the list actually does is act as a filter between the registry and one proxy:
 
 ```mermaid
 flowchart LR
-    R["the mesh registry<br/>every Service, ServiceEntry and WorkloadEntry"] --> F{"egress.hosts<br/>does this entry match"}
-    F -->|"matches"| K["kept: pushed to this proxy as a cluster"]
-    F -->|"no match"| D["dropped: this proxy is never told it exists"]
+    R["registry entry"] --> F{"in egress.hosts?"}
+    F -->|"yes: kept"| K["cluster on this proxy"]
+    F -->|"no: dropped"| D["never sent"]
 ```
 
-Nothing is deleted and no other proxy is affected. The registry is unchanged; one proxy is simply told less of it.
+Each entry in the mesh registry (Services, ServiceEntries, WorkloadEntries) is checked against the `Sidecar`'s `egress.hosts`. Nothing is deleted and no other proxy is affected. The registry is unchanged; one ship is simply handed a smaller copy of the star chart.
 
 Two details that decide whether an entry matches anything:
 
@@ -97,7 +95,7 @@ The failure is the worst kind: **partial**. The pod still starts, application tr
 Treat `./*` and `istio-system/*` as the floor that every namespace-wide `Sidecar` starts from, and add to it.
 
 > [!TIP]
-> **Try it — scope the namespace down and watch the config shrink**
+> **Try it — scope the namespace down and watch the configuration shrink**
 >
 > ```sh
 > kubectl apply -f - <<'EOF'
@@ -172,15 +170,15 @@ Re-run the cluster count and `sidecar-other` is back, within seconds and with no
 Most Istio objects — `VirtualService`, `DestinationRule`, `ServiceEntry` — carry an `exportTo` list that says which namespaces may see them at all. Omitted, it means every namespace.
 
 ```mermaid
-flowchart LR
-    O["an object in namespace A<br/>exportTo decides who MAY see it"] --> V{"is this proxy's namespace<br/>allowed by exportTo"}
-    V -->|"no"| X["never offered to the proxy"]
-    V -->|"yes"| S{"does this proxy's Sidecar<br/>egress.hosts ask for it"}
-    S -->|"no"| X2["offered, but not requested: dropped"]
-    S -->|"yes"| K["configured on the proxy"]
+flowchart TB
+    O["object in namespace A"] --> V{"exportTo allows it?"}
+    V -->|"no"| X["never offered"]
+    V -->|"yes"| S{"Sidecar asks for it?"}
+    S -->|"no"| X2["offered, dropped"]
+    S -->|"yes"| K["on the proxy"]
 ```
 
-Both gates have to open. That is the single most useful thing to know when a host is missing from a proxy and the object looks perfect: there are two independent places it can be filtered out, one written by the object's owner and one written by the consumer's namespace. Section 070 covers `exportTo` on a `ServiceEntry`, where it matters most.
+Both gates have to open. That is the single most useful thing to know when a host is missing from a proxy and the object looks perfect: there are two independent places it can be filtered out, one written by the object's owner and one written by the consumer's namespace. `exportTo` matters most on a `ServiceEntry`, where one team's object is used from many namespaces.
 
 ## Common pitfalls
 
@@ -200,10 +198,3 @@ Both gates have to open. That is the single most useful thing to know when a hos
 > **Forgetting the producer side.** A host can be absent because `exportTo` never offered it, not because your `hosts` list omitted it.
 
 > *`egress.hosts` entries are `<namespace>/<host>`, `./*` means this namespace, and `istio-system/*` belongs in the list unless you have a specific reason to leave it out.*
-
-## Reference
-
-- [Sidecar API](https://istio.io/latest/docs/reference/config/networking/sidecar/) — the full schema, including `ingress`, `port` on an egress entry, and `outboundTrafficPolicy`.
-- [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — the host syntax with more worked combinations.
-- [Sidecar resource in the traffic management concepts](https://istio.io/latest/docs/concepts/traffic-management/#sidecar-configurations) — where the object sits relative to the rest of the model.
-- `istioctl proxy-config listener --help` — the filters that make the listener dump readable while you are watching it shrink.

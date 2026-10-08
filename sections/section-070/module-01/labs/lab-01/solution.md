@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects. The mesh is already deny-by-default, so this is about granting one host precisely — and then proving the grant brought Istio's features with it.
+Two objects, astronaut. The mesh is already deny-by-default, so this mission is about charting one planet precisely, and then proving the new chart entry brought Istio's features with it.
 
 ---
 
@@ -27,7 +27,7 @@ forbidden: 10.244.0.15
 10.244.0.15      -> 502
 ```
 
-Both refused. That `502` is the mesh saying "not in the registry" — DNS and the network are fine, and the pods are running. Confirm that last part so you know the 502 is a decision rather than a failure:
+Both refused. That `502` is the mesh saying "not on the star chart" — DNS and the network are fine, and the pods are running. Confirm that last part so you know the 502 is a decision rather than a failure:
 
 ```sh
 kubectl -n outside-mesh get pods -o wide
@@ -103,13 +103,13 @@ partner.example.com   8080   -   outbound   STATIC
 10.244.0.15      -> 502
 ```
 
-One host in the cluster list, one endpoint open, the other still refused. That asymmetry is the whole point of `REGISTRY_ONLY` plus [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/): egress is a list you maintain rather than an assumption you inherit.
+One host in the cluster list, one endpoint open, the other still refused. That asymmetry is the whole point of `REGISTRY_ONLY` plus `ServiceEntry`: egress is a list of charted planets you maintain, rather than an assumption you inherit.
 
 ---
 
 ## Step 4: Put a Timeout on It
 
-A registered host is an ordinary host, so every [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) feature applies:
+A registered host is an ordinary host, so every `VirtualService` feature applies:
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
@@ -158,20 +158,3 @@ This is the step that fails if `protocol` was `TCP`: the proxy would have no ide
 - **Relaxing the mesh to `ALLOW_ANY`.** It makes both endpoints work and fails check 8 — the task is a precise grant, not a blanket one.
 - **Creating a Service in `outside-mesh`.** That would put the endpoint in the registry through the back door; the grader rejects it.
 - **Pointing the `VirtualService` at the IP.** It must name the `ServiceEntry` host.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
-- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
-- [HTTPRoute API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) — `timeout` alongside `retries`, `fault` and `mirror` on one rule
-- [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — how `exportTo` and `Sidecar` together decide what a proxy sees
-- [MeshConfig outboundTrafficPolicy](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-OutboundTrafficPolicy) — `ALLOW_ANY` versus `REGISTRY_ONLY`
-- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

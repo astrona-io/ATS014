@@ -3,10 +3,10 @@
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
-  name: reviews
-  namespace: bookinfo
+  name: scout
+  namespace: starfleet
 spec:
-  host: reviews
+  host: scout
   subsets:
   - name: v1
     labels:

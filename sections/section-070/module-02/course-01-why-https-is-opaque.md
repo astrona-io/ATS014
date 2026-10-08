@@ -1,8 +1,6 @@
 # Why HTTPS Is Opaque
 
-> Prerequisite: [the module landing page](./course.md). Next: [The Three Objects](./course-02-the-three-objects.md).
-
-Before the fix, be precise about the problem. This part establishes exactly what a sidecar can see when an application makes its own HTTPS call, and what that costs.
+Before the fix, be precise about the problem. This part establishes exactly what the communications officer (the sidecar) can see when the crew seals its own signal with HTTPS, and what that costs.
 
 ## What the proxy sees
 
@@ -38,7 +36,7 @@ The cleanest demonstration is the access log, because for an HTTP request it rec
 > [2026-09-27T12:31:05.442Z] "- - -" 0 - - - "-" 705 5923 212 - "-" "-" "-" "-" "91.208.132.5:443" ...
 > ```
 >
-> The call worked — and the log line has `"- - -"` where the method, path and protocol would be, and no status code. The proxy moved 705 bytes up and 5923 down to an IP on port 443, and has nothing else to say. That is the whole problem in one line.
+> The call worked — and the log line has `"- - -"` where the method, path and protocol would be, and no status code. The proxy moved 705 bytes up and 5923 down to an IP on port 443, and has nothing else to say. The flight log recorded a sealed signal, nothing more. That is the whole problem in one line.
 
 The contrast is what makes the point, so run the same call over plain HTTP and put the two log lines side by side. Nothing about the mesh changed between them — only whether the proxy was able to read what was inside the connection.
 
@@ -83,22 +81,22 @@ Everything else does.
 Being able to name these keeps the next part straight:
 
 ```mermaid
-flowchart LR
-    subgraph A["1. the application originates: the problem"]
-      A1["app"] -->|"TLS, opaque to the proxy"| A2["external:443"]
+flowchart TB
+    subgraph A["1. the app originates"]
+      A1["app"] -->|"TLS, opaque"| A2["external:443"]
     end
-    subgraph B["2. the sidecar originates: this module"]
+    subgraph B["2. the sidecar originates"]
       B1["app"] -->|"HTTP"| B2["its sidecar"]
       B2 -->|"TLS"| B3["external:443"]
     end
-    subgraph C["3. an egress gateway originates: section 080"]
+    subgraph C["3. egress gateway originates"]
       C1["app"] -->|"HTTP"| C2["its sidecar"]
-      C2 -->|"HTTP"| C3["egress gateway<br/>holds the certificate"]
+      C2 -->|"HTTP"| C3["egress gateway"]
       C3 -->|"TLS"| C4["external:443"]
     end
 ```
 
-In arrangements 2 and 3 the only plaintext hop is inside the pod, over loopback — which is the answer to the reasonable first objection that this sounds like a downgrade.
+In arrangement 3 the egress gateway holds the certificate. In arrangements 2 and 3 the only plaintext hop is inside the pod, over loopback — which is the answer to the reasonable first objection that this sounds like a downgrade.
 
 To be precise about that: the plaintext hop is between the application container and its own sidecar, over the loopback interface inside the same pod. Nothing crosses the node boundary unencrypted.
 
@@ -120,10 +118,3 @@ If the code keeps calling `https://`, the sidecar sees an encrypted stream and n
 > **Forgetting the application has to cooperate.** It must call `http://` on the declared port and let the proxy originate TLS. An application that insists on `https://` is back to arrangement 1.
 >
 > **Assuming TLS origination changes what the destination sees.** It receives an ordinary HTTPS request, exactly as if the application had made it.
-
-## Reference
-
-- [Egress TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/) — the task page this module follows.
-- [Envoy access log format](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage) — what each field is, and why they are empty for a TCP stream.
-- [ServiceEntry protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — `HTTPS` versus `TLS` versus `TCP` for an external port.
-- [Understanding TLS configuration](https://istio.io/latest/docs/ops/configuration/traffic-management/tls-configuration/) — where origination sits among Istio's other TLS settings.

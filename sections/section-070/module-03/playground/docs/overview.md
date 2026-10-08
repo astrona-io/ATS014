@@ -2,7 +2,7 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab. The environment starts clean, runs
+Welcome aboard, astronaut. This is a **playground**, not a lab. The environment starts clean, runs
 `bootstrap/prepare.sh`, applies the starting workloads, and then waits. There is
 no task, no `astrona submit`, and no pass/fail. Explore, break things,
 `astrona destroy`, start over.
@@ -14,8 +14,8 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 - Namespace **`vm-demo`**, injected, containing:
   - `tester` — a client pod with `curl` and a sidecar.
   - `legacy-backend` — a pod **excluded from injection** with
-    `sidecar.istio.io/inject: "false"`. It stands in for a virtual machine: an
-    address that answers HTTP on 8080, with no sidecar, no Service and no mesh
+    `sidecar.istio.io/inject: "false"`. It stands in for a virtual machine (an old
+    ship outside the fleet network): an address that answers HTTP on 8080, with no sidecar, no Service and no mesh
     membership.
   - `legacy-sa` — the ServiceAccount the stand-in runs as, so identity has
     something to point at.
@@ -56,4 +56,4 @@ exercise, not something you can watch work.
 astrona destroy ats-014-playground-070-03
 ```
 
-(`astrona destroy` takes the environment name, not the config path.)
+(`astrona destroy` takes the environment name, not the configuration path.)

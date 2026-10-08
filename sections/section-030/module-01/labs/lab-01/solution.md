@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects. The interesting part is the second `trafficPolicy` — the one on the subset — because it replaces the host policy rather than adding to it, and the grader checks that you put it in exactly one place.
+Mission debrief, astronaut. Two objects. The interesting part is the second `trafficPolicy` — the one on the subset — because it replaces the host policy rather than adding to it, and the grader checks that you put it in exactly one place.
 
 ---
 
@@ -200,21 +200,3 @@ The policy is unchanged and still `RING_HASH`; these requests simply have nothin
 - **Expecting affinity for requests without the header.** They fall back to spreading, silently.
 - **Putting the default rule above the `x-track` rule.** First match wins; the canary rule never runs.
 - **Reading affinity from the application response.** `go-httpbin` does not report which pod answered — the client proxy's access log does.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [ConsistentHashLB API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings-ConsistentHashLB) — the four hash sources, `ttl`, and `minimumRingSize`
-- [LoadBalancerSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings) — the `simple` enum and the `consistentHash` alternative
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

@@ -2,7 +2,7 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab. The environment starts clean, runs
+Astronaut, this is your training solar system in the simulator: a **playground**, not a lab. The environment starts clean, runs
 `bootstrap/prepare.sh`, applies the starting workloads, and then waits. There is
 no task, no `astrona submit`, and no pass/fail. Explore, break things,
 `astrona destroy`, start over.
@@ -20,7 +20,8 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 - Namespace **`mesh-legacy`**, deliberately **not** injected, containing:
   - `legacy` — the same client image, running **1/1**, with no proxy.
 - **No Istio traffic configuration at all.** This module is about the machinery
-  that exists before you configure anything.
+  that exists before you configure anything: the communications officers on board and
+  mission control behind them.
 
 ## Things to try
 
@@ -29,8 +30,8 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 - Send a request from `web` and read both access logs — the caller's proxy and
   the receiver's proxy each logged the same request.
 - Send the same request from `legacy` and notice there is no proxy log anywhere,
-  because nothing intercepted it.
-- Count what one proxy is configured with: `istioctl proxy-config cluster deploy/web -n mesh-demo | wc -l`.
+  because no communications officer was on board to intercept it.
+- Count what one proxy is configured with (how big its star chart is): `istioctl proxy-config cluster deploy/web -n mesh-demo | wc -l`.
 - Run `istioctl proxy-status` to see every connected proxy and the xDS channels it subscribes to, then name one of them to get a `Match` line per resource type.
 - Run `istioctl x describe pod <a web pod> -n mesh-demo` and read what it says
   about the pod before any Istio object exists.
@@ -43,4 +44,4 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 astrona destroy ats-014-playground-000-01
 ```
 
-(`astrona destroy` takes the environment name, not the config path.)
+(`astrona destroy` takes the environment name, not the configuration path.)

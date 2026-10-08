@@ -1,0 +1,28 @@
+# Route by request header: user "jason" gets v2, everyone else gets v1.
+# Needs the scout DestinationRule from 01-request-routing (subsets v1, v2).
+# Same name as the VirtualService in 01, so applying this replaces it.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  hosts:
+  - scout
+  http:
+  # Rules are checked top to bottom; the first match wins.
+  # Rule 1: header "end-user" equals "jason" exactly.
+  - match:
+    - headers:
+        end-user:
+          # Also possible: prefix: "ja", regex: "^j.*"
+          exact: jason
+    route:
+    - destination:
+        host: scout
+        subset: v2
+  # Rule 2: catch-all (no match). Must be last, or rule 1 is never reached.
+  - route:
+    - destination:
+        host: scout
+        subset: v1

@@ -1,26 +1,43 @@
 # `fault.delay`
 
-> Prerequisite: [the module landing page](./course.md). Next: [`fault.abort`](./course-02-fault-abort.md).
-
-The first half of the feature, and the one that models the failure mode people most often forget to test: a dependency that is not broken, just slow.
+The first half of the feature, and the failure people most often forget to test: a ship that is not broken, just slow to answer. The signal still gets through, it simply arrives late.
 
 ## The baseline
+
+First, astronaut, you need a working chain of ships to break. Send user `jason` to `reviews` v2, which signals `ratings` on every request. Everyone else goes to `reviews` v1.
 
 > [!TIP]
 > **Try it — the call chain working normally**
 >
 > ```sh
-> kubectl -n fault-demo run t0 --rm -i --restart=Never --image=curlimages/curl -- \
->   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -X POST http://booking-service/book
+> cat > virtualservice-reviews-jason-v2.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: reviews
+>   namespace: bookinfo
+> spec:
+>   hosts:
+>     - reviews
+>   http:
+>     - match:
+>         - headers:
+>             end-user:
+>               exact: jason
+>       route:
+>         - destination:
+>             host: reviews
+>             subset: v2
+>     - route:
+>         - destination:
+>             host: reviews
+>             subset: v1
+> EOF
+> kubectl apply -f virtualservice-reviews-jason-v2.yaml
+> status_and_time -H "end-user: jason" http://reviews:9080/reviews/0
 > ```
 >
-> Expect something like:
->
-> ```text
-> 200 0.043s
-> ```
->
-> Forty milliseconds for a request crossing two services. Both numbers are the baseline — the status code and the latency are what the two halves of this module each change, one at a time.
+> Expect a `200`, in well under a second. That request crossed two services: `curl` to `reviews` v2, then `reviews` v2 to `ratings`. Both numbers are the baseline — the status code and the time are what the two halves of this module each change, one at a time.
 
 ## The field
 
@@ -35,30 +52,33 @@ http:
           value: 100
     route:
       - destination:
-          host: notification-service
+          host: ratings
+          subset: v1
 ```
 
 **The request still succeeds.** The caller gets a correct response, two seconds late. That is precisely what you want for testing a timeout, because it separates "slow" from "broken" — and a real degraded dependency usually looks like this, not like a clean error.
+
+`percentage.value` is a percent, and it may have decimals. `100` is every request, `50` is half, and `0.1` is one request in a thousand — not one in ten.
 
 There is also `exponentialDelay` in the API, intended for modelling growing latency. `fixedDelay` is what tasks and examples use; recognise the other rather than reaching for it.
 
 ## Which `VirtualService` owns the fault
 
-This is the detail worth being precise about, because getting it wrong produces a working experiment that tests the wrong thing.
+This is the detail to get exactly right, because getting it wrong gives you a drill that works but tests the wrong thing.
 
-The fault is **enforced by the caller's proxy**, but the object is keyed by the **callee's hostname**. So a `VirtualService` for host `notification-service` injects faults into calls *to* `notification-service`, and the code that runs is inside `booking-service`'s sidecar:
+The fault is **enforced by the caller's proxy**, but the object is keyed by the **callee's hostname**. So a `VirtualService` for host `ratings` injects faults into calls *to* `ratings`, and the code that runs is inside the sidecar of whoever calls `ratings` — here, `reviews` v2. In the space picture, the flight plan names the ship the signal is flying *to*, but it is the communications officer on the *sending* ship who holds the signal back.
 
 ```mermaid
 flowchart LR
-    C["curl"] --> B["booking-service"]
-    B --> P["booking-service's own sidecar<br/>enforces the fault here"]
-    P --> N["notification-service"]
-    V["the VirtualService whose host is<br/>notification-service"] -.->|"configures"| P
+    C["curl"] --> R["reviews v2"]
+    R --> P["reviews v2 sidecar"]
+    P -->|"enforces fault"| T["ratings"]
+    V["VirtualService: ratings"] -.->|"configures"| P
 ```
 
 The object names the *callee* and the code runs in the *caller*. Those are two different pods, and mixing them up gives you a working experiment that tests the wrong thing.
 
-Put the fault on `booking-service` instead and you delay the inbound request from curl — a different experiment, testing curl's patience rather than `booking-service`'s timeout handling.
+Put the fault on `reviews` instead and you delay the request from curl — a different experiment, testing curl's patience rather than how `reviews` copes with a slow `ratings`.
 
 The rule of thumb: **name the host you want to pretend is broken.**
 
@@ -66,15 +86,15 @@ The rule of thumb: **name the host you want to pretend is broken.**
 > **Try it — two seconds added to the second hop**
 >
 > ```sh
-> kubectl apply -f - <<'EOF'
+> cat > virtualservice-ratings-delay-2s.yaml <<'EOF'
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
->   name: notification
->   namespace: fault-demo
+>   name: ratings
+>   namespace: bookinfo
 > spec:
 >   hosts:
->     - notification-service
+>     - ratings
 >   http:
 >     - fault:
 >         delay:
@@ -83,27 +103,29 @@ The rule of thumb: **name the host you want to pretend is broken.**
 >             value: 100
 >       route:
 >         - destination:
->             host: notification-service
+>             host: ratings
+>             subset: v1
 > EOF
-> kubectl -n fault-demo run t1 --rm -i --restart=Never --image=curlimages/curl -- \
->   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -X POST http://booking-service/book
+> kubectl apply -f virtualservice-ratings-delay-2s.yaml
+> status_and_time -H "end-user: jason" http://reviews:9080/reviews/0
+> kubectl logs -n bookinfo deploy/reviews-v2 -c istio-proxy --tail=2 | grep ratings
 > ```
 >
-> Expect something like:
+> Expect `200 2.0s`, and a line like this in the `reviews` v2 sidecar (trimmed):
 >
 > ```text
-> 200 2.061s
+> "GET /ratings/0 HTTP/1.1" 200 DI via_upstream ... 2001 ...
 > ```
 >
-> Still a `200`, now two seconds slower. Nothing was deployed, restarted or patched in either application — `booking-service` is simply experiencing a slow dependency, which is the condition its timeout configuration is supposed to handle.
+> Still a `200`, now two seconds slower. **`DI`** is the response flag for "delay injected", and `2001` is the time in milliseconds. The line is in the log of `reviews` v2 — the caller — not `ratings`. Nothing was deployed, restarted or patched in either application: `reviews` is simply experiencing a slow dependency, which is the condition its timeout configuration is supposed to handle.
 
 ## The delay is real work being held
 
 Two clarifications that prevent misreading the mechanism.
 
-**The upstream never sees the delay.** The proxy holds the request before forwarding it, so `notification-service` receives it two seconds late and responds normally. Its own latency metrics are untouched — which is what makes this a clean test of the *caller*.
+**The upstream never sees the delay.** The communications officer holds the signal before sending it on, so `ratings` receives it two seconds late and answers normally. Its own latency metrics are untouched — which is what makes this a clean test of the *caller*.
 
-**The delay consumes caller resources.** For those two seconds, `booking-service` has a request in flight: a connection, a worker, a slot in any pool. That is not an artefact of the test; it is exactly what a real slow dependency does, and it is why a delay of a few seconds against a tight connection pool (section 040, module 2) will produce overflow rejections as a *side effect*. Worth knowing so you do not misread those 503s.
+**The delay consumes caller resources.** For those two seconds, `reviews` has a request in flight: a connection, a worker, a slot in any pool. That is not an artefact of the test; it is exactly what a real slow dependency does, and it is why a delay of a few seconds against a tight connection pool (section 040, module 2) will produce overflow rejections as a *side effect*. Worth knowing so you do not misread those 503s.
 
 ## Common pitfalls
 
@@ -117,12 +139,9 @@ Two clarifications that prevent misreading the mechanism.
 > **Assuming an omitted `percentage` means nothing happens.** The default is 100%.
 >
 > **Reading a delayed success as a failure.** `fault.delay` produces a correct response, late. That is the point: it separates slow from broken.
+>
+> **Reading `percentage.value: 0.1` as 10%.** It means 0.1% — one request in a thousand.
+>
+> **Testing from a pod without a sidecar.** The fault runs in the caller's sidecar. A caller with no sidecar never meets it, so nothing happens.
 
 > *`fault.delay` produces a slow success, enforced in the caller's proxy, on the `VirtualService` of the host you want to pretend is struggling.*
-
-## Reference
-
-- [Fault injection task](https://istio.io/latest/docs/tasks/traffic-management/fault-injection/) — the upstream walkthrough for both halves.
-- [HTTPFaultInjection API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPFaultInjection) — `delay`, `abort`, and the percentage fields.
-- [HTTPFaultInjection.Delay](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPFaultInjection-Delay) — `fixedDelay` and `exponentialDelay`.
-- [Request timeouts task](https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/) — the section 040 field this is built to exercise.

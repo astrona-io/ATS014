@@ -9,9 +9,9 @@ run and checked on a real cluster.
 
 ## Task 1: every request to one version
 
-> In namespace `bookinfo`, make sure **every** request to `reviews` is served by
+> In namespace `starfleet`, make sure **every** request to `scout` is served by
 > version **v2** (black stars). Use a DestinationRule and a VirtualService both
-> named `reviews`. Verify on the product page.
+> named `scout`. Verify on the product page.
 
 <details><summary>Solution</summary>
 
@@ -19,12 +19,12 @@ Apply the docking instructions (the subsets) first, then the flight plan (the
 route). That order means the route always has somewhere to go.
 
 ```bash
-cat > destinationrule-reviews.yaml <<'EOF'
+cat > destinationrule-scout.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
-metadata: {name: reviews, namespace: bookinfo}
+metadata: {name: scout, namespace: starfleet}
 spec:
-  host: reviews
+  host: scout
   subsets:
   - name: v1
     labels: {version: v1}
@@ -33,22 +33,22 @@ spec:
   - name: v3
     labels: {version: v3}
 EOF
-kubectl apply -f destinationrule-reviews.yaml
+kubectl apply -f destinationrule-scout.yaml
 
-cat > virtualservice-reviews.yaml <<'EOF'
+cat > virtualservice-scout.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
-metadata: {name: reviews, namespace: bookinfo}
+metadata: {name: scout, namespace: starfleet}
 spec:
-  hosts: [reviews]
+  hosts: [scout]
   http:
   - route:
-    - destination: {host: reviews, subset: v2}
+    - destination: {host: scout, subset: v2}
 EOF
-kubectl apply -f virtualservice-reviews.yaml
+kubectl apply -f virtualservice-scout.yaml
 
-count_versions $REVIEWS/0                               # 10 reviews-v2
-kubectl exec -n bookinfo deploy/curl -- curl -s http://productpage:9080/productpage | grep -c glyphicon-star
+count_versions $SCOUT/0                               # 10 scout-v2
+kubectl exec -n starfleet deploy/shuttle -- curl -s http://bridge:9080/productpage | grep -c glyphicon-star
 # a number > 0 = stars are shown (v1 shows none)
 ```
 
@@ -56,34 +56,34 @@ kubectl exec -n bookinfo deploy/curl -- curl -s http://productpage:9080/productp
 
 ## Task 2: one header, one version
 
-> Requests to `reviews` with header `x-canary: true` must go to **v3**. All
+> Requests to `scout` with header `x-canary: true` must go to **v3**. All
 > other requests go to **v1**.
 
 <details><summary>Solution</summary>
 
-This needs the `reviews` DestinationRule from task 1 (subsets `v1`, `v2`,
+This needs the `scout` DestinationRule from task 1 (subsets `v1`, `v2`,
 `v3`).
 
 ```bash
-cat > virtualservice-reviews.yaml <<'EOF'
+cat > virtualservice-scout.yaml <<'EOF'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
-metadata: {name: reviews, namespace: bookinfo}
+metadata: {name: scout, namespace: starfleet}
 spec:
-  hosts: [reviews]
+  hosts: [scout]
   http:
   - match:
     - headers:
         x-canary: {exact: "true"}
     route:
-    - destination: {host: reviews, subset: v3}
+    - destination: {host: scout, subset: v3}
   - route:
-    - destination: {host: reviews, subset: v1}
+    - destination: {host: scout, subset: v1}
 EOF
-kubectl apply -f virtualservice-reviews.yaml
+kubectl apply -f virtualservice-scout.yaml
 
-count_versions -H "x-canary: true" $REVIEWS/0      #  10 reviews-v3
-count_versions $REVIEWS/0                          #  10 reviews-v1
+count_versions -H "x-canary: true" $SCOUT/0      #  10 scout-v3
+count_versions $SCOUT/0                          #  10 scout-v1
 ```
 
 `"true"` must be quoted: it is a string, not a YAML boolean.

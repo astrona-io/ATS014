@@ -1,0 +1,22 @@
+# Case 2 (mistake): delay AND timeout on the SAME route.
+# Looks like it should time out after 0.5s – but a route with "fault" ignores
+# its own timeout (and retries). The request waits the full 2s.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: ratings
+  namespace: bookinfo
+spec:
+  hosts:
+  - ratings
+  http:
+  - fault:
+      delay:
+        percentage:
+          value: 100
+        fixedDelay: 2s
+    route:
+    - destination:
+        host: ratings
+        subset: v1
+    timeout: 0.5s

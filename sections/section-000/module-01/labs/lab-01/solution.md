@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two workloads are outside the mesh for two *different* reasons, and neither reason produces an error. The whole lab is an exercise in the module's standing habit: what `kubectl get` shows you and what the mesh actually sees are different facts.
+Two ships are flying outside the mesh for two *different* reasons, and neither reason produces an error. The whole mission is an exercise in the module's standing habit: what `kubectl get` shows you and what the mesh actually sees are different facts.
 
 ---
 
@@ -21,7 +21,7 @@ NAME                       READY   STATUS    RESTARTS   AGE
 billing-7d5b8c6f94-tm9vk   1/1     Running   0          3m
 ```
 
-`api` is `2/2`. The other two are `1/1`. Same images, same health, no proxy.
+`api` is `2/2`. The other two are `1/1`. Same images, same health, no communications officer (proxy) on board.
 
 The control plane agrees:
 
@@ -29,7 +29,7 @@ The control plane agrees:
 istioctl proxy-status
 ```
 
-Only `api` appears. A workload missing from that list is not connected to the control plane at all.
+Only `api` appears. A workload missing from that list is not connected to the control plane at all: mission control cannot reach it.
 
 ---
 
@@ -58,7 +58,7 @@ kubectl -n mesh-demo get deployment reports \
 {"sidecar.istio.io/inject":"false"}
 ```
 
-An explicit opt-out on the pod template. The namespace label says yes, the pod annotation says no, and the pod wins.
+An explicit opt-out on the pod template. The namespace label (the planet's rule) says yes, the pod annotation (the ship's own orders) says no, and the pod wins.
 
 ---
 
@@ -68,7 +68,7 @@ An explicit opt-out on the pod template. The namespace label says yes, the pod a
 kubectl label namespace legacy-app istio-injection=enabled
 ```
 
-That alone changes nothing you can see, and this is the part people miss. Injection happens in an admission webhook **when a pod is created**. Every pod already running was admitted before the rule applied, so it stays exactly as it is:
+That alone changes nothing you can see, and this is the part people miss. Injection happens in an admission webhook **when a pod is created**, the way a communications officer only boards a ship at launch. Every pod already running was admitted before the rule applied, so it stays exactly as it is:
 
 ```sh
 kubectl -n legacy-app get pods
@@ -78,7 +78,7 @@ kubectl -n legacy-app get pods
 billing-7d5b8c6f94-tm9vk   1/1     Running   0          4m
 ```
 
-Still `1/1`. The label governs the future. Recreate the pods to collect it:
+Still `1/1`. The label governs future launches. Relaunch the pods to collect it:
 
 ```sh
 kubectl -n legacy-app rollout restart deployment
@@ -147,14 +147,3 @@ astrona submit
 * **Looking only at the namespace.** One of the two faults is on the workload, and a namespace label cannot override a pod-template opt-out.
 * **Looking for `istio-proxy` under `containers`.** On Kubernetes 1.28+ it is in `initContainers` with `restartPolicy: Always`.
 * **Trusting `Running` and `1/1`.** Both faults are perfectly healthy pods. `1/1` where you expected `2/2` is the entire signal.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [Sidecar injection](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/) — the namespace label, the pod annotation, and when injection happens
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

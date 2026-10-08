@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Four objects. Three are straightforward; the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) is the one worth slowing down for, because it configures two different proxies from one document.
+Four objects, astronaut. Three are straightforward; the `VirtualService` is the one worth slowing down for, because it configures two different proxies from one document.
 
 ---
 
@@ -22,7 +22,7 @@ direct call: 200
 0
 ```
 
-The gateway is running. The call works. The gateway logged nothing — the traffic went straight out of `tester`'s own sidecar. **A deployed egress gateway is evidence of nothing.**
+The departure gate is running. The call works. The gate's flight log recorded nothing — the signal went straight out through `tester`'s own communications officer (sidecar). **A deployed egress gateway is evidence of nothing.**
 
 ---
 
@@ -53,7 +53,7 @@ EOF
 kubectl apply -f serviceentry-partner.yaml
 ```
 
-Section 070's object, unchanged. Without it neither stage below has a host to route.
+Section 070's object, unchanged: it puts the partner on the star chart. Without it neither stage below has a host to route.
 
 ---
 
@@ -95,7 +95,7 @@ kubectl apply -f egress-gateway-manifests.yaml
 Two things that look wrong and are not:
 
 - **`hosts: [partner.example.com]`** — the **external** hostname. Read the object from the gateway's point of view: it is going to receive requests whose `Host` header says `partner.example.com`, so that is what its listener must accept. An internal name here produces a gateway that rejects everything.
-- **A subset with no labels.** It narrows nothing; it exists so the two stages can name a distinct cluster per external host. With several hosts through one gateway, each gets its own subset and the proxy config stays readable.
+- **A subset with no labels.** It narrows nothing; it exists so the two stages can name a distinct cluster per external host. With several hosts through one gateway, each gets its own subset and the proxy configuration stays readable.
 
 Note `selector: istio: egressgateway` — the **egress** gateway. Using `ingressgateway` here configures the wrong pod entirely.
 
@@ -157,7 +157,7 @@ The top-level `gateways` must list **both**. Omit `mesh` and stage 1 is never pr
 
 ## Step 5: Prove the Hop
 
-The response looks identical either way, so the evidence has to come from the gateway:
+The reply signal looks the same either way, so the evidence has to come from the gate's flight log:
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
@@ -209,7 +209,7 @@ other-client: 200
 gateway lines: +0
 ```
 
-This is the lesson. `other-client` does not carry `egress-allowed: "true"`, so stage 1 did not apply — and it **still reached the endpoint**, directly, with no gateway record.
+This is the lesson. The `other-client` spaceship does not carry `egress-allowed: "true"`, so stage 1 did not apply — and it **still reached the endpoint**, directly, with no record at the gate.
 
 `sourceLabels` narrows the **route**, not the permission. A non-matching workload is un-diverted, not blocked. To make the gateway a genuine control you need `REGISTRY_ONLY` so nothing unregistered leaves at all, plus an `AuthorizationPolicy` on the gateway.
 
@@ -218,28 +218,10 @@ This is the lesson. `other-client` does not carry `egress-allowed: "true"`, so s
 ## Common Mistakes
 
 - **Expecting the gateway to intercept.** It carries nothing until routed to. The `+0` in step 1 is the proof.
-- **An internal hostname in the [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/)'s `servers[].hosts`.** It must be the external host.
+- **An internal hostname in the `Gateway`'s `servers[].hosts`.** It must be the external host.
 - **`selector: istio: ingressgateway`.** Wrong gateway — that one serves inbound traffic.
 - **The two `match.gateways` values swapped.** Traffic loops or never diverts.
 - **`mesh` missing from the top-level `gateways`.** Stage 1 never reaches sidecars.
-- **No [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/).** Neither stage has a host to route.
+- **No `ServiceEntry`.** Neither stage has a host to route.
 - **Counting gateway log lines without a baseline.** The log accumulates.
 - **Reading `sourceLabels` as an access control.** It is a route filter; non-matching workloads go direct.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
-- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [MeshConfig outboundTrafficPolicy](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-OutboundTrafficPolicy) — `ALLOW_ANY` versus `REGISTRY_ONLY`
-- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

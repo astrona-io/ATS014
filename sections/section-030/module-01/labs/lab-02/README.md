@@ -1,6 +1,6 @@
 # Session Affinity For Browsers Sandbox
 
-Welcome to the Module 1 second practice sandbox. Lab 1 pinned a user with a header that somebody else had to set. This one handles the case where nobody sets anything: the client is a browser, it arrives with no identifier, and Istio has to issue one itself — attached at the port level rather than to the whole host.
+Welcome to the Module 1 second practice sandbox, astronaut. Lab 1 pinned a user with a header that somebody else had to set. This one handles the case where nobody sets anything: the client is a browser, its signals arrive with no call sign, and Istio has to issue one itself — attached at the port level rather than to the whole host.
 
 ## Launching the Lab
 Run the following command in your terminal to boot the kind Kubernetes cluster:

@@ -2,12 +2,14 @@
 
 Solve this question on: `terminal`
 
+Astronaut, your mission: open the spaceport arrival gate (the ingress gateway) for two ships and steer each outside signal to the right one by its hostname.
+
 Namespace `ingress-demo` holds two applications that must be reachable from outside the cluster:
 
 * `booking-service` — a Service on port 80
 * `catalog-service` — a Service on port 80
 
-Istio is installed with the `demo` profile, so `istio-ingressgateway` is running in `istio-system` — unconfigured, and currently answering 404 to everything. There is no [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/) and no [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/).
+Istio is installed with the `demo` profile, so `istio-ingressgateway` is running in `istio-system` — unconfigured, and currently answering 404 to everything. There is no `Gateway` and no `VirtualService`.
 
 `kind` has no load balancer, so reach the gateway with a port-forward:
 
@@ -34,19 +36,3 @@ Expose both applications through the **one shared gateway**, separated by hostna
 8.  `GET /book` with `Host: catalog.ica.local` does **not** return 200 — each host only carries its own routes.
 9.  Both hosts appear in the gateway proxy's route table. A `VirtualService` that exists but is not bound to the gateway fails this check even though the objects look correct.
 10. Both `VirtualService` objects name the gateway in their `gateways` field.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

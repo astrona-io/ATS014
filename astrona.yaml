@@ -6,9 +6,11 @@ training:
     Management domain — request routing and configuration scoping, traffic
     shifting and mirroring, destination rule traffic policies, resilience
     features, fault injection, ingress across three APIs, external services
-    and workloads, and egress gateways. Each module pairs a layered reader
-    with an ungraded hands-on playground and a graded practice lab, and each
-    section closes with an integration capstone.
+    and workloads, egress gateways, and the safe order to apply and remove
+    traffic rules. Each module pairs a layered reader with an ungraded
+    hands-on playground (most run Bookinfo, the Istio docs' sample app) and,
+    for almost every module, a graded practice lab. Each section closes with
+    an integration capstone.
     Built and verified against Istio 1.30.5.
 
   certification:
@@ -18,6 +20,28 @@ training:
     domain: Traffic Management
 
 modules:
+
+  - id: module-intro
+    title: "Mission Briefing"
+    description: >
+      Start here. What this course trains you to do, how it is laid out, how
+      to get your machine ready with the astrona command-line tool, how the
+      content is written and checked, who maintains it, and how to report a
+      mistake.
+
+    content:
+      - type: reading
+        title: Mission Briefing
+        path: sections/intro/README.md
+      - type: reading
+        title: "Welcome, Astronaut"
+        path: sections/intro/course-01-welcome.md
+      - type: reading
+        title: "Before Your First Launch"
+        path: sections/intro/course-02-before-your-first-launch.md
+      - type: reading
+        title: "How This Course Is Made"
+        path: sections/intro/course-03-how-this-course-is-made.md
 
   - id: module-000
     title: "Mesh Foundations"
@@ -44,13 +68,13 @@ modules:
       - type: reading
         title: "The Diagnostic Toolkit"
         path: sections/section-000/module-01/course-03-the-diagnostic-toolkit.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-000/module-01/course-04-wrap-up.md
 
       - type: reading
         title: Question
         path: sections/section-000/module-01/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-000/module-01/labs/lab-01/solution.md
       - type: lab
         title: "Which Workloads Are Actually In The Mesh Lab"
         path: sections/section-000/module-01/labs/lab-01
@@ -61,7 +85,9 @@ modules:
     description: >
       Split a Service into named subsets and route individual requests by
       header, URI and query parameter, then cut a proxy's configuration down
-      from the whole service registry to the hosts a workload actually calls.
+      from the whole service registry to the hosts a workload actually calls,
+      and apply and remove these rules in an order that never leaves a
+      request pointing at something that does not exist yet.
 
     content:
       - type: reading
@@ -86,13 +112,13 @@ modules:
       - type: reading
         title: "Routing Non-HTTP Traffic"
         path: sections/section-010/module-01/course-05-routing-non-http-traffic.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-01/course-06-wrap-up.md
 
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-010/module-01/labs/lab-01/solution.md
       - type: lab
         title: "Route Requests By Header, URI And Query Parameter Lab"
         path: sections/section-010/module-01/labs/lab-01
@@ -101,9 +127,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-02/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-010/module-01/labs/lab-02/solution.md
       - type: lab
         title: "Reshape A Request Lab"
         path: sections/section-010/module-01/labs/lab-02
@@ -121,24 +144,34 @@ modules:
       - type: reading
         title: "Precedence, Reachability And What It Is Not"
         path: sections/section-010/module-02/course-03-precedence-reachability-and-limits.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-02/course-04-wrap-up.md
 
       - type: reading
         title: Question
         path: sections/section-010/module-02/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-010/module-02/labs/lab-01/solution.md
       - type: lab
         title: "Scope Proxy Configuration With The Sidecar Resource Lab"
         path: sections/section-010/module-02/labs/lab-01
         difficulty: intermediate
 
       - type: reading
+        title: "Apply And Remove Traffic Rules Safely"
+        path: sections/section-010/module-03/course.md
+      - type: reading
+        title: "The Order To Apply And Remove Rules"
+        path: sections/section-010/module-03/course-01-the-order-to-apply-and-remove-rules.md
+      - type: reading
+        title: "One Object Per Host, And The Defaults"
+        path: sections/section-010/module-03/course-02-one-object-per-host-and-the-defaults.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-03/course-03-wrap-up.md
+
+      - type: reading
         title: Question
         path: sections/section-010/capstone/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-010/capstone/labs/lab-01/solution.md
       - type: lab
         title: "Route And Scope A Storefront Capstone Lab"
         path: sections/section-010/capstone/labs/lab-01
@@ -173,9 +206,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-020/module-01/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-020/module-01/labs/lab-01/solution.md
       - type: lab
         title: "Shift Traffic With Weighted Routing Lab"
         path: sections/section-020/module-01/labs/lab-01
@@ -197,9 +227,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-020/module-02/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-020/module-02/labs/lab-01/solution.md
       - type: lab
         title: "Mirror Live Traffic To A Shadow Service Lab"
         path: sections/section-020/module-02/labs/lab-01
@@ -208,9 +235,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-020/capstone/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-020/capstone/labs/lab-01/solution.md
       - type: lab
         title: "Canary And Shadow At The Same Time Capstone Lab"
         path: sections/section-020/capstone/labs/lab-01
@@ -245,9 +269,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-030/module-01/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-030/module-01/labs/lab-01/solution.md
       - type: lab
         title: "Load Balancer Policy And Session Affinity Lab"
         path: sections/section-030/module-01/labs/lab-01
@@ -256,9 +277,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-030/module-01/labs/lab-02/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-030/module-01/labs/lab-02/solution.md
       - type: lab
         title: "Session Affinity For Browsers Lab"
         path: sections/section-030/module-01/labs/lab-02
@@ -267,9 +285,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-030/capstone/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-030/capstone/labs/lab-01/solution.md
       - type: lab
         title: "Sticky Sessions With A Shadowed Canary Capstone Lab"
         path: sections/section-030/capstone/labs/lab-01
@@ -303,9 +318,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-040/module-01/labs/lab-01/solution.md
       - type: lab
         title: "Timeouts And Retries Lab"
         path: sections/section-040/module-01/labs/lab-01
@@ -327,9 +339,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-040/module-02/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-040/module-02/labs/lab-01/solution.md
       - type: lab
         title: "Circuit Breaking With Connection Pool Limits Lab"
         path: sections/section-040/module-02/labs/lab-01
@@ -351,9 +360,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-040/module-03/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-040/module-03/labs/lab-01/solution.md
       - type: lab
         title: "Outlier Detection And Endpoint Ejection Lab"
         path: sections/section-040/module-03/labs/lab-01
@@ -375,9 +381,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-040/module-04/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-040/module-04/labs/lab-01/solution.md
       - type: lab
         title: "Locality Load Balancing And Failover Lab"
         path: sections/section-040/module-04/labs/lab-01
@@ -386,9 +389,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-040/capstone/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-040/capstone/labs/lab-01/solution.md
       - type: lab
         title: "A Resilient Payment Path Capstone Lab"
         path: sections/section-040/capstone/labs/lab-01
@@ -422,9 +422,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-050/module-01/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-050/module-01/labs/lab-01/solution.md
       - type: lab
         title: "Fault Injection With Delays And Aborts Lab"
         path: sections/section-050/module-01/labs/lab-01
@@ -433,9 +430,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-050/capstone/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-050/capstone/labs/lab-01/solution.md
       - type: lab
         title: "A Controlled Chaos Experiment Capstone Lab"
         path: sections/section-050/capstone/labs/lab-01
@@ -469,9 +463,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-060/module-01/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-060/module-01/labs/lab-01/solution.md
       - type: lab
         title: "Expose A Service With An Istio Ingress Gateway Lab"
         path: sections/section-060/module-01/labs/lab-01
@@ -493,9 +484,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-060/module-02/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-060/module-02/labs/lab-01/solution.md
       - type: lab
         title: "Expose A Service With A Kubernetes Ingress Lab"
         path: sections/section-060/module-02/labs/lab-01
@@ -517,9 +505,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-060/module-03/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-060/module-03/labs/lab-01/solution.md
       - type: lab
         title: "Ingress With The Kubernetes Gateway API Lab"
         path: sections/section-060/module-03/labs/lab-01
@@ -528,9 +513,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-060/capstone/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-060/capstone/labs/lab-01/solution.md
       - type: lab
         title: "Three APIs, One Edge Capstone Lab"
         path: sections/section-060/capstone/labs/lab-01
@@ -564,9 +546,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-070/module-01/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-070/module-01/labs/lab-01/solution.md
       - type: lab
         title: "Control External Access With ServiceEntry Lab"
         path: sections/section-070/module-01/labs/lab-01
@@ -588,9 +567,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-070/module-02/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-070/module-02/labs/lab-01/solution.md
       - type: lab
         title: "TLS Origination For External Services Lab"
         path: sections/section-070/module-02/labs/lab-01
@@ -612,9 +588,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-070/module-03/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-070/module-03/labs/lab-01/solution.md
       - type: lab
         title: "Add External Workloads With WorkloadEntry Lab"
         path: sections/section-070/module-03/labs/lab-01
@@ -623,9 +596,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-070/capstone/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-070/capstone/labs/lab-01/solution.md
       - type: lab
         title: "A Deny-By-Default Integration Layer Capstone Lab"
         path: sections/section-070/capstone/labs/lab-01
@@ -660,9 +630,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-080/module-01/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-080/module-01/labs/lab-01/solution.md
       - type: lab
         title: "Route External Traffic Through An Egress Gateway Lab"
         path: sections/section-080/module-01/labs/lab-01
@@ -684,9 +651,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-080/module-02/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-080/module-02/labs/lab-01/solution.md
       - type: lab
         title: "TLS Origination At The Egress Gateway Lab"
         path: sections/section-080/module-02/labs/lab-01
@@ -695,9 +659,6 @@ modules:
       - type: reading
         title: Question
         path: sections/section-080/capstone/labs/lab-01/question.md
-      - type: reading
-        title: Solution Walkthrough
-        path: sections/section-080/capstone/labs/lab-01/solution.md
       - type: lab
         title: "One Exit, Two Partners Capstone Lab"
         path: sections/section-080/capstone/labs/lab-01

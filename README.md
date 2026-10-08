@@ -4,6 +4,8 @@ Course material for the **Traffic Management** domain of the Istio Certified Ass
 
 Built and verified against **Istio 1.30.5**.
 
+Welcome aboard, astronaut. Your missions here all deal with one thing: **signals**. Every request one spaceship (a pod) sends to another is a signal. Istio puts a communications officer (the sidecar proxy) on every ship, and mission control (`istiod`) tells each communications officer where signals may fly, how long to wait for a reply, and what to do when a ship is damaged. This course trains you to give those orders, and to prove they work, on a real solar system (a Kubernetes cluster).
+
 The repository has three layers:
 
 | Layer | Path | What it is |
@@ -14,7 +16,13 @@ The repository has three layers:
 | **Integration** | `sections/section-0N0/capstone/labs/lab-01/` | One graded capstone per section, combining that section's modules |
 | **Source** | `domains/traffic-management/` | The original exam-style study labs each module was built from |
 
-Read a module's parts, run its playground alongside, then take the module lab without looking at the solution — and finish the section with its capstone.
+Your flight path for each module: read its parts, fly its playground alongside (your training simulator), then take the module lab without looking at the solution. Finish each section with its capstone, the bigger mission that combines everything in that section.
+
+---
+
+## Start Here
+
+New to the course? Read the **[Mission Briefing](sections/intro/README.md)** first. It explains how the course is laid out, how to get your machine ready, how the content is made, who maintains it, and how to report a mistake.
 
 ---
 
@@ -32,14 +40,14 @@ The Traffic Management domain is seven topics. Every section below is named afte
 | 6 | Using Resilience Features (circuit breaking, failover, outlier detection, timeouts, retries) | [040](sections/section-040) |
 | 7 | Using Fault Injection | [050](sections/section-050) |
 
-Section [000](sections/section-000) is not an exam topic. It is the prerequisite the other seven assume — what a sidecar is, how `istiod` programs it, and how to read a proxy's live configuration.
+Section [000](sections/section-000) is not an exam topic. It is pre-flight training that the other seven assume: what a sidecar is (the communications officer), how `istiod` programs it (mission control's orders), and how to read a proxy's live configuration.
 
 ## Sections
 
 | Section | Title | Modules | Curriculum item |
 | --- | --- | --- | --- |
 | [000](sections/section-000) | Mesh Foundations | 1 | *prerequisite — not an exam item* |
-| [010](sections/section-010) | Configuring Routing Within A Service Mesh | 2 | Configuring Routing within a Service Mesh |
+| [010](sections/section-010) | Configuring Routing Within A Service Mesh | 3 | Configuring Routing within a Service Mesh |
 | [020](sections/section-020) | Configuring Traffic Shifting | 2 | Configuring Traffic Shifting |
 | [030](sections/section-030) | Defining Traffic Policies With Destination Rules | 1 | Defining Traffic Policies with Destination Rules |
 | [040](sections/section-040) | Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries) | 4 | Using Resilience Features |
@@ -48,9 +56,9 @@ Section [000](sections/section-000) is not an exam topic. It is the prerequisite
 | [070](sections/section-070) | Connecting In-Mesh Workloads To External Workloads And Services | 3 | Connecting In-Mesh Workloads to External Workloads and Services |
 | [080](sections/section-080) | Configuring Ingress And Egress Traffic — Egress | 2 | Configuring Ingress and Egress Traffic |
 
-**19 modules · 59 deep-dive parts · 21 graded labs · 8 capstones · 19 playgrounds.**
+**20 modules · 65 deep-dive parts · 21 graded labs · 8 capstones · 20 playgrounds.**
 
-All of it is listed in [`astrona.yaml`](astrona.yaml) — 174 entries across the 9 sections, in the order a learner should work through them.
+The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml) — 156 entries across the briefing and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
 
 Sections are ordered so each needs only what came before. Section 000 is foundations — what a sidecar is, how `istiod` programs it, and how to read a proxy's live configuration — because every section after it assumes all three. `VirtualService` and `DestinationRule` are introduced first because everything else is a field on one of them; `ServiceEntry` (070) precedes the egress gateway (080) that depends on it.
 
@@ -65,6 +73,7 @@ Each module is a landing page plus its ordered parts. The landing page links the
 | 000-01 | [How A Request Moves Through The Mesh](sections/section-000/module-01/course.md) | [lab](sections/section-000/module-01/labs/lab-01) | — |
 | 010-01 | [Route Requests Within The Mesh](sections/section-010/module-01/course.md) | [lab 1](sections/section-010/module-01/labs/lab-01) · [lab 2](sections/section-010/module-01/labs/lab-02) | [`01-request-routing…`](domains/traffic-management/01-request-routing-headers-uri-query) |
 | 010-02 | [Scope Proxy Configuration With The Sidecar Resource](sections/section-010/module-02/course.md) | [lab](sections/section-010/module-02/labs/lab-01) | [`17-sidecar-resource-scoping`](domains/traffic-management/17-sidecar-resource-scoping) |
+| 010-03 | [Apply And Remove Traffic Rules Safely](sections/section-010/module-03/course.md) | — | — |
 | 020-01 | [Shift Traffic With Weighted Routing](sections/section-020/module-01/course.md) | [lab](sections/section-020/module-01/labs/lab-01) | [`02-traffic-shifting…`](domains/traffic-management/02-traffic-shifting-weighted-canary) |
 | 020-02 | [Mirror Live Traffic To A Shadow Service](sections/section-020/module-02/course.md) | [lab](sections/section-020/module-02/labs/lab-01) | [`03-traffic-mirroring`](domains/traffic-management/03-traffic-mirroring) |
 | 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | [lab 1](sections/section-030/module-01/labs/lab-01) · [lab 2](sections/section-030/module-01/labs/lab-02) | [`08-load-balancing…`](domains/traffic-management/08-load-balancing-and-session-affinity) |
@@ -86,16 +95,18 @@ Each module is a landing page plus its ordered parts. The landing page links the
 
 ## Running a playground
 
-Every module has one: a **kind** cluster with Istio 1.30.5 (`demo` profile) installed and the module's starting workloads applied — and deliberately no Istio traffic configuration, because writing that is the module's subject.
+Every module has one. Think of it as a training solar system in the simulator: a **kind** cluster with Istio 1.30.5 installed and the module's starting workloads applied. It has deliberately no Istio traffic configuration, because writing that is your mission.
+
+Most playgrounds now run **Bookinfo**, the sample app the Istio docs use, in namespace `bookinfo`. They install Istio with Helm (only `istiod`, plus a gateway where the module needs one), so you need `istioctl` on your own machine. Each one has `examples/` with ready YAML files, and most also have `docs/practice.md` with an exam-style task. The playgrounds not moved over yet (000-01, 010-02, 040-04, 060-02, 060-03, 070-02, 070-03, 080-02) still use the `demo` profile and their own small apps. The graded labs and capstones are unchanged.
 
 ```bash
 astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-010/module-01/playground
 astrona destroy ats-014-playground-010-01
 ```
 
-Playgrounds are **ungraded**: no task, no `astrona submit`, no pass/fail. Each one's `docs/overview.md` lists what is in the box and things worth trying — including deliberate mistakes, which are often the fastest way to learn a failure signature.
+Playgrounds are **ungraded**: no task, no `astrona submit`, no pass/fail. Crash as often as you like. Each one's `docs/overview.md` lists what is in the box and things worth trying, including deliberate mistakes. Breaking things on purpose is often the fastest way to learn what a failure looks like.
 
-`astrona destroy` takes the environment **name** (`metadata.name` in the playground's `config.yaml`), not the config path.
+`astrona destroy` takes the environment **name** (`metadata.name` in the playground's `config.yaml`), not the configuration path.
 
 ## Running a lab or capstone
 
@@ -104,7 +115,7 @@ astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/m
 astrona submit -c sections/section-010/module-01/labs/lab-01
 ```
 
-Labs are **graded** against live cluster state. Each carries a `question.md` (the task), a `solution.md` (a full walkthrough, plus the mistakes that fail it), and a validation script that checks behaviour rather than just object fields.
+Labs are your real missions: they are **graded** against the live state of the solar system. Each carries a `question.md` (the task), a `solution.md` (a full walkthrough, plus the mistakes that fail it), and a validation script that checks behaviour rather than just object fields.
 
 ---
 

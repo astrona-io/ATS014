@@ -1,0 +1,43 @@
+# Two hops for traffic to httpbin.org:
+#   hop 1: any sidecar in the mesh  -> egress gateway
+#   hop 2: egress gateway           -> httpbin.org
+# Uses "tls" routes (not "http"): the traffic is still encrypted, so only the
+# SNI host and port can be matched.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: httpbin-org-via-egress
+  namespace: bookinfo
+spec:
+  hosts:
+  - httpbin.org
+  # "mesh" = all sidecars. "egress-gateway" = the Gateway in 02.
+  gateways:
+  - mesh
+  - egress-gateway
+  tls:
+  # Hop 1: from sidecars, send to the egress gateway.
+  - match:
+    - gateways:
+      - mesh
+      port: 443
+      sniHosts:
+      - httpbin.org
+    route:
+    - destination:
+        host: istio-egress.istio-egress.svc.cluster.local
+        subset: httpbin-org
+        port:
+          number: 443
+  # Hop 2: from the egress gateway, send to the real host.
+  - match:
+    - gateways:
+      - egress-gateway
+      port: 443
+      sniHosts:
+      - httpbin.org
+    route:
+    - destination:
+        host: httpbin.org
+        port:
+          number: 443

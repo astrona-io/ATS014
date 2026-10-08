@@ -1,12 +1,10 @@
 # Where The `DestinationRule` Attaches
 
-> Prerequisite: [The Five-Step Chain](./course-01-the-five-step-chain.md). Next: [Mutual TLS And The Consolidation Argument](./course-03-mutual-tls-and-consolidation.md).
-
-Part 1 asserted that traffic policy is applied by the calling proxy. This part proves it, which also happens to be the cleanest way to verify the whole chain.
+Part 1 claimed that traffic policy is applied by the calling proxy. This part proves it, astronaut, and that proof is also the cleanest way to check the whole chain.
 
 ## Two independent facts to prove
 
-The response looks identical whether the gateway is involved or not, and whether TLS was originated or not. So there are two separate claims, each with its own evidence:
+The reply signal looks the same whether the gateway was involved or not, and whether TLS was originated or not. So there are two separate claims, each with its own evidence:
 
 | Claim | Evidence |
 | --- | --- |
@@ -40,7 +38,7 @@ The response looks identical whether the gateway is involved or not, and whether
 
 This is the check that settles arguments, and the one that demonstrates the rule from Part 1 rather than asserting it.
 
-Both proxies are ordinary Envoys and both can be inspected. Only one of them has a TLS transport socket for the external host.
+Both proxies are ordinary Envoys, and you can inspect both. Only one of them carries the TLS equipment (a transport socket) for the external host.
 
 > [!TIP]
 > **Try it — the TLS context is on the gateway, not the sidecar**
@@ -85,7 +83,7 @@ For completeness, the sidecar's view confirms it is doing the simpler job:
 > "cluster": "outbound|80|httpbin|istio-egressgateway.istio-system.svc.cluster.local",
 > ```
 >
-> Port **80**, the gateway Service, the `httpbin` subset. From the sidecar's point of view this is an ordinary in-cluster call to a plain HTTP service. It has no idea TLS is involved anywhere, which is exactly the separation of concerns the arrangement buys.
+> Port **80**, the gateway Service, the `httpbin` subset. From the communications officer's point of view, this is an ordinary signal to a plain HTTP service inside the solar system. It has no idea TLS is involved anywhere, which is exactly the separation of concerns the arrangement buys.
 
 ## A short diagnostic order
 
@@ -104,8 +102,8 @@ When the chain does not work, this sequence resolves it faster than re-reading f
 ## Keeping it off the sidecars
 
 One detail decides whether that comparison comes out the way this part describes.
-A `DestinationRule` is visible mesh-wide by default, so a rule for
-`partner.example.com` is handed to **every** sidecar as well as to the gateway —
+A `DestinationRule` is visible mesh-wide by default. Mission control hands a rule for
+`partner.example.com` to **every** sidecar as well as to the gateway —
 and each one then builds a TLS-originating cluster for the host. Nothing breaks,
 because the sidecars route to the gateway rather than to the host directly and
 never use that cluster, but the evidence you are about to rely on is gone: dump
@@ -138,10 +136,3 @@ which is both the design you want and the thing you can point at to prove it.
 > **Treating one working half as the whole chain.** Traffic reaching the gateway and TLS being originated are two independent facts, and either can be true without the other.
 >
 > **Leaving the origination rule visible to sidecars.** Without scoping, every sidecar also learns to originate TLS for that host, which defeats the point of consolidating it.
-
-## Reference
-
-- [Egress gateway TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/) — the verification steps in the upstream task.
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-config` against a gateway as well as a sidecar.
-- [TrafficPolicy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy) — the object whose scope this part is about.
-- `istioctl proxy-config cluster <workload> --fqdn <host> -o json` — run it against both proxies; the difference is the lesson.

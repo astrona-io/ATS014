@@ -1,0 +1,17 @@
+# Case 1: ServiceEntry in namespace "default" instead of "bookinfo".
+# The bookinfo Sidecar only imports "./*" and "istio-system/*", so the
+# bookinfo pods never see this entry -> still blocked.
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: httpbin-org
+  namespace: default
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: DNS

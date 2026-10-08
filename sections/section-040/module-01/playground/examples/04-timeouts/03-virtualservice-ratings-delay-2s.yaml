@@ -1,0 +1,22 @@
+# Make ratings slow: every request waits 2s before it is forwarded.
+# The delay is added by the CALLER's sidecar (here: the reviews pod), not by
+# the ratings pod. Used to test the timeout in the next step.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: ratings
+  namespace: bookinfo
+spec:
+  hosts:
+  - ratings
+  http:
+  - fault:
+      delay:
+        # 100% of requests.
+        percentage:
+          value: 100
+        fixedDelay: 2s
+    route:
+    - destination:
+        host: ratings
+        subset: v1

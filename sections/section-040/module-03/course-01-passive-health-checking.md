@@ -1,136 +1,157 @@
 # Passive Health Checking
 
-> Prerequisite: [the module landing page](./course.md). Next: [Ejection Mechanics And Limits](./course-02-ejection-mechanics-and-limits.md).
+> **Before you start:** define the helper functions from [the landing page](./course.md#before-you-start).
 
-This part establishes what the mechanism is, what it watches, and why it catches a class of failure that Kubernetes structurally cannot.
+Astronaut, this part shows what the mechanism is, what it watches, and why it catches a kind of failure that Kubernetes cannot see: a ship that reports "all green" but drops your signals.
 
 ## The problem, made visible
 
-With two endpoints and no policy, load balancing sends roughly half the traffic into the failing pod.
+Add a third pod behind the `httpbin` Service. It carries the same `app: httpbin` label, so the Service sends it a share of the traffic. But it answers **every** request with a 503. It never fails a readiness probe, because it has none to fail.
 
 > [!TIP]
-> **Try it — a Service with one poisoned endpoint**
+> **Try it — a Service with one broken endpoint**
 >
 > ```sh
-> kubectl -n outlier-demo get endpoints httpbin
-> kubectl -n outlier-demo get pods -o wide
-> kubectl -n outlier-demo exec deploy/tester -- sh -c \
->   'for i in $(seq 1 20); do curl -s -o /dev/null -w "%{http_code} " http://httpbin:8000/get; done; echo'
+> cat > httpbin-broken-pod.yaml <<'EOF'
+> apiVersion: apps/v1
+> kind: Deployment
+> metadata:
+>   name: httpbin-broken
+>   namespace: bookinfo
+> spec:
+>   replicas: 1
+>   selector:
+>     matchLabels:
+>       app: httpbin
+>       version: broken
+>   template:
+>     metadata:
+>       labels:
+>         app: httpbin
+>         version: broken
+>     spec:
+>       containers:
+>       - name: http-echo
+>         image: hashicorp/http-echo:1.0
+>         args:
+>         - -listen=:8080
+>         - -status-code=503
+>         - -text=broken
+>         ports:
+>         - containerPort: 8080
+> EOF
+> kubectl apply -f httpbin-broken-pod.yaml
+> kubectl rollout status -n bookinfo deploy/httpbin-broken
+> kubectl get pods -n bookinfo -l app=httpbin
+> count_status
 > ```
 >
-> Expect something like:
+> Expect all three `httpbin` pods to show `2/2 Running`, and a count like:
 >
 > ```text
-> NAME      ENDPOINTS                            AGE
-> httpbin   10.244.0.14:8080,10.244.0.15:8080    5m
-> httpbin-bad-...    1/1 Running   10.244.0.15
-> httpbin-good-...   1/1 Running   10.244.0.14
-> 200 503 200 503 503 200 200 503 200 503 200 503 200 200 503 200 503 200 503 200
+>   12 200
+>    3 503
 > ```
 >
-> Both endpoints are listed and **both pods show `1/1` Running**. Kubernetes considers them equally healthy. Half the calls fail anyway. Note the bad pod's IP — you will want it in Part 3.
+> Your split will vary a little. Kubernetes treats all three pods as equally healthy, and still about a third of the requests fail.
 
 ## Active versus passive
 
-The distinction is worth stating precisely, because it is the shape of the whole module.
+The difference is worth stating exactly, because it shapes the whole module.
 
 | | Readiness probe (Kubernetes) | Outlier detection (Istio) |
 | --- | --- | --- |
-| Kind | **active** — synthetic requests on a schedule | **passive** — observes real traffic |
-| Who decides | the kubelet, per pod | each client proxy, independently |
+| Kind | **active**: test requests on a schedule | **passive**: watches real traffic |
+| Who decides | the kubelet, per pod | each caller's sidecar, on its own |
 | What it asks | "do you say you are ready?" | "have your answers to *me* been failing?" |
-| Effect | removes the pod from the Service, for everyone | removes the endpoint from **one proxy's** load balancing set |
-| Catches | a pod that knows it is broken | a pod that does not know, or lies |
+| Effect | takes the pod out of the Service, for everyone | takes the endpoint out of **one proxy's** load-balancing set |
+| Catches | a pod that knows it is broken | a pod that does not know, or claims it is fine |
 
-The second row is the one people underestimate and Part 3 returns to. The fifth row is why this module exists: a probe is a question the pod answers about itself, and a pod with a dead downstream dependency or a poisoned cache will answer it correctly and still fail every real request.
+People underestimate the second row, and Part 3 comes back to it. The last row is why this module exists. A probe is a question the pod answers about itself. A pod with a dead dependency will answer it correctly and still fail every real request.
 
-Passive checking has a cost that follows from its nature: **it needs real failures to notice anything.** The evidence is other people's failed requests. There is no way to detect a bad endpoint before it has broken something.
+Passive checking has a cost that follows from how it works: **it needs real failures to notice anything.** The evidence is other people's failed requests. There is no way to spot a bad endpoint before it has broken something.
 
 ## The fields
+
+The settings live in a `DestinationRule`, under `trafficPolicy.outlierDetection`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
   name: httpbin
-  namespace: outlier-demo
+  namespace: bookinfo
 spec:
   host: httpbin
   trafficPolicy:
     outlierDetection:
       consecutive5xxErrors: 3
       interval: 5s
-      baseEjectionTime: 30s
-      maxEjectionPercent: 100
+      baseEjectionTime: 1m
+      maxEjectionPercent: 50
 ```
 
-The detection fields — the ones that define what counts as an outlier:
+The fields that decide what counts as a failing endpoint:
 
-- **`consecutive5xxErrors`** — how many 5xx responses **in a row from the same endpoint** mark it. *Consecutive* is the operative word: a single success resets that endpoint's counter to zero.
-- **`consecutiveGatewayErrors`** — the same idea restricted to 502/503/504, for when you do not want application 500s to count.
-- **`consecutiveLocalOriginFailures`** — counts failures the proxy itself observed (connection refused, reset) rather than status codes, used with `splitExternalLocalOriginErrors`.
+- **`consecutive5xxErrors`** — how many 5xx answers **in a row from the same endpoint** mark it as failing. A single success from that endpoint resets its count to zero. It defaults to 5 as soon as an `outlierDetection` block exists. Set it to `0` to switch it off.
+- **`consecutiveGatewayErrors`** — the same idea, but it only counts 502, 503 and 504. Use it when application 500s should not count. It is off (`0`) by default. Part 2 shows the trap in combining the two.
+- **`consecutiveLocalOriginFailures`** — counts failures the proxy saw itself (connection refused, reset) instead of status codes. It is used with `splitExternalLocalOriginErrors`.
 
-The remaining fields — `interval`, `baseEjectionTime`, `maxEjectionPercent`, `minHealthPercent` — govern what *happens* once an endpoint is marked, and they are Part 2.
+The other fields, `interval`, `baseEjectionTime`, `maxEjectionPercent` and `minHealthPercent`, decide what *happens* once an endpoint is marked. They are Part 2.
 
-## Why "consecutive" and "per endpoint" matter together
+## "Consecutive" and "per endpoint"
 
-Both words do real work, and together they explain why a test that seems generous is not.
+Both words matter, and together they decide how fast a bad endpoint is caught.
 
-Counting is **per endpoint**: each endpoint has its own counter. And it is **consecutive**: any success resets it.
+The count is **per endpoint**: each endpoint has its own counter, fed only by its own answers. Answers from the healthy pods do not reset the broken pod's count. And it is **consecutive**: a success *from that endpoint* resets it.
 
-Now consider the playground. Load balancing spreads requests across two endpoints, so the bad one receives roughly every other request. To accumulate three consecutive failures it must be chosen three times in a row — and with round-robin-ish selection that takes a while. Twenty requests is usually not enough. Sixty usually is.
+So a pod that fails **every** request is caught quickly. It only has to be picked three times, whenever that happens, for `consecutive5xxErrors: 3` to mark it. Healthy pods around it do not slow that down.
 
-The general shape: **the traffic needed to trigger an ejection grows with the number of healthy endpoints**, because they dilute the failing one. On a service with ten endpoints and one bad one, `consecutive5xxErrors: 3` may take hundreds of requests. That is an argument for `consecutiveGatewayErrors` tuned low, or for accepting that detection is not instant.
+A pod that fails only *some* requests is a different story. If it fails every other request, its successes keep resetting the count, and it may never reach the threshold even though half its answers are errors. Consecutive counting catches a pod that is fully broken. It is weak against a pod that is partly broken.
 
 > [!TIP]
-> **Try it — apply the detection and drive enough traffic to trigger it**
+> **Try it — apply the detection and watch the failures stop**
 >
 > ```sh
-> kubectl apply -f - <<'EOF'
+> cat > destinationrule-httpbin-outlier-detection.yaml <<'EOF'
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
 >   name: httpbin
->   namespace: outlier-demo
+>   namespace: bookinfo
 > spec:
 >   host: httpbin
 >   trafficPolicy:
 >     outlierDetection:
 >       consecutive5xxErrors: 3
 >       interval: 5s
->       baseEjectionTime: 30s
->       maxEjectionPercent: 100
+>       baseEjectionTime: 1m
+>       maxEjectionPercent: 50
 > EOF
-> kubectl -n outlier-demo exec deploy/tester -- sh -c \
->   'for i in $(seq 1 60); do curl -s -o /dev/null -w "%{http_code} " http://httpbin:8000/get; done; echo'
+> kubectl apply -f destinationrule-httpbin-outlier-detection.yaml
+> count_status
+> count_status
 > ```
 >
-> Expect something like:
+> Expect a few 503s in the first run, while the sidecar is still counting the broken pod's errors. Then the second run shows:
 >
 > ```text
-> 200 503 503 200 503 503 503 200 200 503 200 200 200 200 200 200 200 200 200 200 ...
+>   15 200
 > ```
 >
-> The 503s cluster near the beginning and then stop. That transition is the ejection: once the bad endpoint accumulated three consecutive failures and the next analysis interval came round, the client proxy removed it from its own pool. Sixty requests is deliberate — with load balancing diluting the failures, fewer often will not get there.
+> The broken pod gave three 503s in a row, so the caller's sidecar took it out of its own pool. Part 3 shows where you can see that.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Expecting it to catch a bad endpoint before it breaks anything.** Passive means it learns from real failed requests. There is no pre-emptive detection.
+> **Expecting it to catch a bad endpoint before it breaks anything.** Passive means it learns from real failed requests. Something has to fail first.
 >
-> **Assuming an ejection is mesh-wide.** Each client proxy decides independently, from its own traffic. One caller can be avoiding an endpoint that another is still using happily.
+> **Treating it as a replacement for readiness probes.** They answer different questions. A probe takes a pod out of the Service for everyone. An ejection takes an endpoint out of one proxy's load-balancing set.
 >
-> **Treating it as a replacement for readiness probes.** They answer different questions. A probe removes a pod from the Service for everyone; an ejection removes an endpoint from one proxy's load balancing set.
+> **Expecting `Running` and `2/2` to mean a pod serves correctly.** That is exactly the case this module exists for.
 >
-> **Expecting `1/1 Running` to mean a pod is serving correctly.** That is exactly the case this module exists for.
+> **Expecting consecutive counting to catch a pod that fails only sometimes.** Each success from that pod resets its count.
 >
-> **Configuring it on a Service with one endpoint.** `maxEjectionPercent` and simple arithmetic mean there is usually nothing it can safely eject.
+> **Configuring it on a Service with one endpoint.** With nothing else to send to, there is nothing it can usefully eject.
 
-> *Passive means the evidence is other people's failed requests — nothing is detected until something has already broken.*
-
-## Reference
-
-- [Circuit breaking task](https://istio.io/latest/docs/tasks/traffic-management/circuit-breaking/) — Istio groups outlier detection under this heading.
-- [OutlierDetection API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#OutlierDetection) — every field, including the local-origin variants.
-- [Envoy outlier detection](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/outlier) — the algorithm, the counters, and the exact meaning of each threshold.
-- [Kubernetes readiness probes](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes) — the active mechanism this one complements rather than replaces.
+> *Passive means the evidence is other people's failed requests: nothing is detected until something has already broken.*

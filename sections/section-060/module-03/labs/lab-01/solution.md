@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Four objects and a namespace label. The label is the part that makes the cross-namespace route work, and forgetting it produces the one failure this API reports clearly.
+Four objects and a namespace label. The label is the part that makes the cross-namespace (planet-to-planet) route work, and forgetting it produces the one failure this API reports clearly.
 
 ---
 
@@ -25,7 +25,7 @@ gwapi-team   Active   8m    istio-injection=enabled,kubernetes.io/metadata.name=
 No resources found in gwapi-demo namespace.
 ```
 
-CRDs present, [`GatewayClass`](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) accepted, neither namespace carries `gateway-access` yet. Note the controller string is `istio.io/gateway-**controller**` — different from module 2's `istio.io/ingress-controller`. Separate APIs, separate controllers.
+CRDs present, `GatewayClass` accepted, neither namespace carries `gateway-access` yet. Note the controller string is `istio.io/gateway-**controller**` — different from module 2's `istio.io/ingress-controller`. Separate APIs, separate controllers.
 
 ---
 
@@ -170,7 +170,7 @@ EOF
 kubectl apply -f httproute-catalog.yaml
 ```
 
-**`namespace: gwapi-demo` in `parentRefs` is required here.** Without it the route looks for a [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/) called `shared-gateway` in its own namespace, `gwapi-team`, where none exists.
+**`namespace: gwapi-demo` in `parentRefs` is required here.** Without it the route looks for a `Gateway` called `shared-gateway` in its own namespace, `gwapi-team`, where none exists.
 
 Note the `backendRefs` has no namespace — the backend is in the route's own namespace, which is the normal case. Referring to a Service in a *third* namespace would additionally need a `ReferenceGrant`, which is the same deny-by-default idea applied to backends.
 
@@ -248,16 +248,3 @@ Two namespaces, two teams, one shared gateway that the platform team owns and ex
 - **Looking for the proxy in `istio-system`.** It is `shared-gateway-istio` in `gwapi-demo`.
 - **Using `networking.istio.io/v1`.** Wrong API group entirely — that object has a `selector` and configures an existing pod.
 - **Reading `PathPrefix` as a string prefix.** It is element-wise, like `Ingress` and unlike Istio's `uri.prefix`.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
-- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
-- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
-- [Sidecar injection](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/) — the namespace label, the pod annotation, and when injection happens

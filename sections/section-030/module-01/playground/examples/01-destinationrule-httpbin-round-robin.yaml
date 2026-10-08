@@ -1,0 +1,13 @@
+# Load balancing algorithm for httpbin: ROUND_ROBIN (each pod in turn).
+# Istio's default is LEAST_REQUEST (pod with fewest active requests).
+# Other simple options: RANDOM, PASSTHROUGH.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  host: httpbin
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN

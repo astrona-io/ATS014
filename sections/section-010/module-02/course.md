@@ -2,16 +2,16 @@
 
 <!-- astrona:playground -->
 > [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS014/tree/main/sections/section-010/module-02/playground)
+> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
 >
 > ```sh
 > astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-010/module-02/playground
 > astrona destroy ats-014-playground-010-02
 > ```
 
-Ask a sidecar in a fresh mesh what it knows about, and the answer is: everything. Every Service in every namespace, whether or not the pod beside it will ever send a single request there. That is a deliberate default — it means routing works without declaring anything — and it has a cost that grows with the cluster rather than with your application.
+Astronaut, this mission is about the star chart each ship carries. Ask a sidecar (a ship's communications officer) in a fresh mesh what it knows about, and the answer is: everything. Every Service in every namespace, whether or not the pod beside it will ever send a single request there. That is a deliberate default — it means routing works without declaring anything — and it has a cost that grows with the cluster rather than with your application.
 
-`Sidecar` is the object that cuts it down. It is the only `networking.istio.io` resource in this course that is about the proxy's **configuration** rather than about a request's journey, and the thing you measure is not a response code but the size of a config dump.
+Think of it as every ship carrying the full star chart of the whole solar system, even if it only ever flies to two planets. `Sidecar` is the object that cuts it down: it gives a ship a smaller star chart with only the planets it needs. It is the only `networking.istio.io` resource in this course that is about the proxy's **configuration** rather than about a request's journey, and the thing you measure is not a response code but the size of a configuration dump.
 
 > Every sidecar knows about every service by default; the `Sidecar` resource is how you cut that down.
 
@@ -21,7 +21,7 @@ It earns three parts because the interesting material is not the YAML — the ob
 
 1. **[What A Proxy Is Programmed With](./course-01-what-a-proxy-is-programmed-with.md)** — the service registry, how it becomes clusters and listeners in every proxy, and why the cost of that scales with the cluster rather than with your workload.
 2. **[The Sidecar Object And Its Host Language](./course-02-the-sidecar-object-and-host-language.md)** — `workloadSelector`, `egress.hosts` and the `<namespace>/<host>` syntax, including why `istio-system/*` is boilerplate rather than a choice.
-3. **[Precedence, Reachability And What It Is Not](./course-03-precedence-reachability-and-limits.md)** — which `Sidecar` applies to a workload when several could, why removing config removes reachability, and why this is not a security boundary.
+3. **[Precedence, Reachability And What It Is Not](./course-03-precedence-reachability-and-limits.md)** — which `Sidecar` applies to a workload when several could, why removing configuration removes reachability, and why this is not a security boundary.
 
 ## Learning objectives
 

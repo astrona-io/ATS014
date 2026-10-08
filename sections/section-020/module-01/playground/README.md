@@ -5,10 +5,8 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-
-
-A single sandbox environment that spins up, runs OS prep, and stays running so
-you can explore the module's topic on a clean machine. Nothing to submit.
+A Starfleet sandbox (a training solar system) that spins up, installs Istio, and
+stays running so you can try weighted routing on a clean cluster. Nothing to submit.
 
 ## Run it
 
@@ -17,15 +15,18 @@ astrona run -c .
 astrona destroy ats-014-playground-020-01
 ```
 
-`astrona destroy` takes the environment name (`metadata.name` = `ats-014-playground-020-01`), not
-the config path. `astrona submit` and `astrona test` do not apply — there is no
-grading.
+`astrona destroy` takes the environment name (`metadata.name` =
+`ats-014-playground-020-01`), not the configuration path. `astrona submit` and
+`astrona test` do not apply — there is no grading.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
-| `config.yaml` | Environment definition (runtime + bootstrap only) |
-| `bootstrap/prepare.sh` | OS prep run once at startup: istioctl + Istio control plane + sidecar check |
-| `manifests/lab-start.yaml` | Starting workloads applied at bootstrap (copied from the matching `domains/` lab) |
-| `docs/overview.md` | What the environment contains and ideas to try |
+| `config.yaml` | Environment definition: kind runtime, the bridge port forward, two bootstrap scripts |
+| `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm (`istio-base` + `istiod`) |
+| `bootstrap/deploy.sh` | Namespace `starfleet`, access logs, the Starfleet (`bridge`, `cargo`, `scout` v1-v3, `navcom`), `shuttle`, `probe`, the `scout` DestinationRule |
+| `bootstrap/manifests/` | The YAML `deploy.sh` applies |
+| `examples/` | The module's VirtualServices, numbered in the order you apply them, plus `cases/` |
+| `docs/overview.md` | What the environment contains, the `count_versions` helper, ideas to try |
+| `docs/practice.md` | An exam-style drill with a checked solution |

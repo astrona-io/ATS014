@@ -1,6 +1,6 @@
 # TLS Origination At The Egress Gateway Sandbox
 
-Welcome to the Module 2 targeted practice sandbox — the last one in the course. A TLS-only endpoint, a client speaking plain `http://`, and a gateway in between that has to do the handshake. Five objects, and the endpoint itself tells you whether you got it right.
+Welcome to the Module 2 practice mission, astronaut — the last one in the course. A planet that only accepts encrypted (TLS) signals, a spaceship that only sends plain `http://`, and a departure gate in between that has to do the secure handshake. Five objects, and the endpoint itself tells you whether you got it right.
 
 This lab needs **no outbound internet access**.
 

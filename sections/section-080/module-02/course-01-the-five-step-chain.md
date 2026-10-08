@@ -1,21 +1,19 @@
 # The Five-Step Chain
 
-> Prerequisite: [the module landing page](./course.md). Next: [Where The `DestinationRule` Attaches](./course-02-where-the-destinationrule-attaches.md).
-
-Five steps, each owned by one object. Two of them are where every mistake in this module lives, so it is worth walking the whole path before writing anything.
+A signal's journey here has five steps, and each step is owned by one object. Two of them are where every mistake in this module lives, so walk the whole flight path before you write anything, astronaut.
 
 ## The path
 
 ```mermaid
-flowchart TD
-    S1["1. the app calls http://httpbin.org/get<br/>plain HTTP, port 80"] --> S2["2. the sidecar matches gateways: mesh<br/>and forwards to the egress gateway on port 80<br/>VirtualService, stage 1"]
-    S2 --> S3["3. the gateway accepts it for host httpbin.org on port 80<br/>Gateway listener"]
-    S3 --> S4["4. the gateway routes it to httpbin.org on port 443<br/>VirtualService, stage 2"]
-    S4 --> S5["5. the gateway originates TLS to port 443<br/>DestinationRule on httpbin.org"]
-    S5 --> S6["the external service, over HTTPS"]
+flowchart TB
+    S1["1. app: HTTP on 80"] --> S2["2. sidecar"]
+    S2 -->|"VirtualService 1"| S3["3. gateway listener :80"]
+    S3 -->|"VirtualService 2"| S4["4. route to :443"]
+    S4 -->|"DestinationRule"| S5["5. TLS to :443"]
+    S5 --> S6["httpbin.org over HTTPS"]
 ```
 
-Compare with section 070 module 2's three-step version, where the sidecar did steps 3 to 5 itself. Nothing new happens — the same work has moved one hop outward.
+Without an egress gateway, the communications officer on the ship (the sidecar) does steps 3 to 5 itself. Nothing new happens here: the same work has moved one hop outward, to the departure gate.
 
 ## Step 4 — the route targets 443, the listener stays on 80
 
@@ -28,7 +26,7 @@ They are not. They describe different directions:
 | `Gateway.servers[].port` | **80** | the port the gateway **accepts** traffic on, from inside the cluster |
 | Stage 2's `destination.port` | **443** | the port the gateway **sends** traffic to, outside the cluster |
 
-The gateway is a proxy: it receives on one port and sends on another. Route step 4 to port 80 of the external host and the gateway faithfully forwards plaintext to an HTTPS endpoint, which fails — and the failure looks like a TLS problem when it is a routing one.
+The gateway is a proxy: it listens on one radio channel (port) and transmits on another. Route step 4 to port 80 of the external host, and the gate faithfully forwards plaintext to an HTTPS endpoint. That fails, and the failure looks like a TLS problem when it is really a routing one.
 
 ## Step 5 — the `DestinationRule` targets the external host
 
@@ -53,7 +51,7 @@ spec:
           sni: httpbin.org
 ```
 
-The reason is section 030's rule: **traffic policy attaches to a destination and is applied by whichever proxy is calling it.** Since the gateway is the proxy calling `httpbin.org`, the gateway is where this policy takes effect.
+The reason is section 030's rule: **traffic policy attaches to a destination and is applied by whichever proxy is calling it.** Think of docking instructions: they belong to the planet you approach, and the ship doing the approach follows them. The gateway is the one calling `httpbin.org`, so the gateway is where this policy takes effect.
 
 Put it on `istio-egressgateway.istio-system.svc.cluster.local` instead and nothing originates — because that is the policy for calls *to the gateway*, which is the sidecar's leg, and that leg is plain HTTP by design.
 
@@ -192,7 +190,7 @@ Two `DestinationRule` objects pointing at two different hosts, doing two unrelat
 > http:// call: 200
 > ```
 >
-> A plain `http://` call from an application that knows nothing about any of this, answered over a TLS connection made two hops away. As in module 1, the response alone proves nothing — Part 2 is the evidence.
+> A plain `http://` signal from an app that knows nothing about any of this, answered over a TLS connection made two hops away. As in module 1, the response alone proves nothing — Part 2 is the evidence.
 
 > *The gateway receives on 80 and sends on 443 — the two port numbers are the two directions, not an inconsistency.*
 
@@ -206,10 +204,3 @@ Two `DestinationRule` objects pointing at two different hosts, doing two unrelat
 > **Attaching the TLS `DestinationRule` to the gateway Service.** It attaches to the *external host*, because that is the destination whose connection is being secured.
 >
 > **Losing track of which of the five steps failed.** Each step has its own object and its own proxy. Part 2's diagnostic order exists for this.
-
-## Reference
-
-- [Egress gateway TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/) — the upstream walkthrough for this exact chain.
-- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `mode`, `sni`, `credentialName`.
-- [Egress TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/) — the sidecar version, for the comparison.
-- [Egress gateways](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway/) — module 1's two-stage routing.

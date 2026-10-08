@@ -1,8 +1,8 @@
 # Configuring Traffic Shifting
 
-Releasing a new version is a traffic problem before it is a deployment problem. The pods are easy to start; the hard questions are how many real requests reach them, and how fast you can change your mind.
+Astronaut, this section is about launching a new ship class into a fleet that is already flying. Releasing a new version is a traffic problem before it is a deployment problem. The spaceships (pods) are easy to launch; the hard questions are how many real signals (requests) reach them, and how fast you can change your mind.
 
-Istio gives two answers and this section covers both. Weighted routing moves a controllable percentage of live traffic to the new version — real users, real responses, reversible in one apply. Mirroring sends the new version a *copy* of production traffic and throws the answer away, so it sees real load while no user is exposed to it. They solve the same problem from opposite ends, and choosing between them is a real decision: weights give you the candidate's answers, mirroring gives you its behaviour under load with no way to compare output.
+Istio gives two answers and this section covers both. Weighted routing moves a controllable percentage of live traffic to the new version — like sending a small share of signals to the new ship class before the whole fleet switches. Real users, real responses, reversible in one apply. Mirroring sends the new version a *copy* of production traffic and throws the answer away — a test ship that hears every signal while nobody listens to its replies. It sees real load while no user is exposed to it. They solve the same problem from opposite ends, and choosing between them is a real decision: weights give you the candidate's answers, mirroring gives you its behaviour under load with no way to compare output.
 
 **Curriculum item covered:** Configuring Traffic Shifting
 
@@ -10,7 +10,7 @@ Istio gives two answers and this section covers both. Weighted routing moves a c
 
 ## What You Will Master
 
-- Several weighted destinations in one `route` block, with `weight` beside `destination` and the 100-sum rule enforced at admission.
+- Several weighted destinations in one `route` block, with `weight` beside `destination`, written to add up to 100 (on Istio 1.30.5 other totals are accepted and used as a ratio).
 - How a weight becomes a per-request draw inside Envoy, and why cluster selection happens before endpoint load balancing.
 - Running a canary as a sequence of applies, and rolling back in one — the reason the feature is worth the configuration.
 - Why a merge patch on any list-valued field replaces the list rather than editing it.
@@ -28,12 +28,14 @@ Istio gives two answers and this section covers both. Weighted routing moves a c
 
 ## The Learning Path
 
+Work through the modules in this order, astronaut. For each one: read the parts with its playground open next to you, clean up the playground, then take its graded mission. Finish with the capstone, which brings the whole section together.
+
 ### 1. Shift Traffic With Weighted Routing
 *   **Module Reader:** **[Shift Traffic With Weighted Routing](./module-01/course.md)**
     1. [Weighted Destinations](./module-01/course-01-weighted-destinations.md)
     2. [Running A Rollout](./module-01/course-02-running-a-rollout.md)
     3. [Weight Versus Replicas, And Proof](./module-01/course-03-weight-versus-replicas-and-proof.md)
-*   **Hands-on Playground:** `sections/section-020/module-01/playground` — a kind cluster with Istio installed and namespace `shifting-demo` holding two versions with distinguishable responses, plus a client pod.
+*   **Hands-on Playground:** `sections/section-020/module-01/playground` — a kind cluster with Istio 1.30.5 (Helm) and the Starfleet on planet `starfleet`: the bridge, cargo, `scout` v1/v2/v3 with the `scout` DestinationRule already applied, navcom, the `shuttle` client and the `probe`. No VirtualService yet.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-020/module-01/playground
     ```
@@ -49,7 +51,7 @@ Istio gives two answers and this section covers both. Weighted routing moves a c
     1. [Mirror As A Sibling Of Route](./module-02/course-01-mirror-as-a-sibling-of-route.md)
     2. [Identifying And Sampling Shadow Traffic](./module-02/course-02-identifying-and-sampling-shadow-traffic.md)
     3. [Consequences, Verification And Limits](./module-02/course-03-consequences-verification-and-limits.md)
-*   **Hands-on Playground:** `sections/section-020/module-02/playground` — the same shape in namespace `mirror-demo`, with no routing configured so the mirror is yours to add.
+*   **Hands-on Playground:** `sections/section-020/module-02/playground` — a kind cluster with Istio 1.30.5 (Helm) and access logs on: the `probe` v1/v2 (the echo probe) behind one Service and the `shuttle` client on planet `starfleet`. No DestinationRule or VirtualService yet.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-020/module-02/playground
     ```
@@ -70,4 +72,4 @@ Istio gives two answers and this section covers both. Weighted routing moves a c
 
 ---
 
-Each playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.
+Each playground is ungraded: a training solar system in the simulator. It spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.

@@ -1,0 +1,24 @@
+# Case 1 helper: a broken pod behind httpbin that answers HTTP 500 (not 503).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpbin-broken-500
+  namespace: bookinfo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin
+      version: broken-500
+  template:
+    metadata:
+      labels:
+        app: httpbin
+        version: broken-500
+    spec:
+      containers:
+      - name: http-echo
+        image: hashicorp/http-echo:1.0
+        args: ["-listen=:8080", "-status-code=500", "-text=broken"]
+        ports:
+        - containerPort: 8080

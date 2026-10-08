@@ -1,0 +1,13 @@
+# Case 1: sticky by caller IP. Every request from the curl pod lands on the
+# same httpbin pod, no header or cookie needed.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  host: httpbin
+  trafficPolicy:
+    loadBalancer:
+      consistentHash:
+        useSourceIp: true

@@ -1,10 +1,10 @@
 # Configuring Ingress And Egress Traffic — Egress
 
-Section 070 let every pod make its own outbound connection. That means as many source addresses as you have nodes, an audit trail spread across every sidecar's logs, and — if an external service wants a client certificate — that certificate distributed to every workload that calls it.
+Astronaut, in section 070 every spaceship (pod) sent its own signals straight out of the solar system (cluster). That gives you as many source addresses as you have nodes. The audit trail is spread across every communications officer's (sidecar's) log. And if a planet in another solar system wants a client certificate, every ship that calls it needs a copy.
 
-An egress gateway concentrates all of it into one standalone proxy. This section builds that path, then moves the TLS handshake onto it.
+An egress gateway pulls all of that into one place. Think of it as the solar system's **departure gate**: one checked exit that outgoing signals can be sent through. It is one standalone proxy. In this section you build the path to that gate, then move the TLS handshake onto it.
 
-The most important idea arrives in the first paragraph of module 1 and is worth carrying into the exam: **an egress gateway intercepts nothing**. Traffic reaches it only because a two-stage `VirtualService` routed it there. A running egress gateway pod is evidence of nothing at all.
+The most important idea comes in the first paragraph of module 1. Carry it into the exam: **an egress gateway intercepts nothing**. A signal reaches the gate only because a two-stage `VirtualService` (a flight plan) sent it there. A running egress gateway pod proves nothing at all.
 
 **Curriculum item covered:** Configuring Ingress and Egress Traffic (egress half; the ingress half is section 060)
 
@@ -29,12 +29,14 @@ The most important idea arrives in the first paragraph of module 1 and is worth 
 
 ## The Learning Path
 
+Work through the modules in this order, astronaut. For each one: read the parts with its playground open next to you, clean up the playground, then take its graded mission. Finish with the capstone, which brings the whole section together.
+
 ### 1. Route External Traffic Through An Egress Gateway
 *   **Module Reader:** **[Route External Traffic Through An Egress Gateway](./module-01/course.md)**
     1. [A Gateway That Carries Nothing](./module-01/course-01-a-gateway-that-carries-nothing.md)
     2. [The Two-Stage `VirtualService`](./module-01/course-02-the-two-stage-virtualservice.md)
     3. [Restricting, Proving And The Trade-Off](./module-01/course-03-restricting-proving-and-the-trade-off.md)
-*   **Hands-on Playground:** `sections/section-080/module-01/playground` — namespace `egwgw-demo` with a client pod, an idle `istio-egressgateway`, and no Istio configuration.
+*   **Hands-on Playground:** `sections/section-080/module-01/playground` — a kind cluster with Istio 1.30.5 (Helm) and an egress gateway `istio-egress` (label `istio: egress`) in namespace `istio-egress`; `bookinfo` with `curl` and `httpbin`. Needs outbound internet.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-080/module-01/playground
     ```
@@ -71,6 +73,6 @@ The most important idea arrives in the first paragraph of module 1 and is worth 
 
 ---
 
-The module playgrounds reach real hosts on the internet; without outbound access you will see network errors rather than mesh behaviour. **Every graded lab and the capstone in this section run entirely offline.**
+The module playgrounds send signals to real hosts on the internet. Without outbound access you will see network errors, not mesh behaviour. **Every graded lab and the capstone in this section run entirely offline.**
 
-Each playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.
+Each playground is a training solar system and is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.

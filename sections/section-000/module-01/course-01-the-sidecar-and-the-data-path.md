@@ -1,8 +1,6 @@
 # The Sidecar And The Data Path
 
-> Prerequisite: [the module landing page](./course.md). Next: [How The Proxy Gets Its Configuration](./course-02-how-the-proxy-gets-its-configuration.md).
-
-Everything in this course is a way of telling a proxy what to do. Before any of those instructions make sense, you need to know where that proxy is, how it got there, and how a request that was never addressed to it ends up going through it anyway. That is this part.
+Astronaut, everything in this course is a way of telling a proxy what to do. Before any of those orders make sense, you need to know where that proxy is, how it got on board, and how a signal (a request) that was never addressed to it ends up going through it anyway. That is this part.
 
 Nothing here is configured by you. It is the machinery that exists the moment a namespace is injected, and it is the reason a `VirtualService` can change behaviour without a single line of application code changing.
 
@@ -10,9 +8,9 @@ Nothing here is configured by you. It is the machinery that exists the moment a 
 
 A service that calls other services has to deal with a list of concerns that have nothing to do with what the service is for: retries, timeouts, TLS, which version of a dependency to call, what to do when a dependency is slow, and how to report what happened. Solve them in the application and you solve them once per language, per framework, per team, and you redeploy the application every time the policy changes.
 
-A **service mesh** moves that list out of the application and into infrastructure that sits beside it. Istio's version of "beside it" is a second container in every pod — a proxy — plus a control plane that programs every one of those proxies from a single set of objects you write.
+A **service mesh** moves that list out of the application and into infrastructure that sits beside it. Picture it as the fleet's shared signal network. Istio's version of "beside it" is a second container in every pod (every spaceship) — a proxy, the ship's communications officer — plus a control plane, mission control, that programs every one of those proxies from a single set of objects you write.
 
-The trade is worth stating plainly, because it is the thing to remember when something behaves strangely later: **your application is no longer talking directly to the network.** Two processes now sit between any two services, and the behaviour you observe is theirs.
+The trade is worth stating plainly, because it is the thing to remember when something behaves strangely later: **your application is no longer talking directly to the network.** Two communications officers now sit between any two services, one on each ship, and the behaviour you observe is theirs.
 
 ## What injection actually adds
 
@@ -25,7 +23,7 @@ metadata:
     istio-injection: enabled
 ```
 
-With that label present, a Kubernetes **mutating admission webhook** registered by Istio intercepts every pod creation in the namespace and rewrites the pod spec on its way into the cluster. Nothing modifies your Deployment; the Deployment is unchanged and the change lands on the pods it produces. That is why a namespace labelled *after* its pods were created needs a `rollout restart` before anything is injected — existing pods were admitted before the rule applied.
+With that label present, a Kubernetes **mutating admission webhook** registered by Istio intercepts every pod creation in the namespace and rewrites the pod spec on its way into the cluster. Think of it as the launch pad crew putting a communications officer on board every ship that launches from this planet. Nothing modifies your Deployment; the Deployment is unchanged and the change lands on the pods it produces. That is why a namespace labelled *after* its pods were created needs a `rollout restart` before anything is injected — existing pods were admitted before the rule applied.
 
 Two things are added:
 
@@ -45,7 +43,7 @@ That placement surprises people, so it is worth being precise. On Kubernetes 1.2
 
 Two consequences follow. The proxy is guaranteed to be up **before** your application's first request, which the old arrangement could not promise. And native sidecars still count toward the `READY` column — which is why a pod with one application container reads `2/2`.
 
-`istio-proxy` holds two processes: **Envoy**, the proxy that moves the traffic, and **istio-agent**, a small supervisor that fetches configuration and certificates for it. When this course says "the sidecar", it means Envoy.
+`istio-proxy` holds two processes: **Envoy**, the proxy that moves the traffic (the communications officer at the radio), and **istio-agent**, a small supervisor that fetches orders and certificates for it from mission control. When this course says "the sidecar", it means Envoy.
 
 > [!TIP]
 > **Try it — the whole difference, in one column**
@@ -96,20 +94,20 @@ The `READY` column counts containers, not what they are. Ask the pod directly wh
 - Inbound traffic arriving at the pod is redirected to the proxy's port **15006**.
 - Traffic the proxy itself originates is exempt, or the rules would loop.
 
-The proxy then does the real work: it terminates the connection, looks at the request, decides where it should go, opens its own connection to the chosen destination, and relays the answer back.
+The proxy then does the real work: it terminates the connection, reads the signal, decides where it should go, opens its own connection to the chosen destination, and relays the reply back. The app never radios another ship directly; every signal is passed through the communications officer.
 
 ```mermaid
 sequenceDiagram
-    participant A as curl in the web pod
-    participant IP as iptables in the pod netns
-    participant P as istio-proxy on 15001
-    participant R as the chosen destination
-    A->>IP: connect to api on port 80
-    IP->>P: redirected, the app never knew
-    Note over P: reads the request, applies your rules, picks a pod
-    P->>R: a new connection the proxy opened itself
+    participant A as curl (web pod)
+    participant IP as iptables
+    participant P as istio-proxy
+    participant R as destination
+    A->>IP: connect to api:80
+    IP->>P: redirect to port 15001
+    Note over P: apply rules, pick a pod
+    P->>R: new connection
     R-->>P: response
-    P-->>A: response, as if nothing happened
+    P-->>A: response
 ```
 
 Take from this that the application's connection and the proxy's connection are **two different connections**. Timeouts, retries and mTLS all belong to the second one, which is why Istio can retry a request the application only sent once.
@@ -120,7 +118,7 @@ The proxy listens on a handful of fixed ports, and they are worth recognising in
 | --- | --- |
 | `15001` | outbound — where the pod's own outgoing traffic is redirected |
 | `15006` | inbound — where traffic arriving for this pod is redirected |
-| `15000` | Envoy's admin interface, bound to localhost inside the pod |
+| `15000` | Envoy's administration interface, bound to localhost inside the pod |
 | `15020` | istio-agent: merged metrics, plus the readiness endpoint Kubernetes probes |
 | `15021` | health checking — the port the mesh uses to ask "is this proxy up?" |
 | `15090` | Envoy's own Prometheus metrics |
@@ -129,7 +127,7 @@ You will not normally connect to these by hand. You need to recognise them becau
 
 ## Two proxies see every in-mesh request
 
-Because both ends are injected, a request from `web` to `api` passes through two proxies: `web`'s on the way out and `api`'s on the way in. Each writes its own access log line. That is not redundancy — the two ends do different jobs. Routing, retries and timeouts are decided by the **caller's** proxy; authorization and inbound TLS termination are enforced by the **receiver's**.
+Because both ends are injected, a request from `web` to `api` passes through two proxies: `web`'s on the way out and `api`'s on the way in. Each writes its own access log line, the way both ships record the same signal in their own flight log. That is not redundancy — the two ends do different jobs. Routing, retries and timeouts are decided by the **caller's** proxy; authorization and inbound TLS termination are enforced by the **receiver's**.
 
 > [!TIP]
 > **Try it — one request, two log lines**
@@ -156,7 +154,7 @@ Access logging is on here because the playground installs the `demo` profile, wh
 
 ## What an uninjected workload changes
 
-`mesh-legacy` gives you the contrast directly. The `legacy` pod has no proxy, so nothing intercepts what it sends. Its traffic reaches `api` the ordinary Kubernetes way — DNS to the Service's virtual IP, then `kube-proxy` to a pod.
+`mesh-legacy` gives you the contrast directly. The `legacy` pod is a ship with no communications officer, so nothing intercepts what it sends. Its traffic reaches `api` the ordinary Kubernetes way — DNS to the Service's virtual IP, then `kube-proxy` to a pod.
 
 Predict what the logs will show before you run the next checkpoint: there is no proxy in the `legacy` pod to write a caller-side line, but the receiving end is still meshed.
 
@@ -198,10 +196,3 @@ It also explains why so much of this course points its diagnostic commands at th
 > **Treating the application's connection and the proxy's connection as one.** They are two. That distinction is what makes retries, pooling and mTLS possible, and it is why a single application request can appear more than once upstream.
 
 > *Injection puts a proxy in the pod and rewrites the pod's own routing table so traffic cannot avoid it — everything else in this course is instructions for that proxy.*
-
-## Reference
-
-- [Sidecar injection](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/) — the webhook, the namespace label, and the manual `istioctl kube-inject` form.
-- [Traffic flow in the mesh](https://istio.io/latest/docs/ops/deployment/architecture/) — where the data plane and control plane split.
-- [Ports used by Istio](https://istio.io/latest/docs/ops/deployment/application-requirements/#ports-used-by-istio) — the authoritative list behind the table above.
-- [Envoy's listener and connection model](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/listeners/listeners) — what "terminates the connection" means in the proxy doing it.

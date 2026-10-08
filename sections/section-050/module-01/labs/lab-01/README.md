@@ -1,6 +1,6 @@
 # Fault Injection With Delays And Aborts Sandbox
 
-Welcome to the Module 1 targeted practice sandbox. In this lab you'll break a dependency on purpose — for your own requests only — and use a fabricated delay to make a route timeout fire on demand.
+Welcome, astronaut, to your Module 1 practice mission. You will run a simulation drill: break a dependency on purpose, for your own signals only, and use a fake delay to make a route's abort window (its timeout) fire on demand.
 
 ## Launching the Lab
 Run the following command in your terminal to boot the kind Kubernetes cluster:

@@ -2,50 +2,60 @@
 
 <!-- astrona:playground -->
 > [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS014/tree/main/sections/section-030/module-01/playground)
+> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
 >
 > ```sh
 > astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-030/module-01/playground
 > astrona destroy ats-014-playground-030-01
 > ```
 
-Every routing decision so far has ended at a *subset* — a group of pods. Something still has to pick one specific pod out of that group for each request, and until now you have let Istio decide. This module is about taking that decision over.
+Astronaut, every routing decision so far has ended at a *subset*: a named group of pods. Think of a subset as one ship class. A ship class often has several spaceships (pods) in its squadron, and each signal (request) goes to just one of them. Something still has to pick that one ship. Until now you let Istio decide. On this mission you take that decision over.
 
-There are two reasons to. The first is efficiency: when requests have very different costs, plain round robin sends an expensive request to a pod that is already busy. The second is stickiness: some applications keep per-user state in memory, and a user whose requests bounce between three pods sees a broken session. Both live in the same field of the same object.
+The flight plan (the `VirtualService`) gets a signal to the right squadron. Then someone still has to say which ship in the squadron takes it. Choosing that ship is **load balancing**: spreading the work over the pods.
 
-> `loadBalancer` in a `DestinationRule` decides how the client proxy picks an endpoint; `consistentHash` is how you get sticky sessions.
+There are two reasons to control it:
+
+- **Efficiency.** Some requests cost much more than others. Plain turn-taking can send a heavy request to a pod that is already busy.
+- **Stickiness.** Some apps keep each user's data in memory. If a user's requests jump between three pods, that user sees a broken session. Stickiness (session affinity) means the same astronaut always reaches the same ship.
+
+Both are set in the same field of the same object:
+
+> `loadBalancer` in a `DestinationRule` decides how the calling proxy picks a pod. `consistentHash` is how you get sticky sessions.
 
 ## How this module is organised
 
-1. **[Endpoint Selection And The `simple` Algorithms](./course-01-endpoint-selection-and-simple-algorithms.md)** — where in the request path the choice happens, the four `simple` values and what each is for, and how to observe which endpoint a proxy actually chose.
-2. **[`consistentHash` And The Ring](./course-02-consistent-hash-and-the-ring.md)** — the four things you can hash, how a hash becomes an endpoint, why affinity is best effort by design, and what happens to a request with nothing to hash.
-3. **[Policy Levels And Verification](./course-03-policy-levels-and-verification.md)** — host, subset and port level settings and which wins, why a subset policy replaces rather than merges, and reading `lbPolicy` from a live proxy.
+1. **[Endpoint Selection And The `simple` Algorithms](./course-01-endpoint-selection-and-simple-algorithms.md)** — where in the request path the choice happens, the four `simple` values and what each is for, and how to see which pod a proxy actually chose.
+2. **[`consistentHash` And The Ring](./course-02-consistent-hash-and-the-ring.md)** — the four things you can hash, how a hash becomes a pod, why stickiness is "best effort", and what happens to a request with nothing to hash.
+3. **[Policy Levels And Verification](./course-03-policy-levels-and-verification.md)** — settings at host, subset and port level and which one wins, why a subset policy replaces the host policy instead of merging with it, and how to read `lbPolicy` from a live proxy.
 
 ## Learning objectives
 
 After this module you can:
 
-- Explain where endpoint selection happens relative to routing and weighted cluster selection.
+- Explain where endpoint selection happens compared with routing and weighted subset selection.
 - Set `trafficPolicy.loadBalancer.simple` and say what `ROUND_ROBIN`, `LEAST_REQUEST`, `RANDOM` and `PASSTHROUGH` each do, and when each is the right choice.
 - Configure session affinity with `consistentHash` over a header, a cookie, a query parameter or the source IP.
-- Explain the ring-hash mechanism well enough to predict what happens to sessions when the endpoint set changes.
+- Explain the ring-hash mechanism well enough to predict what happens to sessions when pods are added or removed.
 - Predict the behaviour of a request that does not carry the hashed property.
+- Explain why stickiness does not keep a user on one version in a weighted split.
 - Apply a `trafficPolicy` at host, subset or port level and say which one wins, and why a subset policy does not inherit the rest of the host's.
 - Read `lbPolicy` and the ring hash configuration out of a live proxy with `istioctl proxy-config cluster`.
 
 ## Before you start
 
-This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it, and `istioctl proxy-config` as the way to see what a proxy really holds.
 
-You need `DestinationRule` from section 010 — this module adds a second field to the object you already use for subsets. No new object is introduced, which is why this section has one module rather than three.
+You also need the `DestinationRule` from section 010. This module adds a second field to the object you already use for subsets. It adds no new object, which is why this section has one module.
 
-The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`lb-demo`**, injected, containing:
+The playground gives you a single-node `kind` cluster with **Istio 1.30.5** installed with Helm (`istio-base` and `istiod`), and access logs switched on for every proxy. Namespace **`bookinfo`** has sidecar injection on and contains:
 
-- `httpbin` — a Deployment with **three replicas**, behind a Service on port 8000 (container port 8080). Three endpoints is the minimum that makes endpoint selection observable; with one replica you cannot tell affinity from luck.
-- `tester` — a client pod with `curl`.
+- `httpbin` — a test server behind one Service on port `8000`, with **four pods**: three of `httpbin-v1` and one of `httpbin-v2`. The path `/hostname` answers with the name of the pod that served you. With only one pod you could not tell stickiness from luck, so the playground gives you several.
+- `curl` — a client pod inside the mesh. You send every test request from it.
 
-No `DestinationRule` exists yet, so the mesh default policy is in force.
+No `DestinationRule` exists yet, so Istio's default policy is in force. It is your training solar system: break it and launch a new one whenever you like. [Part 1](./course-01-endpoint-selection-and-simple-algorithms.md) gives you a small helper, `count_pods`, that every "Try it" in this module uses. The playground's [overview](./playground/docs/overview.md) has the same helper, ideas to try, and an exam-style [practice task](./playground/docs/practice.md).
+
+The graded labs for this module run in their own environment and are described in their own `question.md`.
 
 ## Where this fits
 
-`trafficPolicy` is the container for every client-side decision about a destination, and this module fills in one of its keys. Section 040 fills in three more on the same object — `connectionPool` for circuit breaking, `outlierDetection` for passive health checking, and `localityLbSetting` nested inside `loadBalancer` itself for locality preference. The precedence rules you learn in Part 3 apply to all of them, so it is worth getting them right here.
+`trafficPolicy` holds every decision the caller makes about a destination, and this module fills in one of its keys. Section 040 fills in three more on the same object: `connectionPool` for circuit breaking, `outlierDetection` for taking faulty pods out of service, and `localityLbSetting` (inside `loadBalancer` itself) for preferring nearby pods. The precedence rules in Part 3 apply to all of them, so it is worth getting them right here.

@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-One object, two rules. The scoping is not decoration — the grader sends unmarked traffic and fails you if it is affected.
+Mission debrief, astronaut. One object, two rules. The scoping is not decoration: the grader sends unmarked signals and fails you if any of them are affected.
 
 ---
 
@@ -17,7 +17,7 @@ No resources found in fault-demo namespace.
 200 0.043s
 ```
 
-Forty milliseconds across two hops. Both numbers matter: the status is what the abort would change, the latency is what the delay changes.
+Forty milliseconds across two hops, ship to ship to ship. Both numbers matter: the status is what the abort would change, the latency is what the delay changes.
 
 ---
 
@@ -140,7 +140,7 @@ istioctl proxy-config routes deploy/booking-service-v1 -n fault-demo -o json | g
       "denominator": "HUNDRED"
 ```
 
-Note which proxy that is: **`booking-service`**, the caller. The [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) is keyed by the callee's hostname, but the filter runs in the calling workload's sidecar.
+Note which proxy that is: **`booking-service`**, the caller. The `VirtualService` is keyed by the callee's hostname, but the filter runs in the calling workload's sidecar.
 
 ---
 
@@ -225,20 +225,3 @@ kubectl -n fault-demo delete virtualservice notification
 - **Scoping on a header the intermediate service does not forward.** The fault silently never fires.
 - **Reading only the outer response code.** In a two-hop chain, the interesting evidence is in the intermediate service's proxy log.
 - **Leaving the fault in place afterwards.** Delete it.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [HTTPRoute API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) — `timeout` alongside `retries`, `fault` and `mirror` on one rule
-- [HTTPFaultInjection API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPFaultInjection) — `delay`, `abort` and the percentage fields
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

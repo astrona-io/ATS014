@@ -1,8 +1,6 @@
 # What A Proxy Is Programmed With
 
-> Prerequisite: [the module landing page](./course.md). Next: [The Sidecar Object And Its Host Language](./course-02-the-sidecar-object-and-host-language.md).
-
-You cannot reason about narrowing a proxy's configuration until you know what is in it and where it came from. This part settles that: what `istiod` sends to a sidecar by default, how it gets there, and why the volume is a function of how big the cluster is rather than how much your application does.
+You cannot reason about narrowing a proxy's configuration until you know what is in it and where it came from. This part settles that: what `istiod` (mission control) sends to a sidecar by default, how it gets there, and why the volume is a function of how big the cluster is rather than how much your application does.
 
 ## The default is "everything"
 
@@ -29,18 +27,18 @@ Start by counting.
 
 ## How it got there
 
-Section 000 covered the delivery mechanism: `istiod` watches Kubernetes, builds a model of the mesh, and pushes it to every proxy over the xDS streams. What this module cares about is the **fan-out** — not how one proxy is configured, but how many proxies one change reaches.
+Section 000 covered the delivery mechanism: `istiod` watches Kubernetes, builds a model of the mesh, and pushes it to every proxy over the xDS streams. What this module cares about is the **fan-out** — not how one proxy is configured, but how many proxies one change reaches. Picture mission control radioing a new order: by default, every ship in the solar system gets it.
 
 ```mermaid
-flowchart TD
-    C["one Service added anywhere in the cluster"] --> I["istiod recomputes<br/>the configuration for every proxy"]
-    I --> P1["proxy in pod 1"]
-    I --> P2["proxy in pod 2"]
-    I --> P3["proxy in pod 3"]
-    I --> PN["...every other proxy in the mesh"]
+flowchart TB
+    C["new Service"] -->|"added anywhere"| I["istiod"]
+    I -->|"push"| P1["proxy in pod 1"]
+    I -->|"push"| P2["proxy in pod 2"]
+    I -->|"push"| P3["proxy in pod 3"]
+    I -->|"push"| PN["every other proxy"]
 ```
 
-Every proxy is a recipient, whether or not the workload beside it will ever call the new Service. That is the default this module exists to change.
+One new Service anywhere in the cluster makes `istiod` recompute every proxy's configuration. Every proxy is a recipient, whether or not the workload beside it will ever call the new Service. That is the default this module exists to change.
 
 Two consequences follow directly:
 
@@ -93,7 +91,7 @@ At ten services this is free. At a thousand services and a thousand pods it is t
 | Control plane CPU | `istiod` recomputing configuration on every registry change |
 | Push latency | the time between a change and every proxy having it — and a "push storm" when many changes land together |
 
-The first of those three is measurable from inside the pod. Envoy exposes its own statistics on the proxy's admin interface, and `pilot-agent` — the supervisor process that shares the `istio-proxy` container — can query it without any network access from outside.
+The first of those three is measurable from inside the pod. Envoy exposes its own statistics on the proxy's administration interface, and `pilot-agent` — the supervisor process that shares the `istio-proxy` container — can query it without any network access from outside.
 
 > [!TIP]
 > **Try it — what the configuration costs in memory**
@@ -151,7 +149,7 @@ Narrowing configuration narrows that too — Part 3 shows the call failing — b
 
 One clarification before Part 2, because the host language you are about to learn selects over it.
 
-The mesh registry is not only Kubernetes Services. It holds:
+The mesh registry (the star chart) is not only Kubernetes Services. It holds:
 
 - every Kubernetes Service in every namespace the control plane watches;
 - every `ServiceEntry` (section 070), which adds external hosts;
@@ -171,10 +169,3 @@ All three are "hosts in a namespace" as far as scoping is concerned, and all thr
 > **Expecting a restart to be needed.** Configuration is swapped in over a live stream. If a change has not taken effect, the reason is not that the pod needs recreating.
 
 > *`istiod` pushes the whole registry to every proxy by default, so configuration cost grows with the size of the cluster, not the size of your application.*
-
-## Reference
-
-- [Performance and scalability](https://istio.io/latest/docs/ops/deployment/performance-and-scalability/) — Istio's own numbers for proxy memory and push cost, and the levers that move them.
-- [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — the operational guide this module's object exists to serve.
-- [xDS protocol overview](https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol) — what the discovery services are and how a push works.
-- `istioctl proxy-status` — one line per proxy currently connected to the control plane, with the xDS channels it subscribes to; naming a single proxy prints a `Match` line per resource type instead. The first command to run when a push seems not to have landed.

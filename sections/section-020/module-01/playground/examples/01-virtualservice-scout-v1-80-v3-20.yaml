@@ -1,0 +1,21 @@
+# Canary step 1: 80% of requests to v1, 20% to the new version v3.
+# Needs the scout DestinationRule (subsets v1, v3). bootstrap/deploy.sh applies it.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  hosts:
+  - scout
+  http:
+  - route:
+    # Weights should add up to 100. Picked randomly per request.
+    - destination:
+        host: scout
+        subset: v1
+      weight: 80
+    - destination:
+        host: scout
+        subset: v3
+      weight: 20

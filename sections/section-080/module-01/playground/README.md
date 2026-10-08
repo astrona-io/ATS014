@@ -5,10 +5,7 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-
-
-A single sandbox environment that spins up, runs OS prep, and stays running so
-you can explore the module's topic on a clean machine. Nothing to submit.
+A training solar system for astronauts: a single sandbox environment that spins up, installs Istio with Helm (including an egress gateway in `istio-egress`) plus a `curl` client and `httpbin` in namespace `bookinfo`, and stays running so you can explore the module's topic. Nothing to submit. Needs outbound internet access.
 
 ## Run it
 
@@ -17,15 +14,16 @@ astrona run -c .
 astrona destroy ats-014-playground-080-01
 ```
 
-`astrona destroy` takes the environment name (`metadata.name` = `ats-014-playground-080-01`), not
-the config path. `astrona submit` and `astrona test` do not apply — there is no
-grading.
+`astrona destroy` takes the environment name (`metadata.name` = `ats-014-playground-080-01`), not the configuration path. `astrona submit` and `astrona test` do not apply — there is no grading.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
 | `config.yaml` | Environment definition (runtime + bootstrap only) |
-| `bootstrap/prepare.sh` | OS prep run once at startup: istioctl + Istio control plane + sidecar check |
-| `manifests/lab-start.yaml` | Starting workloads applied at bootstrap (copied from the matching `domains/` lab) |
+| `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm (`istio-base`, `istiod`, egress gateway `istio-egress`) |
+| `bootstrap/deploy.sh` | Namespace `bookinfo` (injected), mesh-wide access logs, `curl` and `httpbin` |
+| `bootstrap/manifests/` | The YAML `deploy.sh` applies |
+| `examples/` | The module's YAML, numbered in apply order; `examples/cases/` holds the break-it cases |
 | `docs/overview.md` | What the environment contains and ideas to try |
+| `docs/practice.md` | An exam-style drill with a checked solution |

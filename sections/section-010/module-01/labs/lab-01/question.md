@@ -2,14 +2,14 @@
 
 Solve this question on: `terminal`
 
-Namespace `routing-demo` runs two versions of one application behind a single Service:
+Astronaut, your mission: steer the signals on one planet. Namespace `routing-demo` runs two versions of one application behind a single Service:
 
 * `notification-service-v1` — pods labelled `version: v1`, answers `["EMAIL"]`
 * `notification-service-v2` — pods labelled `version: v2`, answers `["EMAIL","SMS"]`
 * `notification-service` — one Service on port 80 selecting on `app` only, so both versions receive traffic
 * `tester` — a client pod with `curl`
 
-Istio is installed and every pod in `routing-demo` is injected. There is no [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) and no [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/).
+Istio is installed and every pod in `routing-demo` is injected. There is no `VirtualService` and no `DestinationRule`.
 
 Configure routing for host `notification-service` in namespace `routing-demo` so that:
 
@@ -22,19 +22,3 @@ Configure routing for host `notification-service` in namespace `routing-demo` so
 7.  Leave the Deployments and the Service unchanged. Do not add a third Deployment, and do not change the Service selector.
 
 The grader sends live traffic from the `tester` pod and reads the responses, so the rules have to work — not merely exist.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

@@ -1,0 +1,17 @@
+# Register the external host httpbin.org (HTTPS on 443).
+# Needed so the VirtualService below can route it; same as example 11.
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: httpbin-org
+  namespace: bookinfo
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  - number: 443
+    name: tls
+    # TLS: traffic is routed by SNI without decrypting.
+    protocol: TLS
+  location: MESH_EXTERNAL
+  resolution: DNS

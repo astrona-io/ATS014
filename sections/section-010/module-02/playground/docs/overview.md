@@ -2,7 +2,7 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab. The environment starts clean, runs
+This is a **playground**, not a lab: your training solar system. The environment starts clean, runs
 `bootstrap/prepare.sh`, applies the starting workloads, and then waits. There is
 no task, no `astrona submit`, and no pass/fail. Explore, break things,
 `astrona destroy`, start over.
@@ -12,11 +12,11 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 - A single-node `kind` Kubernetes cluster with `kubectl` already pointed at it.
 - **Istio 1.30.5**, installed with the `demo` profile, plus `istioctl` on your
   PATH.
-- Two injected namespaces, because scoping needs somewhere to cut off:
+- Two injected namespaces (two planets), because scoping needs somewhere to cut off:
   - **`sidecar-demo`** — a `tester` client pod with `curl`.
   - **`sidecar-other`** — an `httpbin` Deployment and Service on port 8000.
-- **No `Sidecar` resource.** Every proxy is still programmed with the full
-  service registry, which is the starting point the module measures against.
+- **No `Sidecar` resource.** Every proxy still carries the full star chart (the
+  service registry), which is the starting point the module measures against.
 
 ## Things to try
 
@@ -41,4 +41,4 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 astrona destroy ats-014-playground-010-02
 ```
 
-(`astrona destroy` takes the environment name, not the config path.)
+(`astrona destroy` takes the environment name, not the configuration path.)

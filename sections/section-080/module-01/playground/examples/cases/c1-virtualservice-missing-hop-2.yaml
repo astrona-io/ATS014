@@ -1,0 +1,26 @@
+# Case 1 (mistake): only hop 1 (sidecar -> egress gateway).
+# The egress gateway receives the traffic but has no route onward.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: httpbin-org-via-egress
+  namespace: bookinfo
+spec:
+  hosts:
+  - httpbin.org
+  gateways:
+  - mesh
+  - egress-gateway
+  tls:
+  - match:
+    - gateways:
+      - mesh
+      port: 443
+      sniHosts:
+      - httpbin.org
+    route:
+    - destination:
+        host: istio-egress.istio-egress.svc.cluster.local
+        subset: httpbin-org
+        port:
+          number: 443

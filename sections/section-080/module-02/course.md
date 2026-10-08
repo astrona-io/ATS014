@@ -2,16 +2,16 @@
 
 <!-- astrona:playground -->
 > [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS014/tree/main/sections/section-080/module-02/playground)
+> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
 >
 > ```sh
 > astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-080/module-02/playground
 > astrona destroy ats-014-playground-080-02
 > ```
 
-This module is the last two joined: the egress gateway from module 1, doing the TLS origination from section 070 module 2.
+Astronaut, this is the final mission of the course. It joins the last two ideas: the departure gate (egress gateway) from module 1, doing the TLS origination from section 070 module 2.
 
-The reason to combine them is **credentials**. Sidecar-side origination works, but if the external service requires a client certificate, every pod that calls it needs that certificate — a secret distributed to dozens of workloads, rotated in dozens of places, and readable by anything that compromises any of them. Move the handshake to the gateway and the certificate lives in exactly one place.
+The reason to combine them is **credentials**. Origination in the sidecar works. But if the planet you call requires a client certificate, every spaceship (pod) that calls it needs a copy. That is one secret handed to dozens of workloads, rotated in dozens of places, and readable by anything that breaks into any of them. Move the handshake to the gate, and the certificate lives in exactly one place.
 
 The change to the configuration is smaller than you might expect. One object moves, and one port number changes.
 
@@ -44,4 +44,4 @@ The commands reach `httpbin.org`; **without outbound internet access** you will 
 
 ## Where this fits
 
-This is the last module of the course, and it is the one that composes the most: a `ServiceEntry` from section 070, a `Gateway` and a two-stage `VirtualService` from module 1, and a `DestinationRule` with `portLevelSettings` from section 030's precedence rules. If the five objects below make sense to you without looking anything up, the traffic-management domain is done.
+This is the last module of the course, and it combines the most pieces: a `ServiceEntry` from section 070, a `Gateway` and a two-stage `VirtualService` from module 1, and a `DestinationRule` with `portLevelSettings` from section 030's precedence rules. If the five objects below make sense to you without looking anything up, the traffic-management domain is done.

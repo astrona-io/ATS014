@@ -1,8 +1,6 @@
 # `WorkloadGroup` And Real Onboarding
 
-> Prerequisite: [`MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md). Next: [the module landing page](./course.md).
-
-Writing a `WorkloadEntry` per machine does not scale and does not survive autoscaling. This part is the object that fixes that, what a real VM needs for it to work, and an honest account of where this playground stops.
+Writing a `WorkloadEntry` per machine is like charting every ship by hand: it does not scale and does not survive autoscaling. This part is the object that fixes that, what a real VM needs for it to work, and an honest account of where this playground stops.
 
 ## The problem with hand-written entries
 
@@ -31,7 +29,7 @@ spec:
       http: 8080
 ```
 
-It describes what instances of a service **look like** — labels, service account, ports, optionally a readiness probe — without naming any address. A VM running `istio-agent` then **registers itself** against the group at startup, and Istio creates the `WorkloadEntry` automatically. When the instance goes away, the entry is removed.
+It describes what instances of a service **look like** — labels, service account, ports, optionally a readiness probe — without naming any address. A VM running `istio-agent` then **registers itself** against the group at startup (it radios mission control on launch), and Istio creates the `WorkloadEntry` automatically. When the instance goes away, the entry is removed.
 
 The relationships are worth stating plainly, because the three object names blur together:
 
@@ -53,11 +51,11 @@ Auto-registration is not configuration alone. Before a machine can register, it 
 | `istio-agent` installed and running | it is what connects to the control plane and registers |
 | A **token** provisioned onto the machine | it proves the machine may assume the group's service account |
 | The mesh **root certificate** | to trust the control plane |
-| A `cluster.env` / mesh config file | trust domain, network, the control plane address |
+| A `cluster.env` / mesh configuration file | trust domain, network, the control plane address |
 | Network reachability to `istiod` (port 15012) | the xDS connection |
 | The VM's address routable from the pod network | otherwise nothing can reach it once registered |
 
-`istioctl x workload entry configure` generates the first four into a bundle you copy onto the machine. The full procedure is Istio's "virtual machine installation" guide and is a larger topic than this module — but knowing the **shape** of it (agent, token, root cert, config, connectivity) is enough for the exam, and enough to know whether a proposed answer is plausible.
+`istioctl x workload entry configure` generates the first four into a bundle you copy onto the machine. The full procedure is Istio's "virtual machine installation" guide and is a larger topic than this module — but knowing the **shape** of it (agent, token, root cert, configuration, connectivity) is enough for the exam, and enough to know whether a proposed answer is plausible.
 
 ## What this playground cannot show
 
@@ -127,10 +125,3 @@ If you want to see auto-registration, it needs a real machine. What you can do h
 > **Forgetting the ServiceAccount object must exist.** `serviceAccount: legacy-sa` refers to a real Kubernetes ServiceAccount in the same namespace.
 
 > *`WorkloadGroup` is to `WorkloadEntry` what a Deployment is to a Pod — and like a Deployment, it needs something on the other end that actually registers.*
-
-## Reference
-
-- [WorkloadGroup API](https://istio.io/latest/docs/reference/config/networking/workload-group/) — the template, including the readiness probe.
-- [Virtual machine installation](https://istio.io/latest/docs/setup/install/virtual-machine/) — the full onboarding procedure, including `istioctl x workload entry configure`.
-- [Virtual machine architecture](https://istio.io/latest/docs/ops/deployment/vm-architecture/) — how the agent, the token and the control plane fit together.
-- [Bookinfo with a virtual machine](https://istio.io/latest/docs/examples/virtual-machines/) — a worked end-to-end example on real machines.

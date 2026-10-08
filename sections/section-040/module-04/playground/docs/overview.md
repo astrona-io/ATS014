@@ -2,14 +2,14 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab. The environment starts clean, runs
+Welcome aboard, astronaut. This is a **playground**, your training solar system, not a lab. The environment starts clean, runs
 `bootstrap/prepare.sh`, applies the starting workloads, and then waits. There is
 no task, no `astrona submit`, and no pass/fail. Explore, break things,
 `astrona destroy`, start over.
 
 ## What's in the box
 
-- A single-node `kind` Kubernetes cluster with `kubectl` already pointed at it.
+- A single-node `kind` Kubernetes cluster (a small solar system of your own) with `kubectl` already pointed at it.
 - **Istio 1.30.5** (`demo` profile) and `istioctl` on your PATH.
 - Namespace **`locality-demo`**, injected, containing:
   - `httpbin-zone-a` and `httpbin-zone-b` — one replica each, behind one
@@ -37,7 +37,7 @@ pods are on the same machine.
   `istioctl proxy-config endpoints deploy/tester -n locality-demo --cluster "outbound|8000||httpbin.locality-demo.svc.cluster.local" -o json | grep -E '"region"|"zone"'`.
   An empty locality means nothing below will work.
 - Send traffic with no `DestinationRule` at all and see that Istio already
-  prefers the caller's locality. Most of the default behaviour needs no config.
+  prefers the caller's locality. Most of the default behaviour needs no configuration.
 - Scale `httpbin-zone-a` to 0 and watch traffic move with no failed requests —
   that is endpoint removal, not failover.
 - Add `outlierDetection` and make the local pod fail instead (for example by
@@ -56,4 +56,4 @@ pods are on the same machine.
 astrona destroy ats-014-playground-040-04
 ```
 
-(`astrona destroy` takes the environment name, not the config path.)
+(`astrona destroy` takes the environment name, not the configuration path.)

@@ -1,12 +1,10 @@
 # Claiming An Ingress
 
-> Prerequisite: [the module landing page](./course.md). Next: [Rules, Path Types And Translation](./course-02-rules-path-types-and-translation.md).
-
-An `Ingress` object on its own belongs to nobody. Some controller has to take ownership of it, and the mechanism for that ownership — plus the silent failure when nothing does — is this part.
+An `Ingress` object on its own belongs to nobody. It is like a docking request that no space station has answered yet. Some controller has to take ownership of it, and the mechanism for that ownership — plus the silent failure when nothing does — is this part.
 
 ## The ownership problem
 
-A cluster can run several ingress controllers at once: nginx, Istio, a cloud provider's, all watching the same API. Something has to decide which of them implements a given `Ingress`, and that something is the **ingress class**.
+A cluster, your solar system, can run several ingress controllers at once: nginx, Istio, a cloud provider's, all watching the same API, like several spaceports that could each answer the same request. Something has to decide which of them implements a given `Ingress`, and that something is the **ingress class**.
 
 There are two ways to express it, and you will meet both:
 
@@ -33,7 +31,7 @@ spec:
 Two fields, each doing one job:
 
 - **`metadata.name`** is the string an `Ingress` puts in `ingressClassName`. It is arbitrary — `istio` is convention, not a requirement.
-- **`spec.controller`** is the fixed identifier `istiod` watches for: **`istio.io/ingress-controller`**. This one is not arbitrary. Get it wrong and the class exists, `Ingress` objects reference it happily, and nothing implements them.
+- **`spec.controller`** is the fixed identifier `istiod` (mission control) watches for: **`istio.io/ingress-controller`**. This one is not arbitrary. Get it wrong and the class exists, `Ingress` objects reference it happily, and nothing implements them.
 
 The object is cluster-scoped and created once. Whether it already exists depends on how Istio was installed, so checking is the first step rather than an assumption.
 
@@ -58,7 +56,7 @@ The object is cluster-scoped and created once. Whether it already exists depends
 
 This is the failure worth seeing deliberately, because it produces no error anywhere.
 
-An `Ingress` with no class, or with a class no controller implements, is simply ignored. The object is valid. `kubectl apply` succeeds. No event is recorded, no status is set, no log line appears. Requests 404 — and from Kubernetes' point of view there is no problem at all, because nothing ever claimed responsibility.
+An `Ingress` with no class, or with a class no controller implements, is simply ignored. The object is valid. `kubectl apply` succeeds. No event is recorded, no status is set, no log line appears. Signals 404, and from Kubernetes' point of view there is no problem at all, because no spaceport ever claimed the request.
 
 The tell is in `kubectl get ingress`: the **`CLASS`** column, and the **`ADDRESS`** column staying empty.
 
@@ -153,10 +151,3 @@ So an `Ingress` goes to the default gateway, and there is no per-object way to s
 > **Expecting Istio to serve an `Ingress` claimed by another controller.** Both controllers see the object; only the one named by the class acts on it.
 >
 > **Looking for a `Gateway` object.** Istio synthesises the gateway configuration from the `Ingress`. There is no `Gateway` in your namespace to inspect.
-
-## Reference
-
-- [Kubernetes Ingress API](https://kubernetes.io/docs/concepts/services-networking/ingress/) — the object, its history, and the class mechanism.
-- [IngressClass](https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-class) — the field, the annotation, and default classes.
-- [Istio Kubernetes Ingress task](https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/) — Istio's own walkthrough, including the controller string.
-- [MeshConfig `ingressService` / `ingressSelector`](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig) — which gateway serves `Ingress` objects.

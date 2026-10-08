@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-One object, three rules, two independent experiments — and the first one's result is the lesson.
+Mission debrief, astronaut. One object, three rules, two independent simulation drills — and the first drill's result is the lesson.
 
 ---
 
@@ -17,7 +17,7 @@ No resources found in orders namespace.
 200 0.041s
 ```
 
-The namespace is shared. Every rule you add that lacks a `match` block is a change to somebody else's traffic, which is why both experiments get their own header and a clean catch-all goes last.
+The namespace is shared: other crews live on this planet. Every rule you add that lacks a `match` block is a change to somebody else's signals, which is why both experiments get their own header and a clean catch-all goes last.
 
 ---
 
@@ -239,20 +239,3 @@ A fault is configuration. Left in place, the `x-chaos` rules are harmless — no
 - **The catch-all placed first.** It matches everything and neither experiment ever runs.
 - **Putting the faults on `booking-service`.** That delays the inbound request and tests the wrong hop.
 - **Reading only the outer status.** The `FI` evidence is in the intermediate service's proxy log, and the `UT` evidence is in the client's.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [HTTPRoute API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) — `timeout` alongside `retries`, `fault` and `mirror` on one rule
-- [HTTPRetry API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRetry) — `attempts`, `perTryTimeout`, `retryOn` and `retriableStatusCodes`
-- [HTTPFaultInjection API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPFaultInjection) — `delay`, `abort` and the percentage fields
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

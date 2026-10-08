@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-One object, four fields deep — and two of those fields are where this lab is won or lost: `portLevelSettings`, because the task asks for the policy there rather than on the host, and `ttl`, because without it Istio never issues the cookie and the whole thing silently does nothing.
+Mission debrief, astronaut. One object, four fields deep — and two of those fields are where this lab is won or lost: `portLevelSettings`, because the task asks for the policy there rather than on the host, and `ttl`, because without it Istio never issues the cookie and the whole thing silently does nothing.
 
 ---
 
@@ -154,19 +154,3 @@ astrona submit
 * **Naming port 8080.** `portLevelSettings` takes the **Service** port — 8000. The container port belongs to the endpoints, one layer down.
 * **Testing affinity without checking the fallback.** A policy that pins everything, cookie or not, is not what you configured — it usually means you hashed something every request happens to carry.
 * **Reading affinity from response bodies.** `go-httpbin` does not tell you which pod answered. The client proxy's access log does.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [ConsistentHashLB API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings-ConsistentHashLB) — the four hash sources, `ttl`, and `minimumRingSize`
-- [LoadBalancerSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings) — the `simple` enum and the `consistentHash` alternative
-- [TrafficPolicy portLevelSettings](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy-PortTrafficPolicy) — attaching policy to one port instead of the whole host
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

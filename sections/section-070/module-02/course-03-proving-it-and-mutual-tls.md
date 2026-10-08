@@ -1,12 +1,10 @@
 # Proving It, And Mutual TLS
 
-> Prerequisite: [The Three Objects](./course-02-the-three-objects.md). Next: [the module landing page](./course.md).
-
 A `200` does not prove origination — the external service might simply have accepted plaintext. This part is the evidence, then what changes when the external service also wants a certificate from you.
 
 ## Evidence from the destination
 
-The honest proof comes from the **destination's own view** of the request. Many HTTP services report the scheme they were reached over in an `X-Forwarded-Proto` header, and `httpbin.org/headers` echoes back everything it received.
+The honest proof comes from the **destination's own view** of the signal: ask the other planet what it received. Many HTTP services report the scheme they were reached over in an `X-Forwarded-Proto` header, and `httpbin.org/headers` echoes back everything it received.
 
 > [!TIP]
 > **Try it — ask the external service what it saw**
@@ -53,7 +51,7 @@ Those two checkpoints together are the complete proof: the destination saw HTTPS
 
 ## Mutual TLS to an external service
 
-`SIMPLE` means the proxy verifies the server's certificate — ordinary one-way HTTPS. When the external service also requires a **client** certificate, the mode is `MUTUAL` and the proxy needs credentials.
+`SIMPLE` means the proxy verifies the server's certificate — ordinary one-way HTTPS. When the external service also requires a **client** certificate, both sides must check a secret handshake, the mode is `MUTUAL`, and the proxy needs credentials.
 
 There are two ways to supply them:
 
@@ -87,7 +85,7 @@ Everything else is unchanged: `MUTUAL` is still origination, still under `portLe
 
 This is the decision section 080 module 2 exists to make, and it is worth framing now.
 
-With sidecar origination, **every calling workload originates its own TLS**. For `SIMPLE` that is fine — there is no secret. For `MUTUAL` it means the client certificate must be available to every pod that calls the service:
+With sidecar origination, **every calling ship seals its own signals**: every calling workload originates its own TLS. For `SIMPLE` that is fine — there is no secret. For `MUTUAL` it means the client certificate must be available to every pod that calls the service:
 
 | | Sidecar origination (this module) | Gateway origination (section 080) |
 | --- | --- | --- |
@@ -119,10 +117,3 @@ For a partner API with a client certificate, that first row is usually the whole
 > **Forgetting the `VirtualService` entirely.** Traffic stays on port 80, the external service refuses plaintext, and the `DestinationRule` never gets a chance to act.
 
 > *A `200` proves the call worked; `X-Forwarded-Proto: https` at the destination proves the sidecar did the handshake.*
-
-## Reference
-
-- [Egress TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/) — including the mutual TLS variant.
-- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — every mode and credential field.
-- [Egress gateway TLS origination](https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/) — where section 080 takes this next.
-- `istioctl proxy-config cluster <workload> --fqdn <host> -o json` — the `transportSocket` block that confirms which proxy holds the TLS context.

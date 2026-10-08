@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects, and the trick is that the thing you are building is invisible from where you normally look. The caller's output is identical whether the mirror works or not, so the verification is the interesting half.
+Two objects, and the trick is that the thing you are building is invisible from where you normally look — the test ship's replies never come back to you. The caller's output is identical whether the mirror works or not, so the verification is the interesting half.
 
 ---
 
@@ -190,19 +190,3 @@ Three states worth remembering:
 - **Grepping for a `-shadow` authority.** Older Istio appended it; 1.30 does not, and the grep silently returns nothing.
 - **Expecting the mirrored response to matter.** It is discarded, along with its latency. Mirroring cannot compare outputs.
 - **Omitting `mirrorPercentage` and assuming nothing is mirrored.** The default is 100%; the task asks you to state it anyway.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPRouteDestination API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRouteDestination) — `destination` plus `weight`, and the rule that weights sum to 100
-- [HTTPMirrorPolicy API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMirrorPolicy) — `mirror`, `mirrors` and `mirrorPercentage`
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

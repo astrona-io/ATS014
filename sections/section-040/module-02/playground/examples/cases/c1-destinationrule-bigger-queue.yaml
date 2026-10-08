@@ -1,0 +1,16 @@
+# Case 1: same single connection, but up to 10 requests may WAIT for it.
+# With 3 parallel clients nothing overflows: requests queue instead of 503.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  host: httpbin
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 1
+      http:
+        http1MaxPendingRequests: 10
+        maxRequestsPerConnection: 1

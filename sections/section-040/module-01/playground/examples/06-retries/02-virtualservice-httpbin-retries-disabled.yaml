@@ -1,0 +1,18 @@
+# Turn retries off completely, including Istio's default retries.
+# Use for requests that must not run twice (e.g. a non-idempotent POST that
+# creates an order).
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  hosts:
+  - httpbin
+  http:
+  - route:
+    - destination:
+        host: httpbin
+    retries:
+      # 0 = no retries at all.
+      attempts: 0
