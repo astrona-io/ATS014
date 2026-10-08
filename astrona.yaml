@@ -276,7 +276,7 @@ modules:
         difficulty: advanced
 
   - id: module-040
-    title: "Using Resilience Features"
+    title: "Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries)"
     description: >
       Bound how long a caller waits, retry what is worth retrying, refuse work
       that cannot be done promptly, eject endpoints that keep failing, and
@@ -442,7 +442,7 @@ modules:
         difficulty: advanced
 
   - id: module-060
-    title: "Configuring Ingress Traffic"
+    title: "Configuring Ingress And Egress Traffic — Ingress"
     description: >
       Bring north-south traffic into the mesh through three different APIs —
       Istio's own Gateway and VirtualService, the Kubernetes Ingress API, and
@@ -632,7 +632,7 @@ modules:
         difficulty: advanced
 
   - id: module-080
-    title: "Egress Gateways"
+    title: "Configuring Ingress And Egress Traffic — Egress"
     description: >
       Concentrate outbound traffic through a single standalone proxy with a
       two-stage VirtualService, then move the TLS handshake onto it so a

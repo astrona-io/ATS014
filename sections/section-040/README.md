@@ -1,4 +1,4 @@
-# Using Resilience Features
+# Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries)
 
 Every service in a mesh depends on services it does not control. Resilience features are what a caller can do about that without the callee's cooperation — bound how long it waits, retry what is worth retrying, refuse to queue work it cannot finish, stop talking to an endpoint that keeps failing, and prefer a locality that still works.
 

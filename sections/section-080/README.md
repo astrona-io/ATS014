@@ -1,4 +1,4 @@
-# Egress Gateways
+# Configuring Ingress And Egress Traffic — Egress
 
 Section 070 let every pod make its own outbound connection. That means as many source addresses as you have nodes, an audit trail spread across every sidecar's logs, and — if an external service wants a client certificate — that certificate distributed to every workload that calls it.
 
