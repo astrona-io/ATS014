@@ -1,29 +1,35 @@
-# Route Requests Within The Mesh (PLAYGROUND) — Playground environment
-# A clean sandbox: it spins up, runs OS prep, then stays running for free
-# exploration. No task, no grading, no `astrona submit`.
-# Schema: internal/config.LabConfig.
-#
-# Runtime: kind cluster by default (no `runtime:` block). For a clean VM over
-# SSH with no Kubernetes, add a `runtime:` block with type "qemu" — see
-# references/astrona-cli.md in the skill. `scripts/scaffold_playground.sh
-# --runtime qemu` appends a starter block for you.
-
+# Route Requests Within The Mesh — Playground environment
+# A clean sandbox: it spins up, installs Istio and Bookinfo, then stays running
+# for free exploration. No task, no grading, no `astrona submit`.
+#   astrona run -c .                          new kind cluster "astro-ats-014-playground-010-01"
+#   astrona destroy ats-014-playground-010-01  delete the cluster again
 metadata:
   name: "ats-014-playground-010-01"
   docs:
     guide: "docs/overview.md"
 
+# Port forwards: astrona keeps these running on 127.0.0.1 (astrona port-forward list).
+runtime:
+  type: kind
+  portForwards:
+    - name: bookinfo-ui
+      resource: svc/productpage
+      namespace: bookinfo
+      hostPort: 9080
+      targetPort: 9080
+      scheme: http
+      description: "Bookinfo UI – open /productpage, refresh to see the stars change"
+
 bootstrap:
   init:
-    - name: "prepare"
-      description: "Install istioctl, install the Istio control plane, and make sure the starting workloads are injected."
+    - name: "install-istio"
+      description: "Istio 1.30.5 (istio-base + istiod) with Helm"
       type: "file"
-      source: "bootstrap/prepare.sh"
-  manifests:
-    - name: "lab-start"
-      description: "Starting workloads for this module (namespace, Deployments, Service, client pod)."
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Namespace bookinfo, access logs, Bookinfo, curl client and httpbin v1/v2"
       type: "file"
-      source: "manifests/lab-start.yaml"
+      source: "bootstrap/deploy.sh"
 
 teardown:
   keepCluster: false

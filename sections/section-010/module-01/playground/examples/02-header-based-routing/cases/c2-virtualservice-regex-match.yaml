@@ -1,0 +1,23 @@
+# Case 2: regex match (RE2 syntax, must match the WHOLE value) – exactly
+# jason or jane get v2. "jasonx" does not match.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: reviews
+  namespace: bookinfo
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - headers:
+        end-user:
+          regex: "jason|jane"
+    route:
+    - destination:
+        host: reviews
+        subset: v2
+  - route:
+    - destination:
+        host: reviews
+        subset: v1

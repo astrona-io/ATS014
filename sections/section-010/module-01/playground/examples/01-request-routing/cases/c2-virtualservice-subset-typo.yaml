@@ -1,0 +1,15 @@
+# Case 2 (mistake): subset v4 does not exist in the DestinationRule.
+# Expect HTTP 503 with flag NC (cluster not found), and an istioctl analyze error.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: reviews
+  namespace: bookinfo
+spec:
+  hosts:
+  - reviews
+  http:
+  - route:
+    - destination:
+        host: reviews
+        subset: v4

@@ -1,0 +1,16 @@
+# Case 4: full service names (FQDN) instead of short names.
+# Same result as the short name, and safe if the VirtualService ever lives in
+# another namespace (short names resolve in the VirtualService's namespace).
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: reviews
+  namespace: bookinfo
+spec:
+  hosts:
+  - reviews.bookinfo.svc.cluster.local
+  http:
+  - route:
+    - destination:
+        host: reviews.bookinfo.svc.cluster.local
+        subset: v1

@@ -1,0 +1,19 @@
+# Case 3 (mistake): subset v1 selects label version=v9, which no pod has.
+# The subset exists (so no NC), but it has no endpoints.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: reviews
+  namespace: bookinfo
+spec:
+  host: reviews
+  subsets:
+  - name: v1
+    labels:
+      version: v9
+  - name: v2
+    labels:
+      version: v2
+  - name: v3
+    labels:
+      version: v3
