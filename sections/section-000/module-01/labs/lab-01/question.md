@@ -1,3 +1,7 @@
+---
+estimated_duration: 10m
+---
+
 # Question
 
 Solve this question on: `terminal`
