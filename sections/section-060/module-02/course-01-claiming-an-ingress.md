@@ -35,6 +35,8 @@ Two fields, each doing one job:
 
 The object is cluster-scoped and created once. Whether it already exists depends on how Istio was installed, so checking is the first step rather than an assumption.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — is there an `istio` ingress class yet?**
 >

@@ -42,6 +42,8 @@ Three differences worth naming:
 - **`parentRefs` is a list**, so one route can attach to several Gateways. That is how you serve the same application on an internal and an external gateway without duplicating the routing.
 - **`path.type` is `PathPrefix`, `Exact` or `RegularExpression`** — and `PathPrefix` is **element-wise**, like `Ingress`'s `pathType: Prefix` and unlike Istio's `uri.prefix`. The same trap as module 2.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — attach a route and send a request**
 >

@@ -8,6 +8,8 @@ Two files with the same `metadata.name` in the same namespace describe the **sam
 
 The course uses this on purpose. Many steps change the same `VirtualService` called `scout`: first "all to v1", then "jason to v2", then a weighted split. Each new file replaces the last.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it: apply replaces, it does not add**
 >

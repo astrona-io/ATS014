@@ -85,6 +85,8 @@ Declare only 443 and stage 2 has no port-80 entry to start from.
 
 Two `DestinationRule` objects pointing at two different hosts, doing two unrelated jobs. Keeping them apart is most of the work.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the whole chain in one apply**
 >

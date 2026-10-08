@@ -8,6 +8,8 @@ The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2
 
 ## The `VirtualService` object
 
+<!-- astrona:playground:renew -->
+
 Start with the simplest flight plan there is: send every scout signal to v1. Save this as `virtualservice-scout.yaml`:
 
 ```yaml

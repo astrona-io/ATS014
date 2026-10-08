@@ -8,6 +8,8 @@ The gateway's own access log, its black box flight log, is the direct evidence. 
 
 But a `200` proves nothing on its own. The next mistake returns `200` too.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — `mesh` missing: it works, and skips the gateway**
 >

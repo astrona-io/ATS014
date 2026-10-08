@@ -50,6 +50,8 @@ Differences from module 1's object beyond the missing selector:
 - **`hostname` is singular**, one per listener. Where Istio's `Gateway` took a list of hosts on one server, here you write several listeners or use a wildcard.
 - **`allowedRoutes`** has no Istio equivalent at all.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — create a Gateway and watch a data plane appear**
 >

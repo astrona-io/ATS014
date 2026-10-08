@@ -88,6 +88,12 @@ Strict guidelines:
   `## Common pitfalls` `> [!WARNING]` block for that part only. Use a Mermaid
   diagram for a flow, an order or a state change, keep it under about 12
   boxes, and follow it with one sentence that says what it shows.
+- **Renew the playground before hands-on work.** Every reading part that
+  runs commands has `<!-- astrona:playground:renew -->` exactly once, on its
+  own line, right before the first hands-on step (the first "Save this as"
+  or the first command block), so the playground timer is reset before the
+  learner needs the playground. Not on landing pages (they carry
+  `<!-- astrona:playground -->`), wrap-up pages or pages without commands.
 - **Mermaid without HTML.** The platform renders Mermaid with HTML labels
   switched off, so `<br/>` and any other HTML tag break the drawing. Rules:
   - One line per box, no `<br/>`, no HTML. Keep the box to the thing's name

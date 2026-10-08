@@ -38,6 +38,8 @@ http:
 
 This is the shape to reach for by default, astronaut. It makes fault injection something you can run in a solar system other crews are using, and it is a realistic exam scenario precisely because the unscoped version is irresponsible.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the fault applies only to the marked request**
 >

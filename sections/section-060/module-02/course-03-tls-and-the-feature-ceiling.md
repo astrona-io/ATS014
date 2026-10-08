@@ -34,6 +34,8 @@ The failure is quiet and asymmetric:
 
 That combination — HTTP fine, HTTPS dead, no error — is the signature. The gate answers on the open channel but cannot do the secret handshake. Check which namespace the secret is in before anything else.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the wrong namespace, then the right one**
 >

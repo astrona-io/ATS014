@@ -32,6 +32,8 @@ With v1 on ten pods and v3 on one, at 50/50:
 
 Scaling v3 to ten pods does not change its 50% share. It changes how much capacity there is to handle that share. Getting capacity right matters a lot, but it is not a way to split traffic.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it – four times the pods, same share**
 >

@@ -6,6 +6,8 @@ A `200` does not prove origination — the external service might simply have ac
 
 The honest proof comes from the **destination's own view** of the signal: ask the other planet what it received. Many HTTP services report the scheme they were reached over in an `X-Forwarded-Proto` header, and `httpbin.org/headers` echoes back everything it received.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — ask the external service what it saw**
 >

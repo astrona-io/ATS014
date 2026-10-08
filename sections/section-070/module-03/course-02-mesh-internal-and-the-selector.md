@@ -56,6 +56,8 @@ The rows that matter are the bottom four. `MESH_EXTERNAL` would give you the hos
 
 The mTLS row carries a practical consequence: with `MESH_INTERNAL`, Istio expects to speak mTLS to the workload (the secret handshake both ships check), which a real VM can only do if it is running `istio-agent`. In this playground the stand-in is not, so traffic falls back to plaintext — fine for a lab, and one more place the analogy stops.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — give the workload a name and a place in the registry**
 >

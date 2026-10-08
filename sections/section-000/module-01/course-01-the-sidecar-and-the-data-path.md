@@ -45,6 +45,8 @@ Two consequences follow. The proxy is guaranteed to be up **before** your applic
 
 `istio-proxy` holds two processes: **Envoy**, the proxy that moves the traffic (the communications officer at the radio), and **istio-agent**, a small supervisor that fetches orders and certificates for it from mission control. When this course says "the sidecar", it means Envoy.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the whole difference, in one column**
 >

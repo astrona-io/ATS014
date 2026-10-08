@@ -31,6 +31,8 @@ It is `attempts + 1` because `attempts` counts retries, and there is also the fi
 
 Set `timeout: 1.5s` against that policy, and the request is cut off soon after the second try starts. The caller sees a `504`, the retry policy looks broken, and **nothing anywhere reports a configuration error**. The policy was not ignored. It ran out of time.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the overall timeout cuts the retries short**
 >

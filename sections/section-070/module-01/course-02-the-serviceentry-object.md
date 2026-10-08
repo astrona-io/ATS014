@@ -72,6 +72,8 @@ For a third-party service, `MESH_EXTERNAL` is the answer, and it is the default.
 
 `DNS` is right for nearly every public API. `NONE` is what you use with a wildcard host, because there is nothing concrete to resolve.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — `httpbin.org` allowed over HTTPS only**
 >

@@ -11,6 +11,8 @@ The reply signal looks the same whether the gateway was involved or not, and whe
 | the gateway was in the path | a line in **the gateway's** access log |
 | TLS was originated | the destination reports `X-Forwarded-Proto: https`, and the upstream in the log is port **443** |
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the gateway carried it, and the destination saw HTTPS**
 >

@@ -51,6 +51,8 @@ The proxy replies to the caller with a `301` and a `Location` header. Nothing re
 
 `redirectCode` defaults to `301`. Set it to `302` for a temporary move. Prefer `308` when the method must stay the same, because a `301` allows a client to turn a `POST` into a `GET`. `redirect.authority` also changes the host in the `Location` header, which is how you move a path to a different host name.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it: a rule that never reaches a pod**
 >

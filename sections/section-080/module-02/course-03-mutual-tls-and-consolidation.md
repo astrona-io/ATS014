@@ -34,6 +34,8 @@ That is the same rule as the `Ingress` TLS secret in section 060 module 2, and f
 
 The failure is silent, like a signal lost in deep space. A `credentialName` pointing at a secret that is not there gives you a listener that never comes up, calls that fail, and **no message naming the cause**. When gateway TLS "just does not work", check which namespace the secret is in before anything else.
 
+<!-- astrona:playground:renew -->
+
 The secret itself is an ordinary TLS secret plus, for `MUTUAL`, the CA to verify the server:
 
 ```sh

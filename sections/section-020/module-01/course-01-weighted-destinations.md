@@ -57,6 +57,8 @@ The client sidecar matches the `http` rule, then makes one random roll for this 
 - **It is not a rota.** At 80/20 the sidecar does not send every fifth request to v3. Five requests in a row can all land on v1. So can twenty. The share only shows up over many requests, and it is never exact.
 - **The cluster is chosen before the pod.** The weight picks a *subset*. Only then does load balancing pick a pod inside it. Part 3 is about what that order means.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it – an 80/20 canary**
 >

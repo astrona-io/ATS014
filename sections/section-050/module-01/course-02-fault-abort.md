@@ -45,6 +45,8 @@ The evidence lives in the **caller's** access log (its black box flight log), be
 
 As with every percentage in this course the decision is per request and independent, so measure over enough requests to see a rate rather than a coincidence.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — half the calls fail, none of them reach the upstream**
 >

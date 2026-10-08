@@ -25,6 +25,8 @@ Three things follow:
 
 This is the sharpest contrast with a readiness probe, which takes the pod out of the Service once, centrally, for everybody.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — Kubernetes and the proxy disagree**
 >

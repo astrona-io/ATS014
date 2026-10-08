@@ -94,6 +94,8 @@ Nothing here replaces section 070. `httpbin.org` must be on the star chart, or n
 
 Apply the `Gateway` and the `DestinationRule` before the `VirtualService`, because the `VirtualService` points at both. This is the "make before break" order: nothing changes until the `VirtualService` arrives, so there is never a moment when a route points at something that does not exist yet.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — route the external host through the gateway, and see both hops**
 >

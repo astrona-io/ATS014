@@ -8,6 +8,8 @@ Astronaut, this part covers the shape of the object, the picture behind it, and 
 
 `load_test 3` sends 30 requests to `httpbin`, with 3 open at any moment. `-qps 0` inside the helper means "as fast as you can", so this is a small but aggressive burst.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — 30 requests, three at a time, no policy**
 >

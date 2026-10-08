@@ -47,6 +47,8 @@ This is the most common way to lose a setting you thought was applied. The sign 
 
 The safe habit: when you add a subset-level `trafficPolicy`, write out **everything** that subset needs, not just the field you are changing.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — a different load balancer for one subset**
 >

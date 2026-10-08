@@ -56,6 +56,8 @@ The last two rows are the whole difference: `Ingress` compares path *elements*, 
 
 Same word, different semantics, in two APIs you will translate between. When converting an `Ingress` to a `VirtualService`, a `pathType: Prefix` of `/book` becomes `uri: { prefix: /book/ }` plus an `exact` match on `/book` if you want to be faithful — or you accept that the Istio version is slightly broader.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — `Prefix` is element-wise**
 >

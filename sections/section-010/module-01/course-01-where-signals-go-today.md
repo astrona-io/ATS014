@@ -34,6 +34,8 @@ Without Istio, a component called `kube-proxy` picks one of the pods for each ne
 
 ### See it in your playground
 
+<!-- astrona:playground:renew -->
+
 Send 10 signals from the shuttle to the scout beacon, and count which ship class answered each one:
 
 ```sh

@@ -106,6 +106,8 @@ Since the proxy is now the TLS client, **the proxy must send it**. If it does no
 
 Some endpoints tolerate its absence — a host with a single certificate has nothing to disambiguate — which makes this a mistake that works in testing and fails in production.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — apply all three and call over plain HTTP**
 >

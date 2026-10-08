@@ -94,6 +94,8 @@ The failure is the worst kind: **partial**. The pod still starts, application tr
 
 Treat `./*` and `istio-system/*` as the floor that every namespace-wide `Sidecar` starts from, and add to it.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — scope the namespace down and watch the configuration shrink**
 >

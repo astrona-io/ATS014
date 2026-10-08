@@ -17,6 +17,8 @@ Check the label before you write a `Gateway`: `kubectl get pods -A -l 'istio in 
 
 First, the direct path. Register `httpbin.org` with a `ServiceEntry` (section 070), so it is on the star chart, and call it:
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — straight to the internet, past an idle gateway**
 >

@@ -20,6 +20,8 @@ SNI is the one useful piece — it is sent in the clear during the handshake —
 
 The cleanest demonstration is the access log, because for an HTTP request it records a method, a path and a status, and for an encrypted stream it cannot.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — what a direct HTTPS call looks like from the mesh's side**
 >

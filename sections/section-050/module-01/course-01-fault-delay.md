@@ -6,6 +6,8 @@ The first half of the feature, and the failure people most often forget to test:
 
 First, astronaut, you need a working chain of ships to break. Send user `jason` to `reviews` v2, which signals `ratings` on every request. Everyone else goes to `reviews` v1.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the call chain working normally**
 >

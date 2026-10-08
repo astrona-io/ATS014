@@ -20,6 +20,8 @@ Rule 1 asks "is `end-user` equal to `jason`?". If yes, the signal goes to subset
 
 A rule without `match` fits every request. This is the **catch-all** rule: the "everyone else" line at the bottom of the checklist. It can only ever be useful as the **last** rule. Put it first, and every rule below it is dead.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it: the right order, then the wrong order**
 >

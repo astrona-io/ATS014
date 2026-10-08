@@ -55,6 +55,8 @@ A mirror and a weighted split work together. Here, real traffic is split 50/50 b
 
 `mirror` belongs to the whole rule, not to one destination. The weights pick a destination for each request. Then every request is **also** copied to the mirror, whichever destination the weights picked. So v2 gets its real share **plus** a copy of everything.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it – how much does v2 really receive?**
 >

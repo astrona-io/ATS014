@@ -69,6 +69,8 @@ The stand-in is a pod with injection disabled. It faithfully reproduces "a reach
 
 If you want to see auto-registration, it needs a real machine. What you can do here is write the `WorkloadGroup`, read its `template` against the `WorkloadEntry` you wrote by hand, and confirm that the second is exactly what the first would have produced.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the template beside the instance it would create**
 >

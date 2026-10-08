@@ -6,6 +6,8 @@ One object describing one machine: you add one old ship to the star chart. Three
 
 Start from what you have. The stand-in workload has an IP and answers signals, and mission control knows nothing about it.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — reachable, but anonymous**
 >

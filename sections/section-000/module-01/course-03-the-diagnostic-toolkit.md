@@ -27,6 +27,8 @@ Each rung answers a different question, and skipping to the bottom is the usual 
 
 Kubernetes validates one object against its schema. It cannot tell you that a `VirtualService` names a subset no `DestinationRule` defines, because that is a relationship between two objects. `istioctl analyze` runs Istio's own cross-object analysers over a namespace and reports what it finds with a stable `IST####` code.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — what clean looks like**
 >

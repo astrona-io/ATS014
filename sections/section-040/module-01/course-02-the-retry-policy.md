@@ -86,6 +86,8 @@ Notice what is missing: **4xx** in general. A `400` or `404` is the caller's own
 
 The caller cannot see retries. It gets one answer. The proof is on the **server** side, where each try arrives as its own request in the sidecar log. That is what `count_received` counts.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — four tries for one request**
 >

@@ -50,6 +50,8 @@ That is why `allowedRoutes` in Part 2 is a first-class field rather than a conve
 
 When Istio starts with the CRDs present, it registers a `GatewayClass` of its own.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — what the CRDs brought with them**
 >

@@ -8,6 +8,8 @@ Astronaut, a timeout is your signal's abort window. It is one field. But there a
 
 Istio sets **no** HTTP timeout unless you write one. A request to a service that takes 3 seconds simply takes 3 seconds. A request that hangs keeps on hanging.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the caller waits as long as it takes**
 >

@@ -57,6 +57,8 @@ A `DestinationRule` is the **docking instructions** for one beacon. It says whic
 
 This is the rule for `scout`. Save it to a file and apply it to your playground.
 
+<!-- astrona:playground:renew -->
+
 Save this as `destinationrule-scout.yaml`:
 
 ```yaml

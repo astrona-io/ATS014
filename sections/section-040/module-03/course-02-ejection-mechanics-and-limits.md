@@ -41,6 +41,8 @@ The trap is the default. You might write only `consecutiveGatewayErrors: 3`, so 
 
 There is one more rule from the API. Gateway errors also count as 5xx errors. So if `consecutiveGatewayErrors` is equal to or higher than `consecutive5xxErrors`, it never gets the chance to act.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — count only gateway errors**
 >

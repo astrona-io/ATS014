@@ -8,6 +8,8 @@ Module 1 showed one Service becoming clusters in the `tester` proxy. The part le
 
 Start by counting.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — what one proxy currently carries**
 >

@@ -21,6 +21,8 @@ The caller sits in region `local`, zone `a`. Each level is used only when the on
 
 So the common requirement — "keep traffic in the zone, fall back if the zone dies" — needs **no configuration at all**. What `localityLbSetting` adds is *control* over that preference: explicit proportions, or an explicit fallback order.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the default preference, with nothing configured**
 >

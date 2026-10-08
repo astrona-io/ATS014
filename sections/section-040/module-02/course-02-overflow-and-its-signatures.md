@@ -12,6 +12,8 @@ Every sidecar keeps a black box flight log: one line per request, with a short c
 
 An application's own 503 has no such flag. So the first question for any unexplained 503 is not "what is wrong with the backend?" It is "does the *caller's* access log say `UO`?"
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the `UO` flag in the caller's access log**
 >

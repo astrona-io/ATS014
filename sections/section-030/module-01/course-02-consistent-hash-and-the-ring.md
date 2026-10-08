@@ -42,6 +42,8 @@ Two facts follow from that picture, and both come up in exams:
 
 That second fact is the "consistent" in consistent hashing. A simple `hash(value) % number_of_pods` would move **almost every** user when the number of pods changes. The ring moves only about `1/N` of them, where `N` is the number of pods.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the same user always lands on the same pod**
 >

@@ -25,6 +25,8 @@ Out of the box, a sidecar passes traffic to uncharted planets straight through. 
 
 That is a deliberate choice: a mesh that cut off every outbound signal the moment it launched would be unusable. The cost is that the mesh has no visibility into, and no control over, where your workloads send data.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — by default everything gets out**
 >

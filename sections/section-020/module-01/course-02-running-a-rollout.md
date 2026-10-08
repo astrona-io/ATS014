@@ -26,6 +26,8 @@ Each step of the rollout is the **same** VirtualService, `scout`, with new numbe
 
 When the canary looks healthy, you raise its share. At 100, the old version gets nothing.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it – 50/50, then 100% v3**
 >

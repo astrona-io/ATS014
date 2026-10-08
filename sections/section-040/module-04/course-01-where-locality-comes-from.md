@@ -48,6 +48,8 @@ Two details:
 
 This is the step to do first, every time. If endpoints have no locality, nothing in Part 2 will do anything and there will be no error message telling you so.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the locality attached to each endpoint**
 >

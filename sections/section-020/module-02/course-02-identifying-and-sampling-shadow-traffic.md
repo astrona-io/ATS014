@@ -30,6 +30,8 @@ There are two logs on the receiving pod, and both work here:
 - The **app log**. `count_received` reads it: `probe` writes one line per request it handles.
 - The **sidecar access log**. Each sidecar is the communications officer on its ship, and the access log is the ship's black box flight log: one line per request, with the status code and short codes for what went wrong. It is on the receiving pod, so the command names `-c istio-proxy` on the shadow's Deployment, not on the caller.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it – the copies in the shadow sidecar's access log**
 >

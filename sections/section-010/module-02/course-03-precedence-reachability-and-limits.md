@@ -30,6 +30,8 @@ The supported shape is therefore: one namespace default, plus non-overlapping se
 
 "Replaces rather than merges" is the claim worth testing, because it is the one that breaks namespaces. Add a selective `Sidecar` that lists *only* `./*` on top of the namespace default from Part 2, and watch `istio-system` disappear from the proxy even though the namespace default still lists it.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — a selective `Sidecar` that inherits nothing**
 >

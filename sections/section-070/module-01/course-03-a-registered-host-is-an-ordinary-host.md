@@ -61,6 +61,8 @@ spec:
 
 This works **only because** the `ServiceEntry` declared `protocol: HTTP` on port 80. With only an HTTPS or `TCP` port, the `VirtualService` would apply to nothing.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — a deadline on somebody else's API**
 >

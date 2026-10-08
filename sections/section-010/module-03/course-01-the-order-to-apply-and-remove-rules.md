@@ -71,6 +71,8 @@ So keep this rule:
 
 In a real cluster the gap is short, so the wrong order may *look* fine when you try it once. Under steady traffic, it causes a burst of `503` errors on every change. The easiest way to see it on purpose is to apply the route with no `DestinationRule` at all.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it: the route before the subsets**
 >

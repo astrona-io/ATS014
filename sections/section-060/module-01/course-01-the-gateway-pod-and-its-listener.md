@@ -16,6 +16,8 @@ The ingress gateway is the same Envoy program that runs in every injected pod. I
 
 Because it is the same Envoy, every tool you already know works on it: `istioctl proxy-config listeners/routes/clusters`, the access log, `pilot-agent request GET stats`. Keep that in mind. You debug a gateway with the same commands as a sidecar.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — a gateway with no configuration**
 >

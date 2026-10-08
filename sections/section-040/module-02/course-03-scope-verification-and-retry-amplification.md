@@ -8,6 +8,8 @@ This part assumes the full limits from Part 1 are applied (`destinationrule-http
 
 Envoy, the proxy inside every sidecar, calls this feature **circuit breakers**. The limits you set sit on the cluster for `httpbin`.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — the limits the caller's proxy is enforcing**
 >

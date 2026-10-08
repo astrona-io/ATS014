@@ -48,6 +48,8 @@ There is a second way a locality can run out of endpoints, and distinguishing it
 
 Scaling a Deployment to zero exercises the first row. It shows locality **preference** falling back, which is real and useful — but it is not the failover path, and a configuration that passes this test can still be completely broken for the second row.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — remove the preferred zone's endpoint**
 >

@@ -13,6 +13,8 @@ The playground's [overview](./playground/docs/overview.md) has three helpers for
 
 Start with a baseline: all traffic to v1, and nothing mirrored. You need a `DestinationRule` with subsets first. A subset is a ship class: the same `probe` model, built two ways, `v1` and `v2`. Then a `VirtualService`, the flight plan, sends every request to `v1`.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it – answered = received**
 >

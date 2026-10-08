@@ -45,6 +45,8 @@ flowchart TB
 
 Because it is a push over a live stream, an accepted object reaches the proxies in seconds and nothing restarts. It also means `kubectl apply` returning is **not** proof that anything is configured. Mission control writing the orders down is not the same as the ship hearing them: apply returns when the object is stored in Kubernetes, not when Envoy has it. Those are separate events, and the gap between them is where a surprising amount of confusion lives.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — is every proxy up to date?**
 >

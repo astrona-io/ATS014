@@ -29,6 +29,8 @@ You need a quick way to see which pod answered. The playground's httpbin has a p
 
 Paste this helper into your terminal. It sends 8 requests from the `curl` pod and counts which pod answered each one. You can add extra `curl` options, such as a header. It also sets `$HOSTNAME_URL`, the address every "Try it" in this module calls. A shell function lasts only for the current terminal, so paste it again in each new window.
 
+<!-- astrona:playground:renew -->
+
 ```sh
 count_pods() { for i in $(seq 1 8); do
   kubectl exec -n bookinfo deploy/curl -- curl -s "$@" | grep -o '"httpbin-[^"]*"'

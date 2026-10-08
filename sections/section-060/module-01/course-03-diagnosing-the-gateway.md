@@ -14,6 +14,8 @@ Remember it as one sentence: **`000` is my gate, 404 is my flight plan, 503 is m
 
 The difference is sharp because these are different stages inside the proxy. `000` means there is no listener at all. A 404 means Envoy found a listener but no route entry to use. A 503 means it found a route, picked a cluster, and that cluster had nothing healthy to send to. The endpoint check from section 010 applies unchanged.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — produce each failure on purpose**
 >

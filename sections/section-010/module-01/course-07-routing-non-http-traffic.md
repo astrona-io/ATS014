@@ -31,6 +31,8 @@ Two traps follow from this table:
 
 Prove the first trap on `probe`, whose port is named `http` today.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it: turn off HTTP routing with one word**
 >

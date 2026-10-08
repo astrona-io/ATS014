@@ -73,6 +73,8 @@ gateways:
 
 That attaches the same routes to the gateway **and** to callers inside the mesh. It is useful when outside and inside traffic should behave the same. Make it a real decision, not a default, because often they should not.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — attach the routes and watch 404 become 200**
 >

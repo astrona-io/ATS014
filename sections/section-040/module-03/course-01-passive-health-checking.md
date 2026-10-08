@@ -8,6 +8,8 @@ Astronaut, this part shows what the mechanism is, what it watches, and why it ca
 
 Add a third pod behind the `httpbin` Service. It carries the same `app: httpbin` label, so the Service sends it a share of the traffic. But it answers **every** request with a 503. It never fails a readiness probe, because it has none to fail.
 
+<!-- astrona:playground:renew -->
+
 > [!TIP]
 > **Try it — a Service with one broken endpoint**
 >
