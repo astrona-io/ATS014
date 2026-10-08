@@ -2,16 +2,16 @@
 
 <!-- astrona:playground -->
 > [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS014/tree/main/sections/section-060/module-02/playground)
+> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
 >
 > ```sh
 > astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-060/module-02/playground
 > astrona destroy ats-014-playground-060-02
 > ```
 
-Kubernetes had an ingress API before Istio existed, and a great deal of existing YAML uses it. Istio's gateway can serve that API too: point an `Ingress` at Istio's ingress class and the same gateway pod you configured in module 1 handles it, with no `Gateway` and no `VirtualService` anywhere.
+Astronaut, Kubernetes had its own way to let signals into the solar system before Istio existed: the `Ingress` API. A great deal of existing YAML uses it. Istio's gateway can serve that API too: point an `Ingress` at Istio's ingress class and the same gateway pod you configured in module 1 handles it, with no `Gateway` and no `VirtualService` anywhere.
 
-This is a **migration and compatibility feature**, not the recommended way to configure Istio. Knowing *why* — what the `Ingress` API structurally cannot express — is more examinable than the YAML itself, and it is the reason the next module exists.
+Think of it as an older docking standard that the new spaceport still accepts. It is a **migration and compatibility feature**, not the recommended way to configure Istio. Knowing *why* — what the `Ingress` API structurally cannot express — is more examinable than the YAML itself, and it is the reason the next module exists.
 
 ## How this module is organised
 
@@ -47,4 +47,4 @@ export GATEWAY_URL=localhost:8080
 
 ## Where this fits
 
-Three APIs, one gateway pod, one backend. Module 1 was Istio's native pair. This module is the API that came first and can express the least. Module 3 is the portable successor the Kubernetes project built to replace it. The ICA expects you to recognise which API a task is written in and to know what each one cannot do — that recognition is most of the value of reading all three.
+Three APIs, one arrival gate (gateway pod), one backend. Module 1 was Istio's native pair. This module is the API that came first and can express the least. Module 3 is the portable successor the Kubernetes project built to replace it. The ICA expects you to recognise which API a task is written in and to know what each one cannot do — that recognition is most of the value of reading all three.

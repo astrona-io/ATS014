@@ -1,0 +1,19 @@
+# Case 1: abort 100% with HTTP 503 – simulate a service that is completely down.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: ratings
+  namespace: bookinfo
+spec:
+  hosts:
+  - ratings
+  http:
+  - fault:
+      abort:
+        percentage:
+          value: 100
+        httpStatus: 503
+    route:
+    - destination:
+        host: ratings
+        subset: v1

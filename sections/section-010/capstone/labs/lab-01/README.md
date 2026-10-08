@@ -1,6 +1,6 @@
 # Capstone: Route And Scope A Storefront
 
-This is the Section 010 integration challenge. It combines both modules — subsets and request matching from Module 1, configuration scoping from Module 2 — into one specification you have to deliver on a mesh with no traffic configuration at all.
+Astronaut, this is your Section 010 capstone mission: the integration challenge. It combines both modules — subsets and request matching from Module 1, configuration scoping from Module 2 — into one specification you have to deliver on a mesh with no traffic configuration at all.
 
 The two halves interact, which is the point: a `Sidecar` that is too narrow will break routing you got right, and a routing rule pointing at a subset the proxy was never told about fails the same way as a subset that does not exist.
 

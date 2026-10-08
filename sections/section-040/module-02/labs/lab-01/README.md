@@ -1,6 +1,6 @@
 # Circuit Breaking With Connection Pool Limits Sandbox
 
-Welcome to the Module 2 targeted practice sandbox. In this lab you'll cap the concurrent work a caller may have outstanding, then prove the cap is real — by showing that the same total number of requests succeeds sequentially and fails concurrently.
+Welcome to the Module 2 training mission, astronaut. In this lab you'll raise a caller's shields: cap the concurrent work it may have outstanding, then prove the cap is real — by showing that the same total number of requests succeeds sequentially and fails concurrently.
 
 ## Launching the Lab
 Run the following command in your terminal to boot the kind Kubernetes cluster:

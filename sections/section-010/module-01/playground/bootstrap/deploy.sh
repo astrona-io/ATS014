@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Deploy what the 010-01 playground needs (runs after install-istio.sh):
-#   - namespace bookinfo (sidecar injection) + mesh-wide access logs
-#   - Bookinfo (productpage, details, reviews v1-v3, ratings)
-#   - curl client + httpbin v1/v2 (httpbin is used by parts 4 and 5:
+#   - namespace starfleet (sidecar injection) + mesh-wide access logs
+#   - the Starfleet: bridge, cargo, scout v1-v3, navcom (Bookinfo with space names)
+#   - shuttle (test client) + probe v1/v2 (echo service used by parts 4 and 5:
 #     it echoes headers and paths, and its port can be renamed to "tcp")
 # No DestinationRule or VirtualService is created: writing them is the module.
 set -euo pipefail
@@ -19,16 +19,15 @@ ISTIO_VERSION="${ISTIO_VERSION:-1.30.5}"
 echo "==> Namespace and access logs"
 kubectl apply -f manifests/namespace.yaml -f manifests/access-logs.yaml
 
-echo "==> Bookinfo"
-BRANCH="release-${ISTIO_VERSION%.*}"   # 1.30.5 -> release-1.30
-kubectl apply -n bookinfo -f "https://raw.githubusercontent.com/istio/istio/$BRANCH/samples/bookinfo/platform/kube/bookinfo.yaml"
+echo "==> The Starfleet"
+kubectl apply -n starfleet -f manifests/starfleet.yaml
 
-echo "==> Test clients"
-kubectl apply -f manifests/curl-client.yaml
-kubectl apply -f manifests/httpbin.yaml
+echo "==> Shuttle and probe"
+kubectl apply -f manifests/shuttle.yaml
+kubectl apply -f manifests/probe.yaml
 
 echo "==> Waiting for pods (first run pulls images, takes a few minutes)"
-kubectl wait -n bookinfo --for=condition=Available deploy --all --timeout=600s
+kubectl wait -n starfleet --for=condition=Available deploy --all --timeout=600s
 
-kubectl get pods -n bookinfo
+kubectl get pods -n starfleet
 echo "==> Playground ats-014-playground-010-01 ready"

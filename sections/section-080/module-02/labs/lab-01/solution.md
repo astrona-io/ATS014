@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Five objects, composing almost every idea in the course. Build them in order and the verification is three independent checks.
+Five objects, astronaut, combining almost every idea in the course. Build them in order, and the verification is three independent checks.
 
 ---
 
@@ -21,7 +21,7 @@ scheme=https
 0
 ```
 
-Two constraints and one starting fact: the endpoint refuses plaintext, it reports the scheme honestly, and the gateway currently carries nothing.
+Two constraints and one starting fact: the partner planet refuses plaintext, it reports the scheme honestly, and the departure gate currently carries no signals.
 
 ---
 
@@ -94,7 +94,7 @@ EOF
 kubectl apply -f egress-gateway-manifests.yaml
 ```
 
-The listener is on **8080** — the port the gateway *receives* on. It will *send* on 8443. Those are two directions, and the apparent inconsistency is the thing to get comfortable with.
+The listener is on **8080** — the radio channel the gateway *receives* on. It will *send* on 8443. Those are two directions, and the apparent mismatch is the thing to get comfortable with.
 
 ---
 
@@ -149,7 +149,7 @@ kubectl -n egwtls-demo exec deploy/tester -- \
 without origination: 503
 ```
 
-The traffic reaches port 8443 — as plaintext. Each object has its own failure, and this is the one for a missing origination rule.
+The signal reaches port 8443 — as plaintext. Each object has its own failure, and this is the one for a missing origination rule.
 
 ---
 
@@ -233,31 +233,11 @@ One and zero — the most compact proof that policy follows the caller. In secti
 
 ## Common Mistakes
 
-- **The origination [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) on the gateway Service.** Nothing originates — that is the sidecar's leg, which is plaintext by design.
+- **The origination `DestinationRule` on the gateway Service.** Nothing originates — that is the sidecar's leg, which is plaintext by design.
 - **Stage 2 routing to port 8080.** Plaintext to a TLS-only endpoint.
-- **Declaring only port 8443 in the [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/).** Stage 2 has nowhere to start from.
+- **Declaring only port 8443 in the `ServiceEntry`.** Stage 2 has nowhere to start from.
 - **`tls` at the top of `trafficPolicy`.** It would apply to 8080 as well.
 - **Omitting `sni` or `insecureSkipVerify`.** The certificate names `partner.example.com` and is self-signed; both are needed here.
 - **Confusing the two `DestinationRule` objects.** One names the gateway Service and holds an empty subset; the other names the external host and holds the TLS settings.
 - **`mesh` missing from the top-level `gateways`.** Stage 1 never reaches sidecars and the call goes direct — which, on this endpoint, fails outright.
 - **Counting gateway log lines without a baseline.** The log accumulates.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
-- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [TrafficPolicy portLevelSettings](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy-PortTrafficPolicy) — attaching policy to one port instead of the whole host
-- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `mode`, `credentialName` and `sni` for origination
-- [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — how `exportTo` and `Sidecar` together decide what a proxy sees
-- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

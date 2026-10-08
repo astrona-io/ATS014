@@ -1,22 +1,22 @@
 # Scope, Verification And Retry Amplification
 
-> Prerequisite: [Overflow And Its Signatures](./course-02-overflow-and-its-signatures.md). Next: [the module landing page](./course.md).
+Astronaut, three things are left. Reading the limits the proxy is really enforcing. Being exact about what "per caller" means when you plan capacity. And the way module 1's retries can turn a safety feature into a source of damage.
 
-Three things remain: reading the thresholds the proxy is actually enforcing, being precise about what "per client" means for capacity planning, and the interaction with module 1 that turns a protective mechanism into a destructive one.
+This part assumes the full limits from Part 1 are applied (`destinationrule-httpbin-connection-pool.yaml`).
 
-## The thresholds as Envoy holds them
+## The limits as Envoy holds them
 
-Envoy's name for this feature is **circuit breakers**, and the configured thresholds sit on the cluster.
+Envoy, the proxy inside every sidecar, calls this feature **circuit breakers**. The limits you set sit on the cluster for `httpbin`.
 
 > [!TIP]
-> **Try it — the thresholds the client proxy is enforcing**
+> **Try it — the limits the caller's proxy is enforcing**
 >
 > ```sh
-> istioctl proxy-config cluster deploy/fortio -n circuit-demo \
->   --fqdn notification-service.circuit-demo.svc.cluster.local -o json | grep -A8 circuitBreakers
+> istioctl proxy-config cluster deploy/fortio -n bookinfo \
+>   --fqdn httpbin.bookinfo.svc.cluster.local -o json | grep -A8 circuitBreakers
 > ```
 >
-> Expect something like:
+> Expect something like (trimmed):
 >
 > ```text
 > "circuitBreakers": {
@@ -28,125 +28,109 @@ Envoy's name for this feature is **circuit breakers**, and the configured thresh
 >       "maxRetries": 4294967295
 > ```
 >
-> `maxConnections` and `maxPendingRequests` are your settings. The two enormous numbers are `2^32 - 1` — the unset defaults, meaning effectively no limit. That is the useful observation: **anything you do not configure is unbounded**, so a partial policy leaves a gap rather than inheriting something sensible.
+> `maxConnections` and `maxPendingRequests` are your settings. The two huge numbers are `2^32 - 1`, the unset defaults, which means "no real limit". That is the useful lesson: **anything you do not set has no limit**. A partial policy leaves a gap. It does not inherit something sensible.
 
-`maxRequests` there corresponds to `http2MaxRequests`. On HTTP/1 traffic it does not bind, which is why the HTTP/1 breaker is built from `maxConnections` plus `maxPendingRequests`. On **HTTP/2** the picture inverts: one connection multiplexes many concurrent streams, so `maxConnections: 1` barely constrains anything and `http2MaxRequests` is the setting that matters. gRPC is HTTP/2, so this is not an edge case.
+`maxRequests` here matches `http2MaxRequests`. On HTTP/1 traffic it never binds, which is why the HTTP/1 breaker is built from `maxConnections` plus `maxPendingRequests`. On **HTTP/2** it is the other way round. One connection carries many requests at once, so `maxConnections: 1` barely limits anything, and `http2MaxRequests` is the setting that matters. gRPC runs on HTTP/2, so this is not a rare case.
 
-## "Per client" is a capacity statement
+## "Per caller" is a capacity statement
 
-The limits are enforced in each calling workload's sidecar, over that sidecar's own counters. There is no shared state and no coordination.
+Each calling workload's sidecar enforces the limits with its own counters. There is no shared count and no coordination between callers. Every calling ship keeps its own tally of docking ports, and the ship being called sees the sum.
 
 ```mermaid
 flowchart LR
-    A["caller A sidecar<br/>maxConnections: 1"] --> B["the backend<br/>sees up to 3 connections"]
-    C["caller B sidecar<br/>maxConnections: 1"] --> B
-    D["caller C sidecar<br/>maxConnections: 1"] --> B
+    A["caller A"] -->|"max 1"| B["httpbin"]
+    C["caller B"] -->|"max 1"| B
+    D["caller C"] -->|"max 1"| B
 ```
 
-Each caller honours the limit perfectly and the backend still sees three times it. The policy is per client proxy, and there is no shared counter anywhere.
+Each caller's sidecar has `maxConnections: 1`. The diagram shows each caller keeping its limit perfectly while `httpbin` still sees three times that limit.
 
-Three consequences worth being able to state:
+Three things to be able to say:
 
-- **The backend's exposure is `limit × number of callers`**, not `limit`. Sizing a pool means knowing how many client pods there are, and remembering that number changes when the callers autoscale.
-- **It is not rate limiting.** Rate limiting caps requests per unit time, globally, usually enforced server-side; a connection pool caps concurrent outstanding work, locally, per client. If a task says "the service must accept no more than N requests per second", a connection pool is the wrong answer.
-- **A caller with no sidecar is unaffected.** Same caveat as the `Sidecar` resource in section 010 — this is client-side configuration, not an enforced boundary.
+- **The backend's exposure is `limit × number of callers`**, not `limit`. To size a pool you need to know how many caller pods there are, and that number changes when the callers scale.
+- **It is not rate limiting.** Rate limiting caps requests per second, for everyone together, usually at the server. A connection pool caps open work, per caller. If a task says "the service must accept no more than N requests per second", a connection pool is the wrong answer.
+- **A caller with no sidecar is not limited at all.** This is settings in the caller's proxy, not a wall around the service.
 
-Where a genuine service-wide ceiling is required, Istio's answer is a rate limiting filter (local or global, backed by an external rate limit service), which is outside this module and outside the traffic-management domain.
+For a real service-wide ceiling, Istio offers rate limiting (local, or global with an external rate-limit service). That is outside this module and outside the Traffic Management domain.
 
 ## Retries and pools fight each other
 
-This is the most valuable idea in the module, because it is a production trap rather than a syntax detail.
+This is the most valuable idea in the module, because it is a production trap, not a syntax detail.
 
-Work through the sequence:
+Follow the sequence:
 
 ```mermaid
-flowchart TD
-    A["the backend slows down"] --> B["the caller's pending queue fills"]
-    B --> C["the pool rejects the overflow: 503 with UO"]
-    C --> D["retryOn 5xx sees a 5xx and re-sends"]
-    D --> E["the retry occupies the same full pool"]
-    E --> C
+flowchart TB
+    A["httpbin slows down"] --> B["queue fills"]
+    B -->|"overflow"| C["503 UO"]
+    C -->|"retryOn 5xx"| D["retry sent"]
+    D -->|"same full pool"| C
 ```
 
-The arrow from the last box back to the third is the whole problem: the rejection is itself retriable, so the mechanism meant to absorb a transient fault feeds itself.
+The arrow from "retry sent" back to "503 UO" is the whole problem: the refusal can itself be retried, so the feature meant to absorb a short failure feeds on itself.
 
-The mechanism intended to absorb transient failures amplifies a sustained one. Each caller now generates `attempts + 1` times its normal concurrency at exactly the moment the pool is already full, and the pool rejections are themselves retriable under `5xx`.
+The feature meant to soak up brief failures makes a lasting one worse. Each caller now sends up to `attempts + 1` times its normal load, at exactly the moment the pool is already full. And the pool's own refusals count as retryable under `5xx`.
 
-Three defensive habits:
+Three safe habits:
 
-- **Prefer `gateway-error` or `connect-failure` over blanket `5xx`** on routes to a service you are also pool-limiting. A `503 UO` is a deliberate rejection, not a transient fault, and retrying it is counterproductive.
-- **Keep `attempts` small** — one or two, not five.
-- **Remember the budget from module 1.** A retry policy that cannot complete inside the route timeout produces a 504 *and* the extra load, which is the worst of both.
+- **Prefer `gateway-error` or `connect-failure` over a blanket `5xx`** on routes to a service you also pool-limit. A `503 UO` is a deliberate refusal, not a passing glitch. Retrying it makes things worse.
+- **Keep `attempts` small:** one or two, not five.
+- **Remember the time budget from module 1.** A retry policy that cannot finish inside the route timeout gives you a 504 *and* the extra load. That is the worst of both.
 
-Istio does not stop you configuring the amplifying combination, and nothing warns you. It only shows up under load.
+Istio lets you configure the harmful combination, and nothing warns you. It only shows up under load.
 
 > [!TIP]
-> **Try it — watch retries multiply the rejections**
+> **Try it — watch retries multiply the refusals**
+>
+> Note the counter, add an aggressive retry policy, run the same load, and read the counter again:
 >
 > ```sh
-> BEFORE=$(kubectl -n circuit-demo exec deploy/fortio -c istio-proxy -- \
->   pilot-agent request GET stats 2>/dev/null | grep 'notification-service.*pending_overflow' | awk -F': ' '{print $2}')
-> kubectl apply -f - <<'EOF'
+> pending_overflow() { kubectl exec -n bookinfo deploy/fortio -c istio-proxy -- \
+>   pilot-agent request GET stats 2>/dev/null | grep 'httpbin.bookinfo.*pending_overflow' | awk -F': ' '{print $2}'; }
+> BEFORE=$(pending_overflow)
+> cat > virtualservice-httpbin-retry-5xx.yaml <<'EOF'
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
->   name: notification-service
->   namespace: circuit-demo
+>   name: httpbin
+>   namespace: bookinfo
 > spec:
 >   hosts:
->     - notification-service
+>     - httpbin
 >   http:
 >     - route:
 >         - destination:
->             host: notification-service
+>             host: httpbin
 >       retries:
 >         attempts: 3
 >         perTryTimeout: 1s
 >         retryOn: 5xx
 >       timeout: 10s
 > EOF
+> kubectl apply -f virtualservice-httpbin-retry-5xx.yaml
 > sleep 3
-> kubectl -n circuit-demo exec deploy/fortio -c fortio -- \
->   fortio load -c 4 -qps 0 -n 40 -loglevel Warning http://notification-service/notify 2>&1 | grep -E 'Code |All done'
-> AFTER=$(kubectl -n circuit-demo exec deploy/fortio -c istio-proxy -- \
->   pilot-agent request GET stats 2>/dev/null | grep 'notification-service.*pending_overflow' | awk -F': ' '{print $2}')
-> echo "pending_overflow increased by: $((AFTER - BEFORE)) for 40 client requests"
+> load_test 4
+> AFTER=$(pending_overflow)
+> echo "pending_overflow went up by $((AFTER - BEFORE)) for 30 client requests"
 > ```
 >
-> Expect something like:
+> Compare this run's 503 share with Part 1's `load_test 3`. Read the two results together. The failure rate the client sees usually *improves*, because retries hide many refusals. Meanwhile the counter can go up by more than the 30 requests you sent, because each retry is another attempt into the full pool. Under real load, that extra work is the spiral. Delete the VirtualService afterwards to leave the playground as you found it:
 >
-> ```text
-> Code 200 : 37 (92.5 %)
-> Code 503 : 3 (7.5 %)
-> pending_overflow increased by: 58 for 40 client requests
+> ```sh
+> kubectl delete -f virtualservice-httpbin-retry-5xx.yaml
 > ```
->
-> Read those two numbers together. The client-visible failure rate *improved* — retries hid most of the rejections — while the proxy performed far more overflowing attempts than there were requests. Under real load that extra work is the spiral. Delete the `VirtualService` afterwards to leave the playground as you found it.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Testing sequentially.** `maxConnections` limits concurrency. A thousand requests one at a time never trip it, however long you run them.
+> **Expecting the limits to protect the server for everyone.** Each caller enforces its own pool, so the backend's exposure is `limit × callers`. For a service-wide ceiling you need rate limiting.
 >
-> **Looking for the 503 in the server's logs.** The client proxy rejects the request and the backend never sees it. Look at the caller's access log for `UO`.
+> **Leaving `http2MaxRequests` unset for HTTP/2 or gRPC traffic.** One connection carries many requests, so `maxConnections` barely limits anything.
 >
-> **Confusing a breaker 503 with an application 503.** `UO` and `upstream_rq_pending_overflow` are what distinguish them. Neither moving means it is not a breaker.
+> **Assuming unset fields inherit something sensible.** They are `2^32 - 1`, which means no limit.
 >
-> **Expecting the limits to protect the server globally.** Each client enforces its own pool, so the backend's exposure is `limit × callers`. For a service-wide ceiling you need rate limiting.
+> **Combining an aggressive `retryOn: 5xx` with tight pools.** Retries turn an overload into a storm, and the failure rate the client sees can *improve* while the real load doubles.
 >
-> **Leaving `http2MaxRequests` unset for HTTP/2 or gRPC traffic.** One connection carries many streams, so `maxConnections` barely constrains anything.
->
-> **Assuming unset fields inherit something sensible.** They are `2^32 - 1` — unbounded.
->
-> **Combining aggressive `retryOn: 5xx` with tight pools.** Retries turn an overload into a storm, and the client-visible failure rate can *improve* while the real load doubles.
->
-> **Setting the pool on the server's own `DestinationRule` expecting server-side protection.** It is the caller's proxy that reads it.
+> **Putting the pool on the server's own side and expecting server-side protection.** Wherever the `DestinationRule` lives, it is the caller's proxy that reads and applies it.
 
-> *Each caller enforces its own pool, so the limit you set is multiplied by the number of callers — and retries multiply it again.*
-
-## Reference
-
-- [Circuit breaking task](https://istio.io/latest/docs/tasks/traffic-management/circuit-breaking/) — the canonical walkthrough.
-- [ConnectionPoolSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ConnectionPoolSettings) — every field, with defaults.
-- [Envoy circuit breaking](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/circuit_breaking) — the thresholds and the HTTP/1 versus HTTP/2 distinction.
-- [Istio rate limiting](https://istio.io/latest/docs/tasks/policy-enforcement/rate-limit/) — what to use when the requirement is genuinely "no more than N per second".
+> *Each caller enforces its own pool, so the limit you set is multiplied by the number of callers, and retries multiply it again.*

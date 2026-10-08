@@ -1,7 +1,5 @@
 # `HTTPRoute`, Status And What Stays In Istio
 
-> Prerequisite: [A Gateway That Creates Its Own Data Plane](./course-02-a-gateway-that-creates-its-own-data-plane.md). Next: [the module landing page](./course.md).
-
 The routing half, the status conditions that make this API far easier to debug than `Ingress`, and an explicit line around what the Gateway API does not cover.
 
 ## Translating a `VirtualService`
@@ -86,7 +84,7 @@ Three differences worth naming:
 
 ## Status conditions
 
-This is the biggest practical improvement over `Ingress`, which had essentially no status. Both objects report structured conditions, and reading them replaces most guesswork.
+This is the biggest practical improvement over `Ingress`, which had essentially no status. Both objects report structured conditions, like status lights on a launch control panel, and reading them replaces most guesswork.
 
 On a **`Gateway`**:
 
@@ -186,7 +184,7 @@ The line to be able to draw:
 | Mirroring | ✅ `RequestMirror` filter | `VirtualService` also |
 | Fault injection | | **`VirtualService`** |
 
-The important part: **a `DestinationRule` applies to a host however the request was routed to it.** Client-side policy is attached to the destination, not to the route, so everything from sections 030 and 040 continues to work unchanged alongside an `HTTPRoute`. You do not choose between them.
+The important part: **a `DestinationRule` applies to a host however the request was routed to it.** The docking instructions belong to the destination, whichever flight plan brought the signal there. Client-side policy is attached to the destination, not to the route, so everything from sections 030 and 040 continues to work unchanged alongside an `HTTPRoute`. You do not choose between them.
 
 ## Common pitfalls
 
@@ -208,10 +206,3 @@ The important part: **a `DestinationRule` applies to a host however the request 
 > **Port-forwarding to `istio-ingressgateway`.** That is module 1's proxy and it knows nothing about your `HTTPRoute`.
 
 > *`Accepted` is about attachment and `ResolvedRefs` is about backends — the condition reading `False` tells you which half of the configuration to look at.*
-
-## Reference
-
-- [Gateway API: HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/) — matches, filters, `backendRefs` and weights.
-- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — Istio's implementation, including what is and is not supported.
-- [Gateway API status and conditions](https://gateway-api.sigs.k8s.io/geps/gep-1364/) — the condition model the diagnostics above rely on.
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — the object that keeps working alongside an `HTTPRoute`.

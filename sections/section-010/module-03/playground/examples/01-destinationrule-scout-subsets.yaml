@@ -1,0 +1,23 @@
+# Step 1: define the versions (subsets) of the scout.
+# A subset is a named group of pods, picked by label. Nothing changes for
+# traffic yet: without a VirtualService, requests still go to all versions.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  host: scout
+  subsets:
+  # Pods labelled version=v1: no star ratings.
+  - name: v1
+    labels:
+      version: v1
+  # Pods labelled version=v2: black stars.
+  - name: v2
+    labels:
+      version: v2
+  # Pods labelled version=v3: red stars.
+  - name: v3
+    labels:
+      version: v3

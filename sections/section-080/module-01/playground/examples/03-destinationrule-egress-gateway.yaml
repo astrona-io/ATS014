@@ -1,0 +1,13 @@
+# A named subset of the egress gateway Service, used as a route target in the
+# VirtualService. One subset per external host keeps the routes readable.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: egress-gateway-for-httpbin-org
+  namespace: bookinfo
+spec:
+  # Full name: the egress gateway Service lives in namespace istio-egress.
+  host: istio-egress.istio-egress.svc.cluster.local
+  subsets:
+  # No labels: covers all egress gateway pods.
+  - name: httpbin-org

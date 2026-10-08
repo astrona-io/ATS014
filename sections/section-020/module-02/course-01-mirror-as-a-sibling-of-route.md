@@ -1,118 +1,245 @@
 # Mirror As A Sibling Of Route
 
-> Prerequisite: [the module landing page](./course.md). Next: [Identifying And Sampling Shadow Traffic](./course-02-identifying-and-sampling-shadow-traffic.md).
+The whole feature is one field on the flight plan. This part is about where that field goes and what the sidecar does when it fires. It also covers the fact that trips people up first: a mirror sits *next to* the route, not inside it.
 
-The whole feature is one field. This part is about where that field goes, what the proxy does when it fires, and the structural fact that trips people up first — that a mirror sits *beside* the route rather than inside it.
+## Answered versus received
 
-## The field, and its indentation
+Normally two things are the same: which version **answered** the caller, and which versions **received** the request. Mirroring makes them differ. So before you mirror anything, it helps to be able to measure both.
+
+The playground's [overview](./playground/docs/overview.md) has three helpers for that. Paste them once in each new terminal:
+
+- `send_requests` counts **answers**: what the caller saw.
+- `mark_start` notes the time, and `count_received` then counts **arrivals** since that time, from each version's own app log.
+
+Start with a baseline: all traffic to v1, and nothing mirrored. You need a `DestinationRule` with subsets first. A subset is a ship class: the same `probe` model, built two ways, `v1` and `v2`. Then a `VirtualService`, the flight plan, sends every request to `v1`.
+
+> [!TIP]
+> **Try it – answered = received**
+>
+> ```sh
+> cat > destinationrule-probe.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: DestinationRule
+> metadata:
+>   name: probe
+>   namespace: starfleet
+> spec:
+>   host: probe
+>   subsets:
+>   - name: v1
+>     labels:
+>       version: v1
+>   - name: v2
+>     labels:
+>       version: v2
+> EOF
+> cat > virtualservice-probe.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: probe
+>   namespace: starfleet
+> spec:
+>   hosts:
+>   - probe
+>   http:
+>   - route:
+>     - destination:
+>         host: probe
+>         subset: v1
+> EOF
+> kubectl apply -f destinationrule-probe.yaml
+> kubectl apply -f virtualservice-probe.yaml
+> mark_start; send_requests 5; count_received
+> ```
+>
+> Expect:
+>
+> ```text
+>    5 probe-v1
+> probe-v1 received: 5
+> probe-v2 received: 0
+> ```
+>
+> Five answers from v1, five arrivals at v1, nothing at v2. The two numbers match.
+
+## The field, and where it sits
+
+Here is the same flight plan with a mirror added:
 
 ```yaml
-http:
+  http:
   - route:
-      - destination:
-          host: notification-service
-          subset: v1
-        weight: 100
+    - destination:
+        host: probe
+        subset: v1
+      weight: 100
+    # Where to send the copy.
     mirror:
-      host: notification-service
+      host: probe
       subset: v2
+    # Share of requests to copy, in percent. 100 = all.
     mirrorPercentage:
       value: 100.0
 ```
 
-Read the indentation carefully, because this is where the object is usually got wrong:
+Read the indentation carefully, because this is where people usually go wrong:
 
-- **`route`** is a list of destinations that serve the caller. Its weights sum to 100 among themselves.
-- **`mirror`** is a sibling of `route` on the same `http` rule, and it is **one destination, not a list**. There is no `weight` on it.
-- **`mirrorPercentage`** is another sibling, with a float under `value`.
+- **`route`** is the list of destinations that serve the caller.
+- **`mirror`** sits next to `route` on the same `http` rule. It is **one destination, not a list**, and it has no `weight`.
+- **`mirrorPercentage`** is another field next to them, with a decimal number under `value`.
 
-A mirror is therefore never part of the weighted split. The weights in `route` are complete on their own, and the mirrored copy is **extra traffic on top of them**. A hundred client requests with a full mirror produce two hundred requests inside the cluster.
+So a mirror is never part of the weighted split. The weights in `route` are complete on their own, and the copy is **extra traffic on top**. A hundred requests with a full mirror become two hundred requests inside the cluster. Part 3 shows what that means when you combine a mirror with a split.
 
-## What the proxy actually does
+## What the sidecar does
+
+Think of mirroring as sending a copy of each signal to a test ship. The proven ship still answers. The test ship's replies are ignored.
+
+In mesh terms: the caller's sidecar sends the request to the route's destination, as usual. It **also** sends a copy to the mirror's destination. It only waits for the route's answer. The mirror's answer is thrown away. People call this "fire and forget".
 
 ```mermaid
 sequenceDiagram
-    participant C as the caller
-    participant P as the caller's proxy
-    participant V1 as subset v1, the primary
-    participant V2 as subset v2, the shadow
-    C->>P: POST /notify
-    P->>V1: the real request
-    P->>V2: a fire-and-forget copy
-    V1-->>P: 200
-    P-->>C: 200, always from the primary
-    V2-->>P: whatever it returns, discarded
+    participant C as shuttle sidecar
+    participant V1 as probe v1
+    participant V2 as probe v2
+    C->>V1: GET /hostname
+    C-)V2: copy of GET /hostname
+    V1-->>C: 200 (returned to shuttle)
+    V2-->>C: answer (thrown away)
 ```
 
-The copy is dispatched and forgotten. Its response never reaches the caller and neither does its latency, which is what makes it safe to mirror at something slow or broken.
+The picture shows one request. v1's answer goes back to `shuttle`. v2's answer goes nowhere. Three things follow, and all three come up in the exam:
 
-Three properties follow, and all three are examinable:
-
-- **The caller's response always comes from the primary.** The mirrored response is dropped entirely — the proxy does not compare them, does not log the difference, and does not fall back to it.
-- **The mirror's latency does not reach the caller.** The copy is dispatched fire-and-forget; a shadow that takes ten seconds does not make the caller wait. This is what makes mirroring safe to point at something slow.
-- **A failing shadow is invisible from the client side.** If `v2` returns 500 to every copy, the caller still sees `v1`'s `200`. Part 2 is about where the evidence actually is.
-
-## The subset still has to exist
-
-`mirror.subset` resolves through the same `DestinationRule` as every other destination in this course. Point it at a subset nobody defined and the mirror **silently does nothing**: no copy is sent, the caller still gets a correct response from the primary, and there is no symptom on the calling side at all.
-
-That is worth internalising before you spend time wondering why a shadow is quiet. The diagnostic order for "my mirror is not working" is:
-
-1. Does the `DestinationRule` define the subset the `mirror` names? (`istioctl analyze` reports it if not.)
-2. Does the subset select any running pod? (`istioctl proxy-config endpoints`.)
-3. Is `requestMirrorPolicies` present in the proxy's route config? (Part 3.)
+- **The caller's answer always comes from the route.** The mirrored answer is dropped. The sidecar does not compare the two, does not log the difference, and never falls back to it.
+- **The mirror's speed does not reach the caller.** A shadow that takes ten seconds does not make the caller wait. That is what makes it safe to mirror to something slow.
+- **A failing shadow is invisible from the caller's side.** If v2 answers 500 to every copy, the caller still sees v1's `200`. Part 2 is about where the evidence is.
 
 > [!TIP]
-> **Try it — route to v1, mirror everything to v2**
+> **Try it – v2 receives a copy of everything**
+>
+> Add the `mirror` and `mirrorPercentage` lines shown above to `virtualservice-probe.yaml`, then apply and count:
 >
 > ```sh
-> kubectl apply -f - <<'EOF'
+> kubectl apply -f virtualservice-probe.yaml
+> mark_start; send_requests 5; count_received
+> ```
+>
+> Expect:
+>
+> ```text
+>    5 probe-v1
+> probe-v1 received: 5
+> probe-v2 received: 5
+> ```
+>
+> The caller only ever saw v1. Yet v2 handled every request too.
+
+## Mirroring into a broken version
+
+The safety promise is easiest to believe when you watch it hold. Below is a pod that answers `503` to everything, labelled `version: broken`. The same files are in the playground's [`examples/cases/`](./playground/examples/cases/) folder. You add a `broken` subset for it to the DestinationRule, and point the mirror there with `mirrorPercentage: 100.0`.
+
+> [!TIP]
+> **Try it – the caller stays fine while the shadow fails**
+>
+> Write the three files, then apply them in this order:
+>
+> ```sh
+> cat > c2-probe-broken-pod.yaml <<'EOF'
+> apiVersion: apps/v1
+> kind: Deployment
+> metadata:
+>   name: probe-broken
+>   namespace: starfleet
+> spec:
+>   replicas: 1
+>   selector:
+>     matchLabels:
+>       app: probe
+>       version: broken
+>   template:
+>     metadata:
+>       labels:
+>         app: probe
+>         version: broken
+>     spec:
+>       containers:
+>       - name: http-echo
+>         image: hashicorp/http-echo:1.0
+>         args: ["-listen=:8080", "-status-code=503", "-text=broken"]
+>         ports:
+>         - containerPort: 8080
+> EOF
+> cat > c2-destinationrule-with-broken-subset.yaml <<'EOF'
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
->   name: notification-service
->   namespace: mirror-demo
+>   name: probe
+>   namespace: starfleet
 > spec:
->   host: notification-service
+>   host: probe
 >   subsets:
->     - name: v1
->       labels:
->         version: v1
->     - name: v2
->       labels:
->         version: v2
-> ---
+>   - name: v1
+>     labels:
+>       version: v1
+>   - name: v2
+>     labels:
+>       version: v2
+>   - name: broken
+>     labels:
+>       version: broken
+> EOF
+> cat > c2-virtualservice-mirror-to-broken.yaml <<'EOF'
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
->   name: notification
->   namespace: mirror-demo
+>   name: probe
+>   namespace: starfleet
 > spec:
 >   hosts:
->     - notification-service
+>   - probe
 >   http:
->     - route:
->         - destination:
->             host: notification-service
->             subset: v1
->           weight: 100
->       mirror:
->         host: notification-service
->         subset: v2
->       mirrorPercentage:
->         value: 100.0
+>   - route:
+>     - destination:
+>         host: probe
+>         subset: v1
+>     mirror:
+>       host: probe
+>       subset: broken
+>     mirrorPercentage:
+>       value: 100.0
 > EOF
-> kubectl -n mirror-demo exec deploy/tester -- sh -c \
->   'for i in $(seq 1 20); do curl -s -X POST http://notification-service/notify; echo; done' | sort | uniq -c
+> kubectl apply -f c2-probe-broken-pod.yaml
+> kubectl rollout status -n starfleet deploy/probe-broken
+> kubectl apply -f c2-destinationrule-with-broken-subset.yaml
+> kubectl apply -f c2-virtualservice-mirror-to-broken.yaml
+> for i in $(seq 1 5); do
+>   kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://probe:8000/hostname
+> done | sort | uniq -c
+> kubectl logs -n starfleet deploy/probe-broken -c istio-proxy --tail=5 | grep -c hostname
+> kubectl logs -n starfleet deploy/probe-broken -c istio-proxy --tail=1
 > ```
 >
 > Expect something like:
 >
 > ```text
->   20 ["EMAIL"]
+>       5 200
+> 5
+> "GET /hostname HTTP/1.1" 503 ...
 > ```
 >
-> Twenty requests, twenty answers from `v1`, no trace of `v2` anywhere in the output. From the caller's side this is indistinguishable from a plain 100%-to-`v1` route — which is the entire point, and also why the next part exists.
+> The callers got five `200`s. The broken pod got every copy and answered `503` to each one, and nobody saw it. You find a shadow's problems in its logs and metrics, not in complaints from users.
+>
+> Clean up afterwards: `kubectl delete -f c2-probe-broken-pod.yaml`, then apply `destinationrule-probe.yaml` again.
+
+## The subset still has to exist
+
+`mirror.subset` is looked up through the same `DestinationRule` as every other destination in this course. Point it at a subset nobody defined, and the mirror **silently does nothing**. No copy is sent, the caller still gets a correct answer from the route, and nothing goes wrong on the calling side.
+
+Keep that in mind before you spend time wondering why a shadow is quiet. When "my mirror is not working", check in this order:
+
+1. Does the `DestinationRule` define the subset the `mirror` names? (`istioctl analyze` reports it if not.)
+2. Does the subset select any running pod? (`istioctl proxy-config endpoints`.)
+3. Does the sidecar's route configuration have `requestMirrorPolicies`? (Part 3.)
 
 ## Mirroring to a different host
 
@@ -120,39 +247,32 @@ That is worth internalising before you spend time wondering why a shadow is quie
 
 ```yaml
 mirror:
-  host: notification-service-shadow
+  host: probe-shadow
   port:
-    number: 80
+    number: 8000
 ```
 
-That is the shape to use when the shadow is a separate deployment with its own Service and its own datastore — which, as Part 3 argues, is usually what you want. Mirroring to a subset of the *same* Service is convenient for a demonstration and slightly risky in production, because the shadow pods are behind the same name and can be reached by ordinary traffic too.
+Use that shape when the shadow is a separate Deployment with its own Service and its own datastore. As Part 3 explains, that is usually what you want. Mirroring to a subset of the *same* Service is handy for a demo, and a little risky in production, because the shadow pods sit behind the same name and ordinary traffic can reach them too.
 
 ## What mirroring cannot tell you
 
-One honest limitation, because it decides whether the feature fits a given question.
+One honest limit, because it decides whether the feature fits a question.
 
-Istio discards the shadow's response, so mirroring **cannot compare outputs**. It will tell you that `v2` crashed, timed out, leaked memory or fell over under real load. It will not tell you that `v2` returned a subtly wrong answer, because nothing ever looked at the answer.
+Istio throws away the shadow's answer, so mirroring **cannot compare outputs**. It will tell you that v2 crashed, timed out, leaked memory or fell over under real load. It will not tell you that v2 gave a slightly wrong answer, because nothing ever looked at the answer.
 
-Response comparison ("diff testing") needs a component that receives both responses and compares them — an application-level concern that sits outside the mesh. If a task asks how to verify a new version returns *the same results*, mirroring is not the answer; weighted routing plus real observation is.
+Comparing answers ("diff testing") needs something that receives both answers and compares them. That is an application concern outside the mesh. If a task asks how to check a new version gives *the same results*, mirroring is not the answer. Weighted routing plus real observation is.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Putting `mirror` inside the `route` list.** It is a sibling of `route` on the `http` rule, and it is a single destination with no `weight`.
+> **Putting `mirror` inside the `route` list.** It sits next to `route` on the `http` rule, and it is one destination with no `weight`.
 >
 > **Expecting the mirror to be part of the 100.** It is extra traffic on top. A full mirror doubles the requests inside the cluster.
 >
-> **Mirroring to a subset no `DestinationRule` defines.** No copy is sent and the caller sees nothing wrong. Silent, and the most common cause of a quiet shadow.
+> **Mirroring to a subset no `DestinationRule` defines.** No copy is sent and the caller sees nothing wrong. This is the most common cause of a quiet shadow.
 >
-> **Expecting the shadow's failures to surface at the caller.** The response is discarded. A shadow returning 500 to everything looks identical to a healthy one from the client side.
+> **Expecting the shadow's failures to show at the caller.** The answer is thrown away. A shadow returning 503 to everything looks exactly like a healthy one from the caller's side.
 >
-> **Expecting mirroring to compare responses.** Nothing looks at the shadow's answer. It finds crashes and load problems, never wrong results.
+> **Expecting mirroring to compare answers.** Nothing looks at the shadow's answer. It finds crashes and load problems, never wrong results.
 
-> *`mirror` is a sibling of `route`, not an entry in it — the copy is extra traffic whose response and latency are both thrown away.*
-
-## Reference
-
-- [Mirroring task](https://istio.io/latest/docs/tasks/traffic-management/mirroring/) — the upstream walkthrough this module follows.
-- [HTTPMirrorPolicy API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMirrorPolicy) — `mirror`, `mirrors` and `mirrorPercentage` in one page.
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the `http` rule that `route`, `mirror`, `timeout` and `fault` all hang off.
-- `istioctl analyze -n <namespace>` — the fastest way to catch a `mirror` pointing at an undefined subset.
+> *`mirror` sits next to `route`, not inside it. The copy is extra traffic whose answer and delay are both thrown away.*

@@ -1,8 +1,6 @@
 # Preference, `distribute` And `failover`
 
-> Prerequisite: [Where Locality Comes From](./course-01-where-locality-comes-from.md). Next: [The Health Dependency And Scope](./course-03-the-health-dependency-and-scope.md).
-
-Before writing anything, know what you already have. A surprising share of "locality configurations" in the wild restate the default. This part covers that default, then the two mutually exclusive ways to override it.
+Astronaut, before writing anything, know what you already have. A surprising share of "locality configurations" in the wild restate the default. This part covers that default, then the two mutually exclusive ways to override it.
 
 ## The default: prefer local, spill over when you must
 
@@ -11,15 +9,15 @@ Istio **prefers the caller's own locality by default**, with no `localityLbSetti
 The matching is hierarchical and most-specific-first: same region *and* zone *and* subzone beats same region and zone, which beats same region, which beats anything.
 
 ```mermaid
-flowchart TD
-    C["a caller in region local, zone a"] --> Z{"any healthy endpoints in local/zone-a"}
-    Z -->|"yes"| U1["all traffic stays in zone a"]
-    Z -->|"no"| R{"any healthy endpoints elsewhere in region local"}
-    R -->|"yes"| U2["spill to the other zones in the region"]
-    R -->|"no"| U3["spill to another region"]
+flowchart TB
+    C["caller in zone-a"] --> Z{"healthy in zone-a?"}
+    Z -->|"yes"| U1["stay in zone-a"]
+    Z -->|"no"| R{"healthy in region?"}
+    R -->|"yes"| U2["other zones in region"]
+    R -->|"no"| U3["another region"]
 ```
 
-Each level is used only when the one above it has nothing healthy left. "Keep traffic in the zone, fall back if the zone dies" is therefore the default, with no configuration at all.
+The caller sits in region `local`, zone `a`. Each level is used only when the one above it has nothing healthy left. "Keep traffic in the zone, fall back if the zone dies" is therefore the default, with no configuration at all.
 
 So the common requirement — "keep traffic in the zone, fall back if the zone dies" — needs **no configuration at all**. What `localityLbSetting` adds is *control* over that preference: explicit proportions, or an explicit fallback order.
 
@@ -143,7 +141,7 @@ There is also `failoverPriority`, a list of label keys (such as `topology.kubern
 > [!WARNING]
 > **Configuring `distribute` to get zone preference.** Preference is already the default. `distribute` is for overriding it with explicit proportions.
 >
-> **Writing `distribute` weights that do not sum to 100.** Same rule as section 020's route weights, and the same admission rejection.
+> **Writing `distribute` weights that do not sum to 100.** Here the total must be exactly 100, and Istio's validation rejects the object if it is not. This is stricter than section 020's route weights, which Istio 1.30.5 accepts and uses as a ratio.
 >
 > **Mixing `distribute` and `failover` for the same locality.** They are alternative ways of answering the same question; pick one.
 >
@@ -152,10 +150,3 @@ There is also `failoverPriority`, a list of label keys (such as `topology.kubern
 > **Testing locality on a single-node cluster.** Every pod shares the node's locality, so there is no second locality to prefer or fail over to.
 
 > *The default already prefers the caller's locality and spills over — `localityLbSetting` exists to change that default, not to create it.*
-
-## Reference
-
-- [Locality load balancing task](https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/) — separate pages for distribute, failover and failoverPriority.
-- [LocalityLoadBalancerSetting API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LocalityLoadBalancerSetting) — the schema, including the mutual exclusion.
-- [Envoy locality weighted load balancing](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/locality_weight) — what the weights compile into.
-- `istioctl proxy-config endpoints -o json` — the per-endpoint locality the settings above are matching against.

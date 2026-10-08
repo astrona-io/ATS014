@@ -1,0 +1,24 @@
+# Case 3: mirroring works together with a weighted split.
+# Real traffic: 50% v1, 50% v2. Copy of every request: also to v2.
+# So v2 gets its own 50% PLUS a copy of everything.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - route:
+    - destination:
+        host: probe
+        subset: v1
+      weight: 50
+    - destination:
+        host: probe
+        subset: v2
+      weight: 50
+    mirror:
+      host: probe
+      subset: v2

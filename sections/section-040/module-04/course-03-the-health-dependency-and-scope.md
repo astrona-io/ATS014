@@ -1,8 +1,6 @@
 # The Health Dependency And Scope
 
-> Prerequisite: [Preference, `distribute` And `failover`](./course-02-preference-distribute-and-failover.md). Next: [the module landing page](./course.md).
-
-One fact remains, and it is the most examinable thing in section 040. Then where the configuration lives, and an honest account of what this playground can and cannot show you.
+One fact remains, and it is the most examinable thing in section 040: the fleet only switches orbit when someone notices the nearby ships are damaged. Then where the configuration lives, and an honest account of what this playground can and cannot show you.
 
 ## Failover needs outlier detection
 
@@ -11,14 +9,13 @@ One fact remains, and it is the most examinable thing in section 040. Then where
 Follow the consequence:
 
 ```mermaid
-flowchart TD
-    E["an endpoint failing every request"] --> P["its readiness probe still passes<br/>so it stays a Service endpoint"]
-    P --> O["no outlierDetection is configured<br/>so nothing ever marks it unhealthy"]
-    O --> H["locality failover sees a perfectly healthy endpoint"]
-    H --> N["traffic keeps going to the broken locality<br/>failover never triggers"]
+flowchart TB
+    E["failing endpoint"] -->|"readiness passes"| P["still a Service endpoint"]
+    P -->|"no outlierDetection"| O["never marked unhealthy"]
+    O -->|"failover sees healthy"| N["traffic keeps going"]
 ```
 
-Locality failover has no failure detector of its own. It acts on health, and something else has to supply it.
+The endpoint fails every request, yet failover never triggers. Locality failover has no failure detector of its own. It acts on health, and something else has to supply it.
 
 So a working failover configuration always has **two** parts in the same `trafficPolicy`:
 
@@ -117,10 +114,3 @@ What it **does** show faithfully: locality derivation, the default preference, `
 > **Testing failover by scaling to zero and declaring victory.** That is endpoint removal, which works without outlier detection. It does not prove the failure path.
 
 > *Locality decides where traffic should go; outlier detection decides what counts as unavailable — without the second, the first never acts.*
-
-## Reference
-
-- [Locality load balancing task](https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/) — including the explicit statement that failover requires outlier detection.
-- [LocalityLoadBalancerSetting API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LocalityLoadBalancerSetting) — `distribute`, `failover`, `failoverPriority` and `enabled`.
-- [MeshConfig](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig) — where the mesh-wide `localityLbSetting` is defined.
-- [OutlierDetection API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#OutlierDetection) — the dependency, from module 3.

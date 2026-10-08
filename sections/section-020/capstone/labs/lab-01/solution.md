@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-One [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) carrying both of the section's features. The second rule does two things at once — splits caller traffic and copies it elsewhere — and keeping those two straight is the whole exercise.
+One `VirtualService` carrying both of the section's features. The second rule does two things at once — splits caller traffic between two ship classes and copies every signal to a test ship — and keeping those two straight is the whole exercise.
 
 ---
 
@@ -218,21 +218,3 @@ tester                    1
 - **Measuring the split with 10 requests.** Independent per-request draws; use 200.
 - **Counting shadow log lines without a baseline.** Take a `BEFORE` count and subtract.
 - **Scaling Deployments to shape the split.** Weights are applied before endpoint selection, so it would not work anyway — and the grader checks.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [HTTPRouteDestination API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRouteDestination) — `destination` plus `weight`, and the rule that weights sum to 100
-- [HTTPMirrorPolicy API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMirrorPolicy) — `mirror`, `mirrors` and `mirrorPercentage`
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

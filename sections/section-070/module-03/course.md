@@ -2,16 +2,16 @@
 
 <!-- astrona:playground -->
 > [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS014/tree/main/sections/section-070/module-03/playground)
+> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
 >
 > ```sh
 > astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-070/module-03/playground
 > astrona destroy ats-014-playground-070-03
 > ```
 
-The previous two modules dealt with services somebody else runs: a public API you call and cannot change. This module is about something different — a workload **you** run that simply is not in Kubernetes. A database on a VM, a legacy service nobody has containerised, an appliance with a fixed address.
+Astronaut, the previous two modules dealt with services somebody else runs: planets in other solar systems that you signal but cannot change. This module is about something different: a workload **you** run that simply is not in Kubernetes. Think of an old ship that flies outside the fleet's signal network: a database on a VM, a legacy service nobody has containerised, an appliance with a fixed address.
 
-The distinction matters because you want more from your own workload than from a third party's. Calling it by a stable hostname instead of an IP is the obvious part. Giving it a mesh **identity**, so the same `AuthorizationPolicy` and `PeerAuthentication` rules that govern your pods govern it too, is the part that makes this feature worth learning.
+The distinction matters because you want more from your own workload than from a third party's. Calling it by a stable hostname instead of an IP is the obvious part. Giving it a mesh **identity** (crew papers mission control recognises), so the same `AuthorizationPolicy` and `PeerAuthentication` rules that govern your spaceships govern it too, is the part that makes this feature worth learning.
 
 > `MESH_EXTERNAL` gets you routing. `MESH_INTERNAL` additionally gets you identity and policy.
 
@@ -50,4 +50,4 @@ No `WorkloadEntry`, `ServiceEntry` or `WorkloadGroup` exists yet.
 
 ## Where this fits
 
-This is the last of the three external-traffic modules and the one that closes the loop: modules 1 and 2 brought other people's services into the mesh's view, and this one brings your own non-Kubernetes workloads into its *membership*. The payoff is a single policy and identity model covering pods and machines alike, which is what "mesh expansion" means in Istio's own documentation.
+This is the last of the three external-traffic modules and the one that closes the loop: modules 1 and 2 brought other people's services into the mesh's view, and this one brings your own non-Kubernetes workloads into its *membership*. The payoff is a single policy and identity model covering spaceships and old machines alike, which is what "mesh expansion" means in Istio's own documentation.

@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Three objects that only work together. The endpoint reports the scheme it was reached over, so there is no ambiguity about whether you succeeded.
+Three objects that only work together, astronaut. The endpoint reports the scheme it was reached over, so there is no ambiguity about whether your mission succeeded.
 
 ---
 
@@ -29,7 +29,7 @@ scheme=https
 [2026-09-27T12:31:05.442Z] "- - -" 0 - - - "-" 705 5923 212 - "-" "-" "-" "-" "10.244.0.16:8443" ...
 ```
 
-Three facts established. The endpoint refuses plaintext. It answers `scheme=https` when reached properly. And when the *application* does the TLS, the proxy's log line is `"- - -"` — no method, no path, no status. That last line is the problem this module solves.
+Three facts established. The endpoint refuses open (plaintext) signals. It answers `scheme=https` when reached properly. And when the *application* does the TLS, the proxy's log line is `"- - -"` — no method, no path, no status. That last line is the problem this module solves.
 
 ---
 
@@ -109,7 +109,7 @@ kubectl -n tlsorig-demo exec deploy/tester -- \
 without DestinationRule: 503
 ```
 
-The traffic now reaches port 8443 — as plaintext, which the endpoint drops. Each object has a distinct failure, and this is the one for a missing [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/).
+The traffic now reaches port 8443 — as plaintext, which the endpoint drops. Each object has a distinct failure, and this is the one for a missing `DestinationRule`.
 
 ---
 
@@ -157,7 +157,7 @@ scheme=https
 status: 200
 ```
 
-An `http://` call, a `200`, and the endpoint reporting **`scheme=https`**. The endpoint speaks only TLS, so it could not have answered at all unless the sidecar did the handshake. The application never changed.
+An `http://` call, a `200`, and the endpoint reporting **`scheme=https`**. The endpoint speaks only TLS, so it could not have answered at all unless the communications officer sealed the signal and did the handshake. The application never changed.
 
 ---
 
@@ -177,7 +177,7 @@ istioctl proxy-config cluster deploy/tester -n tlsorig-demo --fqdn secure.exampl
 
 Compare that log line with step 1's. A method, a path and a status where there were dashes — which means every layer-7 feature in this course now applies to this call. The `transportSocket` on the cluster is the proxy-side confirmation.
 
-Try adding a `timeout` to the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) if you want to see that claim demonstrated.
+Try adding a `timeout` to the `VirtualService` if you want to see that claim demonstrated.
 
 ---
 
@@ -188,24 +188,6 @@ Try adding a `timeout` to the [`VirtualService`](https://istio.io/latest/docs/re
 - **Omitting `sni`.** This endpoint's certificate names `secure.example.com`; without SNI the handshake has nothing to select on.
 - **Omitting `insecureSkipVerify`.** The certificate is self-signed, so verification fails and the handshake is rejected.
 - **Omitting the `VirtualService`.** Traffic stays on 8080, the endpoint never sees a TLS handshake.
-- **Pointing the `VirtualService` at the IP instead of the host.** It must name the [`ServiceEntry`](https://istio.io/latest/docs/reference/config/networking/service-entry/) host.
+- **Pointing the `VirtualService` at the IP instead of the host.** It must name the `ServiceEntry` host.
 - **Calling `https://` from the client.** Then the sidecar sees an encrypted stream and none of this applies.
 - **Creating a Service in `outside-mesh`.** That puts the endpoint in the registry through the back door.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [TrafficPolicy portLevelSettings](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy-PortTrafficPolicy) — attaching policy to one port instead of the whole host
-- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `mode`, `credentialName` and `sni` for origination
-- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

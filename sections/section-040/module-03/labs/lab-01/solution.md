@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-One object with four fields, and one of those fields is the whole exercise — the default silently makes the policy a no-op on a service this small.
+Astronaut, here is the mission debrief. One object with four fields pulls the damaged ship out of formation, and one of those fields is the whole exercise: its default silently makes the policy do nothing on a squadron this small.
 
 ---
 
@@ -181,23 +181,9 @@ done
 ## Common Mistakes
 
 - **Leaving `maxEjectionPercent` at its default.** 10% of two endpoints is zero. The single most common reason this task fails.
-- **Testing with 20 requests.** Consecutive failures on one endpoint take more traffic than you expect, because healthy endpoints dilute them.
+- **Testing with too few requests.** Each endpoint counts only the signals that reach it. With several pods, the broken one gets only its share of the traffic, so you need a few times `consecutive5xxErrors` requests before it has failed enough times in a row.
 - **Deleting or scaling `httpbin-bad`.** The grader checks it is still running — the proxy has to be the one that stops using it.
 - **Adding a retry policy.** It would hide the failures the detector needs to see, and the grader rejects it.
 - **Looking at `kubectl get endpoints` for proof.** It never changes. Use the proxy's stats and `proxy-config endpoints`.
 - **Checking `ejections_active` at the wrong moment.** It flickers to 0 between ejections. `ejections_total` is the monotonic one.
 - **Setting `minHealthPercent` high.** At 60% on two endpoints, ejecting one would breach the floor and ejection is disabled entirely.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [OutlierDetection API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#OutlierDetection) — `consecutive5xxErrors`, `interval`, `baseEjectionTime`, `maxEjectionPercent`
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full

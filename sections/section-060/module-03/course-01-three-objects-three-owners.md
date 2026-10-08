@@ -1,8 +1,6 @@
 # Three Objects, Three Owners
 
-> Prerequisite: [the module landing page](./course.md). Next: [A Gateway That Creates Its Own Data Plane](./course-02-a-gateway-that-creates-its-own-data-plane.md).
-
-The Gateway API splits into three objects where `Ingress` had one. That split is not tidiness — it maps onto who owns what in a real organisation, and understanding the mapping makes the rest of the API predictable.
+The Gateway API splits into three objects where `Ingress` had one. That split is not tidiness. It maps onto who owns what in a real organisation, like a space agency where one crew designs spaceport types, another builds a spaceport, and a third writes flight plans. Understanding the mapping makes the rest of the API predictable.
 
 ## The CRDs are not part of Kubernetes
 
@@ -34,15 +32,15 @@ There are sibling route kinds — `GRPCRoute`, `TCPRoute`, `TLSRoute` — for no
 The split maps onto organisational boundaries, and the API says so explicitly:
 
 ```mermaid
-flowchart TD
-    I["infrastructure provider"] -->|"owns"| GC["GatewayClass<br/>this is how gateways are implemented here"]
-    P["platform or cluster team"] -->|"owns"| G["Gateway<br/>a listener on 443 for *.example.com,<br/>and who may attach routes to it"]
-    A["application team"] -->|"owns"| R["HTTPRoute<br/>my /checkout path goes to my service"]
-    GC --> G
-    G --> R
+flowchart TB
+    I["infrastructure provider"] -->|"owns"| GC["GatewayClass"]
+    P["platform team"] -->|"owns"| G["Gateway"]
+    A["application team"] -->|"owns"| R["HTTPRoute"]
+    GC -->|"used by"| G
+    G -->|"accepts"| R
 ```
 
-Three objects, three different owners, one chain. `Ingress` mixed all three concerns into a single object, which is why an application team writing one was also making infrastructure decisions.
+For example, the `GatewayClass` says how gateways are built, the `Gateway` is a listener on 443 for `*.example.com`, and the `HTTPRoute` sends `/checkout` to the team's service. Three objects, three different owners, one chain. `Ingress` mixed all three concerns into a single object, which is why an application team writing one was also making infrastructure decisions.
 
 With `Ingress`, one object mixed all three concerns, so an application team writing an `Ingress` was also making infrastructure decisions — and a platform team had no object to own. With `Gateway` and `HTTPRoute` as separate resources, RBAC can grant a team `HTTPRoute` in its own namespace and nothing else.
 
@@ -106,10 +104,3 @@ Before going further, fix the distinction, because examples on the internet mix 
 > **Assuming any installed CRD version will do.** The Gateway API version has to be one the installed Istio supports.
 >
 > **Expecting `GatewayClass` to be namespaced.** It is cluster-scoped, like `IngressClass`.
-
-## Reference
-
-- [Gateway API](https://gateway-api.sigs.k8s.io/) — the project, including the role-oriented design rationale.
-- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — Istio's own walkthrough and the CRD installation step.
-- [Gateway API concepts: roles and personas](https://gateway-api.sigs.k8s.io/concepts/roles-and-personas/) — the three-owner split this part describes.
-- `kubectl get gatewayclass` — the one-line check that Istio's controller is registered and accepted.

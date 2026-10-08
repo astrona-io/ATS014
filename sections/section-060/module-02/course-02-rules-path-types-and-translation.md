@@ -1,7 +1,5 @@
 # Rules, Path Types And Translation
 
-> Prerequisite: [Claiming An Ingress](./course-01-claiming-an-ingress.md). Next: [TLS And The Feature Ceiling](./course-03-tls-and-the-feature-ceiling.md).
-
 The rule structure is Kubernetes', not Istio's, and one of its fields behaves differently from the Istio field with the same name. This part covers the shape, that difference, and what Istio builds out of it.
 
 ## The rule structure
@@ -81,7 +79,7 @@ Same word, different semantics, in two APIs you will translate between. When con
 
 ## Watching the translation
 
-Istio does not run a separate `Ingress` implementation. `istiod` **translates** the object into the same internal gateway configuration a `Gateway` plus `VirtualService` would produce, and pushes that to the gateway proxy.
+Istio does not run a separate `Ingress` implementation. `istiod`, mission control, **translates** the object into the same internal gateway configuration a `Gateway` plus `VirtualService` would produce, and radios that to the gateway proxy. The older docking standard is turned into the spaceport's own orders.
 
 Two consequences, both useful:
 
@@ -133,7 +131,7 @@ spec:
             backend: { service: { name: catalog-service, port: { number: 80 } } }
 ```
 
-Note what is **not** here: any way to express ordering. Istio's `VirtualService` evaluates `http` rules top down and first match wins, and you control that order. The `Ingress` API has no such guarantee — the specification says the most specific match wins, and leaves the details to the controller.
+Note what is **not** here: any way to express ordering. A flight plan's checklist is read top to bottom; an `Ingress` has no checklist order at all. Istio's `VirtualService` evaluates `http` rules top down and first match wins, and you control that order. The `Ingress` API has no such guarantee — the specification says the most specific match wins, and leaves the details to the controller.
 
 For non-overlapping paths that is fine. For overlapping ones it means the behaviour is defined by the implementation rather than by your YAML, which is a real reason to prefer an API where you can see the ordering.
 
@@ -149,10 +147,3 @@ For non-overlapping paths that is fine. For overlapping ones it means the behavi
 > **Assuming `ImplementationSpecific` behaves consistently.** Its meaning is up to the controller, so a manifest that worked on another ingress controller may not behave the same here.
 >
 > **Expecting rule order to decide precedence.** `Ingress` has no first-match-wins list; longest path wins, which is a different model from the `VirtualService` you translate it into.
-
-## Reference
-
-- [Ingress path types](https://kubernetes.io/docs/concepts/services-networking/ingress/#path-types) — the three values with the specification's own examples.
-- [Ingress path matching precedence](https://kubernetes.io/docs/concepts/services-networking/ingress/#multiple-matches) — what the spec says about overlapping paths.
-- [Istio Kubernetes Ingress task](https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/) — the translation in practice.
-- [HTTPMatchRequest](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — Istio's `uri.prefix`, for the comparison above.

@@ -1,145 +1,168 @@
 # `consistentHash` And The Ring
 
-> Prerequisite: [Endpoint Selection And The `simple` Algorithms](./course-01-endpoint-selection-and-simple-algorithms.md). Next: [Policy Levels And Verification](./course-03-policy-levels-and-verification.md).
+Every algorithm in Part 1 spreads traffic. This part is the other option. Instead of choosing by load, the proxy works out the pod from something **in the signal** (the request). The same input then always lands on the same pod. This is called a **sticky session**, or **session affinity**.
 
-Every algorithm in Part 1 spreads traffic. This part is the alternative: instead of choosing by load, the proxy derives the endpoint from a property of the request, so the same input always lands on the same pod. This part covers what you can hash, the mechanism that turns a hash into an endpoint, and the two behaviours that surprise people — sessions moving when the pool changes, and affinity vanishing when the property is absent.
+Think of an astronaut who calls the same squadron again and again. With sticky sessions, the same spaceship always answers that astronaut, so the crew on board still remembers where the conversation left off.
+
+This part covers what you can hash, how a hash becomes a pod, and the two behaviours that surprise people: sessions moving when pods change, and stickiness vanishing when the request carries nothing to hash.
 
 ## The four things you can hash
 
-`consistentHash` is the second, mutually exclusive form of `loadBalancer`. Exactly one of these sub-fields is set:
+A **hash** is a number the proxy calculates from a value, such as the text `alice`. The same value always gives the same number. `consistentHash` is the second form of `loadBalancer`, and you can only use it **instead of** `simple`. You set exactly one of these fields:
 
 | Field | Hashes | Good for |
 | --- | --- | --- |
-| `httpHeaderName` | a named request header | a gateway or client that already sets a stable user or tenant id |
-| `httpCookie` | a cookie, with `name` and optionally `ttl` | browser traffic, where Istio can *generate* the cookie |
-| `useSourceIp: true` | the caller's IP address | the bluntest option; misleading behind NAT or a shared gateway |
-| `httpQueryParameterName` | a named query parameter | APIs that carry the identifier in the URL |
+| `httpHeaderName` | a named request header | a gateway or client that already sends a stable user or tenant id |
+| `httpCookie` | a cookie, with a `name` and an optional `ttl` | browser traffic, where Istio can **create** the cookie |
+| `useSourceIp: true` | the caller's IP address | the bluntest option; misleading when many users share one address |
+| `httpQueryParameterName` | a named query parameter, such as `?user=alice` | APIs that carry the user id in the URL |
 
-`simple` and `consistentHash` cannot both be set. The object is rejected at admission, which is the good kind of failure.
+If you set `simple` and `consistentHash` together, the object is rejected when you apply it. That is a good kind of failure: you find out straight away.
 
-## How a hash becomes an endpoint
+## How a hash becomes a pod
 
-The name "consistent hashing" is not decoration — it describes a specific algorithm, and knowing roughly how it works is what lets you predict its behaviour.
+"Consistent hashing" is the name of a specific method. Knowing roughly how it works lets you predict what it does.
 
-Envoy builds a **ring**: a circular space of hash values. Each endpoint is placed at many points around that ring (hundreds, controlled by `minimumRingSize`). To route a request, the proxy hashes the chosen property, finds that position on the ring, and walks clockwise to the first endpoint marker it meets.
+Envoy builds a **ring**: a circle of hash values. Picture the rings of Saturn, with every spaceship (pod) parked at many small spots around it (hundreds of them, set by `minimumRingSize`). To route a request, the proxy hashes the chosen value, finds that point on the ring, and walks clockwise to the first pod marker it meets.
 
 ```mermaid
-flowchart LR
-    V["the value being hashed<br/>for example the string alice"] --> H["hash it to a position on the ring"]
-    H --> W["walk clockwise to the first endpoint marker"]
-    W --> E["that marker's endpoint serves the request"]
-    E --> N["nothing is stored:<br/>the next request repeats the same walk"]
+flowchart TB
+    V["value: alice"] -->|"hash"| H["point on the ring"]
+    H -->|"walk clockwise"| W["first pod marker"]
+    W -->|"serves"| E["that pod"]
+    E -->|"next request: repeat"| V
 ```
 
-Each endpoint owns hundreds of markers scattered around the ring, not one — that is what makes the arcs small enough that losing an endpoint disturbs only a fraction of them.
+Nothing is stored: every request repeats the walk. Each pod owns hundreds of small slices of the ring, not one big slice. That is why losing one pod disturbs only a small share of users.
 
-Two properties fall straight out of that picture, and both are examinable:
+Two facts follow from that picture, and both come up in exams:
 
-- **No state is stored.** The proxy does not remember that `alice` went to pod A. It recomputes the same hash and walks to the same marker every time. That is why affinity survives proxy restarts and needs no shared session store.
-- **Removing an endpoint only affects its own arcs.** Take endpoint A out and its markers vanish; requests that used to land on them now walk on to whatever marker is next. Everything that was already landing on B or C is untouched.
+- **Nothing is stored.** The proxy does not remember that `alice` went to pod A. It works out the same hash and walks to the same marker every time. So stickiness survives a proxy restart and needs no shared session store.
+- **Removing a pod only affects its own slices.** Take pod A away and its markers vanish. Requests that used to land on them walk on to the next marker. Requests that were already landing on B or C do not move.
 
-That second property is the "consistent" in consistent hashing. A naive `hash(key) % endpoint_count` would remap **almost every** key when the count changes; the ring remaps roughly `1/N` of them.
+That second fact is the "consistent" in consistent hashing. A simple `hash(value) % number_of_pods` would move **almost every** user when the number of pods changes. The ring moves only about `1/N` of them, where `N` is the number of pods.
 
 > [!TIP]
-> **Try it — pin one user to one pod**
+> **Try it — the same user always lands on the same pod**
+>
+> Write a DestinationRule that hashes the `x-user` header, then apply it. It has the same name as the one from Part 1, so it replaces it.
 >
 > ```sh
-> kubectl -n lb-demo patch destinationrule httpbin --type merge -p '
+> cat > destinationrule-httpbin.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: DestinationRule
+> metadata:
+>   name: httpbin
+>   namespace: bookinfo
 > spec:
+>   host: httpbin
 >   trafficPolicy:
 >     loadBalancer:
 >       consistentHash:
->         httpHeaderName: x-user'
-> sleep 2
-> kubectl -n lb-demo exec deploy/tester -- sh -c \
->   'for i in $(seq 1 12); do curl -s -o /dev/null http://httpbin:8000/get -H "x-user: alice"; done'
-> kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 \
->   | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:8080' | sort | uniq -c
+>         httpHeaderName: x-user
+> EOF
+> kubectl apply -f destinationrule-httpbin.yaml
+> count_pods -H "x-user: alice" $HOSTNAME_URL
+> count_pods -H "x-user: bob" $HOSTNAME_URL
 > ```
 >
-> Expect something like:
->
-> ```text
->      12 10.244.0.12:8080
-> ```
->
-> One endpoint, twelve times. Nothing was stored — the proxy recomputed the same hash of the string `alice` on every request and walked to the same marker. Which pod it is depends on the hash, so yours may differ.
+> Expect 8 × one pod for `alice`, and 8 × one (maybe other) pod for `bob`. Nothing was stored. The proxy worked out the same hash of `alice` on every request and walked to the same marker. Which pod it is depends on the hash, so yours may differ.
 
-A pin is only meaningful if different values land differently. Repeat the loop with `x-user: bob` and the hash of `bob` selects its own position on the ring — usually a different endpoint, though with only three endpoints two names can legitimately land on the same one. **A collision is not a misconfiguration**; if `alice` and `bob` coincide, try `carol`.
+A pin only means something if different values can land on different pods. `bob` usually gets a different pod from `alice`. But with four pods, two names can land on the same one. **A collision is not a mistake in your configuration.** If `alice` and `bob` share a pod, try `carol`.
 
-## Affinity is best effort
+## Stickiness is best effort
 
-This is the sentence to be able to say in an exam answer, because "sticky sessions" invites the assumption that stickiness is absolute.
+Be ready to say this in an exam answer. "Sticky sessions" sounds absolute, but it is not.
 
-The ring is built from the **current** endpoint set. Add a pod and it inserts new markers, capturing some arcs that previously belonged to its neighbours. Lose a pod and its arcs are absorbed by whoever is next clockwise. Either way, a share of existing sessions moves.
+The ring is built from the pods that exist **right now**. Add a pod and it places new markers, taking over some slices from its neighbours. Lose a pod and the next pods clockwise take over its slices. Either way, some existing sessions move.
 
-What consistent hashing guarantees is that the share is *small* — roughly one over the number of endpoints, rather than a full reshuffle. Going from three pods to four moves about a quarter of sessions; the other three quarters never notice.
+What consistent hashing promises is that the share is **small**: about one over the number of pods, not a full reshuffle. Going from three pods to four moves about a quarter of sessions. The other three quarters never notice.
 
-The practical consequence: **treat affinity as an optimisation, not a correctness guarantee.** An application that *breaks* when a session moves is an application that needs shared session state, whatever the load balancer does. Affinity makes the cache hit rate better; it does not make in-memory session state safe.
+So **treat stickiness as a speed-up, not a guarantee.** If an app breaks when a session moves to another pod, that app needs shared session storage, whatever the load balancer does. Stickiness makes caches work better. It does not make in-memory session data safe.
 
 ## A request with nothing to hash
 
-This is the failure mode behind most "affinity works in testing but not in production" reports.
+This is behind most "it works in testing but not in production" reports about stickiness.
 
-If a request does not carry the hashed property — no `x-user` header, no cookie, no such query parameter — there is nothing to hash. The proxy does not fail the request and does not pick a fixed fallback pod. It **falls back to normal load balancing for that request**.
+If a signal does not carry the hashed value (no `x-user` header, no cookie, no such query parameter), there is nothing to hash. It is like a signal with no call sign on the label. The proxy does not fail the request, and it does not pick a fixed backup pod. It **falls back to normal load balancing** for that request.
 
-So a policy hashing a header the client only sometimes sends produces affinity that only sometimes applies, with no error anywhere and no obvious pattern.
+So a policy that hashes a header the client only sometimes sends gives stickiness that only sometimes works. There is no error and no clear pattern.
 
 > [!TIP]
-> **Try it — no header means no affinity**
+> **Try it — no header means no stickiness**
 >
 > ```sh
-> kubectl -n lb-demo exec deploy/tester -- sh -c \
->   'for i in $(seq 1 12); do curl -s -o /dev/null http://httpbin:8000/get; done'
-> kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 \
->   | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:8080' | sort | uniq -c
+> count_pods $HOSTNAME_URL
 > ```
 >
-> Expect something like:
->
-> ```text
->       4 10.244.0.11:8080
->       5 10.244.0.12:8080
->       3 10.244.0.13:8080
-> ```
->
-> The `consistentHash` policy is still applied and unchanged — these requests simply have nothing to hash, so they spread. Compare with the twelve-on-one-pod result from the previous checkpoint: same policy, different requests, completely different behaviour.
+> Expect the 8 answers spread over several pods. The `consistentHash` policy is still in place and unchanged. These requests simply have nothing to hash, so they spread. Compare this with the 8-on-one-pod result above: same policy, different requests, completely different behaviour.
 
-## Cookie-based affinity, and the `ttl` switch
+## Sticky by cookie, and what `ttl` does
 
-Header-based affinity assumes somebody sets the header. For browser traffic a cookie is usually the better fit:
+A browser cannot easily send a custom header, but it does keep cookies. So for browser traffic, a cookie is usually the better choice:
 
 ```yaml
 trafficPolicy:
   loadBalancer:
     consistentHash:
       httpCookie:
-        name: session-id
-        ttl: 60s
+        name: session
+        ttl: 3600s
 ```
 
-The important detail is what `ttl` does. **Setting `ttl` makes Istio generate the cookie** if the request does not already carry one: the proxy issues a `Set-Cookie` on the response, and the browser returns it on every subsequent request. That closes the "nothing to hash" gap for a client that arrives with no identifier.
+The important detail is what `ttl` does. **Setting `ttl` makes the sidecar create the cookie** when the request does not have one. The sidecar adds a `Set-Cookie` header to the response, and the browser sends the cookie back on every later request. That closes the "nothing to hash" gap for a first-time visitor. `ttl` is also how long that cookie lasts.
 
-Leave `ttl` out and Istio will only hash a cookie the client already sends — which is the right choice when some other component owns the session cookie and a second one would cause confusion.
+If you leave `ttl` out, Istio only hashes a cookie the client already sends. That is the right choice when another part of your system owns the session cookie and a second one would cause confusion.
+
+> [!TIP]
+> **Try it — the sidecar hands out a cookie**
+>
+> ```sh
+> cat > destinationrule-httpbin.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: DestinationRule
+> metadata:
+>   name: httpbin
+>   namespace: bookinfo
+> spec:
+>   host: httpbin
+>   trafficPolicy:
+>     loadBalancer:
+>       consistentHash:
+>         httpCookie:
+>           name: session
+>           ttl: 3600s
+> EOF
+> kubectl apply -f destinationrule-httpbin.yaml
+> kubectl exec -n bookinfo deploy/curl -- curl -s -i $HOSTNAME_URL | grep -i -E 'set-cookie|hostname'
+> count_pods -b "session=abc123" $HOSTNAME_URL
+> ```
+>
+> Expect a `set-cookie: session="..."; Max-Age=3600; HttpOnly` line. Then expect 8 × the same pod for the requests that carry the cookie.
+
+## The other two: source IP and query parameter
+
+The playground has a ready-made file for each of the last two hash sources, in `examples/cases/`.
+
+**`useSourceIp: true`** hashes the caller's IP address: where in the solar system the signal came from. All requests from the `curl` pod have the same IP, so they all land on one httpbin pod, with no header or cookie needed. The downside is the same fact turned around: many users behind one address all land on one pod. Traffic that comes in through the ingress gateway is the classic case, because every user then arrives from the gateway's address.
+
+**`httpQueryParameterName: user`** hashes the value of `?user=`. `count_pods "$HOSTNAME_URL?user=alice"` lands 8 times on one pod. Without the parameter, requests spread as normal. Keep the quotes around the URL, because `?` is a special character in zsh.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Treating affinity as a guarantee.** Changing the endpoint set moves roughly `1/N` of sessions. An application that breaks when a session moves needs shared session state.
+> **Treating stickiness as a guarantee.** Changing the set of pods moves about `1/N` of sessions. An app that breaks when a session moves needs shared session storage.
 >
-> **Hashing a property the client does not always send.** Requests with nothing to hash fall back to ordinary load balancing, silently and per request.
+> **Hashing a value the client does not always send.** Requests without it fall back to normal load balancing, silently, one request at a time.
 >
-> **Reading a collision as a bug.** With three endpoints, two different values landing on the same pod is ordinary. Try a third value before changing anything.
+> **Reading a collision as a bug.** With a few pods, two different values landing on the same pod is normal. Try a third value before changing anything.
 >
-> **Expecting `httpCookie` to create a cookie without `ttl`.** Without `ttl` Istio only hashes a cookie the client already sends.
+> **Expecting `httpCookie` to create a cookie without `ttl`.** Without `ttl`, Istio only hashes a cookie the client already sends.
 >
-> **Using `useSourceIp` behind a gateway or NAT.** Every caller arrives with the same address, so every request hashes identically and one pod takes all of it.
+> **Using `useSourceIp` behind a gateway or NAT.** Every caller arrives with the same address, so every request hashes the same and one pod takes all of it.
+>
+> **Expecting stickiness to keep a user on one version in a weighted split.** The version (subset) is picked first, for every request. Stickiness only chooses among that version's pods. If each user must stay on one version, route by header in the `VirtualService`.
+>
+> **Leaving a query-parameter URL unquoted in zsh.** zsh treats `?` as a wildcard and stops with `no matches found` before `curl` even runs.
 
-> *The ring means a hash maps to an endpoint without storing anything, and that changing the endpoint set moves a small share of sessions rather than all of them.*
-
-## Reference
-
-- [ConsistentHashLB API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings-ConsistentHashLB) — the four hash sources, `minimumRingSize`, and the cookie fields.
-- [Envoy ring hash load balancer](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers#ring-hash) — the ring, its size, and the remapping guarantee.
-- [Consistent hashing (original paper summary)](https://en.wikipedia.org/wiki/Consistent_hashing) — the `1/N` remapping property in two paragraphs, if you want the reasoning rather than the assertion.
-- `istioctl proxy-config cluster <workload> --fqdn <host> -o json` — where `RING_HASH` and `ringHashLbConfig` appear, covered in Part 3.
+> *The ring maps a hash to a pod without storing anything, and changing the set of pods moves a small share of sessions, not all of them.*

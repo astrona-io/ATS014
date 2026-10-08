@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-One object with two rules that differ in exactly one respect — whether retrying is safe. The arithmetic in step 3 is what most people get wrong.
+Astronaut, here is the flight plan step by step. One object with two rules that differ in exactly one respect: whether re-sending a signal (retrying) is safe. The arithmetic in step 3 is what most people get wrong.
 
 ---
 
@@ -35,7 +35,7 @@ echo "attempts: $((AFTER - BEFORE))"
 attempts: 1
 ```
 
-One, because a `503` from the application is not in the default policy's list (`connect-failure`, `refused-stream`, `unavailable`, `cancelled`). That is worth seeing before you assume "no config" means "no retries" — for a *connection* failure the same route would retry twice.
+One, because a `503` from the application is not in the default policy's list (`connect-failure`, `refused-stream`, `unavailable`, `cancelled`). That is worth seeing before you assume "no configuration" means "no retries" — for a *connection* failure the same route would retry twice.
 
 ---
 
@@ -195,20 +195,3 @@ kubectl -n resilience-demo logs deploy/tester -c istio-proxy --tail=2
 - **`retryOn: 5xx` instead of `gateway-error`.** Both would pass the attempt count here, but the task names `gateway-error`, and it is the better habit toward a service you might also be pool-limiting.
 - **Counting server attempts without a baseline.** The log accumulates across runs; take a `BEFORE` count.
 - **Checking the caller's output to count retries.** The caller sees one response no matter how many attempts happened. The server's proxy log is the evidence.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [HTTPRoute API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) — `timeout` alongside `retries`, `fault` and `mirror` on one rule
-- [HTTPRetry API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRetry) — `attempts`, `perTryTimeout`, `retryOn` and `retriableStatusCodes`
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

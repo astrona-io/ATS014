@@ -1,0 +1,20 @@
+# Canary step 2: v3 looks healthy, move to 50/50.
+# Same name as step 1, so applying this updates the same VirtualService.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  hosts:
+  - scout
+  http:
+  - route:
+    - destination:
+        host: scout
+        subset: v1
+      weight: 50
+    - destination:
+        host: scout
+        subset: v3
+      weight: 50

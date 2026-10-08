@@ -1,0 +1,16 @@
+# Case 1: retryOn gateway-error = only 502, 503, 504. A 500 is NOT retried.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  hosts:
+  - httpbin
+  http:
+  - route:
+    - destination:
+        host: httpbin
+    retries:
+      attempts: 3
+      retryOn: gateway-error

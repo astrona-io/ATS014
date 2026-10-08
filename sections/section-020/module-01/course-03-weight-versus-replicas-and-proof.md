@@ -1,156 +1,142 @@
 # Weight Versus Replicas, And Proof
 
-> Prerequisite: [Running A Rollout](./course-02-running-a-rollout.md). Next: [the module landing page](./course.md).
+One idea is left, and it is the one the exam asks about most often in this module: how much traffic a version gets compared with how many pods it runs. This part settles that. Then it shows how to read the weights out of a live sidecar, so that when a task is not working you can find out why instead of guessing.
 
-One idea remains, and it is the single most reliably examined thing in this module: the relationship between how much traffic a version receives and how many pods it runs. This part settles that, then shows how to read the weights out of a live proxy so that a task which is not working can be diagnosed rather than guessed at.
+## Without Istio, the split follows the pods
 
-## The two decisions are made in sequence
+A plain Kubernetes Service is a beacon: one call sign that a whole group of ships answers to. It splits traffic by **pods** — every spaceship behind the beacon gets an equal turn. Say you run 9 v1 pods and 1 v3 pod behind one Service. v3 then gets about 10% of the traffic, because it is 1 pod out of 10. To give a new version more traffic, you would have to run more copies of it.
 
-Part 1's diagram had the answer in it. Expand the bottom half:
+With an Istio weight, the split is by **destination** instead. Weight 20 gives v3 20% of the traffic, even if it has 1 pod against 10. This is what makes canaries safe: you choose the share, not the number of copies.
+
+## The two decisions happen in order
+
+Part 1's diagram already held the answer. Here is the bottom half in more detail, with 10 v1 pods and 1 v3 pod at 50/50:
 
 ```mermaid
-flowchart TD
-    P["client proxy in the CALLING pod"] --> W["step 1: weighted cluster selection<br/>draw against the weights, picks a SUBSET"]
-    W -->|"50"| C1["the v1 cluster<br/>10 endpoints"]
-    W -->|"50"| C2["the v2 cluster<br/>1 endpoint"]
-    C1 --> L1["step 2: load balancing<br/>each v1 pod gets about 5 percent of all traffic"]
-    C2 --> L2["step 2: load balancing<br/>the single v2 pod gets the whole 50 percent"]
+flowchart TB
+    P["calling pod's sidecar"] -->|"step 1"| W["weighted roll"]
+    W -->|"50"| C1["v1: 10 pods"]
+    W -->|"50"| C3["v3: 1 pod"]
+    C1 -->|"step 2"| L1["about 5% per pod"]
+    C3 -->|"step 2"| L3["50% on one pod"]
 ```
 
-Step 2 cannot influence step 1, because step 1 already finished. That ordering is the entire answer to "why does scaling not change the split".
+Step 1 picks a subset with a random roll against the weights. Step 2 is load balancing inside the chosen cluster. Step 2 cannot change step 1, because step 1 has already finished. That order is the whole answer to "why does scaling not change the split".
 
-The weight decides **which cluster**. Load balancing then decides **which endpoint inside it**. The second decision has no way to influence the first, because the first already happened.
+The weight decides **which cluster** — which ship class gets the signal. Load balancing then decides **which pod inside it** — which ship in that squadron takes it. So the general rule is: **weights control traffic share, replicas control capacity.** They live in different objects, you change them for different reasons, and they do not affect each other.
 
-So the general rule: **weights control traffic share, replicas control capacity.** They live in different objects, are changed for different reasons, and do not interact.
+With v1 on ten pods and v3 on one, at 50/50:
 
-Concretely, with `v1` on ten pods and `v2` on one, at 50/50:
+- half of all requests go to the v3 cluster, and its one pod gets all of them;
+- the other half is spread over ten v1 pods, so each gets about 5% of all traffic.
 
-- half of all requests go to the `v2` cluster, and its single pod receives all of them;
-- the other half is spread across ten `v1` pods, so each receives about 5% of total traffic.
-
-Scaling `v2` to ten pods does not change its 50% share. It changes how much capacity is available to absorb that share — which is a real and important thing to get right, just not a traffic-splitting control.
+Scaling v3 to ten pods does not change its 50% share. It changes how much capacity there is to handle that share. Getting capacity right matters a lot, but it is not a way to split traffic.
 
 > [!TIP]
-> **Try it — four times the pods, same share**
+> **Try it – four times the pods, same share**
 >
 > ```sh
-> kubectl -n shifting-demo patch virtualservice notification --type merge -p '
+> kubectl -n starfleet patch virtualservice scout --type merge -p '
 > spec:
 >   http:
 >     - route:
 >         - destination:
->             host: notification-service
+>             host: scout
 >             subset: v1
 >           weight: 50
 >         - destination:
->             host: notification-service
->             subset: v2
+>             host: scout
+>             subset: v3
 >           weight: 50'
-> kubectl -n shifting-demo scale deployment notification-service-v1 --replicas=4
-> kubectl -n shifting-demo rollout status deployment notification-service-v1
-> kubectl -n shifting-demo exec deploy/tester -- sh -c \
->   'for i in $(seq 1 100); do curl -s -X POST http://notification-service/notify; echo; done' | sort | uniq -c
+> kubectl -n starfleet scale deployment scout-v1 --replicas=4
+> kubectl -n starfleet rollout status deployment scout-v1
+> count_versions 100
 > ```
 >
 > Expect something like:
 >
 > ```text
->   51 ["EMAIL"]
->   49 ["EMAIL","SMS"]
+>   51 scout-v1
+>   49 scout-v3
 > ```
 >
-> Four `v1` pods against one `v2` pod, and the split is still 50/50. If replica count influenced traffic share you would be looking at roughly 80/20. Scale `v1` back to 1 afterwards if you want a tidy environment.
+> Four v1 pods against one v3 pod, and the split is still about 50/50. If pod count changed the traffic share, you would see roughly 80/20. Scale `scout-v1` back to 1 afterwards if you want a tidy cluster.
 
 ## Where the endpoints went
 
-The endpoint listing makes the same point structurally rather than statistically, and it is the faster check when you are diagnosing rather than demonstrating.
+The endpoint list makes the same point by structure instead of by counting. It is also the faster check when you are looking for a fault rather than showing a feature.
 
 > [!TIP]
-> **Try it — one cluster with four endpoints, one with a single endpoint**
+> **Try it – one cluster with four endpoints, one with a single endpoint**
 >
 > ```sh
-> for s in v1 v2; do
+> for s in v1 v3; do
 >   echo "--- subset $s ---"
->   istioctl proxy-config endpoints deploy/tester -n shifting-demo \
->     --cluster "outbound|80|$s|notification-service.shifting-demo.svc.cluster.local"
+>   istioctl proxy-config endpoints deploy/shuttle -n starfleet \
+>     --cluster "outbound|9080|$s|scout.starfleet.svc.cluster.local"
 > done
 > ```
 >
-> Expect something like:
+> Expect something like this (pod IPs differ, cluster names trimmed):
 >
 > ```text
 > --- subset v1 ---
 > ENDPOINT            STATUS    OUTLIER CHECK   CLUSTER
-> 10.244.0.14:8084    HEALTHY   OK              outbound|80|v1|notification-service...
-> 10.244.0.18:8084    HEALTHY   OK              outbound|80|v1|notification-service...
-> 10.244.0.19:8084    HEALTHY   OK              outbound|80|v1|notification-service...
-> 10.244.0.20:8084    HEALTHY   OK              outbound|80|v1|notification-service...
-> --- subset v2 ---
+> 10.244.0.14:9080    HEALTHY   OK              outbound|9080|v1|scout...
+> 10.244.0.18:9080    HEALTHY   OK              outbound|9080|v1|scout...
+> 10.244.0.19:9080    HEALTHY   OK              outbound|9080|v1|scout...
+> 10.244.0.20:9080    HEALTHY   OK              outbound|9080|v1|scout...
+> --- subset v3 ---
 > ENDPOINT            STATUS    OUTLIER CHECK   CLUSTER
-> 10.244.0.15:8084    HEALTHY   OK              outbound|80|v2|notification-service...
+> 10.244.0.15:9080    HEALTHY   OK              outbound|9080|v3|scout...
 > ```
 >
-> Four endpoints and one endpoint, in two clusters that the weights treat as equals. The asymmetry is entirely below the weighted decision — which is exactly why the weight does not see it.
+> Four endpoints and one endpoint, in two clusters that the weights treat as equals. The difference sits entirely below the weighted decision, which is why the weight does not see it.
 
-## Reading the weights the proxy holds
+## Reading the weights the sidecar holds
 
-The object existing in `kubectl` and the proxy acting on it are separate facts, as always. Weighted routes appear in the proxy's route dump as a `weightedClusters` block with one entry per destination.
+An object existing in `kubectl` and a sidecar acting on it are two separate facts. Weighted routes show up in the sidecar's route dump as a `weightedClusters` block, with one entry per destination.
 
 > [!TIP]
-> **Try it — the weights inside the client's route table**
+> **Try it – the weights inside the client's route table**
 >
 > ```sh
-> istioctl proxy-config routes deploy/tester -n shifting-demo -o json \
+> istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080 -o json \
 >   | grep -A12 weightedClusters | head -24
 > ```
 >
-> Expect something like:
+> Expect something like this (trimmed):
 >
 > ```text
 > "weightedClusters": {
 >   "clusters": [
 >     {
->       "name": "outbound|80|v1|notification-service.shifting-demo.svc.cluster.local",
+>       "name": "outbound|9080|v1|scout.starfleet.svc.cluster.local",
 >       "weight": 50
 >     },
 >     {
->       "name": "outbound|80|v2|notification-service.shifting-demo.svc.cluster.local",
+>       "name": "outbound|9080|v3|scout.starfleet.svc.cluster.local",
 >       "weight": 50
 >     }
 > ```
 >
-> The subset name is embedded in the cluster name — `|v1|` and `|v2|` — which is how a weighted route and a `DestinationRule` subset are joined together inside Envoy. If these weights disagree with your `VirtualService`, the push has not landed and editing the YAML again will not help.
+> The subset name is part of the cluster name: `|v1|` and `|v3|`. That is how a weighted route and a `DestinationRule` subset are joined inside Envoy. If these weights do not match your `VirtualService`, the push has not landed, and editing the YAML again will not help.
 
-That last sentence is the diagnostic rule for this module. Three possible states, three different actions:
+That last sentence is the rule for finding faults in this module. Three states, three different actions:
 
 | What you see | Means | Do |
 | --- | --- | --- |
-| No `weightedClusters` at all | the `VirtualService` never reached this proxy | check namespace, host name, and `istioctl proxy-status` |
-| Weights present but stale | the push is in flight or the proxy is out of sync | wait, then check `proxy-status` |
-| Weights correct, traffic wrong | your sample is too small, or a rule above is diverting traffic | count 100+, and re-read the whole `http` list |
+| No `weightedClusters` at all | the `VirtualService` never reached this sidecar | check namespace, host name, and `istioctl proxy-status` |
+| Weights present but old | the push is on its way, or the sidecar is out of sync | wait, then check `proxy-status` |
+| Weights correct, traffic wrong | your sample is too small, or a rule above takes traffic away | count 100+, and re-read the whole `http` list |
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Weights that do not sum to 100.** Rejected at admission with a message naming the total. Read it instead of re-applying.
+> **Scaling a Deployment to move traffic.** Pod count is capacity, not share. Only the weight moves traffic.
 >
-> **Judging a split from ten requests.** Each request is an independent draw. Use 100 or more before concluding anything.
+> **Checking the YAML instead of the sidecar.** `kubectl get` shows what you wrote. `istioctl proxy-config routes` shows what the sidecar is using.
 >
-> **Scaling a Deployment to move traffic.** Replica count is capacity, not share. Only the weight moves traffic.
->
-> **A match rule above the weighted rule.** Those requests never enter the split, so your measurement is of a different population than you think.
->
-> **Assuming a merge patch edits one element of `http`.** It replaces the list. Restate the whole route block, or use `kubectl apply`.
->
-> **Expecting per-user stickiness from weights.** Each request is drawn independently, so the same client can bounce between versions. For stickiness use a header match (section 010) or `consistentHash` (section 030).
->
-> **Weighting a subset that does not exist.** The 100-sum check passes; the requests 503. `istioctl analyze` catches it.
+> **Reading endpoints for the wrong cluster name.** The name has four parts: direction, port, subset and host. For the `scout` the port is `9080`.
 
-> *Weights control traffic share and replicas control capacity — they are set in different objects, for different reasons, and neither one moves the other.*
-
-## Reference
-
-- [Traffic shifting task](https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/) — including the scaling discussion.
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — the object whose subsets the weights point at.
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status` and `proxy-config`, the two commands in the diagnostic table above.
-- `istioctl proxy-config routes --help` — `-o json` and `--name`, which make the weighted-cluster block findable on a busy proxy.
+> *Weights control traffic share and replicas control capacity. They are set in different objects, for different reasons, and neither one moves the other.*

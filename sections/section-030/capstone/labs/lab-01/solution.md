@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects again, but this time the [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) carries policy at two levels and the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) carries two features on one rule. Neither half tells you whether the other worked, so the verification is in four independent pieces.
+Mission debrief, astronaut. Two objects again, but this time the `DestinationRule` carries policy at two levels and the `VirtualService` carries two features on one rule. Neither half tells you whether the other worked, so the verification is in four independent pieces.
 
 ---
 
@@ -178,20 +178,3 @@ Forty of forty, carrying the `-shadow` authority. Note the upstream in that line
 - **Testing affinity without a baseline of which pods are which.** Record the stable and canary IPs first.
 - **Counting shadow log lines without a `BEFORE`.** The log accumulates across attempts.
 - **Omitting `mirrorPercentage`.** The default is 100%, but the specification asks for it explicitly.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMirrorPolicy API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMirrorPolicy) — `mirror`, `mirrors` and `mirrorPercentage`
-- [ConsistentHashLB API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings-ConsistentHashLB) — the four hash sources, `ttl`, and `minimumRingSize`
-- [LoadBalancerSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings) — the `simple` enum and the `consistentHash` alternative
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

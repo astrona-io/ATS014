@@ -1,8 +1,6 @@
 # Where Locality Comes From
 
-> Prerequisite: [the module landing page](./course.md). Next: [Preference, `distribute` And `failover`](./course-02-preference-distribute-and-failover.md).
-
-Every setting in this module selects over localities, so the first question is where an endpoint's locality comes from and how to check it has one. Getting this wrong wastes more time than any other mistake here, because every subsequent configuration silently does nothing.
+Every setting in this module selects over localities (which orbit a ship flies in), so the first question is where an endpoint's locality comes from and how to check it has one. Getting this wrong wastes more time than any other mistake here, because every subsequent configuration silently does nothing.
 
 ## Three labels, one hierarchy
 
@@ -113,10 +111,3 @@ So "prefer local" is meaningful only if the calling workload has a locality too.
 > **Changing the label and expecting running pods to update.** Locality is read when the pod is registered. Existing pods keep the locality they started with.
 
 > *Locality comes from node labels, `istio-locality` overrides it per pod, and an endpoint with no locality makes every setting in this module a no-op.*
-
-## Reference
-
-- [Locality load balancing](https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/) — the task page, including the label requirements.
-- [Kubernetes topology labels](https://kubernetes.io/docs/reference/labels-annotations-taints/#topologykubernetesiozone) — the well-known `region` and `zone` labels and who sets them.
-- [Istio pod labels](https://istio.io/latest/docs/reference/config/labels/) — `istio-locality` and the rest of the recognised set.
-- `istioctl proxy-config endpoints <workload> --cluster <name> -o json` — the only place to confirm an endpoint's locality actually arrived.

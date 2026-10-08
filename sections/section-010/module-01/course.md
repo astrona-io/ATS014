@@ -1,60 +1,77 @@
 # Route Requests Within The Mesh
 
-<!-- astrona:playground -->
-> [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS014/tree/main/sections/section-010/module-01/playground)
->
-> ```sh
-> astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-010/module-01/playground
-> astrona destroy ats-014-playground-010-01
-> ```
+Astronaut, your first real mission is to steer signals. Right now a plain Kubernetes Service sends them blindly. A Service is a beacon: one call sign that a group of spaceships (pods) answers to. In your fleet, the `scout` beacon is answered by three ship classes, v1, v2 and v3. Every signal (request) lands on whichever ship `kube-proxy` happens to pick, like a message thrown into space for any ship to catch. You cannot say "send *my* signals to v2 while everyone else stays on v1", because a Service cannot read a signal. It only knows which ships answer its call sign.
 
-A plain Kubernetes Service is a coin toss. Two versions of `notification-service` are running, both match the Service selector, and every request lands on whichever pod kube-proxy happens to pick. You cannot say "send *my* requests to v2 while everyone else stays on v1", because a Service has no idea what a request looks like. It only knows about pods.
+Istio replaces that blind pick with a decision. The decision is made by the sidecar proxy, which can read the request. Think of the proxy as the communications officer on board each ship: every signal in or out goes through them. Two objects give it its orders, and the split between them is the thing to get right first:
 
-Istio replaces that coin toss with a decision, made by a proxy that can read the request. Two objects carry it, and the split between them is the thing to get right first:
+> A `VirtualService` is the **flight plan**: it decides **where** a request goes. A `DestinationRule` is the **docking instructions**: it decides **what the named destinations mean**.
 
-> A `VirtualService` decides **where** a request goes; a `DestinationRule` decides **what the named destinations mean**.
-
-What makes this worth five parts is that almost every later module is this pair with one extra field. Weighted shifting is a `VirtualService` route with numbers on it. Mirroring is the same rule with a `mirror` beside it. Timeouts, retries and fault injection are fields on the same `http` entry. Connection pools, load balancer policy and outlier detection are fields on the same `DestinationRule`. Learn the two objects properly here and most of the domain stops being new concepts and starts being new field names.
-
-## How this module is organised
-
-1. **[Subsets And The Destination Vocabulary](./course-01-subsets-and-destination-vocabulary.md)** — what a `DestinationRule` actually creates, how a subset name becomes an Envoy cluster, and why applying one on its own moves no traffic at all.
-2. **[Matching A Request](./course-02-matching-a-request.md)** — the `VirtualService` object, then the `match` block in detail: the four match types, the three string forms, and the AND/OR rule that decides whether two conditions must both hold.
-3. **[Evaluation Order, Name Resolution And Proof](./course-03-evaluation-order-and-proof.md)** — top-down first-match evaluation, why the default route must be last, how short host names resolve, and how to prove the proxy received what you wrote.
-4. **[Rewriting, Redirecting And Headers](./course-04-rewriting-redirecting-and-headers.md)** — the other things a matched rule can do: answer with a redirect, rewrite the path, add or strip headers, and handle CORS preflights.
-5. **[Routing Non-HTTP Traffic](./course-05-routing-non-http-traffic.md)** — how a Service port's *name* decides whether you get HTTP routing at all, and what `tcp` and `tls` rules can match on when there is no request to read.
-
-Parts 1 to 3 are the module's graded material and the lab is built from them. Parts 4 and 5 cover fields on the same objects that the exam expects you to recognise, and one silent failure — a misnamed Service port — that is worth meeting deliberately rather than in production.
+This module has five parts because almost every later mission is this pair plus one extra field. Weighted shifting is a `VirtualService` route with numbers on it. Mirroring is the same rule with a `mirror` beside it. Timeouts, retries and fault injection are fields on the same `http` rule. Connection pools, load balancing and outlier detection are fields on the same `DestinationRule`. Learn the two objects well here, and most of the domain stops being new ideas and becomes new field names.
 
 ## Learning objectives
 
 After this module you can:
 
-- Explain the division of labour between `VirtualService` and `DestinationRule`, and name which one creates subsets and which one consumes them.
+- Explain the split of work between `VirtualService` and `DestinationRule`, and name which one creates subsets and which one uses them.
 - Define subsets over pod labels, and predict what happens when a subset's labels match no pod.
+- Send all traffic of a service to one subset, and switch it to another without touching the pods.
 - Write `match` rules on `headers`, `uri`, `queryParams` and `method`, choosing correctly between `exact`, `prefix` and `regex`.
-- State whether two match conditions are ANDed or ORed from their position in the YAML.
-- Predict which `http` rule wins for a given request, and place a default route correctly.
-- Resolve a short host name to the namespace Istio will actually look in.
+- State whether two match conditions are combined with AND or OR from their position in the YAML.
+- Predict which `http` rule wins for a given request, and place a catch-all route correctly.
+- Fill in a short host name to the namespace Istio will actually use.
 - Use `redirect`, `rewrite`, `headers` and `corsPolicy` on a matched rule, and say which of them ends the request.
-- Explain how a Service port's name or `appProtocol` decides the protocol, and diagnose the silent fallback to plain TCP.
-- Diagnose the classic failures — a default route placed first, a subset no `DestinationRule` defines, and an object in the wrong namespace — from their symptoms.
+- Explain how a Service port's name or `appProtocol` decides the protocol, and diagnose a port declared as the wrong one.
+- Tell `404 NR`, `503 NC` and `503 UH` apart from the access log, and say what each one means you should fix.
 
 ## Before you start
 
-This module assumes [section 000](../../section-000/module-01/course.md): that a proxy sits beside every pod, that `istiod` programs it over xDS, that an Envoy cluster is a named destination, and that `istioctl proxy-config` prints what a proxy currently holds. If any of that is new, read that module first — it is short, and everything here builds on it.
+Every mission starts with a pre-flight check, astronaut. Before you write your first routing rule, make sure you have the knowledge this module expects, know what is waiting in your playground, and have one small helper ready in your terminal. It takes five minutes, and it saves you from chasing problems that have nothing to do with routing.
 
-You should also be comfortable with `kubectl` against a cluster you have admin rights on: namespaces, Deployments, Services, pod labels, and `kubectl exec`.
+### What you should already know
 
-The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile), `istioctl` on your PATH, and the namespace **`routing-demo`** populated:
+- **How the mesh works.** A proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You can read those orders with `istioctl proxy-config`.
+- **Kubernetes basics.** Namespaces, Deployments, Services, pod labels and `kubectl exec`.
 
-- `notification-service-v1` and `notification-service-v2` — one Deployment each, both labelled `app: notification-service`, distinguished by a `version` label. `v1` answers `["EMAIL"]` and `v2` answers `["EMAIL","SMS"]`, which is how you tell from a response body which one served you.
-- `notification-service` — one Service in front of both, on port `80` named `http`, targeting container port `8084`.
-- `tester` — a client pod with `curl`.
+### What is in your playground
 
-Every pod there already has an `istio-proxy` sidecar. What the playground deliberately does **not** create is any `VirtualService` or `DestinationRule` — writing those is the subject of the module. All commands run in your normal shell, with `kubectl` already pointed at the cluster.
+Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** already installed. Everything you need is on one planet, the namespace **`starfleet`**.
 
-## Where this fits
+The fleet on that planet is **the Starfleet**. It is the Bookinfo sample app that the official Istio docs use, with space names instead of the original ones. Here is the role each ship plays:
 
-This is the first of the `networking.istio.io` objects because the rest are built from it. It is also where the course's standing diagnostic habit gets its first real workout: an object existing in `kubectl` and a proxy acting on it are two different facts, and when they disagree the answer is in `istioctl proxy-config`. Section 000 introduced that habit; Part 3 makes it routine, and every later module assumes it.
+| Ship | Its role in the fleet |
+| --- | --- |
+| `bridge` | The **flagship**. It is the page astronauts see, and it sends signals to the other ships to build it |
+| `cargo` | The **supply ship**. It answers with facts about an item |
+| `scout` v1, v2, v3 | Three **ship classes** of the same scout. They answer the same call sign, but each one reports back differently: v1 with no stars, v2 with black stars, v3 with red stars. Yes, real stars |
+| `navcom` | The **navigation computer**. The v2 and v3 scouts ask it for the star rating |
+| `shuttle` | **Your shuttle**. You send every test signal from here, with the `curl` command |
+| `probe` v1, v2 | An **echo probe**. It sends back exactly what it receives, so you can see what a signal looked like on arrival. Parts 4 and 5 use it |
+
+Every pod shows `2/2`: the app plus its communications officer (the `istio-proxy` sidecar). There is **no** `VirtualService` and **no** `DestinationRule` yet. Writing them is your mission in this module.
+
+One thing keeps its old name: the web paths built into the ships. A signal to the scout goes to `http://scout:9080/reviews/0`, and the bridge page lives at `/productpage`. The names of the ships changed, the paths inside them did not.
+
+You can also watch the flagship from your browser at `http://127.0.0.1:9080/productpage`. Log in as your fellow astronaut `jason` (any password works). From then on, every signal the flagship sends to `scout` carries the label `end-user: jason`, and you will soon steer exactly those signals.
+
+Launch your playground now, and keep it running next to you while you read the parts:
+
+<!-- astrona:playground -->
+
+### One helper to paste first
+
+Paste this into each new terminal before you start. It sends 10 signals to `scout` and counts which version answered:
+
+```sh
+count_versions() { for i in $(seq 1 10); do
+  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o 'scout-v[0-9]' || echo none
+done | sort | uniq -c; }
+SCOUT=http://scout:9080/reviews
+```
+
+Use it like this: `count_versions $SCOUT/0`. Any `curl` options you add, such as `-H "end-user: jason"`, are passed on.
+
+## Why this matters
+
+`VirtualService` and `DestinationRule` are the base of almost everything else in Istio traffic management. Most later features are one more field on one of these two objects, so time spent here pays off on every mission after it.
+
+This module also trains the one habit every Istio astronaut needs. An object that `kubectl get` shows you and a proxy that actually follows it are two different facts. When your rule seems to do nothing, do not guess: ask the communications officer what orders they really hold, with `istioctl proxy-config`.

@@ -1,0 +1,34 @@
+# Route traffic arriving at bookinfo-gateway to productpage.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bookinfo
+  namespace: bookinfo
+spec:
+  # Must match a host on the Gateway server.
+  hosts:
+  - bookinfo.example.com
+  # Bind to the Gateway. Without this, the rule only applies to sidecars
+  # ("mesh") and the gateway still returns 404.
+  # Gateway in another namespace: "<namespace>/bookinfo-gateway".
+  gateways:
+  - bookinfo-gateway
+  http:
+  # Only the paths productpage serves; anything else gets 404 from the gateway.
+  - match:
+    - uri:
+        exact: /productpage
+    - uri:
+        prefix: /static
+    - uri:
+        exact: /login
+    - uri:
+        exact: /logout
+    - uri:
+        prefix: /api/v1/products
+    route:
+    - destination:
+        # Short name = service in this VirtualService's namespace (bookinfo).
+        host: productpage
+        port:
+          number: 9080

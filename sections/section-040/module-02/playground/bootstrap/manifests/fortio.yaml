@@ -1,0 +1,30 @@
+# Fortio load-testing client inside the mesh.
+# Sends many requests in parallel, used to trip the circuit breaker:
+#   kubectl exec -n bookinfo deploy/fortio -c fortio -- \
+#     fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://httpbin:8000/get
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fortio
+  namespace: bookinfo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fortio
+  template:
+    metadata:
+      labels:
+        app: fortio
+      annotations:
+        # Istio keeps only a small set of Envoy counters by default. The
+        # per-cluster ones (upstream_rq_pending_overflow, upstream_cx_overflow,
+        # outlier_detection.*) are not in it. This adds them back for fortio's
+        # sidecar, so `pilot-agent request GET stats` can show them.
+        sidecar.istio.io/statsInclusionPrefixes: "cluster.outbound"
+    spec:
+      containers:
+      - name: fortio
+        image: fortio/fortio:1.69.5
+        # Runs fortio's web server so the container stays up; we exec into it.
+        args: ["server"]

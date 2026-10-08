@@ -1,33 +1,34 @@
 # Diagnosing The Gateway
 
-> Prerequisite: [Binding Routes With `gateways:`](./course-02-binding-routes-with-gateways.md). Next: [the module landing page](./course.md).
+Gateway problems show up as three results: a failed connection, a 404 or a 503. Most of the work in diagnosing them is telling them apart. This part covers that difference, the commands that settle it, and the module's pitfalls in one place.
 
-Gateway problems present as two status codes, and almost all of the diagnostic value is in telling them apart. This part is that distinction, the commands that settle it, and the module's consolidated pitfalls.
+## `000`, 404 and 503
 
-## 404 versus 503
-
-| Code | Means | Look at |
+| Result | Means | Look at |
 | --- | --- | --- |
-| **404** | the request did not match a listener **and** a route | `Host` header, `Gateway.hosts`, `VirtualService.hosts`, whether `gateways:` is set, namespace of the `Gateway` reference |
-| **503** | it matched, but the upstream could not be reached | `destination.host`, the port number, whether a named subset exists, whether the backend pods are ready |
+| **`000`** (empty reply, connection fails) | nothing listens on the port | does a `Gateway` exist, and does its `selector` match the gateway pod's labels |
+| **404** (flag `NR`) | the request reached a listener but matched **no route** | `Host` header, `Gateway.hosts`, `VirtualService.hosts`, whether `gateways:` is set, the namespace in the `Gateway` reference, the path match list |
+| **503** | it matched a route, but the backend could not be reached | `destination.host`, the port number, whether a named subset exists, whether the backend pods are ready |
 
-Worth memorising as a sentence: **404 is my configuration, 503 is my backend.**
+Remember it as one sentence: **`000` is my gate, 404 is my flight plan, 503 is my backend.**
 
-The distinction is sharp because these are different stages. A 404 means Envoy never found a route entry to use. A 503 means it found one, selected a cluster, and that cluster had nothing healthy to send to. Section 010's endpoint-list check applies unchanged.
+The difference is sharp because these are different stages inside the proxy. `000` means there is no listener at all. A 404 means Envoy found a listener but no route entry to use. A 503 means it found a route, picked a cluster, and that cluster had nothing healthy to send to. The endpoint check from section 010 applies unchanged.
 
 > [!TIP]
-> **Try it — produce each failure deliberately**
+> **Try it — produce each failure on purpose**
+>
+> Start from the working setup of part 2 (`gateway-bookinfo.yaml` and `virtualservice-bookinfo.yaml` applied), then:
 >
 > ```sh
 > echo "--- wrong Host (no listener match) ---"
-> curl -s -o /dev/null -w '%{http_code}\n' -H "Host: wrong.ica.local" http://$GATEWAY_URL/book
+> gateway_status /productpage wrong.example.com
 > echo "--- right Host, unmatched path (no route match) ---"
-> curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/nothing-here
+> gateway_status /nothing-here
 > echo "--- route matches, destination does not exist ---"
-> kubectl -n ingress-demo patch virtualservice booking --type merge \
->   -p '{"spec":{"http":[{"match":[{"uri":{"prefix":"/book"}}],"route":[{"destination":{"host":"no-such-service","port":{"number":80}}}]}]}}'
+> kubectl -n bookinfo patch virtualservice bookinfo --type merge \
+>   -p '{"spec":{"http":[{"match":[{"uri":{"exact":"/productpage"}}],"route":[{"destination":{"host":"no-such-service","port":{"number":9080}}}]}]}}'
 > sleep 2
-> curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
+> gateway_status /productpage
 > ```
 >
 > Expect something like:
@@ -41,72 +42,69 @@ The distinction is sharp because these are different stages. A 404 means Envoy n
 > 503
 > ```
 >
-> Two 404s from different causes, then a 503 from a third. The first two are indistinguishable by status code alone — which is why the next section's route dump matters. Restore the correct destination (`booking-service`) before moving on.
+> Two 404s from different causes, then a 503 from a third. The status code alone cannot tell the first two apart. That is why the route dump in the next section matters. Restore the working route before moving on: `kubectl apply -f virtualservice-bookinfo.yaml`.
 
 ## Reading the gateway's own configuration
 
 The gateway is an ordinary Envoy, so `istioctl proxy-config` works on it exactly as on a sidecar. Two commands settle almost everything:
 
-**`listener`** answers "is anything accepting traffic on this port?" — which covers a `Gateway` whose selector matched nothing, or a port you did not open.
+**`listener`** answers "is anything accepting traffic on this port?" That covers a `Gateway` whose selector matched nothing, or a port you did not open. It is the check for `000`.
 
-**`routes`** answers "did my `VirtualService` attach?" — which covers the `gateways:` omission, a host mismatch, and a cross-namespace reference.
+**`routes`** answers "did my `VirtualService` attach?" That covers the missing `gateways:` field, a host mismatch, and a wrong namespace in the `Gateway` reference.
 
 > [!TIP]
 > **Try it — the routes the gateway proxy actually holds**
 >
 > ```sh
-> istioctl proxy-config routes deploy/istio-ingressgateway -n istio-system | grep -i booking
-> istioctl analyze -n ingress-demo
+> istioctl proxy-config routes deploy/istio-ingress -n istio-ingress | grep -i bookinfo
+> istioctl analyze -n bookinfo
 > ```
 >
-> Expect something like:
+> What to look for (output not shown in full): a line with the host `bookinfo.example.com`, the path matches from your `VirtualService`, and the `VirtualService` that produced them, shown as `bookinfo.bookinfo` (name, then namespace). The analysis should report no issues.
 >
-> ```text
-> http.8080     booking.ica.local     /book*     booking.ingress-demo
-> ✔ No validation issues found when analyzing namespace: ingress-demo.
-> ```
->
-> The host appears with its path match and the `VirtualService` that produced it. **If your host is absent from this list, the `VirtualService` never attached** — and that is the single most useful check in the module, because it distinguishes "my routes are wrong" from "my routes are not there".
+> **If your host is missing from this list, the `VirtualService` never attached.** That is the single most useful check in the module. It tells "my routes are wrong" apart from "my routes are not there".
 
-Note that `istioctl analyze` is clean in both the working and the unbound case. It cross-references objects that reference each other; a `VirtualService` attached to `mesh` instead of a gateway is a perfectly valid object, so there is nothing for it to report.
+`istioctl analyze` helps with some gateway mistakes and not others:
+
+| Mistake | Does `istioctl analyze` report it? |
+| --- | --- |
+| `Gateway` `selector` matches no pod | yes, `IST0101` |
+| `VirtualService` host not on the `Gateway` | yes, `IST0132` |
+| `VirtualService` with no `gateways:` field | **no**: a `VirtualService` attached to `mesh` is a valid object |
+| `Gateway` reference to the wrong namespace | no |
 
 ## A short diagnostic order
 
-When a gateway task does not work, this sequence resolves it faster than re-reading YAML:
+When a gateway task does not work, this order finds the cause faster than re-reading YAML:
 
-1. **`curl` with the right `Host`** — 404 or 503? That halves the search space immediately.
-2. **`istioctl proxy-config routes deploy/istio-ingressgateway -n istio-system`** — is your host there at all?
-   - Absent → `gateways:` field, host overlap, or the namespace of the `Gateway` reference.
-   - Present → the routes attached; the problem is downstream.
-3. **`istioctl proxy-config endpoints deploy/istio-ingressgateway -n istio-system`** — does the destination cluster have endpoints? (For a 503.)
-4. **`istioctl analyze -n <namespace>`** — catches subset references and selectors matching nothing.
+1. **`curl` with the right `Host`.** `000`, 404 or 503? That cuts the search space straight away.
+2. For **`000`**: `kubectl get pods -n istio-ingress --show-labels` and compare with the `Gateway` `selector`. Then `istioctl proxy-config listener deploy/istio-ingress -n istio-ingress`.
+3. For **404**: `istioctl proxy-config routes deploy/istio-ingress -n istio-ingress`. Is your host there at all?
+   - Missing → the `gateways:` field, host overlap, or the namespace in the `Gateway` reference.
+   - Present → the routes attached; check the path match list and the `Host` you sent.
+4. For **503**: `istioctl proxy-config endpoints deploy/istio-ingress -n istio-ingress`. Does the destination cluster have endpoints?
+5. **`istioctl analyze -n <namespace>`** catches selectors that match nothing, hosts missing from the `Gateway`, and missing subsets.
+6. **The gateway's access log**, `kubectl logs -n istio-ingress deploy/istio-ingress --tail=1`. It is the gate's own flight log: the status code and a short flag such as `NR` (no route) for every request.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Omitting `gateways:` in the `VirtualService`.** The routes attach to `mesh` and the gateway keeps returning 404 no matter how correct they look. The single most common mistake in this section.
+> **Leaving out `gateways:` in the `VirtualService`.** The routes attach to `mesh` and the gateway keeps returning `404 NR` however correct they look. The most common mistake in this section.
 >
-> **Host mismatch between `Gateway` and `VirtualService`.** The two host sets must intersect. A `*` on one side does not rescue a typo on the other.
+> **A `selector` copied from an `istioctl` install onto a Helm install.** `istio: ingressgateway` matches no pod here, so nothing listens and curl gets `000`. Check the pod labels.
 >
-> **Referencing a cross-namespace `Gateway` without `<namespace>/<name>`.** Silent 404 — the short name resolves in the `VirtualService`'s own namespace.
+> **Host mismatch between `Gateway` and `VirtualService`.** The two host lists must overlap. A `*` on one side does not rescue a typo on the other.
 >
-> **Reading a 503 as a routing problem.** 503 means routing worked. Check the destination host, port, subset and endpoints.
+> **Referencing a `Gateway` in another namespace without `<namespace>/<name>`.** A silent 404: the short name is looked up in the `VirtualService`'s own namespace.
 >
-> **Forgetting the `Host` header when testing.** Without it, curl sends the address you dialled, which matches no listener. Every test in this module needs `-H "Host: ..."`.
+> **Reading a 503 as a routing problem.** A 503 means routing worked. Check the destination host, port, subset and endpoints.
 >
-> **Expecting `EXTERNAL-IP` on a cluster with no load balancer.** `<pending>` is normal on `kind`; use a port-forward or a NodePort.
+> **Forgetting the `Host` header when testing.** Without it, curl sends the address you dialled, which matches no listener host. Every test in this module needs `-H "Host: ..."`, which the `gateway_status` helper adds for you.
 >
-> **A `Gateway` selector matching no pod.** The object exists and configures nothing. `istioctl analyze` reports this one.
+> **Expecting an `EXTERNAL-IP` on a cluster with no load balancer.** On `kind` there is none. Use a port forward (the playground runs one for you) or a NodePort.
 >
 > **Declaring `protocol: TCP` for HTTP traffic.** You get a byte pipe with no host or path routing, which looks like routing that silently ignores your rules.
 >
-> **Trusting a clean `istioctl analyze`.** It does not know your `VirtualService` was supposed to be attached to a gateway.
+> **Trusting a clean `istioctl analyze`.** It does not know your `VirtualService` was meant to be attached to a gateway.
 
-> *404 is my configuration and 503 is my backend — and the gateway's own route dump says which of the two 404s you have.*
-
-## Reference
-
-- [Ingress gateways task](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) — including the troubleshooting section.
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-config` against a gateway rather than a sidecar.
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — what `analyze` does and does not catch.
-- `istioctl proxy-config routes deploy/istio-ingressgateway -n istio-system` — the one command that separates "wrong routes" from "no routes".
+> *`000` is my gate, 404 is my flight plan, 503 is my backend — and the gateway's own route dump says which of the two 404s you have.*

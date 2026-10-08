@@ -1,12 +1,10 @@
 # `WorkloadEntry`: One Instance
 
-> Prerequisite: [the module landing page](./course.md). Next: [`MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md).
-
-One object describing one machine. Three fields, and the third is the one that separates this module from the previous two.
+One object describing one machine: you add one old ship to the star chart. Three fields, and the third is the one that separates this module from the previous two.
 
 ## Reachable, and anonymous
 
-Start from what you have. The stand-in workload has an IP and answers requests, and the mesh knows nothing about it.
+Start from what you have. The stand-in workload has an IP and answers signals, and mission control knows nothing about it.
 
 > [!TIP]
 > **Try it — reachable, but anonymous**
@@ -48,7 +46,7 @@ spec:
   serviceAccount: legacy-sa
 ```
 
-A `WorkloadEntry` is, in effect, a **manually written pod record**. Three fields, each with a clear job:
+A `WorkloadEntry` is, in effect, a **manually written pod record**: a hand-written entry on the star chart for a ship that never launched from your fleet. Three fields, each with a clear job:
 
 - **`address`** — where the instance is. For a real VM this is its routable IP, and it must be reachable from the pod network. The object declares a workload; it does not create connectivity.
 - **`labels`** — how a `ServiceEntry` will select it, exactly as a Kubernetes Service selects pods by label. Part 2 uses these.
@@ -105,10 +103,3 @@ That ServiceAccount is a real Kubernetes object. It does not need to be used by 
 > **Creating it in the wrong namespace.** The identity it receives encodes the namespace, so the object's location is part of its meaning.
 >
 > **Treating it as a substitute for network reachability.** The address still has to be routable from the mesh.
-
-## Reference
-
-- [WorkloadEntry API](https://istio.io/latest/docs/reference/config/networking/workload-entry/) — every field, including `network`, `locality` and `weight`.
-- [Virtual machine architecture](https://istio.io/latest/docs/ops/deployment/vm-architecture/) — how Istio models non-Kubernetes workloads.
-- [SPIFFE ID format in Istio](https://istio.io/latest/docs/concepts/security/#istio-identity) — the identity string this field produces.
-- `kubectl get workloadentry -A` — auto-registered entries appear here too, which Part 3 explains.

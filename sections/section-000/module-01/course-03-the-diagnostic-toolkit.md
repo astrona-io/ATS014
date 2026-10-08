@@ -1,10 +1,8 @@
 # The Diagnostic Toolkit
 
-> Prerequisite: [How The Proxy Gets Its Configuration](./course-02-how-the-proxy-gets-its-configuration.md). Next: [section 010 — Configuring Routing Within A Service Mesh](../../section-010/module-01/course.md).
-
 Istio's characteristic failure is not an error message. It is an object that exists, validates, and changes nothing — or changes something you did not intend. Nothing crashes, nothing logs a stack trace, and `kubectl get` shows everything present and correct.
 
-This part is the set of commands that turn that silence into a sentence. It is short, it is the same four or five commands every time, and the order matters more than the commands do.
+Astronaut, this part is your fault-finding checklist: the set of commands that turn that silence into a sentence. It is short, it is the same four or five commands every time, and the order matters more than the commands do.
 
 ## The one habit
 
@@ -12,15 +10,15 @@ This part is the set of commands that turn that silence into a sentence. It is s
 
 Almost every confusing hour in this domain comes from assuming the first implies the second. It does not, and there are several ordinary reasons why: the object is in the wrong namespace, its host does not resolve to anything, a `Sidecar` scoped the host away, the push has not landed, or the object is correct and something else takes precedence.
 
-The toolkit is a ladder. Start at the top and stop at the first rung that disagrees with you.
+The toolkit is a ladder, like a pre-flight checklist. Start at the top and stop at the first rung that disagrees with you.
 
 ```mermaid
-flowchart TD
-    S["something is not behaving as configured"] --> A["kubectl get<br/>does the object exist, in the namespace you think"]
-    A --> B["istioctl analyze<br/>do the objects agree with each other"]
-    B --> C["istioctl proxy-status<br/>did the push reach the proxies"]
-    C --> D["istioctl proxy-config<br/>does the proxy hold what you wrote"]
-    D --> E["the access log<br/>what did the proxy actually do with the request"]
+flowchart TB
+    S["something is wrong"] -->|"does it exist?"| A["kubectl get"]
+    A -->|"do objects agree?"| B["istioctl analyze"]
+    B -->|"did the push arrive?"| C["istioctl proxy-status"]
+    C -->|"does the proxy hold it?"| D["istioctl proxy-config"]
+    D -->|"what really happened?"| E["access log"]
 ```
 
 Each rung answers a different question, and skipping to the bottom is the usual mistake — reading access logs to diagnose an object that was never in the right namespace.
@@ -48,7 +46,7 @@ Know its limits as precisely as its strengths. `analyze` checks references betwe
 
 ## `istioctl x describe pod` — what applies to this workload?
 
-The `proxy-config` commands dump configuration. `istioctl experimental describe pod` — `x` is the short form of `experimental` — goes the other way: it takes one pod and summarises everything the mesh is currently applying to it, in prose.
+The `proxy-config` commands dump configuration. `istioctl experimental describe pod` — `x` is the short form of `experimental` — goes the other way: it takes one pod (one spaceship) and summarises everything the mesh is currently applying to it, in prose.
 
 > [!TIP]
 > **Try it — the mesh's own summary of a workload**
@@ -77,7 +75,7 @@ The `proxy-config` commands dump configuration. `istioctl experimental describe 
 
 ## `istioctl proxy-config` — what does the proxy hold?
 
-This is the workhorse. Read it as **proxy** + **config**: it dumps one slice of a running Envoy's live configuration, and the subcommand chooses which of the four layers from Part 2:
+This is the workhorse. Read it as **proxy** + **configuration**: it asks one communications officer to read back the orders they are holding right now, and the subcommand chooses which of the four layers from Part 2:
 
 | Subcommand | Layer | Answers |
 | --- | --- | --- |
@@ -94,19 +92,20 @@ There is no separate command for "show me everything", and you do not want one: 
 
 ## Response flags — the access log's one-word diagnosis
 
-When a request fails, the proxy records **why** in a short flag field, early in the access log line, just after the HTTP status. It is the highest-information token in the whole log and it is easy to skim past.
+When a request fails, the proxy records **why** in a short flag field, early in the access log line, just after the HTTP status. The access log is the ship's black box flight log, and the response flag is the short code for what went wrong. It is the highest-information token in the whole log and it is easy to skim past.
 
 | Flag | Meaning | Usually means |
 | --- | --- | --- |
 | `-` | no flag | nothing went wrong at the proxy layer |
 | `NR` | No Route | the request matched no route — wrong host, or no rule matched |
 | `UH` | No healthy Upstream | the cluster exists and has no usable endpoints |
+| `NC` | No Cluster | a rule points at a subset or host the proxy has no cluster for, usually a missing `DestinationRule` subset |
 | `UF` | Upstream connection Failure | the proxy could not connect to the endpoint it chose |
 | `UO` | Upstream Overflow | a circuit breaker limit was hit — section 040 |
 | `URX` | Upstream Retry eXceeded | the retry budget ran out — section 040 |
 | `DC` | Downstream Connection termination | the caller hung up first |
 
-`NR` and `UH` between them account for most of the unexplained 503s in this course, and they point in opposite directions: `NR` is a routing problem, `UH` is a destination problem. Reading the flag decides which half of your configuration to look at before you look at anything.
+`NR`, `NC` and `UH` explain most of the unexplained failures in this course, and they point at different halves of your setup. `NR` arrives as a **404**: no rule matched, so it is a routing problem. `NC` and `UH` arrive as a **503**: a rule matched, but its destination is missing (`NC`) or has no usable pods (`UH`). Reading the flag decides which half of your configuration to look at before you look at anything.
 
 Break something deliberately to see one. Scaling `api` to zero replicas leaves the Service, the cluster and the route in place and removes only the endpoints behind them.
 
@@ -160,15 +159,8 @@ Run them in that order and each one narrows the search. Run them out of order an
 >
 > **Skipping straight to the access log.** If the object is in the wrong namespace, the log will faithfully show you nothing unusual.
 >
-> **Ignoring the response flag.** `NR` and `UH` both surface as a bare 503 to the caller and mean opposite things.
+> **Ignoring the response flag.** A bare 404 or 503 tells you little. `NR` (404) points at your routing rules, while `NC` and `UH` (503) point at the destination. Read the flag before you change anything.
 >
 > **Forgetting that `x` is `experimental`.** `istioctl x describe` is genuinely useful and genuinely subject to change between versions; do not build scripts on its output format.
 
 > *Object exists, objects agree, push landed, proxy holds it, request survived it — five questions, in that order, and the first "no" is your answer.*
-
-## Reference
-
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full.
-- [Istio analyzer message reference](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it.
-- [Envoy access log response flags](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#config-access-log-format-response-flags) — the authoritative list behind the table above.
-- [Istio access log format](https://istio.io/latest/docs/tasks/observability/logs/access-log/) — turning logging on, and the default field order.

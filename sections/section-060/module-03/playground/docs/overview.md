@@ -2,10 +2,14 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab. The environment starts clean, runs
+Welcome, astronaut. This is a **playground**, a training solar system, not a lab. The environment starts clean, runs
 `bootstrap/prepare.sh`, applies the starting workloads, and then waits. There is
 no task, no `astrona submit`, and no pass/fail. Explore, break things,
 `astrona destroy`, start over.
+
+Here you build a spaceport with the Gateway API: the `Gateway` object builds
+its own arrival gate, and routes from other planets (namespaces) may dock only
+if you allow them.
 
 ## What's in the box
 
@@ -46,4 +50,4 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 astrona destroy ats-014-playground-060-03
 ```
 
-(`astrona destroy` takes the environment name, not the config path.)
+(`astrona destroy` takes the environment name, not the configuration path.)

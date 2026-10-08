@@ -1,195 +1,227 @@
 # Binding Routes With `gateways:`
 
-> Prerequisite: [The Gateway Pod And Its Listener](./course-01-the-gateway-pod-and-its-listener.md). Next: [Diagnosing The Gateway](./course-03-diagnosing-the-gateway.md).
-
-Part 1 left a listener with nothing attached. This part is the field that attaches routes to it — one line of YAML that is the single most common omission in the whole section.
+Part 1 left a listener with nothing attached. This part is about the field that attaches routes to it. It is one line of YAML, and it is the most common thing people forget in this whole section.
 
 ## The field
 
-The object is the `VirtualService` from section 010, with one addition:
+The object is the `VirtualService` from section 010, the flight plan that says which way a signal (a request) flies. It gets one new field:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: booking
-  namespace: ingress-demo
+  name: bookinfo
+  namespace: bookinfo
 spec:
   hosts:
-    - booking.ica.local
+  - bookinfo.example.com
   gateways:
-    - booking-gateway          # ← the whole difference
+  - bookinfo-gateway          # ← the whole difference
   http:
-    - match:
-        - uri:
-            prefix: /book
-      route:
-        - destination:
-            host: booking-service
-            port:
-              number: 80
+  - match:
+    - uri:
+        exact: /productpage
+    - uri:
+        prefix: /static
+    - uri:
+        exact: /login
+    - uri:
+        exact: /logout
+    - uri:
+        prefix: /api/v1/products
+    route:
+    - destination:
+        host: productpage
+        port:
+          number: 9080
 ```
 
-Everything except `gateways:` you already know. The `http` rules, the matching, the ordering, the first-match-wins evaluation — all identical to mesh routing.
+You already know everything except `gateways:`. The `http` rules, the matching, the order and the first-match-wins rule all work exactly as they do inside the mesh. The match list here names only the paths `productpage` serves. Any other path finds no route and gets a 404.
 
 ## `mesh` is a reserved name, and it is the default
 
-Every `VirtualService` you wrote before this section had an implicit `gateways` value:
+Every `VirtualService` you wrote before this section had a hidden `gateways` value:
 
 ```yaml
 gateways:
-  - mesh          # implicit when the field is absent
+- mesh          # used when the field is missing
 ```
 
 ```mermaid
-flowchart TD
-    V["a VirtualService"] --> Q{"what does its gateways field say"}
-    Q -->|"absent, so implicitly mesh"| M["applies to every sidecar<br/>north-south traffic is unaffected: 404"]
-    Q -->|"booking-gateway"| G["applies to that gateway only<br/>in-mesh callers are unaffected"]
-    Q -->|"both listed"| B["applies to both"]
+flowchart TB
+    V["VirtualService"] --> Q{"gateways field?"}
+    Q -->|"missing: mesh"| M["every sidecar"]
+    Q -->|"the gateway"| G["that gateway only"]
+    Q -->|"both"| B["both"]
 ```
 
-`mesh` is a reserved gateway name meaning **all sidecars**. So the rule is:
+With `gateways` missing, the rules reach every sidecar and the gateway answers 404. Naming only the gateway leaves callers inside the mesh unaffected. The diagram shows where a `VirtualService`'s rules end up, depending on its `gateways` field.
 
-> Omit `gateways:` and the routes apply to sidecars only. Name a gateway and they apply to that gateway only.
+`mesh` is a reserved gateway name that means **all sidecars**: every communications officer on every ship in the fleet. So the rule is:
 
-Omitting the field while expecting north-south routing is the classic failure of this module. The symptom is a persistent 404 from a configuration that looks entirely correct, with no error from the API server and a clean `istioctl analyze`.
+> Leave out `gateways:` and the routes apply to sidecars only. Name a gateway and they apply to that gateway only.
 
-The field is a list, so both is possible:
+Leaving the field out while expecting traffic from outside to work is the classic failure of this module. You get a 404 from a configuration that looks correct. The API server gives no error, and `istioctl analyze` is clean.
+
+The field is a list, so you can name both:
 
 ```yaml
 gateways:
-  - booking-gateway
-  - mesh
+- bookinfo-gateway
+- mesh
 ```
 
-That attaches the same routes to the gateway **and** to in-mesh callers — useful when internal and external traffic should behave identically, and a real decision rather than a default, because they often should not.
+That attaches the same routes to the gateway **and** to callers inside the mesh. It is useful when outside and inside traffic should behave the same. Make it a real decision, not a default, because often they should not.
 
 > [!TIP]
 > **Try it — attach the routes and watch 404 become 200**
 >
+> Write the `VirtualService` above to a file named `virtualservice-bookinfo.yaml`, then:
+>
 > ```sh
-> kubectl apply -f - <<'EOF'
-> apiVersion: networking.istio.io/v1
-> kind: VirtualService
-> metadata:
->   name: booking
->   namespace: ingress-demo
-> spec:
->   hosts:
->     - booking.ica.local
->   gateways:
->     - booking-gateway
->   http:
->     - match:
->         - uri:
->             prefix: /book
->       route:
->         - destination:
->             host: booking-service
->             port:
->               number: 80
-> EOF
+> kubectl apply -f virtualservice-bookinfo.yaml
 > sleep 2
-> curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
+> gateway_status /productpage
+> gateway_status /admin
+> gateway_status /productpage other.example.com
 > ```
 >
-> Expect something like:
+> Expect `200` first. Then `404`, because `/admin` is not in the match list. Then `404` again, because `other.example.com` is not on the `Gateway`.
 >
-> ```text
-> 200
-> ```
->
-> The `Host` header is doing real work: `booking.ica.local` resolves nowhere, so you are connecting to the port-forward and telling the gateway which listener you mean. That is exactly how a real client's DNS name would reach it.
+> The `Host` header does real work here. `bookinfo.example.com` resolves nowhere, so you connect to the port forward and tell the gateway which host you mean. A real client's DNS name reaches it the same way. To use a browser, add `127.0.0.1 bookinfo.example.com` to `/etc/hosts` and open <http://bookinfo.example.com:8080/productpage>.
 
-Now remove the one line and watch it break, which is more instructive than reading about it.
+Now remove the one line and watch it break. Seeing it is more useful than reading about it.
 
 > [!TIP]
 > **Try it — the same object without `gateways:`**
 >
 > ```sh
-> kubectl -n ingress-demo patch virtualservice booking --type json \
+> kubectl -n bookinfo patch virtualservice bookinfo --type json \
 >   -p '[{"op":"remove","path":"/spec/gateways"}]'
 > sleep 2
-> curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
-> istioctl analyze -n ingress-demo
+> gateway_status /productpage
+> kubectl logs -n istio-ingress deploy/istio-ingress --tail=1
+> istioctl analyze -n bookinfo
 > ```
 >
-> Expect something like:
+> Expect `404`, then a log line and an analysis like these (trimmed):
 >
 > ```text
-> 404
-> ✔ No validation issues found when analyzing namespace: ingress-demo.
+> "GET /productpage HTTP/1.1" 404 NR route_not_found ...
+> ✔ No validation issues found
 > ```
 >
-> A 404 and a clean analysis. The routes are perfectly valid — they are just attached to `mesh` instead of to the gateway. Put the field back before continuing; this is the shape of failure to recognise on sight.
+> A `404 NR` and a clean analysis. The routes are valid. They are just attached to `mesh` instead of to the gateway. Put the field back before you go on (`kubectl apply -f virtualservice-bookinfo.yaml`). This is the failure to recognise on sight: when a gateway returns 404, check `gateways:` first.
 
 ## Host overlap between the two objects
 
-The `hosts` of the `VirtualService` must **intersect** the `hosts` of the `Gateway`. They do not have to be identical:
+The `hosts` of the `VirtualService` must **overlap** the `hosts` of the `Gateway`. They do not have to be the same:
 
 | `Gateway.hosts` | `VirtualService.hosts` | Result |
 | --- | --- | --- |
-| `booking.ica.local` | `booking.ica.local` | works |
-| `*` | `booking.ica.local` | works — the gateway accepts anything, the routes narrow it |
-| `*.ica.local` | `booking.ica.local` | works |
-| `booking.ica.local` | `shop.ica.local` | **no intersection** — routes attach to nothing |
-| `booking.ica.local` | `*` | works, and the listener still only accepts `booking.ica.local` |
+| `bookinfo.example.com` | `bookinfo.example.com` | works |
+| `*` | `bookinfo.example.com` | works: the gateway accepts anything, the routes narrow it |
+| `*.example.com` | `bookinfo.example.com` | works |
+| `bookinfo.example.com` | `shop.example.com` | **no overlap**: the gateway ignores the routes |
+| `bookinfo.example.com` | `*` | works, and the listener still only accepts `bookinfo.example.com` |
 
-A wildcard on one side does not rescue a typo on the other. If the sets do not intersect, the routes attach to nothing and you get a 404 — again with no error.
+A wildcard on one side does not rescue a typo on the other. With no overlap, the gateway ignores the routes for every `Host`, and you get a 404. Here `istioctl analyze` does help: it warns with `IST0132`, "host … not found in Gateway".
+
+Setting `"*"` on both objects accepts every `Host`, so `curl http://localhost:8080/productpage` works with no `Host` header at all. That is handy in a lab, and in an exam task that names no host. In real systems, use real host names. With `"*"`, every `VirtualService` linked to that gateway competes for the same hosts.
+
+## Gateway routes use the same features
+
+A route linked to a gateway can use everything a route inside the mesh can: subsets, weights, retries, faults. Nothing is special about it. The next version of the `VirtualService` adds a first rule that sends `/reviews/<id>` from outside straight to `reviews` v3. It relies on the `reviews` subsets, which the playground already created.
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bookinfo
+  namespace: bookinfo
+spec:
+  hosts:
+  - bookinfo.example.com
+  gateways:
+  - bookinfo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /reviews/
+    route:
+    - destination:
+        host: reviews
+        subset: v3
+        port:
+          number: 9080
+  - match:
+    - uri:
+        exact: /productpage
+    - uri:
+        prefix: /static
+    - uri:
+        exact: /login
+    - uri:
+        exact: /logout
+    - uri:
+        prefix: /api/v1/products
+    route:
+    - destination:
+        host: productpage
+        port:
+          number: 9080
+```
+
+> [!TIP]
+> **Try it — subset routing at the gate**
+>
+> Write the YAML above to `virtualservice-bookinfo-reviews-api.yaml`, then:
+>
+> ```sh
+> kubectl apply -f virtualservice-bookinfo-reviews-api.yaml
+> for i in 1 2 3; do curl -s -H "Host: bookinfo.example.com" http://localhost:8080/reviews/0 | grep -o 'reviews-v[0-9]'; done
+> ```
+>
+> Expect `reviews-v3` three times. Without the rule, `reviews` would spread these requests over all three versions.
 
 ## Referencing a `Gateway` in another namespace
 
-A common production layout is one shared `Gateway` in `istio-system`, with each team's `VirtualService` in its own namespace attaching to it. The reference then needs the namespace:
+A common production layout is one shared `Gateway` in a central namespace, with each team's `VirtualService` in its own namespace attaching to it. The reference then needs the namespace:
 
 ```yaml
 gateways:
-  - istio-system/shared-gateway
+- istio-system/shared-gateway
 ```
 
-A bare name is resolved **in the `VirtualService`'s own namespace**. Omit the prefix and Istio looks for a `Gateway` that does not exist there, finds nothing, and attaches the routes to nothing — silent 404.
+A bare name is looked up **in the `VirtualService`'s own namespace**. Leave out the prefix and Istio looks for a `Gateway` that does not exist there. It finds nothing and attaches the routes to nothing: a silent 404.
 
-This is the same short-name-resolution trap as `hosts` in section 010, in a different field, and it is worth recognising as a family: **any short name in an Istio object resolves relative to that object's namespace.**
+This is the same short-name trap as `hosts` in section 010, in a different field. Learn it as a family: **any short name in an Istio object is looked up in that object's own namespace.**
 
 > [!TIP]
-> **Try it — move the `Gateway` and break the reference**
+> **Try it — point at the wrong namespace and break the reference**
 >
 > ```sh
-> kubectl -n ingress-demo patch virtualservice booking --type merge \
->   -p '{"spec":{"gateways":["istio-system/booking-gateway"]}}'
+> kubectl -n bookinfo patch virtualservice bookinfo --type merge \
+>   -p '{"spec":{"gateways":["istio-system/bookinfo-gateway"]}}'
 > sleep 2
-> curl -s -o /dev/null -w 'wrong namespace: %{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
-> kubectl -n ingress-demo patch virtualservice booking --type merge \
->   -p '{"spec":{"gateways":["booking-gateway"]}}'
+> echo "wrong namespace: $(gateway_status /productpage)"
+> kubectl -n bookinfo patch virtualservice bookinfo --type merge \
+>   -p '{"spec":{"gateways":["bookinfo-gateway"]}}'
 > sleep 2
-> curl -s -o /dev/null -w 'correct:         %{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
+> echo "correct:         $(gateway_status /productpage)"
 > ```
 >
-> Expect something like:
->
-> ```text
-> wrong namespace: 404
-> correct:         200
-> ```
->
-> The `Gateway` is in `ingress-demo`, so `istio-system/booking-gateway` names an object that does not exist. Nothing reports the mistake — the routes simply attach to nothing. Getting a feel for this failure now saves a long debugging session later.
+> Expect `404` for the wrong namespace and `200` once it is fixed. The `Gateway` lives in `bookinfo`, so `istio-system/bookinfo-gateway` names an object that does not exist. Nothing reports the mistake. The routes simply attach to nothing.
 
-> *Omitting `gateways:` means `mesh` — the routes apply to sidecars and the gateway keeps returning 404.*
+> *Leaving out `gateways:` means `mesh`: the routes apply to sidecars and the gateway keeps returning 404.*
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Omitting `gateways:` for north-south routing.** The implicit value is `mesh`, so the routes apply to sidecars and the gateway serves a 404. This is the most common failure in the section, and nothing reports it.
+> **Leaving out `gateways:` for traffic from outside.** The hidden value is `mesh`, so the routes apply to sidecars and the gateway answers `404 NR`. This is the most common failure in the section, and `istioctl analyze` does not report it.
 >
-> **Naming a gateway and expecting in-mesh callers to keep working.** Naming one *replaces* the implicit `mesh`. List `mesh` explicitly if you want both.
+> **Naming a gateway and expecting callers inside the mesh to keep working.** Naming one *replaces* the hidden `mesh`. List `mesh` as well if you want both.
 >
-> **A `hosts` entry in the `VirtualService` that the `Gateway` does not serve.** Both objects have a host list and the effective set is the intersection.
+> **A `VirtualService` host that the `Gateway` does not serve.** Both objects have a host list, and only the overlap counts. `istioctl analyze` warns with `IST0132`.
 >
-> **Referencing a `Gateway` in another namespace by bare name.** A short name resolves in the `VirtualService`'s own namespace; use `<namespace>/<name>`.
-
-## Reference
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the `gateways` field and the reserved `mesh` value.
-- [Ingress gateways task](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) — the canonical two-object example.
-- [Traffic management concepts: gateways](https://istio.io/latest/docs/concepts/traffic-management/#gateways) — why the binding is explicit rather than implicit.
-- `istioctl analyze -n <namespace>` — catches a `Gateway` whose selector matches nothing, though not an unbound `VirtualService`.
+> **Referencing a `Gateway` in another namespace by bare name.** A short name is looked up in the `VirtualService`'s own namespace. Use `<namespace>/<name>`.

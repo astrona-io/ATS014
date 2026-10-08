@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects, and the ordering of the two `http` rules is as graded as the weights themselves.
+Two objects, and the ordering of the two `http` rules is as graded as the weights themselves. Think of it as a flight plan with a checklist: the line for internal testers must come before the line that splits everyone else.
 
 ---
 
@@ -115,7 +115,7 @@ Three things the grader looks at specifically:
 - **`weight` sits beside `destination`, not inside it.** Both destinations are in **one** route block; two separate `http` rules each at 100 would not split anything, because the first would match everything.
 - **The weighted rule has no `match` block.** It is the catch-all, and it has to be last.
 
-The weights sum to 100 within their own route block. Try `70` and `40` and the admission webhook refuses it with a message naming the total — worth doing once so you recognise the error.
+The weights sum to 100 within their own route block. Keep them that way, so the numbers read as percentages. On Istio 1.30.5 a total that is not 100 (say `70` and `40`) is **not** refused: the proxy treats the numbers as a ratio, so the split still works but no longer reads as a percentage. The grader expects exactly `70` and `30`.
 
 ---
 
@@ -140,7 +140,7 @@ istioctl proxy-config routes deploy/tester -n shifting-demo -o json | grep -A12 
     }
 ```
 
-If this block is missing, the [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) never reached the sidecar and no amount of re-reading the YAML will help — check the namespace and `istioctl proxy-status`.
+If this block is missing, the `VirtualService` never reached the sidecar and no amount of re-reading the YAML will help — check the namespace and `istioctl proxy-status`.
 
 ---
 
@@ -199,24 +199,7 @@ Scaling `v1` to 7 and `v2` to 3 would not produce a 70/30 split anyway — the w
 - **Header rule below the weighted rule.** The weighted rule has no `match`, so it matches everything; the header rule never runs.
 - **Two separate `http` rules instead of one route block.** The first matches everything and nothing is split.
 - **`weight` nested inside `destination`.** Schema error — it belongs beside it.
-- **Weights that do not sum to 100.** Rejected at admission with the total in the message.
+- **Weights that do not sum to 100.** Accepted on Istio 1.30.5 and used as a ratio, so the split looks wrong when you read it as percentages — and the grader checks for exactly `70` and `30`.
 - **Measuring with 10 requests.** Each request is an independent draw; small samples are meaningless.
 - **Scaling Deployments to move traffic.** Replica count is capacity, not share — and the grader checks it.
 - **Patching `spec.http` expecting an element edit.** A merge patch replaces the whole list.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [HTTPRouteDestination API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRouteDestination) — `destination` plus `weight`, and the rule that weights sum to 100
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

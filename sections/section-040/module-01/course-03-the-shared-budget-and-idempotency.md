@@ -1,158 +1,185 @@
 # The Shared Budget And Idempotency
 
-> Prerequisite: [The Retry Policy](./course-02-the-retry-policy.md). Next: [the module landing page](./course.md).
+> **Before you start:** define the helper functions from [the landing page](./course.md#before-you-start).
 
-The two fields you now know share one clock. This part is the arithmetic that follows, the signature of getting it wrong, and the safety question Istio cannot answer for you.
+Astronaut, the two fields you now know share one clock. This part covers the arithmetic that follows from that, what it looks like when you get it wrong, and a safety question Istio cannot answer for you.
 
 ## One budget, all attempts
 
-The route `timeout` bounds the **entire request as the caller experiences it**. Retries happen inside that window, not beside it:
+The route `timeout` limits the **whole request as the caller sees it**. Think of it as the mission's abort window: every retry has to happen inside it, not next to it.
 
 ```text
   timeout: 5s
   ├───────────────────────────────────────────────────┤
 
-  attempt 1      attempt 2      attempt 3      attempt 4
+  try 1          retry 1        retry 2        retry 3
   ├── 1s ──┤     ├── 1s ──┤     ├── 1s ──┤     ├── 1s ──┤
                                                         ▲
-                                              finishes at ~4s: fits
+                                              done after ~4s: fits
 
-  timeout: 2s
-  ├────────────────┤
-  attempt 1      attempt 2   ✂ cut off here — caller gets 504
+  timeout: 1.5s
+  ├────────────┤
+  try 1          retry 1   ✂ cut off here, caller gets 504
   ├── 1s ──┤     ├── 1s ──┤
 ```
 
-The rule to apply before writing any retry policy:
+The rule to check before you write any retry policy:
 
-> **`timeout` ≥ (`attempts` + 1) × `perTryTimeout`**, plus headroom for connection setup.
+> **`timeout` ≥ (`attempts` + 1) × `perTryTimeout`**, plus a little room for making the connection.
 
-`attempts + 1` because `attempts` counts retries and there is also the original try. With `attempts: 3` and `perTryTimeout: 1s` you need at least four seconds, and `timeout: 5s` gives a second of slack.
+It is `attempts + 1` because `attempts` counts retries, and there is also the first try. With `attempts: 3` and `perTryTimeout: 1s`, you need at least four seconds.
 
-Set `timeout: 2s` against that policy and the request is cut off partway through the second retry. The caller sees a `504`, the retry policy looks broken, and **nothing anywhere reports a configuration error** — the policy was not ignored, it ran out of time.
+Set `timeout: 1.5s` against that policy, and the request is cut off soon after the second try starts. The caller sees a `504`, the retry policy looks broken, and **nothing anywhere reports a configuration error**. The policy was not ignored. It ran out of time.
 
 > [!TIP]
-> **Try it — shrink the budget and watch the retries get cut off**
+> **Try it — the overall timeout cuts the retries short**
 >
 > ```sh
-> kubectl -n resilience-demo patch virtualservice httpbin --type merge -p '
+> cat > virtualservice-httpbin-short-budget.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: httpbin
+>   namespace: bookinfo
 > spec:
+>   hosts:
+>   - httpbin
 >   http:
->     - route:
->         - destination:
->             host: httpbin
->             port:
->               number: 8000
->       timeout: 2s
->       retries:
->         attempts: 3
->         perTryTimeout: 1s
->         retryOn: 5xx,connect-failure'
-> kubectl -n resilience-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' http://httpbin:8000/delay/10
-> kubectl -n resilience-demo logs deploy/tester -c istio-proxy --tail=2
+>   - route:
+>     - destination:
+>         host: httpbin
+>     timeout: 1.5s
+>     retries:
+>       attempts: 3
+>       perTryTimeout: 1s
+>       retryOn: 5xx
+> EOF
+> kubectl apply -f virtualservice-httpbin-short-budget.yaml
+> status_and_time http://httpbin:8000/delay/3
+> sleep 3; kubectl logs -n bookinfo -l app=httpbin -c istio-proxy --since=10s | grep -c delay/3
 > ```
 >
-> Expect something like:
->
-> ```text
-> 504 2.011s
-> [2026-09-27T11:02:44.118Z] "GET /delay/10 HTTP/1.1" 504 UT upstream_response_timeout ...
-> ```
->
-> The caller is cut off at two seconds — the configured `attempts: 3` never had the budget to complete. **A 504 where you expected a retried success is the signature of this mistake**, and the `UT` flag from Part 1 confirms a deadline rather than an upstream error produced it.
+> Expect `504` after about `1.5s`, then `2`. Each try is cut off after 1 second and retried. Up to four tries were allowed, but the 1.5-second budget only had room for two. **A 504 where you expected a retried success is the sign of this mistake.** The same file is `examples/04-timeouts/cases/c3-virtualservice-httpbin-timeout-cuts-retries.yaml` in the playground.
+
+## Per-try timeouts: retrying slow requests
+
+`perTryTimeout` is not only a limit. It also turns a slow try into a retry. When a try runs past its `perTryTimeout`, the sidecar cancels it, and that cancelled try counts as a 5xx. So with `retryOn: 5xx` it gets retried. This helps when one pod hangs, because the retry may land on a healthy pod.
+
+Here the overall `timeout: 10s` is big enough not to get in the way:
+
+```yaml
+http:
+- route:
+  - destination:
+      host: httpbin
+  timeout: 10s
+  retries:
+    attempts: 2
+    perTryTimeout: 1s
+    retryOn: 5xx
+```
+
+```bash
+# file: examples/06-retries/cases/c3-virtualservice-retry-per-try-timeout.yaml
+status_and_time http://httpbin:8000/delay/3        # 504 3.0s
+count_received "delay/3" 12s                       # 3
+
+kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=1
+# "GET /delay/3 HTTP/1.1" 504 URX,UT upstream_per_try_timeout ...
+```
+
+That is 1 try + 2 retries = 3 tries of 1 second each, so 3 seconds, and then a **504**. The log shows two flags together: `UT` (a deadline fired) and `URX` (the retries are used up).
 
 ## Reading both values off the proxy
 
-The compiled route holds both numbers, which makes this the fastest way to check the arithmetic against what actually landed.
+The route that `istiod` sent to the sidecar holds both numbers. Reading them is the fastest way to check the arithmetic against what really landed.
 
 > [!TIP]
 > **Try it — the timeout and retry policy as Envoy holds them**
 >
+> Apply the short-budget file from the first "Try it" again, then read the route:
+>
 > ```sh
-> istioctl proxy-config routes deploy/tester -n resilience-demo -o json \
+> kubectl apply -f virtualservice-httpbin-short-budget.yaml
+> istioctl proxy-config routes deploy/curl -n bookinfo -o json \
 >   | grep -E '"timeout"|retryOn|numRetries|perTryTimeout' | head
 > ```
 >
-> Expect something like:
->
-> ```text
-> "timeout": "2s",
-> "retryOn": "5xx,connect-failure",
-> "numRetries": 3,
-> "perTryTimeout": "1s",
-> ```
->
-> `numRetries: 3` confirms the off-by-one reading — three *retries*, four attempts, needing four seconds against a two-second budget. Seeing the two numbers side by side is usually enough to spot the problem without running anything.
+> You should see the four fields from your file, in Envoy's own names: `timeout`, `retryOn`, `numRetries` and `perTryTimeout`. `numRetries: 3` confirms the off-by-one reading: three *retries*, four tries, needing four seconds against a budget of one and a half. Seeing the numbers side by side is usually enough to spot the problem without sending a single request.
 
 ## Retries are not free, and not always safe
 
-Before the detail, the decision in one picture — because the mesh will happily retry anything you tell it to, including things that must not be repeated:
+First the decision in one picture, because the mesh will happily retry anything you tell it to, including things that must never run twice:
 
 ```mermaid
-flowchart TD
-    R["you are considering a retry policy for this route"] --> I{"is the operation idempotent<br/>does running it twice equal running it once"}
-    I -->|"no, for example a payment or a POST that creates"| N["do not retry blindly<br/>require an idempotency key, or set attempts: 0"]
-    I -->|"yes, a read or an idempotent write"| T{"is the failure transient"}
-    T -->|"no, a deterministic 500 or a 4xx"| N2["retrying only multiplies load"]
-    T -->|"yes, connect-failure, reset, a busy upstream"| Y["retry, within a budget the timeout can afford"]
+flowchart TB
+    R["retry policy?"] --> I{"idempotent?"}
+    I -->|"no, say payment"| N["no blind retries"]
+    I -->|"yes, a read"| T{"short-lived failure?"}
+    T -->|"no, bug or 4xx"| N2["retry adds load"]
+    T -->|"yes, reset or busy"| Y["retry within budget"]
 ```
 
-Istio has no way to answer the first question. It sees an HTTP request, not what the request means.
+Idempotent means sending a request twice has the same effect as sending it once. Without that, use an idempotency key or `attempts: 0`. With it, retry only within a budget the timeout can afford. Istio cannot answer the first question. It sees an HTTP request, not what the request means.
 
-Two consequences that Istio cannot decide for you.
+A request is **idempotent** when running it twice does no more harm than running it once, like sending the same docking signal twice: the ship docks once. `GET`, `PUT` and `DELETE` are usually idempotent. `POST` usually is not.
 
-**A retried `POST` is a second `POST`.** Istio retries at the HTTP layer with no knowledge of what the request does. If the first attempt reached the server, did its work, and then the *response* was lost, the retry performs the work again. Deduplication is an application concern — an idempotency key, a unique constraint, a conditional write.
+**A retried `POST` is a second `POST`.** Istio retries at the HTTP level and does not check the method. Say the first try reached the server, the work was done, and then the *answer* got lost. The retry does the work again. An order could be created four times, like a launch command sent four times that fires four rockets. Stopping duplicates is the app's job: an idempotency key, a unique constraint, or a conditional write.
 
-The defensive pattern is to scope retries away from the write path by matching on method:
+> [!TIP]
+> **Try it — the POST is sent four times**
+>
+> Apply `virtualservice-httpbin-retries.yaml` from Part 2 again (`attempts: 3`, `retryOn: 5xx,…`), then:
+>
+> ```sh
+> kubectl apply -f virtualservice-httpbin-retries.yaml
+> status_and_time -X POST http://httpbin:8000/status/503
+> count_received "POST /status/503"
+> ```
+>
+> Expect `4`. Istio retried the `POST` exactly like a `GET`.
+
+The safe pattern is to allow retries only for methods that are safe to repeat, by matching on the method. Rules are still checked top to bottom, and the first match wins. So `GET` requests take rule 1, with retries. Everything else falls through to rule 2, with `attempts: 0`:
 
 ```yaml
 http:
-  - match:
-      - method:
-          exact: POST
-    route:
-      - destination: { host: httpbin, port: { number: 8000 } }
-    timeout: 5s
-    retries:
-      attempts: 0            # writes: never retried
-  - route:
-      - destination: { host: httpbin, port: { number: 8000 } }
-    timeout: 5s
-    retries:
-      attempts: 3            # reads: retried freely
-      perTryTimeout: 1s
-      retryOn: gateway-error
+- match:
+  - method:
+      exact: GET
+  route:
+  - destination:
+      host: httpbin
+  retries:
+    attempts: 3
+    retryOn: 5xx
+- route:
+  - destination:
+      host: httpbin
+  retries:
+    attempts: 0
 ```
 
-Rules are still evaluated top down and first match wins, so the `POST` rule goes first.
+```bash
+# file: examples/06-retries/cases/c4-virtualservice-retry-get-only.yaml
+status_and_time http://httpbin:8000/status/503         ; count_received "GET /status/503"     # 4
+status_and_time -X POST http://httpbin:8000/status/503 ; count_received "POST /status/503"    # 1
+```
 
-**Retries multiply load on a struggling service.** A dependency returning 503 under load gets `attempts + 1` times as many requests from every caller that retries — exactly when it can least afford them. This is the interaction with module 2's connection pools, where a pool rejection is itself a `503`: with `retryOn: 5xx` those rejections are retried, producing more rejections. Prefer `gateway-error` or `connect-failure` on routes to a pool-limited service, and keep `attempts` small.
+**Retries multiply the load on a struggling service.** A service that answers 503 because it is overloaded gets `attempts + 1` times as many requests from every caller that retries, right when it can least afford them. This is called a retry storm: a whole fleet re-sending signals at a ship that is already sinking under them. Keep `attempts` small, and combine retries with circuit breaking (module 2), which closes the hatch on an overloaded service before the overload spreads.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **A `timeout` shorter than `(attempts + 1) × perTryTimeout`.** The retries are truncated and the caller gets a 504 with the `UT` flag. Do the multiplication before applying.
+> **A `timeout` shorter than `(attempts + 1) × perTryTimeout`.** The retries are cut short and the caller gets a 504 with the `UT` flag. Do the multiplication before you apply.
 >
-> **Reading `attempts` as the total number of requests.** It is the number of retries *after* the first try — Envoy calls it `numRetries`.
+> **Forgetting that a per-try timeout is retried.** With `retryOn: 5xx`, a try that runs past `perTryTimeout` counts as a failure and is sent again. The log then shows `URX,UT`.
 >
-> **Believing no `retries` block means no retries.** Istio's default is 2 attempts on connection-level failures. Only `attempts: 0` disables them.
+> **Retrying requests that are not idempotent.** A retried `POST` repeats its side effect. Split the route with a `method` match and set `attempts: 0` for the rest.
 >
-> **Expecting `retryOn: 5xx` to retry a 4xx.** Client errors are never retried. Use `retriable-status-codes` with an explicit list if you really need one.
+> **Adding retries everywhere.** Under heavy load, retries multiply the load into a retry storm. Keep `attempts` small and add circuit breaking.
 >
-> **Retrying non-idempotent requests.** A retried `POST` duplicates the side effect. Split the route with a `method` match and set `attempts: 0` on the write path.
+> **Assuming a timeout stops the server.** It stops the caller waiting. The server finishes its work anyway, so a timeout does not take load off a struggling service.
 >
-> **Using `retryOn: 5xx` toward a connection-pool-limited service.** Pool rejections are 503s; retrying them amplifies the overload.
->
-> **Assuming a timeout stops the upstream.** It stops the caller waiting. The upstream finishes its work regardless, so a timeout does not shed load from a struggling dependency.
->
-> **Confusing a synthesised 504 with an upstream one.** Check the access log for `UT` before debugging the wrong hop.
+> **Confusing a 504 made by the sidecar with one from the server.** Check the access log for `UT` before you debug the wrong hop.
 
-> *One clock covers every attempt — compute `(attempts + 1) × perTryTimeout` and give the timeout room, or the policy you wrote is not the policy that runs.*
-
-## Reference
-
-- [HTTPRetry API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRetry) — every retry field in one place.
-- [Request timeouts task](https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/) — the timeout half, with the retry interaction called out.
-- [Envoy router filter retry policy](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#retry-policy) — how the per-try and overall timeouts compose inside the proxy.
-- [Idempotency in HTTP (RFC 9110 §9.2.2)](https://www.rfc-editor.org/rfc/rfc9110#section-9.2.2) — which methods are idempotent by specification, which is the basis for the `method`-matched split above.
+> *One clock covers every try. Work out `(attempts + 1) × perTryTimeout` and give the timeout room, or the policy you wrote is not the policy that runs.*

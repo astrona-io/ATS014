@@ -1,0 +1,29 @@
+# Case 4: testers always see the canary, everyone else gets a 90/10 split.
+#   end-user: jason   -> v3 (always)
+#   everyone else     -> 90% v1, 10% v2
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  hosts:
+  - scout
+  http:
+  - match:
+    - headers:
+        end-user:
+          exact: jason
+    route:
+    - destination:
+        host: scout
+        subset: v3
+  - route:
+    - destination:
+        host: scout
+        subset: v1
+      weight: 90
+    - destination:
+        host: scout
+        subset: v2
+      weight: 10

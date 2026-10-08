@@ -1,0 +1,23 @@
+# Circuit breaker part 2: outlier detection for httpbin.
+# Each caller sidecar watches every httpbin pod. A pod that returns errors
+# in a row is ejected (taken out of load balancing) for a while.
+# Named httpbin, like every DestinationRule in this playground: applying it
+# replaces whichever httpbin DestinationRule is already there.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  host: httpbin
+  trafficPolicy:
+    outlierDetection:
+      # Eject a pod after 3 5xx responses in a row (502/503/504 and 5xx).
+      consecutive5xxErrors: 3
+      # How often the sidecar checks pods for ejection.
+      interval: 5s
+      # How long an ejected pod stays out. Doubles each time it is ejected again.
+      baseEjectionTime: 1m
+      # Max share of pods that may be ejected at the same time.
+      # 50 = at most half, so some capacity always remains.
+      maxEjectionPercent: 50

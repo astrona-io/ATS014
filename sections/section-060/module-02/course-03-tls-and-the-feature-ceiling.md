@@ -1,7 +1,5 @@
 # TLS And The Feature Ceiling
 
-> Prerequisite: [Rules, Path Types And Translation](./course-02-rules-path-types-and-translation.md). Next: [the module landing page](./course.md).
-
 Two things left: the TLS configuration, whose one non-obvious rule causes most of the failures on this topic, and an honest account of what the `Ingress` API cannot do — which is the whole reason the next module exists.
 
 ## TLS on an `Ingress`
@@ -26,7 +24,7 @@ spec:
 
 > **The secret must exist in the gateway's namespace** — normally `istio-system` — **not in the application's namespace.**
 
-This differs from how nearly every other Kubernetes object behaves, and it follows directly from *where the reading happens*. The gateway pod loads the certificate, and a pod can only read secrets from its own namespace. The `Ingress` object lives with your application; the process that needs the key lives somewhere else.
+This differs from how nearly every other Kubernetes object behaves, and it follows directly from *where the reading happens*. The gateway pod loads the certificate, and a pod can only read secrets from its own namespace. Picture the certificate as the gate's secret handshake: it has to be stored on the gate's own planet, not on the planet where your application lives. The `Ingress` object lives with your application; the process that needs the key lives somewhere else.
 
 The failure is quiet and asymmetric:
 
@@ -34,7 +32,7 @@ The failure is quiet and asymmetric:
 - HTTPS refuses the connection — `curl` reports `000`, or a connection reset.
 - The `Ingress` status says nothing. No event, no warning.
 
-That combination — HTTP fine, HTTPS dead, no error — is the signature. Check which namespace the secret is in before anything else.
+That combination — HTTP fine, HTTPS dead, no error — is the signature. The gate answers on the open channel but cannot do the secret handshake. Check which namespace the secret is in before anything else.
 
 > [!TIP]
 > **Try it — the wrong namespace, then the right one**
@@ -121,7 +119,7 @@ Istio deliberately does **not** add a large annotation vocabulary. If you need m
 | New work, and you want portability across implementations | **Gateway API** (module 3) |
 | Platform team owns the listener, app teams own the routes | **Gateway API** — the role split is built into the objects |
 
-The honest summary: `Ingress` support exists so a migration does not have to be a rewrite. It is a bridge, and this module's purpose is to let you cross it knowingly.
+The honest summary: `Ingress` support exists so a migration does not have to be a rewrite. It is a docking adapter for older ships, and this module's purpose is to let you use it knowingly.
 
 ## Common pitfalls
 
@@ -143,10 +141,3 @@ The honest summary: `Ingress` support exists so a migration does not have to be 
 > **Expecting the `ADDRESS` column to confirm health.** On a cluster with no load balancer it stays empty regardless.
 
 > *The `Ingress` TLS secret lives in the gateway's namespace, because the gateway pod is what has to read it.*
-
-## Reference
-
-- [Istio Kubernetes Ingress task](https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/) — including the secret-namespace requirement.
-- [Kubernetes Ingress TLS](https://kubernetes.io/docs/concepts/services-networking/ingress/#tls) — the `spec.tls` structure and secret format.
-- [Gateway API rationale](https://gateway-api.sigs.k8s.io/) — the Kubernetes project's own account of what `Ingress` could not do.
-- [Secure gateways task](https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/) — the native `Gateway` equivalent, where the same namespace rule applies.

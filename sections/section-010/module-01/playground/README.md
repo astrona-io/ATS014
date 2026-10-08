@@ -5,7 +5,7 @@
 - **Type:** Astrona playground — clean environment, no task, no grading
 
 A training solar system in the simulator: it starts a `kind` cluster with Istio
-and the Bookinfo sample app, then waits for you, astronaut. Use it alongside the module's parts. Nothing to submit.
+and the Starfleet (the Istio docs' Bookinfo sample, renamed), then waits for you, astronaut. Use it alongside the module's parts. Nothing to submit.
 
 ## Run it
 
@@ -21,9 +21,9 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 
 | Path | Purpose |
 | --- | --- |
-| `config.yaml` | Environment definition: kind runtime, port forward to Bookinfo, the two bootstrap scripts |
+| `config.yaml` | Environment definition: kind runtime, port forward to the bridge, the two bootstrap scripts |
 | `bootstrap/install-istio.sh` | Installs Istio 1.30.5 (`istio-base` + `istiod`) with Helm |
-| `bootstrap/deploy.sh` | Namespace `bookinfo` with injection, access logs, Bookinfo, `curl` client, `httpbin` v1/v2 |
+| `bootstrap/deploy.sh` | Namespace `starfleet` with injection, access logs, the Starfleet, `shuttle` client, `probe` v1/v2 |
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/01-request-routing/` | Subsets and "all traffic to one version", plus the mistake cases in `cases/` |
 | `examples/02-header-based-routing/` | Header, path and query rules, rule order, plus the cases in `cases/` |

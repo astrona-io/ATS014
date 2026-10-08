@@ -1,47 +1,23 @@
 # Mesh Foundations
 
-Before you configure a mesh, it helps to know what is already running. A namespace labelled for injection gets a proxy in every pod, traffic redirected into it, and a full set of configuration pushed to it — all before you write a single Istio object.
+Welcome aboard, astronaut. Before you give Istio any rules, you need to know what Istio already does on its own. That is your first mission.
 
-This section is one module covering exactly that: what injection adds, how `istiod` programs the proxies, and the handful of commands that tell you what a proxy currently holds. It writes no Istio configuration at all.
+Think about your cluster as a solar system. Each namespace is a planet, and each pod is a spaceship. Istio puts a small helper program, deploys a **proxy** as a sidecar alongside your application container, on board every spaceship. The proxy is the ship's communications officer: every signal in or out of the ship goes through them. Istio's control plane, **`istiod`**, is mission control: it radios every communications officer their orders.
 
-**Curriculum item covered:** none directly — this is prerequisite material for the whole Traffic Management domain.
+When you label a namespace for Istio, three things happen to each new pod that launches there. It gets a proxy. Its traffic is sent through that proxy. And `istiod` sends the proxy a full set of settings. All of this happens before you write a single Istio object.
+
+This section shows you what Istio adds to a pod, how `istiod` sets up the proxies, and a few commands that show what a proxy knows right now. You will not write any Istio traffic rules here.
 
 ---
 
 ## What You Will Master
 
-- What sidecar injection adds to a pod, and why labelling a namespace does not change pods that already exist.
-- How `iptables` rules put a pod's own traffic through the proxy on ports `15001` and `15006` without the application knowing.
-- Why every in-mesh request is logged twice, and what an uninjected caller loses.
-- What the service registry is built from, and how `istiod` turns it into Envoy configuration.
-- LDS, RDS, CDS and EDS: what each carries and why a push needs no restart.
-- The listener → route → cluster → endpoint chain, and how to read each layer with `istioctl proxy-config`.
-- Reading an Envoy cluster name: direction, port, subset and host.
-- The diagnostic ladder — `kubectl get`, `istioctl analyze`, `istioctl proxy-status`, `istioctl proxy-config`, the access log — and what each one cannot see.
-- Access-log response flags, and why `NR` and `UH` point at opposite halves of a configuration.
-
----
-
-## The Learning Path
-
-### 1. How A Request Moves Through The Mesh
-*   **Module Reader:** **[How A Request Moves Through The Mesh](./module-01/course.md)**
-    1. [The Sidecar And The Data Path](./module-01/course-01-the-sidecar-and-the-data-path.md)
-    2. [How The Proxy Gets Its Configuration](./module-01/course-02-how-the-proxy-gets-its-configuration.md)
-    3. [The Diagnostic Toolkit](./module-01/course-03-the-diagnostic-toolkit.md)
-*   **Hands-on Playground:** `sections/section-000/module-01/playground` — a kind cluster with Istio installed, one injected namespace holding a client and an API, and one uninjected namespace for contrast. No Istio traffic configuration at all.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-000/module-01/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-000/module-01/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-000/module-01/labs/lab-01
-    ```
-*   **Hands-on Objective:** Find the two workloads that are running perfectly and are nevertheless outside the mesh — one namespace that was never labelled, one pod template that opted out — and bring both in without replacing them. Nothing in `kubectl get` reports either fault.
-
----
-
-This section has no capstone: it teaches how to look at a mesh, and everything in it is exercised by every graded lab that follows. Its own lab is deliberately diagnostic — the fix is two commands, and finding what to fix is the whole exercise.
-
-The playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear it down with `astrona destroy ats-014-playground-000-01` when you are finished.
+- What Istio adds to a pod when it injects a proxy (the "sidecar"), and why labelling a namespace does not change pods that are already running.
+- How `iptables` rules (the Linux firewall) send a pod's own traffic through the proxy on ports `15001` and `15006`, without the app knowing.
+- Why every request (a signal between ships) inside the mesh is logged twice, and what a caller without a proxy misses out on.
+- What the **service registry** is (Istio's star chart: every planet and beacon it knows about), what it is built from, and how `istiod` turns it into settings for Envoy, the proxy Istio uses.
+- LDS, RDS, CDS and EDS: the four kinds of settings `istiod` sends to each proxy, what each one holds, and why the proxy can take new settings without a restart.
+- The chain a request follows inside a proxy: listener → route → cluster → endpoint. You will learn to read each step with `istioctl proxy-config`.
+- How to read an Envoy cluster name, which tells you the direction, port, subset and host.
+- The order to check things in when something goes wrong: `kubectl get`, `istioctl analyze`, `istioctl proxy-status`, `istioctl proxy-config`, then the access log. You will also learn what each one cannot show you.
+- The short codes in the access log (the ship's black box flight log), called response flags, and why `NR` and `UH` point at opposite halves of your setup.

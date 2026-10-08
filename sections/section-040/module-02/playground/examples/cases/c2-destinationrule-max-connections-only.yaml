@@ -1,0 +1,13 @@
+# Case 2 (common mistake): only maxConnections set. The pending queue keeps
+# its huge default, so extra requests wait – the breaker never trips.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  host: httpbin
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 1

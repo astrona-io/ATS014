@@ -1,0 +1,31 @@
+# Abort only for user jason; everyone else gets normal ratings.
+# Typical way to test failure handling in production without hurting real
+# users: fault on a match rule, normal route as catch-all.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: ratings
+  namespace: bookinfo
+spec:
+  hosts:
+  - ratings
+  http:
+  # Rule 1: jason -> always HTTP 500.
+  - match:
+    - headers:
+        end-user:
+          exact: jason
+    fault:
+      abort:
+        percentage:
+          value: 100
+        httpStatus: 500
+    route:
+    - destination:
+        host: ratings
+        subset: v1
+  # Rule 2: everyone else, no fault.
+  - route:
+    - destination:
+        host: ratings
+        subset: v1

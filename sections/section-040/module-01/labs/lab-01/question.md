@@ -2,12 +2,14 @@
 
 Solve this question on: `terminal`
 
+Astronaut, your mission: give one service an abort window and a safe re-send policy.
+
 Namespace `resilience-demo` runs one backend and one client:
 
 * `httpbin` — a Service on port 8000. `/delay/<seconds>` sleeps before answering; `/status/<code>` returns that status immediately.
 * `tester` — a client pod with `curl`
 
-Istio is installed, both pods are injected, and there is no [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/), so there is no route timeout at all.
+Istio is installed, both pods are injected, and there is no `VirtualService`, so there is no route timeout at all.
 
 The service is called on both a read path and a write path, and they need different treatment: reads are safe to retry, writes are not.
 
@@ -33,20 +35,3 @@ Create a `VirtualService` named `httpbin` for host `httpbin` with exactly **two*
 10. A `POST http://httpbin:8000/status/503` produces exactly **1** request at the server.
 11. A `GET http://httpbin:8000/delay/10` returns **504**, and takes at least as long as the read timeout you configured — proving the timeout fires rather than the retries being cut short early.
 12. The read rule's `timeout` is at least `(attempts + 1) × perTryTimeout`.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [Istio Kubernetes Gateway API task](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/) — `GatewayClass`, `Gateway`, `HTTPRoute`, `parentRefs` and `allowedRoutes`
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [HTTPRoute API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) — `timeout` alongside `retries`, `fault` and `mirror` on one rule
-- [HTTPRetry API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRetry) — `attempts`, `perTryTimeout`, `retryOn` and `retriableStatusCodes`
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

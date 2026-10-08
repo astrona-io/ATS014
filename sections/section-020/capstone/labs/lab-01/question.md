@@ -10,9 +10,9 @@ Namespace `checkout` holds a canary in progress and a shadow deployment that has
 * `notification-shadow` — a **separate** Deployment and Service on port 80, the shadow target, 1 replica
 * `tester` — a client pod with `curl`
 
-Istio is installed, every pod is injected, and there is no [`VirtualService`](https://istio.io/latest/docs/reference/config/networking/virtual-service/) and no [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/).
+Istio is installed, every pod is injected, and there is no `VirtualService` and no `DestinationRule`.
 
-Deliver the following on one `VirtualService` named `notification` for host `notification-service`.
+Astronaut, your mission: one flight plan that runs a test flight and a listening test ship at the same time. Deliver the following on one `VirtualService` named `notification` for host `notification-service`.
 
 **Subsets**
 
@@ -36,21 +36,3 @@ Deliver the following on one `VirtualService` named `notification` for host `not
 9.  `notification-shadow` receives a copy of essentially every ordinary request, identifiable by the rewritten `-shadow` authority in its proxy access log.
 10. No Deployment's replica count has changed — all four still run exactly 1 replica. Traffic share is a weight, not a pod count.
 11. The `notification-service` Service selector still selects on `app` only, and no Deployment was added or removed.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [StringMatch API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#StringMatch) — the `exact` / `prefix` / `regex` choice and what each means
-- [HTTPRouteDestination API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRouteDestination) — `destination` plus `weight`, and the rule that weights sum to 100
-- [HTTPMirrorPolicy API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMirrorPolicy) — `mirror`, `mirrors` and `mirrorPercentage`
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
-- [Istio analyzer messages](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code and what triggers it

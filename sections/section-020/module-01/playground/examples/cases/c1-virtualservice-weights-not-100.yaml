@@ -1,0 +1,20 @@
+# Case 1: weights that do not add up to 100 (50 + 30 = 80).
+# What does Istio do with it? Apply and find out (see README).
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  hosts:
+  - scout
+  http:
+  - route:
+    - destination:
+        host: scout
+        subset: v1
+      weight: 50
+    - destination:
+        host: scout
+        subset: v3
+      weight: 30

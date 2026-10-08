@@ -1,236 +1,300 @@
 # Evaluation Order, Name Resolution And Proof
 
-> Prerequisite: [Matching A Request](./course-02-matching-a-request.md). Next: [Rewriting, Redirecting And Headers](./course-04-rewriting-redirecting-and-headers.md).
+You can now name destinations and read a signal's label. Three things are left. Which rule wins when several could apply. How short host names are filled in, which can make a correct-looking object do nothing. And how to prove the proxy received your work. Almost every failure in this module lands in one of those three.
 
-You can now name destinations and describe requests. What remains is the part that decides behaviour when several rules could apply, the name-resolution rule that makes correct-looking objects do nothing, and the two commands that tell you whether the proxy ever received your work. Every failure mode in this module lands in one of those three.
+The commands below assume the `scout` `DestinationRule` from Part 1 and the `count_versions` helper.
 
 ## First match wins
 
-Envoy walks the `http` list from the top and **stops at the first rule whose match succeeds**. There is no scoring, no "most specific rule", no merging.
+The `http` field is a list of rules. For each signal, the proxy reads the list **from the top** and **stops at the first rule whose `match` fits**. There is no scoring, no "most specific rule wins", and no merging. Think of it as the flight plan's checklist: the crew reads it top to bottom and uses the first line that fits.
 
 ```mermaid
-flowchart TD
-    Q["an outbound request"] --> R1{"rule 1<br/>does its match succeed"}
-    R1 -->|"yes"| D1["route to rule 1's destination<br/>evaluation stops here"]
-    R1 -->|"no"| R2{"rule 2<br/>does its match succeed"}
-    R2 -->|"yes"| D2["route to rule 2's destination<br/>evaluation stops here"]
-    R2 -->|"no"| R3["rule 3 has no match block<br/>it always succeeds"]
-    R3 --> D3["route to the default destination"]
+flowchart TB
+    R["request"] --> M1{"rule 1"}
+    M1 -->|"end-user = jason"| V2["subset v2"]
+    M1 -->|"anyone else"| M2{"rule 2"}
+    M2 -->|"no match: always"| V1["subset v1"]
 ```
 
-There is one arrow out of every rule and no way back up. Whatever matches first is the answer, and nothing below it is consulted.
+Rule 1 asks "is `end-user` equal to `jason`?". If yes, the signal goes to subset v2 and the checking stops. Rule 2 has no match, so it fits every signal that gets that far, and sends it to v1. There is one arrow out of every rule and no way back up. The order in your file is the order of the checks. Istio does not sort the rules for you.
 
-A rule with no `match` matches everything, so it can only ever be the **last** rule. Put it first and the rules below it are unreachable — and nothing tells you. The objects are valid, `istioctl analyze` is clean, the API server is happy, and every request quietly goes to the default. "My header rule does nothing" is, more often than not, this.
-
-The complete configuration for this module's scenario — three specific rules, then the default:
-
-```yaml
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: notification-service
-  namespace: routing-demo
-spec:
-  hosts:
-    - notification-service
-  http:
-    - match:
-        - headers:
-            testing:
-              exact: "true"
-      route:
-        - destination:
-            host: notification-service
-            subset: v2
-    - match:
-        - uri:
-            prefix: /notify/beta
-      route:
-        - destination:
-            host: notification-service
-            subset: v2
-    - match:
-        - queryParams:
-            version:
-              exact: "2"
-      route:
-        - destination:
-            host: notification-service
-            subset: v2
-    - route:
-        - destination:
-            host: notification-service
-            subset: v1
-```
+A rule without `match` fits every request. This is the **catch-all** rule: the "everyone else" line at the bottom of the checklist. It can only ever be useful as the **last** rule. Put it first, and every rule below it is dead.
 
 > [!TIP]
-> **Try it — all four rules, then the same object with the default moved to the top**
+> **Try it: the right order, then the wrong order**
+>
+> Start with jason's rule first and the catch-all last (the same file as in Part 2):
 >
 > ```sh
-> kubectl apply -f - <<'EOF'
+> cat > virtualservice-scout.yaml <<'EOF'
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
->   name: notification-service
->   namespace: routing-demo
+>   name: scout
+>   namespace: starfleet
 > spec:
 >   hosts:
->     - notification-service
+>   - scout
 >   http:
->     - match:
->         - headers:
->             testing:
->               exact: "true"
->       route:
->         - destination: { host: notification-service, subset: v2 }
->     - match:
->         - uri:
->             prefix: /notify/beta
->       route:
->         - destination: { host: notification-service, subset: v2 }
->     - match:
->         - queryParams:
->             version:
->               exact: "2"
->       route:
->         - destination: { host: notification-service, subset: v2 }
->     - route:
->         - destination: { host: notification-service, subset: v1 }
+>   - match:
+>     - headers:
+>         end-user:
+>           exact: jason
+>     route:
+>     - destination:
+>         host: scout
+>         subset: v2
+>   - route:
+>     - destination:
+>         host: scout
+>         subset: v1
 > EOF
-> echo "--- correct order ---"
-> kubectl -n routing-demo exec deploy/tester -- sh -c \
->   'for i in $(seq 1 10); do curl -s -X POST http://notification-service/notify; echo; done' | sort -u
-> kubectl -n routing-demo exec deploy/tester -- curl -s -X POST -H "testing: true" http://notification-service/notify
-> kubectl -n routing-demo exec deploy/tester -- curl -s -X POST 'http://notification-service/notify?version=2'
+> kubectl apply -f virtualservice-scout.yaml
+> count_versions -H "end-user: jason" $SCOUT/0
 > ```
 >
-> Expect something like:
+> Expect `10 scout-v2`. Now swap the order: put the catch-all first. That file is `examples/02-header-based-routing/02-virtualservice-scout-wrong-order.yaml` in the playground.
+>
+> ```sh
+> cat > virtualservice-scout-wrong-order.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: scout
+>   namespace: starfleet
+> spec:
+>   hosts:
+>   - scout
+>   http:
+>   - route:
+>     - destination:
+>         host: scout
+>         subset: v1
+>   - match:
+>     - headers:
+>         end-user:
+>           exact: jason
+>     route:
+>     - destination:
+>         host: scout
+>         subset: v2
+> EOF
+> kubectl apply -f virtualservice-scout-wrong-order.yaml
+> count_versions -H "end-user: jason" $SCOUT/0
+> istioctl analyze -n starfleet
+> ```
+>
+> Expect:
 >
 > ```text
-> --- correct order ---
-> ["EMAIL"]
-> ["EMAIL","SMS"]
-> ["EMAIL","SMS"]
+>   10 scout-v1
+> Warning [IST0130] (VirtualService starfleet/scout) VirtualService rule #1 not used
+> (route without matches defined before).
 > ```
 >
-> Ten default requests collapse to one distinct answer, and each specific request reaches `v2`. Now move the last rule to the top of the `http` list, re-apply, and repeat: every line becomes `["EMAIL"]`. Same four rules, same matches, no error anywhere — and three of them are dead.
+> Rule #1 is the jason rule, because rules are counted from 0. It can never match, and `analyze` tells you so. `kubectl apply` prints the same warning. Put the right order back with `kubectl apply -f virtualservice-scout.yaml`.
 
 ## Why there is no "most specific" rule
 
-Coming from `Ingress`, or from most web frameworks, the instinct is that a longer or more specific path wins regardless of where it sits. Istio does not work that way, and the difference is deliberate: **you** express the priority, by ordering the list. The proxy does not infer it.
+If you come from `Ingress` or most web frameworks, you expect a longer, more specific path to win wherever it sits. Istio does not work that way, on purpose. **You** set the priority by ordering the list. The proxy does not guess it.
 
-That gives you a rule of thumb that resolves almost every ordering question:
+That gives a rule of thumb that answers almost every ordering question:
 
 ```text
-  most specific rule   first
+  most specific rule       first
        ...
   least specific rule
-  the default (no match)   last, always
+  the catch-all (no match) last, always
 ```
 
-The same principle explains a second trap. Two `VirtualService` objects for the same host do not sit in a defined order relative to each other — Istio merges them, and the merge order across objects is not something to build behaviour on. Keep **one `VirtualService` per host**, with your ordering expressed inside its `http` list where you can see it.
+The same idea explains a second trap. Two `VirtualService` objects for the same host have no set order between them. Istio only combines them in some cases, and you should not build on the result. Keep **one `VirtualService` per host**, with your order written inside its `http` list where you can see it.
 
-## Short host names resolve to the object's namespace
+## No catch-all: `404 NR`
 
-`spec.hosts` and every `destination.host` accept a short name, and a short name is expanded **relative to the namespace of the object it appears in** — not the namespace of the workload, and not the caller's namespace.
+Leaving out the catch-all is a different mistake. Once a `VirtualService` exists for `scout`, the proxy only knows the routes inside it. A request that matches no rule has no route at all. The proxy then answers with **`404`** ("not found") by itself.
 
-```mermaid
-flowchart TD
-    N["the short name: notification-service"] --> Q{"which namespace is the OBJECT in"}
-    Q -->|"routing-demo"| A["notification-service.routing-demo.svc.cluster.local<br/>the Service exists, rules apply"]
-    Q -->|"default"| B["notification-service.default.svc.cluster.local<br/>no such Service, rules never fire"]
-```
-
-The caller's namespace and the workload's namespace play no part in it. Only the namespace of the object you wrote.
-
-Create the object in the wrong namespace and the outcome is silence: `kubectl get virtualservice` shows it existing, the schema is valid, and no rule ever fires because the host it describes does not exist there. The fully qualified form `notification-service.routing-demo.svc.cluster.local` is unambiguous and is what to reach for whenever the object and the workload are not obviously together.
-
-The same expansion applies to `DestinationRule.spec.host`. A `DestinationRule` in the wrong namespace defines subsets for a host nobody is calling, which surfaces as the 503 in the next section.
-
-## The two failure signatures
-
-Almost every broken routing task in this domain presents as one of two symptoms, and they point at different halves of the module:
-
-| Symptom | Means | Look at |
-| --- | --- | --- |
-| **The wrong destination answers, no errors** | a rule matched that you did not expect | rule order; AND/OR nesting; whether a default sits above your rules |
-| **HTTP 503, no useful log** | the route resolved to a cluster with no endpoints | subset name spelled differently from the `DestinationRule`; `DestinationRule` missing or in another namespace; subset labels matching no pod |
-
-The access log separates those two cleanly, using the response flags from foundations: a rule that matched nothing leaves `NR`, while a cluster with no usable endpoints leaves `UH`. Both reach the caller as a bare 503, so reading the flag is what tells you which row of the table above you are in.
-
-The 503 case is worth practising deliberately, because there is nothing in the response, the application log or the Kubernetes events that names the cause. `istioctl analyze` catches the common version of it — a subset no `DestinationRule` defines — by cross-referencing the two objects.
+This is valid configuration. Maybe you really wanted it. So `istioctl analyze` stays quiet. Always ask yourself: "What happens to requests that match nothing?"
 
 > [!TIP]
-> **Try it — break the subset name on purpose**
+> **Try it: only the jason rule, nothing for everyone else**
 >
 > ```sh
-> kubectl -n routing-demo patch virtualservice notification-service --type merge -p '
+> cat > virtualservice-scout-no-catch-all.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: scout
+>   namespace: starfleet
 > spec:
+>   hosts:
+>   - scout
 >   http:
->     - route:
->         - destination:
->             host: notification-service
->             subset: v3'
-> kubectl -n routing-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w '%{http_code}\n' -X POST http://notification-service/notify
-> istioctl analyze -n routing-demo
+>   - match:
+>     - headers:
+>         end-user:
+>           exact: jason
+>     route:
+>     - destination:
+>         host: scout
+>         subset: v2
+> EOF
+> kubectl apply -f virtualservice-scout-no-catch-all.yaml
+> kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" $SCOUT/0
+> kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" -H "end-user: jason" $SCOUT/0
+> kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
+> istioctl analyze -n starfleet
 > ```
 >
-> Expect something like:
+> Expect (log line trimmed):
+>
+> ```text
+> 404
+> 200
+> "GET /reviews/0 HTTP/1.1" 404 NR route_not_found ...
+> ✔ No validation issues found
+> ```
+>
+> The flight log marks it with **`NR`**, "no route". `analyze` does **not** catch this one. Put the full rule back with `kubectl apply -f virtualservice-scout.yaml`.
+
+## Short host names are filled in from the object's namespace
+
+`spec.hosts` and every `destination.host` accept a short name like `scout`. A short name works like a beacon's call sign without its planet. Istio fills in the planet for you: the **namespace of the object the name appears in** (each namespace is a planet in your solar system). Not the workload's namespace, and not the caller's.
+
+```mermaid
+flowchart TB
+    N["short name: scout"] --> Q{"object namespace"}
+    Q -->|"starfleet"| A["rules apply"]
+    Q -->|"istio-system"| B["rules never fire"]
+```
+
+Here the short name is `scout`, and the question is which namespace the **object** lives in. Only the namespace of the object you wrote counts: in `starfleet` the short name becomes `scout.starfleet.svc.cluster.local`, a Service that exists, so the rules apply. In `istio-system` it becomes `scout.istio-system.svc.cluster.local`, which does not exist, so the rules never fire.
+
+Create the object in the wrong namespace and nothing happens. `kubectl get virtualservice` shows it. It is valid. And no rule ever fires, because the host it describes does not exist there.
+
+The full name, `scout.starfleet.svc.cluster.local`, is the complete address: call sign, planet and solar system. People also call it the **FQDN** (fully qualified domain name). It cannot be misread. Use it whenever the object and the service do not live in the same namespace, and in the exam whenever you are unsure.
+
+The same rule applies to `DestinationRule.spec.host`. A `DestinationRule` in the wrong namespace defines subsets for a host nobody calls.
+
+> [!TIP]
+> **Try it: the same rule with full names**
+>
+> ```sh
+> cat > virtualservice-scout-fqdn.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: scout
+>   namespace: starfleet
+> spec:
+>   hosts:
+>   - scout.starfleet.svc.cluster.local
+>   http:
+>   - route:
+>     - destination:
+>         host: scout.starfleet.svc.cluster.local
+>         subset: v1
+> EOF
+> kubectl apply -f virtualservice-scout-fqdn.yaml
+> count_versions $SCOUT/0
+> ```
+>
+> Expect `10 scout-v1`. Here the short and the full name mean the same service, because the object lives in `starfleet`. The file has the same name (`scout`), so it replaces the earlier rule.
+
+## The failure signatures
+
+Most broken routing tasks show one of a few symptoms. Each points at a different part of your setup. The access log's **response flag** (the short code in the flight log for what went wrong) tells them apart. You find the flag in the access log line, right after the HTTP status code.
+
+| Symptom | Flag | Means | Look at |
+| --- | --- | --- | --- |
+| **The wrong version answers, no error** | none | a rule matched that you did not expect | rule order; AND/OR; a catch-all above your rules |
+| **`404`** | `NR` | no rule matched, and there is no catch-all | add a catch-all as the last rule |
+| **`503`** | `NC` | the route names a subset with no cluster | subset name spelled wrong; `DestinationRule` missing, in another namespace, or not yet pushed |
+| **`503`** | `UH` | the cluster exists but has no pods | subset labels match no pod; pods not ready (Part 1) |
+
+`NC` and `UH` look the same to the caller. Both are a bare `503`, with nothing in the response or the app's logs. Reading the flag is what tells you which row you are in.
+
+| Flag | Subset in `DestinationRule`? | Pods behind it? | Typical cause |
+| --- | --- | --- | --- |
+| `NC` | no | – | typo in `subset:`, `DestinationRule` missing or applied too late |
+| `UH` | yes | none | wrong `labels`, pods not running or not ready |
+
+`istioctl analyze` catches the common `NC` case, a subset that no `DestinationRule` defines, by checking the two objects against each other.
+
+> [!TIP]
+> **Try it: a typo in the subset name (`503 NC`)**
+>
+> ```sh
+> cat > virtualservice-scout-typo.yaml <<'EOF'
+> apiVersion: networking.istio.io/v1
+> kind: VirtualService
+> metadata:
+>   name: scout
+>   namespace: starfleet
+> spec:
+>   hosts:
+>   - scout
+>   http:
+>   - route:
+>     - destination:
+>         host: scout
+>         subset: v4
+> EOF
+> kubectl apply -f virtualservice-scout-typo.yaml
+> kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" $SCOUT/0
+> kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
+> istioctl analyze -n starfleet
+> ```
+>
+> Expect (log line trimmed):
 >
 > ```text
 > 503
-> Error [IST0101] (VirtualService routing-demo/notification-service) Referenced host+subset in destinationrule not found: "notification-service+v3"
+> "GET /reviews/0 HTTP/1.1" 503 NC cluster_not_found ...
+> Error [IST0101] (VirtualService starfleet/scout) Referenced host+subset in destinationrule not found: "scout+v4"
 > ```
 >
-> A bare 503 from the call, and `IST0101` naming the exact problem. That error code is the reason to run `analyze` before declaring any task finished — it turns a symptom with no information into a sentence. Re-apply the correct four-rule object from the previous checkpoint before moving on.
+> If the log line is an older one, the flight log has not been written yet. Run the `kubectl logs` line again.
+>
+> `istiod` builds one cluster per subset in the `DestinationRule`. There is no `v4` subset, so there is no `v4` cluster. The route points at nothing, and the request never leaves the `shuttle` pod. Put the working rule back with `kubectl apply -f virtualservice-scout.yaml`.
+
+You get the same `NC` for a short time if you apply the `VirtualService` *before* the `DestinationRule` it uses. The safe order is called "make before break": apply the `DestinationRule` first, wait a moment, then apply the `VirtualService` that uses it.
 
 ## Proving the proxy has your rules
 
-The control plane accepting an object and the sidecar acting on it are separate facts. When they disagree — a push that has not landed, a `Sidecar` resource scoping the host away, an object in the wrong namespace — the object looks perfect and the behaviour is wrong. `istioctl proxy-config` is how you tell.
+Istio accepting an object and the communications officer acting on it are two different facts. When they disagree, the object looks perfect and the behaviour is wrong. That can happen when mission control's push has not landed, when a `Sidecar` resource hides the host from that proxy, or when the object is in the wrong namespace. `istioctl proxy-config` shows which.
 
-Foundations covered the full `proxy-config` map and the order to work through it. For this module the relevant subcommand is `routes` — the RDS layer — because that is where a `VirtualService` lands. If the push itself is in doubt, `istioctl proxy-status` answers that first.
+For this module the useful subcommand is `routes`: the route table, where a `VirtualService` lands. If you doubt the push itself, `istioctl proxy-status` answers that first (every proxy should show `SYNCED`).
 
-Two things to look for in the output. The rule you wrote should appear on the virtual host for your service, and the `VIRTUAL SERVICE` column should now **name your object**. An empty column there means no `VirtualService` is attached to that host at all — the route is still the one Istio generated from the Service — which usually means the namespace or the host name is wrong.
+Read `proxy-config routes` as "show the proxy's routing table". An easy way to remember the split: the **route** picks a cluster, and the **cluster** holds the pods. That is the same split as `VirtualService` and `DestinationRule`.
 
 > [!TIP]
-> **Try it — the routes as the client proxy holds them**
+> **Try it: the route points at the v1 cluster**
 >
 > ```sh
-> istioctl proxy-config routes deploy/tester -n routing-demo | grep notification
+> istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080 -o json | grep '"cluster".*scout'
+> istioctl proxy-config clusters deploy/shuttle -n starfleet | grep scout
 > ```
 >
 > Expect something like:
 >
 > ```text
-> 80     notification-service, notification-service.routing-demo + 1 more...     /notify/beta*
-> 80     notification-service, notification-service.routing-demo + 1 more...     /*
+> "cluster": "outbound|9080|v1|scout.starfleet.svc.cluster.local"
+> scout.starfleet.svc.cluster.local   9080   -    outbound   EDS   scout.starfleet
+> scout.starfleet.svc.cluster.local   9080   v1   outbound   EDS   scout.starfleet
+> scout.starfleet.svc.cluster.local   9080   v2   outbound   EDS   scout.starfleet
+> scout.starfleet.svc.cluster.local   9080   v3   outbound   EDS   scout.starfleet
 > ```
 >
-> These are your rules, compiled into Envoy's route table and pushed to the `tester` pod. If a `VirtualService` exists in `kubectl` but its host does not appear here, the break is between the control plane and this proxy — not in your YAML's syntax, and no amount of re-reading the object will show it.
+> One cluster per subset, plus `-` for the whole service. The route uses the v1 cluster. If a `VirtualService` exists in `kubectl` but its cluster never shows up here, the break is between mission control and this proxy, not in your YAML.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **The default route placed first.** A rule with no `match` matches everything and evaluation stops at the first match, so every rule below it is dead code — with no error anywhere. Check order before anything else.
->
-> **A subset no `DestinationRule` defines.** Bare 503, nothing in the logs. `istioctl analyze -n <namespace>` reports it as `IST0101` immediately.
->
-> **A subset whose labels match no pod.** Not an error, not caught by `analyze`. It is a valid cluster with zero endpoints, and it also produces a 503. `istioctl proxy-config endpoints` is the only thing that shows it.
->
-> **Unquoted YAML values that look like booleans or numbers.** `exact: true` is a boolean and is rejected; `exact: "true"` is the string you meant. Quote every header and query value.
->
-> **The object in the wrong namespace.** Short host names resolve relative to the object's own namespace. The object exists, the rules never fire.
->
-> **Matching a query string with `uri`.** The `uri` value stops at the `?`. Use `queryParams`.
->
-> **Assuming `analyze` being clean means the configuration works.** It cross-checks references; it does not check that your labels select real pods, or that your rules are in a sensible order.
+> - **The catch-all placed first.** It fits every request, and checking stops at the first fit. Every rule below it is dead. `istioctl analyze` warns with `IST0130`.
+> - **No catch-all at all.** Requests that match nothing get `404 NR`. `analyze` does not warn.
+> - **A subset no `DestinationRule` defines.** `503 NC`. `analyze` reports `IST0101`.
+> - **A subset whose labels match no pod.** `503 UH`. `analyze` reports `IST0173`; `proxy-config endpoints` shows the empty list.
+> - **The object in the wrong namespace.** Short names are filled in from the object's own namespace. The object exists; the rules never fire. Use full names.
+> - **Trusting a clean `analyze`.** It checks objects against each other. It does not prove your rules are in a sensible order or that requests take the path you expect.
 
-> *When behaviour and configuration disagree, `istioctl analyze` checks the objects against each other and `istioctl proxy-config` checks what the proxy was actually given — in that order.*
-
-## Reference
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the full object, including the `timeout`, `retries`, `fault` and `mirror` fields later sections add to these rules.
-- [Istio analyzer message reference](https://istio.io/latest/docs/reference/config/analysis/) — every `IST####` code, including `IST0101`, with what triggers it.
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — the `proxy-config` and `proxy-status` workflow in full.
-- `istioctl proxy-config routes --help` — `--name` and `-o json`, which are what make the output usable on a busy proxy.
+> *When behaviour and configuration disagree, `istioctl analyze` checks the objects against each other, and `istioctl proxy-config` checks what the proxy was actually given. Use them in that order.*

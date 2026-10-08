@@ -4,13 +4,13 @@
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: reviews
-  namespace: bookinfo
+  name: scout
+  namespace: starfleet
 spec:
   hosts:
-  - reviews.bookinfo.svc.cluster.local
+  - scout.starfleet.svc.cluster.local
   http:
   - route:
     - destination:
-        host: reviews.bookinfo.svc.cluster.local
+        host: scout.starfleet.svc.cluster.local
         subset: v1

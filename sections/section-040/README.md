@@ -1,10 +1,12 @@
 # Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries)
 
-Every service in a mesh depends on services it does not control. Resilience features are what a caller can do about that without the callee's cooperation — bound how long it waits, retry what is worth retrying, refuse to queue work it cannot finish, stop talking to an endpoint that keeps failing, and prefer a locality that still works.
+Astronaut, this is the section where things break in space. Every spaceship (pod) in the fleet depends on ships it does not control. A signal can get lost, a ship can be overloaded, a ship can be damaged, and a whole planet's squadron can go dark.
 
-All four modules configure the **calling** side. Nothing here requires the backend to change, and nothing here is a server-side protection: a connection pool is per client, an ejection is per proxy. That distinction is the one the exam keeps returning to.
+Resilience features are what the **calling** ship can do about that, without any help from the ship it is calling. It can set an abort window (a timeout), re-send a lost signal (a retry), raise its shields instead of queueing work it cannot finish (a circuit breaker), pull a damaged ship out of formation (outlier detection), and prefer ships orbiting a planet that still works (locality failover).
 
-The modules build on each other, and so do their failure modes. Timeouts and retries share one clock. Circuit breaking is the pool that retries can overwhelm. Outlier detection is what marks an endpoint bad — and locality failover cannot work without it.
+All four modules configure the **calling** side. Nothing here requires the backend to change, and nothing here protects the server: a connection pool is per client, and an ejection is one communications officer's (one proxy's) private decision. The exam keeps coming back to that point.
+
+The modules build on each other, and so do their failure modes. Timeouts and retries share one clock. Circuit breaking is the pool that retries can overwhelm. Outlier detection is what marks an endpoint bad, and locality failover cannot work without it. Put together, they stop one failing ship from becoming a Death Star: one weak spot that takes the whole fleet down.
 
 **Curriculum item covered:** Using Resilience Features (circuit breaking, failover, outlier detection, timeouts, retries)
 
@@ -35,12 +37,14 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 
 ## The Learning Path
 
+Work through the modules in this order, astronaut. For each one: read the parts with its playground open next to you, clean up the playground, then take its graded mission. Finish with the capstone, which brings the whole section together.
+
 ### 1. Timeouts And Retries
 *   **Module Reader:** **[Timeouts And Retries](./module-01/course.md)**
     1. [The Route Timeout](./module-01/course-01-the-route-timeout.md)
     2. [The Retry Policy](./module-01/course-02-the-retry-policy.md)
     3. [The Shared Budget And Idempotency](./module-01/course-03-the-shared-budget-and-idempotency.md)
-*   **Hands-on Playground:** `sections/section-040/module-01/playground` — namespace `resilience-demo` with an `httpbin` whose `/delay` and `/status` endpoints make failure controllable.
+*   **Hands-on Playground:** `sections/section-040/module-01/playground` — namespace `bookinfo` with Bookinfo, `httpbin` v1/v2 whose `/delay` and `/status` endpoints make failure controllable, a `curl` client, and the `reviews` route that sends jason to v2.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-040/module-01/playground
     ```
@@ -56,7 +60,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
     1. [The Connection Pool](./module-02/course-01-the-connection-pool.md)
     2. [Overflow And Its Signatures](./module-02/course-02-overflow-and-its-signatures.md)
     3. [Scope, Verification And Retry Amplification](./module-02/course-03-scope-verification-and-retry-amplification.md)
-*   **Hands-on Playground:** `sections/section-040/module-02/playground` — namespace `circuit-demo` with a backend and a `fortio` load generator, because concurrency is the whole subject.
+*   **Hands-on Playground:** `sections/section-040/module-02/playground` — namespace `bookinfo` with `httpbin` (v1 + v2) and a `fortio` load generator whose sidecar keeps the circuit-breaker counters, because concurrency is the whole subject.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-040/module-02/playground
     ```
@@ -72,7 +76,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
     1. [Passive Health Checking](./module-03/course-01-passive-health-checking.md)
     2. [Ejection Mechanics And Limits](./module-03/course-02-ejection-mechanics-and-limits.md)
     3. [Local, Temporary, And Verified](./module-03/course-03-local-temporary-and-verified.md)
-*   **Hands-on Playground:** `sections/section-040/module-03/playground` — namespace `outlier-demo` with one good pod and one that returns 503 to everything while passing its readiness probe.
+*   **Hands-on Playground:** `sections/section-040/module-03/playground` — namespace `bookinfo` with two healthy `httpbin` pods, a `curl` client that keeps the outlier counters, and `fortio`. Adding the pod that answers 503 to everything is your first step.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-040/module-03/playground
     ```
@@ -109,4 +113,4 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 
 ---
 
-Each playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.
+Each playground is an ungraded training solar system: it spins up, prepares the environment, and waits for you. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished. The name is printed in each module's playground callout.

@@ -2,16 +2,16 @@
 
 <!-- astrona:playground -->
 > [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS014/tree/main/sections/section-040/module-04/playground)
+> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
 >
 > ```sh
 > astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-040/module-04/playground
 > astrona destroy ats-014-playground-040-04
 > ```
 
-A cluster spanning three availability zones has a cost that appears in no Istio object: cross-zone traffic is slower than same-zone traffic, and in most clouds you are billed for it. Round robin across all endpoints, indifferent to where they are, maximises both.
+Astronaut, picture your fleet spread over three orbits. A signal to a ship in your own orbit is quick. A signal to a ship in another orbit takes longer, and costs fuel. A cluster spanning three availability zones has the same cost, and it appears in no Istio object: cross-zone traffic is slower than same-zone traffic, and in most clouds you are billed for it. Round robin across all endpoints, indifferent to where they are, maximises both.
 
-Locality load balancing makes the proxy prefer nearby endpoints. Locality *failover* is the other half: when nearby endpoints stop working, spill over to a further-away locality rather than failing.
+Locality load balancing makes the proxy prefer nearby endpoints. Locality *failover* is the other half: when nearby endpoints stop working, spill over to a further-away locality rather than failing, like switching to a ship orbiting another planet when the nearest one goes dark.
 
 Two facts carry the module, and the second is the most examinable thing in section 040:
 
@@ -37,11 +37,11 @@ After this module you can:
 
 ## Before you start
 
-This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+This module assumes [section 000](../../section-000/module-01/course.md): a proxy (the communications officer) beside every pod, `istiod` (mission control) programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
 
 You need `outlierDetection` from module 3 — this module is built directly on top of it — and `DestinationRule.trafficPolicy` generally.
 
-The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`locality-demo`**, injected, containing `httpbin-zone-a` and `httpbin-zone-b` (one replica each) behind one `httpbin` Service on port 8000, plus a `tester` client.
+The playground gives you a training solar system: a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`locality-demo`**, injected, containing `httpbin-zone-a` and `httpbin-zone-b` (one replica each) behind one `httpbin` Service on port 8000, plus a `tester` client.
 
 **One adaptation matters.** Locality normally comes from the **node** a pod runs on, which needs a multi-node cluster with different zone labels. This playground has one node, so the two Deployments declare their locality directly with the **`istio-locality` pod label** (`local.zone-a` and `local.zone-b`) — a documented Istio override for exactly this situation. Everything about `localityLbSetting` behaves identically; what you cannot observe here is real cross-zone latency, because both pods are on the same machine. The matching lab under `domains/` uses node affinity and expects a real multi-node cluster.
 

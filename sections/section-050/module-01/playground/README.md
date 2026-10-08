@@ -5,10 +5,9 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-
-
-A single sandbox environment that spins up, runs OS prep, and stays running so
-you can explore the module's topic on a clean machine. Nothing to submit.
+Your training solar system in the simulator. It starts, installs Istio and the
+Bookinfo app (a small fleet of ships), and then waits for you, astronaut. Use it
+to run every "Try it" step in this module. Nothing to submit.
 
 ## Run it
 
@@ -18,14 +17,18 @@ astrona destroy ats-014-playground-050-01
 ```
 
 `astrona destroy` takes the environment name (`metadata.name` = `ats-014-playground-050-01`), not
-the config path. `astrona submit` and `astrona test` do not apply — there is no
+the configuration path. `astrona submit` and `astrona test` do not apply — there is no
 grading.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
-| `config.yaml` | Environment definition (runtime + bootstrap only) |
-| `bootstrap/prepare.sh` | OS prep run once at startup: istioctl + Istio control plane + sidecar check |
-| `manifests/lab-start.yaml` | Starting workloads applied at bootstrap (copied from the matching `domains/` lab) |
-| `docs/overview.md` | What the environment contains and ideas to try |
+| `config.yaml` | Environment definition: kind runtime, the Bookinfo port forward, two bootstrap scripts |
+| `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm (`istio-base` + `istiod`) |
+| `bootstrap/deploy.sh` | Namespace `bookinfo`, access logs, Bookinfo, `curl`, `httpbin`, and the `reviews` and `ratings` subsets |
+| `bootstrap/manifests/` | The YAML `deploy.sh` applies |
+| `examples/` | The YAML the module's "Try it" steps apply, numbered in order, with comments |
+| `examples/cases/` | One YAML per case in [`docs/overview.md`](docs/overview.md) |
+| `docs/overview.md` | What the environment contains, helper functions, and cases to try |
+| `docs/practice.md` | An exam-style task with a checked solution |

@@ -2,7 +2,7 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab. The environment starts clean, runs
+Welcome aboard, astronaut. This is a **playground**, not a lab. The environment starts clean, runs
 `bootstrap/prepare.sh`, applies the starting workloads, and then waits. There is
 no task, no `astrona submit`, and no pass/fail. Explore, break things,
 `astrona destroy`, start over.
@@ -12,7 +12,7 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 - A single-node `kind` Kubernetes cluster with `kubectl` already pointed at it.
 - **Istio 1.30.5** (`demo` profile) and `istioctl` on your PATH. The mesh is at
   its `ALLOW_ANY` default, so external calls are not blocked — this module is
-  about visibility, not permission.
+  about visibility (can the communications officer read the signal?), not permission.
 - Namespace **`tlsorig-demo`**, injected, with a `tester` client pod.
 - **No Istio configuration at all.**
 
@@ -48,4 +48,4 @@ network errors rather than mesh behaviour.
 astrona destroy ats-014-playground-070-02
 ```
 
-(`astrona destroy` takes the environment name, not the config path.)
+(`astrona destroy` takes the environment name, not the configuration path.)

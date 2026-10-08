@@ -1,0 +1,18 @@
+# Timeout of 1s for all requests to httpbin.
+# Istio has NO HTTP timeout by default; without this, a slow backend keeps the
+# caller waiting. With it, the caller's sidecar gives up after 1s and returns
+# HTTP 504 (response flag UT = upstream timeout).
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  hosts:
+  - httpbin
+  http:
+  - route:
+    - destination:
+        host: httpbin
+    # Max time for the whole request, including retries.
+    timeout: 1s

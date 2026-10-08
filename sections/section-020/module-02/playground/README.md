@@ -5,10 +5,10 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-
-
-A single sandbox environment that spins up, runs OS prep, and stays running so
-you can explore the module's topic on a clean machine. Nothing to submit.
+A sandbox (a training solar system) with the echo `probe` in two versions that spins
+up, installs Istio, and stays running so you can try traffic mirroring on a
+clean cluster. Nothing to
+submit.
 
 ## Run it
 
@@ -17,15 +17,18 @@ astrona run -c .
 astrona destroy ats-014-playground-020-02
 ```
 
-`astrona destroy` takes the environment name (`metadata.name` = `ats-014-playground-020-02`), not
-the config path. `astrona submit` and `astrona test` do not apply — there is no
-grading.
+`astrona destroy` takes the environment name (`metadata.name` =
+`ats-014-playground-020-02`), not the configuration path. `astrona submit` and
+`astrona test` do not apply — there is no grading.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
-| `config.yaml` | Environment definition (runtime + bootstrap only) |
-| `bootstrap/prepare.sh` | OS prep run once at startup: istioctl + Istio control plane + sidecar check |
-| `manifests/lab-start.yaml` | Starting workloads applied at bootstrap (copied from the matching `domains/` lab) |
-| `docs/overview.md` | What the environment contains and ideas to try |
+| `config.yaml` | Environment definition: kind runtime and two bootstrap scripts |
+| `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm (`istio-base` + `istiod`) |
+| `bootstrap/deploy.sh` | Namespace `starfleet`, access logs, `shuttle`, `probe` v1/v2 |
+| `bootstrap/manifests/` | The YAML `deploy.sh` applies |
+| `examples/` | The module's DestinationRule and VirtualServices, numbered in the order you apply them, plus `cases/` |
+| `docs/overview.md` | What the environment contains, the helpers, ideas to try |
+| `docs/practice.md` | An exam-style drill with a checked solution |

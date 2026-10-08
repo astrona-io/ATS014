@@ -1,6 +1,6 @@
 # Capstone: A Controlled Chaos Experiment
 
-This is the Section 050 integration challenge. It uses fault injection as what it is actually for — a test harness for the resilience configuration from section 040 — and it asks you to run two experiments at once on one host, each scoped to its own header so neither touches anybody else's traffic.
+Astronaut, this is the Section 050 capstone mission. It uses fault injection for what it is really for: a simulation drill for the resilience you built in section 040. You will run two drills at once on one host, each one aimed only at signals carrying its own header, so no other crew is affected.
 
 The result of the first experiment is the interesting part, and it is not what most people predict.
 

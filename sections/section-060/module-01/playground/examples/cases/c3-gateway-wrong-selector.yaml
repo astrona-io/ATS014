@@ -1,0 +1,18 @@
+# Case 3 (mistake): selector for an istioctl-installed gateway
+# (istio: ingressgateway), but this cluster's gateway pods have istio: ingress.
+# No gateway pod picks up the config, so nothing listens on port 80.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: bookinfo-gateway
+  namespace: bookinfo
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - bookinfo.example.com

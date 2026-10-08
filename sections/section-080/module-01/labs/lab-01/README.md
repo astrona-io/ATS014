@@ -1,8 +1,8 @@
 # Route External Traffic Through An Egress Gateway Sandbox
 
-Welcome to the Module 1 targeted practice sandbox. An egress gateway is already running and carrying nothing. You'll route one external host through it, prove the hop happened from the gateway's own log, and restrict the path to one workload — then see what "restricted" really means.
+Welcome to the Module 1 practice mission, astronaut. The solar system's departure gate (an egress gateway) is already running, and no signal goes through it yet. You will route one external host through it, prove the hop from the gate's own flight log, and restrict the path to one spaceship (workload). Then you will see what "restricted" really means.
 
-This lab needs **no outbound internet access**: the "external" endpoint is a pod deliberately kept out of the mesh registry.
+This lab needs **no outbound internet access**. The "external" endpoint is a pod deliberately left off the star chart (the mesh registry).
 
 ## Launching the Lab
 Run the following command in your terminal to boot the kind Kubernetes cluster:

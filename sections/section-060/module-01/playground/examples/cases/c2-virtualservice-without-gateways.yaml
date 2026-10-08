@@ -1,0 +1,19 @@
+# Case 2 (mistake): VirtualService WITHOUT spec.gateways.
+# It then only applies to sidecars ("mesh"); the gateway has no route -> 404 NR.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bookinfo
+  namespace: bookinfo
+spec:
+  hosts:
+  - bookinfo.example.com
+  http:
+  - match:
+    - uri:
+        exact: /productpage
+    route:
+    - destination:
+        host: productpage
+        port:
+          number: 9080

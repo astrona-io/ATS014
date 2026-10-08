@@ -1,0 +1,17 @@
+# Case 2: allow a whole domain with a wildcard host.
+# Wildcard hosts cannot be resolved with DNS, so resolution must be NONE:
+# the sidecar forwards to the IP the app already resolved.
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: wikipedia
+  namespace: bookinfo
+spec:
+  hosts:
+  - "*.wikipedia.org"
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: NONE

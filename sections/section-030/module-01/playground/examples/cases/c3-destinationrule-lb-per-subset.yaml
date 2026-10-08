@@ -1,0 +1,23 @@
+# Case 3: a different load balancer per subset.
+# Service default: RANDOM. Subset v1 overrides it with sticky-by-header.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin
+  namespace: bookinfo
+spec:
+  host: httpbin
+  trafficPolicy:
+    loadBalancer:
+      simple: RANDOM
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+    trafficPolicy:
+      loadBalancer:
+        consistentHash:
+          httpHeaderName: x-user
+  - name: v2
+    labels:
+      version: v2

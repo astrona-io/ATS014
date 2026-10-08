@@ -1,0 +1,20 @@
+# Case 3: weight 0 keeps a destination in the config but sends it nothing.
+# Handy to prepare a canary before turning it on.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  hosts:
+  - scout
+  http:
+  - route:
+    - destination:
+        host: scout
+        subset: v1
+      weight: 100
+    - destination:
+        host: scout
+        subset: v3
+      weight: 0

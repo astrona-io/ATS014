@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Eight objects, two partners, one gateway. The structure is module 1's chain twice over, with module 2's origination added to the second one.
+Eight objects, two partner planets, one departure gate. The structure is module 1's chain twice over, with module 2's origination added to the second one.
 
 ---
 
@@ -23,7 +23,7 @@ scheme=https
 0
 ```
 
-Both endpoints reachable directly, the gateway carrying nothing.
+Both endpoints reachable directly, and the gate carrying no signals.
 
 ---
 
@@ -104,7 +104,7 @@ EOF
 kubectl apply -f egress-gateway-manifests.yaml
 ```
 
-One [`Gateway`](https://istio.io/latest/docs/reference/config/networking/gateway/) with two servers, each naming its own **external** hostname. A separate listener port per host keeps the two chains distinguishable — and note both server `name` values are unique, which Istio requires.
+One `Gateway` with two servers, each naming its own **external** hostname. A separate listener port per host keeps the two chains distinguishable — and note both server `name` values are unique, which Istio requires.
 
 Two label-less subsets, one per partner. They narrow nothing; they exist so each chain names a distinct cluster and the proxy configuration stays readable with two partners on one gateway.
 
@@ -229,7 +229,7 @@ secure  -> scheme=https
          gateway lines: +1
 ```
 
-Both partners through the one gateway, and the secure one reporting `scheme=https` to a plain `http://` caller.
+Both partners reached through the one gate, and the secure one reporting `scheme=https` to a plain `http://` caller.
 
 Confirm the upstream port and the TLS placement:
 
@@ -265,37 +265,17 @@ other-client: 200
 gateway lines: +0
 ```
 
-Reached the endpoint, bypassed the gateway. `sourceLabels` narrowed the route, not the permission — which is the distinction to carry out of this section.
+Reached the endpoint, bypassed the gate. `sourceLabels` narrowed the route, not the permission — the distinction to carry out of this section, astronaut. Mission complete.
 
 ---
 
 ## Common Mistakes
 
-- **The origination [`DestinationRule`](https://istio.io/latest/docs/reference/config/networking/destination-rule/) on the gateway Service.** Nothing originates.
+- **The origination `DestinationRule` on the gateway Service.** Nothing originates.
 - **Stage 2 for the secure host routing to 8081.** Plaintext to a TLS-only endpoint.
 - **One listener for both hosts.** Workable, but the task asks for two so the chains stay distinguishable — and duplicate server `name` values are rejected.
-- **Only one subset.** Both chains would share a cluster and the proxy config becomes ambiguous.
+- **Only one subset.** Both chains would share a cluster and the proxy configuration becomes ambiguous.
 - **`mesh` missing from either top-level `gateways`.** That chain never diverts.
 - **`sourceLabels` on the secure chain.** The task puts it only on the plain one.
 - **Expecting `other-client` to be blocked.** It is un-diverted, not denied.
 - **Counting gateway log lines without a baseline.** The log accumulates across both partners.
-
----
-
----
-
-## Reference
-
-The official documentation for everything this task touches — open these rather than trying to recall field names:
-
-- [VirtualService API](https://istio.io/latest/docs/reference/config/networking/virtual-service/) — the whole object: `hosts`, `gateways`, and every field an `http` rule can carry
-- [DestinationRule API](https://istio.io/latest/docs/reference/config/networking/destination-rule/) — `host`, `subsets`, and the `trafficPolicy` block
-- [Gateway API](https://istio.io/latest/docs/reference/config/networking/gateway/) — `selector`, `servers`, `port`, `hosts` and the `tls` block
-- [ServiceEntry API](https://istio.io/latest/docs/reference/config/networking/service-entry/) — `hosts`, `ports`, `location`, `resolution` and `endpoints`
-- [Subsets and traffic policy](https://istio.io/latest/docs/reference/config/networking/destination-rule/#Subset) — how a subset name maps to pod labels
-- [HTTPMatchRequest API](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest) — every match key: `headers`, `uri`, `queryParams`, `method`, `withoutHeaders`
-- [TrafficPolicy portLevelSettings](https://istio.io/latest/docs/reference/config/networking/destination-rule/#TrafficPolicy-PortTrafficPolicy) — attaching policy to one port instead of the whole host
-- [ClientTLSSettings API](https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings) — `mode`, `credentialName` and `sni` for origination
-- [Configuration scoping](https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/) — how `exportTo` and `Sidecar` together decide what a proxy sees
-- [Protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/) — how a port's name or `appProtocol` decides what Istio does with it
-- [Debugging Envoy and istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) — `proxy-status`, `proxy-config` and `x describe` in full
