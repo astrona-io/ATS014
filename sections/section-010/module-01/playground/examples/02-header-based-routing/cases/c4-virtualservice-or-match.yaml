@@ -1,0 +1,25 @@
+# Case 4: OR – header OR path as SEPARATE match items (two "-").
+# jason gets v2 on any path; anyone gets v2 on /reviews/1.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: reviews
+  namespace: bookinfo
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - headers:
+        end-user:
+          exact: jason
+    - uri:
+        prefix: /reviews/1
+    route:
+    - destination:
+        host: reviews
+        subset: v2
+  - route:
+    - destination:
+        host: reviews
+        subset: v1

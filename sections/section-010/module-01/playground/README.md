@@ -1,14 +1,11 @@
 # Route Requests Within The Mesh — Playground
 
-- **ID:** PLAYGROUND
 - **Slug:** ats-014-playground-010-01
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-
-
-A single sandbox environment that spins up, runs OS prep, and stays running so
-you can explore the module's topic on a clean machine. Nothing to submit.
+A training solar system in the simulator: it starts a `kind` cluster with Istio
+and the Bookinfo sample app, then waits for you, astronaut. Use it alongside the module's parts. Nothing to submit.
 
 ## Run it
 
@@ -17,15 +14,18 @@ astrona run -c .
 astrona destroy ats-014-playground-010-01
 ```
 
-`astrona destroy` takes the environment name (`metadata.name` = `ats-014-playground-010-01`), not
-the config path. `astrona submit` and `astrona test` do not apply — there is no
-grading.
+`astrona destroy` takes the environment name (`metadata.name`), not the configuration
+path. `astrona submit` and `astrona test` do not apply: there is no grading.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
-| `config.yaml` | Environment definition (runtime + bootstrap only) |
-| `bootstrap/prepare.sh` | OS prep run once at startup: istioctl + Istio control plane + sidecar check |
-| `manifests/lab-start.yaml` | Starting workloads applied at bootstrap (copied from the matching `domains/` lab) |
-| `docs/overview.md` | What the environment contains and ideas to try |
+| `config.yaml` | Environment definition: kind runtime, port forward to Bookinfo, the two bootstrap scripts |
+| `bootstrap/install-istio.sh` | Installs Istio 1.30.5 (`istio-base` + `istiod`) with Helm |
+| `bootstrap/deploy.sh` | Namespace `bookinfo` with injection, access logs, Bookinfo, `curl` client, `httpbin` v1/v2 |
+| `bootstrap/manifests/` | The YAML `deploy.sh` applies |
+| `examples/01-request-routing/` | Subsets and "all traffic to one version", plus the mistake cases in `cases/` |
+| `examples/02-header-based-routing/` | Header, path and query rules, rule order, plus the cases in `cases/` |
+| `docs/overview.md` | What is in the box, helpers, things to try |
+| `docs/practice.md` | Two exam-style tasks with checked solutions |
