@@ -6,7 +6,7 @@ Istio replaces that blind pick with a decision. The decision is made by the side
 
 > A `VirtualService` is the **flight plan**: it decides **where** a request goes. A `DestinationRule` is the **docking instructions**: it decides **what the named destinations mean**.
 
-This module spends seven parts on these two objects because almost every later mission is this pair plus one extra field. Weighted shifting is a `VirtualService` route with numbers on it. Mirroring is the same rule with a `mirror` beside it. Timeouts, retries and fault injection are fields on the same `http` rule. Connection pools, load balancing and outlier detection are fields on the same `DestinationRule`. Learn the two objects well here, and most of the domain stops being new ideas and becomes new field names.
+This module spends eight parts on these two objects because almost every later mission is this pair plus one extra field. Weighted shifting is a `VirtualService` route with numbers on it. Mirroring is the same rule with a `mirror` beside it. Timeouts, retries and fault injection are fields on the same `http` rule. Connection pools, load balancing and outlier detection are fields on the same `DestinationRule`. Learn the two objects well here, and most of the domain stops being new ideas and becomes new field names.
 
 ## Learning objectives
 

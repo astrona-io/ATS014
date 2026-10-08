@@ -49,7 +49,7 @@ Each arrow means "must exist before". The `Sidecar` stands apart: apply it whene
 
 `istiod` sends your rules to every sidecar. This takes a moment. It is like mission control radioing new orders to a whole fleet: for a short time, some ships have the new orders and some still have the old ones.
 
-Say a `VirtualService` sends traffic to subset `v2`. If it reaches a sidecar *before* the `DestinationRule` that defines `v2`, the sidecar has nowhere to send the signal. It answers with **`503 NC`** ("no cluster") by itself. You met this flag in [module 01, part 3](../module-01/course-03-evaluation-order-and-proof.md#the-failure-signatures), caused there by a typo. Here it is caused only by timing.
+Say a `VirtualService` sends traffic to subset `v2`. If it reaches a sidecar *before* the `DestinationRule` that defines `v2`, the sidecar has nowhere to send the signal. It answers with **`503 NC`** ("no cluster") by itself. The same flag appears when a subset name has a typo. Here it is caused only by timing: the subset exists, it just has not reached the sidecar yet.
 
 ```mermaid
 sequenceDiagram

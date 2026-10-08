@@ -110,17 +110,20 @@ modules:
         title: "Match Exactly What You Mean"
         path: sections/section-010/module-01/course-04-match-exactly-what-you-mean.md
       - type: reading
-        title: "Evaluation Order, Name Resolution And Proof"
-        path: sections/section-010/module-01/course-05-evaluation-order-and-proof.md
+        title: "Put Your Rules In Order"
+        path: sections/section-010/module-01/course-05-put-your-rules-in-order.md
+      - type: reading
+        title: "Find Out Why A Rule Does Nothing"
+        path: sections/section-010/module-01/course-06-find-out-why-a-rule-does-nothing.md
       - type: reading
         title: "Rewriting, Redirecting And Headers"
-        path: sections/section-010/module-01/course-06-rewriting-redirecting-and-headers.md
+        path: sections/section-010/module-01/course-07-rewriting-redirecting-and-headers.md
       - type: reading
         title: "Routing Non-HTTP Traffic"
-        path: sections/section-010/module-01/course-07-routing-non-http-traffic.md
+        path: sections/section-010/module-01/course-08-routing-non-http-traffic.md
       - type: reading
         title: "Wrap-Up: Mission Debrief"
-        path: sections/section-010/module-01/course-08-wrap-up.md
+        path: sections/section-010/module-01/course-09-wrap-up.md
 
       - type: reading
         title: Question
