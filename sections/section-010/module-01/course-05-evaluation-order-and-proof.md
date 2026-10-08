@@ -2,7 +2,7 @@
 
 You can now name destinations and read a signal's label. Three things are left. Which rule wins when several could apply. How short host names are filled in, which can make a correct-looking object do nothing. And how to prove the proxy received your work. Almost every failure in this module lands in one of those three.
 
-The commands below assume the `scout` `DestinationRule` from Part 1 and the `count_versions` helper.
+The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground, and the `count_versions` helper pasted into your terminal.
 
 ## First match wins
 
@@ -23,10 +23,11 @@ A rule without `match` fits every request. This is the **catch-all** rule: the "
 > [!TIP]
 > **Try it: the right order, then the wrong order**
 >
-> Start with jason's rule first and the catch-all last (the same file as in Part 2):
+> Start with jason's rule first and the catch-all last (jason to v2, everyone else to v1).
 >
-> ```sh
-> cat > virtualservice-scout.yaml <<'EOF'
+> Save this as `virtualservice-scout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -48,15 +49,25 @@ A rule without `match` fits every request. This is the **catch-all** rule: the "
 >     - destination:
 >         host: scout
 >         subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_versions -H "end-user: jason" $SCOUT/0
 > ```
 >
-> Expect `10 scout-v2`. Now swap the order: put the catch-all first. That file is `examples/02-header-based-routing/02-virtualservice-scout-wrong-order.yaml` in the playground.
+> Expect `10 scout-v2`. Now swap the order: put the catch-all first. Save this second version to its own file, so you can switch back easily.
 >
-> ```sh
-> cat > virtualservice-scout-wrong-order.yaml <<'EOF'
+> Save this as `virtualservice-scout-wrong-order.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -78,8 +89,17 @@ A rule without `match` fits every request. This is the **catch-all** rule: the "
 >     - destination:
 >         host: scout
 >         subset: v2
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout-wrong-order.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_versions -H "end-user: jason" $SCOUT/0
 > istioctl analyze -n starfleet
 > ```
@@ -118,8 +138,9 @@ This is valid configuration. Maybe you really wanted it. So `istioctl analyze` s
 > [!TIP]
 > **Try it: only the jason rule, nothing for everyone else**
 >
-> ```sh
-> cat > virtualservice-scout-no-catch-all.yaml <<'EOF'
+> Save this as `virtualservice-scout-no-catch-all.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -137,8 +158,17 @@ This is valid configuration. Maybe you really wanted it. So `istioctl analyze` s
 >     - destination:
 >         host: scout
 >         subset: v2
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout-no-catch-all.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" $SCOUT/0
 > kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" -H "end-user: jason" $SCOUT/0
 > kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
@@ -178,8 +208,9 @@ The same rule applies to `DestinationRule.spec.host`. A `DestinationRule` in the
 > [!TIP]
 > **Try it: the same rule with full names**
 >
-> ```sh
-> cat > virtualservice-scout-fqdn.yaml <<'EOF'
+> Save this as `virtualservice-scout-fqdn.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -193,8 +224,17 @@ The same rule applies to `DestinationRule.spec.host`. A `DestinationRule` in the
 >     - destination:
 >         host: scout.starfleet.svc.cluster.local
 >         subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout-fqdn.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_versions $SCOUT/0
 > ```
 >
@@ -209,7 +249,7 @@ Most broken routing tasks show one of a few symptoms. Each points at a different
 | **The wrong version answers, no error** | none | a rule matched that you did not expect | rule order; AND/OR; a catch-all above your rules |
 | **`404`** | `NR` | no rule matched, and there is no catch-all | add a catch-all as the last rule |
 | **`503`** | `NC` | the route names a subset with no cluster | subset name spelled wrong; `DestinationRule` missing, in another namespace, or not yet pushed |
-| **`503`** | `UH` | the cluster exists but has no pods | subset labels match no pod; pods not ready (Part 1) |
+| **`503`** | `UH` | the cluster exists but has no pods | subset labels match no pod; pods not ready |
 
 `NC` and `UH` look the same to the caller. Both are a bare `503`, with nothing in the response or the app's logs. Reading the flag is what tells you which row you are in.
 
@@ -223,8 +263,9 @@ Most broken routing tasks show one of a few symptoms. Each points at a different
 > [!TIP]
 > **Try it: a typo in the subset name (`503 NC`)**
 >
-> ```sh
-> cat > virtualservice-scout-typo.yaml <<'EOF'
+> Save this as `virtualservice-scout-typo.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -238,8 +279,17 @@ Most broken routing tasks show one of a few symptoms. Each points at a different
 >     - destination:
 >         host: scout
 >         subset: v4
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout-typo.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" $SCOUT/0
 > kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 > istioctl analyze -n starfleet

@@ -88,8 +88,9 @@ Two `DestinationRule` objects pointing at two different hosts, doing two unrelat
 > [!TIP]
 > **Try it — the whole chain in one apply**
 >
-> ```sh
-> kubectl apply -f - <<'EOF'
+> Save this as `serviceentry-httpbin-ext.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: ServiceEntry
 > metadata:
@@ -178,7 +179,17 @@ Two `DestinationRule` objects pointing at two different hosts, doing two unrelat
 >         tls:
 >           mode: SIMPLE
 >           sni: httpbin.org
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f serviceentry-httpbin-ext.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 4
 > kubectl -n egwtls-demo exec deploy/tester -- \
 >   curl -s -o /dev/null -w 'http:// call: %{http_code}\n' --max-time 20 http://httpbin.org/get

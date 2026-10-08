@@ -28,8 +28,9 @@ Write down the two canary IPs — the grader checks no caller response comes fro
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > destinationrule-httpbin.yaml <<'EOF'
+Save this as `destinationrule-httpbin.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -51,7 +52,11 @@ spec:
       trafficPolicy:
         loadBalancer:
           simple: LEAST_REQUEST
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-httpbin.yaml
 ```
 
@@ -61,8 +66,9 @@ The `stable` subset deliberately has **no** `trafficPolicy`. That is not lazines
 
 ## Step 3: One Rule, Two Features
 
-```sh
-cat > virtualservice-httpbin.yaml <<'EOF'
+Save this as `virtualservice-httpbin.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -81,8 +87,17 @@ spec:
         subset: canary
       mirrorPercentage:
         value: 100.0
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-httpbin.yaml
+```
+
+Then check the result:
+
+```sh
 istioctl analyze -n sessions
 ```
 

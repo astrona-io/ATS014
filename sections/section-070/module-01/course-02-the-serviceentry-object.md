@@ -77,8 +77,9 @@ For a third-party service, `MESH_EXTERNAL` is the answer, and it is the default.
 >
 > This builds on the `REGISTRY_ONLY` `Sidecar` from Part 1.
 >
-> ```sh
-> cat > serviceentry-httpbin-org.yaml <<'EOF'
+> Save this as `serviceentry-httpbin-org.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: ServiceEntry
 > metadata:
@@ -93,8 +94,17 @@ For a third-party service, `MESH_EXTERNAL` is the answer, and it is the default.
 >       protocol: HTTPS
 >   location: MESH_EXTERNAL
 >   resolution: DNS
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f serviceentry-httpbin-org.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > call_external https://httpbin.org/get
 > call_external http://httpbin.org/get
 > kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=2
@@ -141,8 +151,9 @@ spec:
 > [!TIP]
 > **Try it — a whole domain with one entry**
 >
-> ```sh
-> cat > serviceentry-wikipedia.yaml <<'EOF'
+> Save this as `serviceentry-wikipedia.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: ServiceEntry
 > metadata:
@@ -157,8 +168,17 @@ spec:
 >       protocol: HTTPS
 >   location: MESH_EXTERNAL
 >   resolution: NONE
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f serviceentry-wikipedia.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > call_external https://de.wikipedia.org/
 > call_external https://en.wikipedia.org/wiki/Istio
 > kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=1 | grep wikipedia

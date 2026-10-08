@@ -60,10 +60,11 @@ The client sidecar matches the `http` rule, then makes one random roll for this 
 > [!TIP]
 > **Try it – an 80/20 canary**
 >
-> Paste the `count_versions` helper from the playground's [overview](./playground/docs/overview.md) first. Then write the canary to a file and apply it:
+> Paste the `count_versions` helper from the playground's [overview](./playground/docs/overview.md) first. Then write the canary to a file and apply it.
 >
-> ```sh
-> cat > virtualservice-scout.yaml <<'EOF'
+> Save this as `virtualservice-scout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -82,8 +83,17 @@ The client sidecar matches the `http` rule, then makes one random roll for this 
 >         host: scout
 >         subset: v3
 >       weight: 20
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_versions
 > ```
 >
@@ -105,8 +115,9 @@ In Istio 1.30.5 it is not. Istio accepts it with no error and no warning, and tr
 > [!TIP]
 > **Try it – weights that add up to 80**
 >
-> ```sh
-> cat > virtualservice-scout.yaml <<'EOF'
+> Save this as `virtualservice-scout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -125,8 +136,17 @@ In Istio 1.30.5 it is not. Istio accepts it with no error and no warning, and tr
 >         host: scout
 >         subset: v3
 >       weight: 30
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_versions 100
 > istioctl analyze -n starfleet
 > istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080 -o json | grep '"weight"'

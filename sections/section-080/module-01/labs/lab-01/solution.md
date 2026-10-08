@@ -30,7 +30,13 @@ The departure gate is running. The call works. The gate's flight log recorded no
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
-cat > serviceentry-partner.yaml <<'EOF'
+```
+
+Replace `<PARTNER>` in the YAML below with the real address from the step above. To see it, run `echo $PARTNER`.
+
+Save this as `serviceentry-partner.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -40,7 +46,7 @@ spec:
   hosts:
     - partner.example.com
   addresses:
-    - $PARTNER
+    - <PARTNER>
   ports:
     - number: 8080
       name: http
@@ -48,8 +54,12 @@ spec:
   location: MESH_EXTERNAL
   resolution: STATIC
   endpoints:
-    - address: $PARTNER
-EOF
+    - address: <PARTNER>
+```
+
+Apply it:
+
+```sh
 kubectl apply -f serviceentry-partner.yaml
 ```
 
@@ -61,8 +71,9 @@ Section 070's object, unchanged: it puts the partner on the star chart. Without 
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > egress-gateway-manifests.yaml <<'EOF'
+Save this as `egress-gateway-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -88,7 +99,11 @@ spec:
   host: istio-egressgateway.istio-system.svc.cluster.local
   subsets:
     - name: partner
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f egress-gateway-manifests.yaml
 ```
 
@@ -103,8 +118,9 @@ Note `selector: istio: egressgateway` — the **egress** gateway. Using `ingress
 
 ## Step 4: The Two-Stage VirtualService
 
-```sh
-cat > virtualservice-partner-through-egress.yaml <<'EOF'
+Save this as `virtualservice-partner-through-egress.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -135,7 +151,11 @@ spec:
             host: partner.example.com
             port:
               number: 8080
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-partner-through-egress.yaml
 ```
 

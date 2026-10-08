@@ -98,23 +98,29 @@ modules:
         title: "Route Requests Within The Mesh"
         path: sections/section-010/module-01/course.md
       - type: reading
-        title: "Subsets And The Destination Vocabulary"
-        path: sections/section-010/module-01/course-01-subsets-and-destination-vocabulary.md
+        title: "Where Signals Go Today"
+        path: sections/section-010/module-01/course-01-where-signals-go-today.md
       - type: reading
-        title: "Matching A Request"
-        path: sections/section-010/module-01/course-02-matching-a-request.md
+        title: "Name The Ship Classes"
+        path: sections/section-010/module-01/course-02-name-the-ship-classes.md
+      - type: reading
+        title: "Write A Flight Plan"
+        path: sections/section-010/module-01/course-03-write-a-flight-plan.md
+      - type: reading
+        title: "Match Exactly What You Mean"
+        path: sections/section-010/module-01/course-04-match-exactly-what-you-mean.md
       - type: reading
         title: "Evaluation Order, Name Resolution And Proof"
-        path: sections/section-010/module-01/course-03-evaluation-order-and-proof.md
+        path: sections/section-010/module-01/course-05-evaluation-order-and-proof.md
       - type: reading
         title: "Rewriting, Redirecting And Headers"
-        path: sections/section-010/module-01/course-04-rewriting-redirecting-and-headers.md
+        path: sections/section-010/module-01/course-06-rewriting-redirecting-and-headers.md
       - type: reading
         title: "Routing Non-HTTP Traffic"
-        path: sections/section-010/module-01/course-05-routing-non-http-traffic.md
+        path: sections/section-010/module-01/course-07-routing-non-http-traffic.md
       - type: reading
         title: "Wrap-Up: Mission Debrief"
-        path: sections/section-010/module-01/course-06-wrap-up.md
+        path: sections/section-010/module-01/course-08-wrap-up.md
 
       - type: reading
         title: Question

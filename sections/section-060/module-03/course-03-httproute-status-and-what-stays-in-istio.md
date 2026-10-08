@@ -45,8 +45,9 @@ Three differences worth naming:
 > [!TIP]
 > **Try it — attach a route and send a request**
 >
-> ```sh
-> kubectl apply -f - <<'EOF'
+> Save this as `httproute-booking.yaml`:
+>
+> ```yaml
 > apiVersion: gateway.networking.k8s.io/v1
 > kind: HTTPRoute
 > metadata:
@@ -65,7 +66,17 @@ Three differences worth naming:
 >       backendRefs:
 >         - name: booking-service
 >           port: 80
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f httproute-booking.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl -n gwapi-demo port-forward svc/booking-gateway-istio 8080:80 >/dev/null 2>&1 &
 > sleep 3
 > curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://localhost:8080/book

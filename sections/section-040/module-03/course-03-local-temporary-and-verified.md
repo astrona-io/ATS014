@@ -98,8 +98,9 @@ Module 2's `connectionPool` and this module's `outlierDetection` sit side by sid
 > [!TIP]
 > **Try it — a full circuit breaker**
 >
-> ```sh
-> cat > destinationrule-httpbin-full-circuit-breaker.yaml <<'EOF'
+> Save this as `destinationrule-httpbin-full-circuit-breaker.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -119,8 +120,17 @@ Module 2's `connectionPool` and this module's `outlierDetection` sit side by sid
 >       interval: 5s
 >       baseEjectionTime: 1m
 >       maxEjectionPercent: 50
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin-full-circuit-breaker.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > load_test 3
 > ```
 >

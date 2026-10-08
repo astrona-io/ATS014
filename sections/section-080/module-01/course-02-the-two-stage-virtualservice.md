@@ -99,8 +99,9 @@ Apply the `Gateway` and the `DestinationRule` before the `VirtualService`, becau
 >
 > The `ServiceEntry` from Part 1 is still applied.
 >
-> ```sh
-> cat > gateway-egress-httpbin-org.yaml <<'EOF'
+> Save this as `gateway-egress-httpbin-org.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: Gateway
 > metadata:
@@ -118,8 +119,11 @@ Apply the `Gateway` and the `DestinationRule` before the `VirtualService`, becau
 >         - httpbin.org
 >       tls:
 >         mode: PASSTHROUGH
-> EOF
-> cat > destinationrule-egress-gateway.yaml <<'EOF'
+> ```
+>
+> Save this as `destinationrule-egress-gateway.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -129,8 +133,11 @@ Apply the `Gateway` and the `DestinationRule` before the `VirtualService`, becau
 >   host: istio-egress.istio-egress.svc.cluster.local
 >   subsets:
 >     - name: httpbin-org
-> EOF
-> cat > virtualservice-httpbin-org-via-egress.yaml <<'EOF'
+> ```
+>
+> Save this as `virtualservice-httpbin-org-via-egress.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -162,10 +169,19 @@ Apply the `Gateway` and the `DestinationRule` before the `VirtualService`, becau
 >             host: httpbin.org
 >             port:
 >               number: 443
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f gateway-egress-httpbin-org.yaml
 > kubectl apply -f destinationrule-egress-gateway.yaml
 > kubectl apply -f virtualservice-httpbin-org-via-egress.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > call_external
 > log_hop1_sidecar
 > log_hop2_egress

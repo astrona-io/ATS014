@@ -10,8 +10,9 @@ Try it on your own first, then open the solution. The solution was run and check
 
 Four objects, applied in "make before break" order: the host on the star chart, the gate, the subset, then the two-leg route.
 
-```bash
-cat > google-via-egress.yaml <<'YAML'
+Save this as `google-via-egress.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata: {name: google, namespace: bookinfo}
@@ -51,8 +52,17 @@ spec:
   - match: [{gateways: [egress-google], port: 443, sniHosts: [www.google.com]}]
     route:
     - destination: {host: www.google.com, port: {number: 443}}
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f google-via-egress.yaml
+```
+
+Then check the result:
+
+```bash
 call_external https://www.google.com     # 200
 log_hop2_egress                         # ... outbound|443||www.google.com ...
 ```

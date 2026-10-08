@@ -53,8 +53,9 @@ Differences from module 1's object beyond the missing selector:
 > [!TIP]
 > **Try it — create a Gateway and watch a data plane appear**
 >
-> ```sh
-> kubectl apply -f - <<'EOF'
+> Save this as `gateway-booking-gateway.yaml`:
+>
+> ```yaml
 > apiVersion: gateway.networking.k8s.io/v1
 > kind: Gateway
 > metadata:
@@ -70,7 +71,17 @@ Differences from module 1's object beyond the missing selector:
 >       allowedRoutes:
 >         namespaces:
 >           from: Same
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f gateway-booking-gateway.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl -n gwapi-demo rollout status deployment booking-gateway-istio --timeout=120s
 > kubectl -n gwapi-demo get deploy,svc -l gateway.networking.k8s.io/gateway-name=booking-gateway
 > kubectl -n istio-system get deploy | grep booking || echo "(nothing named booking in istio-system - correct)"

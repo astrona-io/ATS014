@@ -31,15 +31,20 @@ Nothing exists yet, and the key pair is waiting.
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > ingressclass-istio.yaml <<'EOF'
+Save this as `ingressclass-istio.yaml`:
+
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: IngressClass
 metadata:
   name: istio
 spec:
   controller: istio.io/ingress-controller
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f ingressclass-istio.yaml
 ```
 
@@ -55,8 +60,9 @@ The object is cluster-scoped, so there is no namespace on it.
 
 ## Step 3: Create the Ingress
 
-```sh
-cat > ingress-booking.yaml <<'EOF'
+Save this as `ingress-booking.yaml`:
+
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -86,8 +92,17 @@ spec:
                 name: booking-service
                 port:
                   number: 80
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f ingress-booking.yaml
+```
+
+Then check the result:
+
+```sh
 kubectl -n k8s-ingress-demo get ingress booking
 ```
 

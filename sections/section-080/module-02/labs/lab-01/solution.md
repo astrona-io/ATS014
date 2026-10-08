@@ -29,7 +29,13 @@ Two constraints and one starting fact: the partner planet refuses plaintext, it 
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
-cat > serviceentry-partner.yaml <<'EOF'
+```
+
+Replace `<PARTNER>` in the YAML below with the real address from the step above. To see it, run `echo $PARTNER`.
+
+Save this as `serviceentry-partner.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -39,7 +45,7 @@ spec:
   hosts:
     - partner.example.com
   addresses:
-    - $PARTNER
+    - <PARTNER>
   ports:
     - number: 8080
       name: http
@@ -50,8 +56,12 @@ spec:
   location: MESH_EXTERNAL
   resolution: STATIC
   endpoints:
-    - address: $PARTNER
-EOF
+    - address: <PARTNER>
+```
+
+Apply it:
+
+```sh
 kubectl apply -f serviceentry-partner.yaml
 ```
 
@@ -63,8 +73,9 @@ Port 8080 is where the sidecar's plaintext traffic arrives; 8443 is where stage 
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > egress-gateway-manifests.yaml <<'EOF'
+Save this as `egress-gateway-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -90,7 +101,11 @@ spec:
   host: istio-egressgateway.istio-system.svc.cluster.local
   subsets:
     - name: partner
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f egress-gateway-manifests.yaml
 ```
 
@@ -100,8 +115,9 @@ The listener is on **8080** — the radio channel the gateway *receives* on. It 
 
 ## Step 4: The Two-Stage Route
 
-```sh
-cat > virtualservice-partner-through-egress.yaml <<'EOF'
+Save this as `virtualservice-partner-through-egress.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -131,7 +147,11 @@ spec:
             host: partner.example.com
             port:
               number: 8443
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-partner-through-egress.yaml
 ```
 
@@ -155,8 +175,9 @@ The signal reaches port 8443 — as plaintext. Each object has its own failure, 
 
 ## Step 5: Originate TLS — On the External Host
 
-```sh
-cat > destinationrule-originate-tls-for-partner.yaml <<'EOF'
+Save this as `destinationrule-originate-tls-for-partner.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -178,8 +199,17 @@ spec:
           mode: SIMPLE
           sni: partner.example.com
           insecureSkipVerify: true
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-originate-tls-for-partner.yaml
+```
+
+Then check the result:
+
+```sh
 sleep 4
 PARTNER=$(cat /tmp/partner-ip)
 kubectl -n egwtls-demo exec deploy/tester -- curl -s --max-time 20 "http://partner.example.com:8080/"

@@ -45,7 +45,13 @@ partner-api     1/1     Running   10.244.0.14
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
-cat > serviceentry-partner-api.yaml <<'EOF'
+```
+
+Replace `<PARTNER>` in the YAML below with the real address from the step above. To see it, run `echo $PARTNER`.
+
+Save this as `serviceentry-partner-api.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -55,7 +61,7 @@ spec:
   hosts:
     - partner.example.com
   addresses:
-    - $PARTNER
+    - <PARTNER>
   ports:
     - number: 8080
       name: http
@@ -63,18 +69,20 @@ spec:
   location: MESH_EXTERNAL
   resolution: STATIC
   endpoints:
-    - address: $PARTNER
+    - address: <PARTNER>
   exportTo:
     - "."
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f serviceentry-partner-api.yaml
 ```
 
 ```text
 serviceentry.networking.istio.io/partner-api created
 ```
-
-Note the heredoc is **unquoted** (`<<EOF`) so the shell substitutes `$PARTNER`.
 
 Each field is doing a specific job:
 
@@ -113,8 +121,9 @@ A registered host is an ordinary host, so every `VirtualService` feature applies
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > virtualservice-partner-api.yaml <<'EOF'
+Save this as `virtualservice-partner-api.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -128,8 +137,17 @@ spec:
       route:
         - destination:
             host: partner.example.com
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-partner-api.yaml
+```
+
+Then check the result:
+
+```sh
 sleep 3
 PARTNER=$(cat /tmp/partner-ip)
 kubectl -n egress-demo exec deploy/tester -- \

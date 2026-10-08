@@ -6,7 +6,7 @@ Istio replaces that blind pick with a decision. The decision is made by the side
 
 > A `VirtualService` is the **flight plan**: it decides **where** a request goes. A `DestinationRule` is the **docking instructions**: it decides **what the named destinations mean**.
 
-This module has five parts because almost every later mission is this pair plus one extra field. Weighted shifting is a `VirtualService` route with numbers on it. Mirroring is the same rule with a `mirror` beside it. Timeouts, retries and fault injection are fields on the same `http` rule. Connection pools, load balancing and outlier detection are fields on the same `DestinationRule`. Learn the two objects well here, and most of the domain stops being new ideas and becomes new field names.
+This module spends seven parts on these two objects because almost every later mission is this pair plus one extra field. Weighted shifting is a `VirtualService` route with numbers on it. Mirroring is the same rule with a `mirror` beside it. Timeouts, retries and fault injection are fields on the same `http` rule. Connection pools, load balancing and outlier detection are fields on the same `DestinationRule`. Learn the two objects well here, and most of the domain stops being new ideas and becomes new field names.
 
 ## Learning objectives
 
@@ -45,7 +45,7 @@ The fleet on that planet is **the Starfleet**. It is the Bookinfo sample app tha
 | `scout` v1, v2, v3 | Three **ship classes** of the same scout. They answer the same call sign, but each one reports back differently: v1 with no stars, v2 with black stars, v3 with red stars. Yes, real stars |
 | `navcom` | The **navigation computer**. The v2 and v3 scouts ask it for the star rating |
 | `shuttle` | **Your shuttle**. You send every test signal from here, with the `curl` command |
-| `probe` v1, v2 | An **echo probe**. It sends back exactly what it receives, so you can see what a signal looked like on arrival. Parts 4 and 5 use it |
+| `probe` v1, v2 | An **echo probe**. It sends back exactly what it receives, so you can see what a signal looked like on arrival. The rewriting and non-HTTP parts use it |
 
 Every pod shows `2/2`: the app plus its communications officer (the `istio-proxy` sidecar). There is **no** `VirtualService` and **no** `DestinationRule` yet. Writing them is your mission in this module.
 

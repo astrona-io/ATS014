@@ -47,8 +47,9 @@ http://coldstore.archive:8000/get -> 200
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > destinationrule-catalog.yaml <<'EOF'
+Save this as `destinationrule-catalog.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -63,8 +64,17 @@ spec:
     - name: v2
       labels:
         version: v2
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-catalog.yaml
+```
+
+Then check the result:
+
+```sh
 istioctl proxy-config cluster deploy/shopper -n storefront | grep catalog
 ```
 
@@ -80,8 +90,9 @@ Three clusters where there was one. Traffic is unchanged — subsets are docking
 
 ## Step 3: Route, Specific Rules First
 
-```sh
-cat > virtualservice-catalog.yaml <<'EOF'
+Save this as `virtualservice-catalog.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -110,8 +121,17 @@ spec:
         - destination: { host: catalog, subset: v2 }
     - route:
         - destination: { host: catalog, subset: v1 }
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-catalog.yaml
+```
+
+Then check the result:
+
+```sh
 istioctl analyze -n storefront
 ```
 
@@ -156,10 +176,11 @@ istioctl proxy-config cluster deploy/shopper -n storefront | wc -l
       36
 ```
 
-Now the `Sidecar`. Three entries, no selector:
+Now the `Sidecar`. Three entries, no selector.
 
-```sh
-cat > sidecar-default.yaml <<'EOF'
+Save this as `sidecar-default.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: Sidecar
 metadata:
@@ -171,8 +192,17 @@ spec:
         - "./*"
         - "istio-system/*"
         - "partners/*"
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f sidecar-default.yaml
+```
+
+Then check the result:
+
+```sh
 sleep 3
 istioctl proxy-config cluster deploy/shopper -n storefront | wc -l
 istioctl proxy-config cluster deploy/shopper -n storefront | grep -E 'catalog|partners|archive'

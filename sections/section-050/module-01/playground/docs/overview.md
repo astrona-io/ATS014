@@ -71,6 +71,11 @@ on this environment; percentages are random, so your counts will differ.
 
 ```bash
 kubectl apply -f examples/cases/c1-virtualservice-ratings-abort-503-all.yaml
+```
+
+Then check the result:
+
+```bash
 status_and_time http://ratings:9080/ratings/0
 # 503 0.003s     ← instant: no network call
 ```
@@ -82,6 +87,11 @@ itself.
 
 ```bash
 kubectl apply -f examples/cases/c2-virtualservice-ratings-delay-10-percent.yaml
+```
+
+Then check the result:
+
+```bash
 for i in $(seq 1 30); do
   kubectl exec -n bookinfo deploy/curl -- curl -s -o /dev/null -w "%{time_total}\n" http://ratings:9080/ratings/0 \
     | awk '{print ($1 > 0.9 ? "slow" : "fast")}'
@@ -96,6 +106,11 @@ of the pod that *sends* the request.
 ```bash
 kubectl apply -f examples/04-virtualservice-reviews-jason-v2.yaml
 kubectl apply -f examples/cases/c3-virtualservice-ratings-abort-from-reviews-only.yaml
+```
+
+Then check the result:
+
+```bash
 status_and_time http://ratings:9080/ratings/0
 # 200            ← curl calls ratings directly: not affected
 kubectl exec -n bookinfo deploy/curl -- curl -s -H "end-user: jason" http://reviews:9080/reviews/0 \
@@ -108,6 +123,11 @@ own `retries`.
 
 ```bash
 kubectl apply -f examples/cases/c4-virtualservice-ratings-abort-with-retries.yaml
+```
+
+Then check the result:
+
+```bash
 count_ratings_status
 #   3 200
 #   7 500        ← still about half, retries did nothing
@@ -118,6 +138,11 @@ ignores its own `timeout`.
 
 ```bash
 kubectl apply -f examples/cases/c5-virtualservice-ratings-delay-and-timeout.yaml
+```
+
+Then check the result:
+
+```bash
 status_and_time http://ratings:9080/ratings/0
 # 200 2.0s   ← NOT 504 after 0.5s
 ```

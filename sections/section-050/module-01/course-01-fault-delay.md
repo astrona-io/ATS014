@@ -9,8 +9,9 @@ First, astronaut, you need a working chain of ships to break. Send user `jason` 
 > [!TIP]
 > **Try it — the call chain working normally**
 >
-> ```sh
-> cat > virtualservice-reviews-jason-v2.yaml <<'EOF'
+> Save this as `virtualservice-reviews-jason-v2.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -32,8 +33,17 @@ First, astronaut, you need a working chain of ships to break. Send user `jason` 
 >         - destination:
 >             host: reviews
 >             subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-reviews-jason-v2.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time -H "end-user: jason" http://reviews:9080/reviews/0
 > ```
 >
@@ -85,8 +95,9 @@ The rule of thumb: **name the host you want to pretend is broken.**
 > [!TIP]
 > **Try it — two seconds added to the second hop**
 >
-> ```sh
-> cat > virtualservice-ratings-delay-2s.yaml <<'EOF'
+> Save this as `virtualservice-ratings-delay-2s.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -105,8 +116,17 @@ The rule of thumb: **name the host you want to pretend is broken.**
 >         - destination:
 >             host: ratings
 >             subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-ratings-delay-2s.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time -H "end-user: jason" http://reviews:9080/reviews/0
 > kubectl logs -n bookinfo deploy/reviews-v2 -c istio-proxy --tail=2 | grep ratings
 > ```

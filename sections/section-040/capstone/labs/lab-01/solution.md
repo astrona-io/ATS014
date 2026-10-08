@@ -43,8 +43,9 @@ plus headroom                           →  timeout: 4s
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > virtualservice-ledger.yaml <<'EOF'
+Save this as `virtualservice-ledger.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -75,7 +76,11 @@ spec:
         attempts: 2
         perTryTimeout: 1s
         retryOn: gateway-error
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-ledger.yaml
 ```
 
@@ -88,8 +93,9 @@ Two details that fail the task if wrong:
 
 ## Step 4: The DestinationRule — All Three Policies
 
-```sh
-cat > destinationrule-ledger.yaml <<'EOF'
+Save this as `destinationrule-ledger.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -111,8 +117,17 @@ spec:
     loadBalancer:
       localityLbSetting:
         enabled: true
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-ledger.yaml
+```
+
+Then check the result:
+
+```sh
 istioctl analyze -n payments
 ```
 

@@ -89,8 +89,9 @@ The caller cannot see retries. It gets one answer. The proof is on the **server*
 > [!TIP]
 > **Try it — four tries for one request**
 >
-> ```sh
-> cat > virtualservice-httpbin-retries.yaml <<'EOF'
+> Save this as `virtualservice-httpbin-retries.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -108,8 +109,17 @@ The caller cannot see retries. It gets one answer. The proof is on the **server*
 >       perTryTimeout: 2s
 >       retryOn: 5xx,connect-failure,reset
 >     timeout: 10s
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-httpbin-retries.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time http://httpbin:8000/status/503
 > count_received "status/503"
 > kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=1
@@ -179,8 +189,9 @@ retries:
 > [!TIP]
 > **Try it — back to exactly one try**
 >
-> ```sh
-> cat > virtualservice-httpbin-no-retries.yaml <<'EOF'
+> Save this as `virtualservice-httpbin-no-retries.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -195,8 +206,17 @@ retries:
 >         host: httpbin
 >     retries:
 >       attempts: 0
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-httpbin-no-retries.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time http://httpbin:8000/status/503
 > count_received "status/503"
 > ```

@@ -64,8 +64,9 @@ This works **only because** the `ServiceEntry` declared `protocol: HTTP` on port
 > [!TIP]
 > **Try it — a deadline on somebody else's API**
 >
-> ```sh
-> cat > serviceentry-httpbin-org-http-and-https.yaml <<'EOF'
+> Save this as `serviceentry-httpbin-org-http-and-https.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: ServiceEntry
 > metadata:
@@ -83,8 +84,11 @@ This works **only because** the `ServiceEntry` declared `protocol: HTTP` on port
 >       protocol: HTTPS
 >   location: MESH_EXTERNAL
 >   resolution: DNS
-> EOF
-> cat > virtualservice-httpbin-org-timeout.yaml <<'EOF'
+> ```
+>
+> Save this as `virtualservice-httpbin-org-timeout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -98,9 +102,18 @@ This works **only because** the `ServiceEntry` declared `protocol: HTTP` on port
 >         - destination:
 >             host: httpbin.org
 >       timeout: 2s
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f serviceentry-httpbin-org-http-and-https.yaml
 > kubectl apply -f virtualservice-httpbin-org-timeout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > call_external http://httpbin.org/delay/4
 > call_external http://httpbin.org/get
 > ```
@@ -114,8 +127,9 @@ A `DestinationRule` — the docking instructions for one beacon — works the sa
 > [!TIP]
 > **Try it — a connection pool on an external host**
 >
-> ```sh
-> cat > destinationrule-httpbin-org.yaml <<'EOF'
+> Save this as `destinationrule-httpbin-org.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -129,8 +143,17 @@ A `DestinationRule` — the docking instructions for one beacon — works the sa
 >         maxConnections: 2
 >       http:
 >         http1MaxPendingRequests: 2
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin-org.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 3
 > istioctl proxy-config cluster deploy/curl -n bookinfo --fqdn httpbin.org -o json \
 >   | grep -A5 circuitBreakers
@@ -196,7 +219,11 @@ The playground already has that trap set. Part 1's `Sidecar` in `bookinfo` lists
 >
 > ```sh
 > kubectl delete se --all -n bookinfo
-> cat > serviceentry-in-other-namespace.yaml <<'EOF'
+> ```
+>
+> Save this as `serviceentry-in-other-namespace.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: ServiceEntry
 > metadata:
@@ -211,8 +238,17 @@ The playground already has that trap set. Part 1's `Sidecar` in `bookinfo` lists
 >       protocol: HTTPS
 >   location: MESH_EXTERNAL
 >   resolution: DNS
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f serviceentry-in-other-namespace.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > call_external https://httpbin.org/get
 > ```
 >

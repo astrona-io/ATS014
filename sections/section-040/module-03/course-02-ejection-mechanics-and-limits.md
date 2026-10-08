@@ -48,7 +48,11 @@ There is one more rule from the API. Gateway errors also count as 5xx errors. So
 >
 > ```sh
 > kubectl delete -f httpbin-broken-pod.yaml
-> cat > httpbin-broken-500-pod.yaml <<'EOF'
+> ```
+>
+> Save this as `httpbin-broken-500-pod.yaml`:
+>
+> ```yaml
 > apiVersion: apps/v1
 > kind: Deployment
 > metadata:
@@ -72,8 +76,11 @@ There is one more rule from the API. Gateway errors also count as 5xx errors. So
 >         args: ["-listen=:8080", "-status-code=500", "-text=broken"]
 >         ports:
 >         - containerPort: 8080
-> EOF
-> cat > destinationrule-httpbin-gateway-errors-only.yaml <<'EOF'
+> ```
+>
+> Save this as `destinationrule-httpbin-gateway-errors-only.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -88,10 +95,29 @@ There is one more rule from the API. Gateway errors also count as 5xx errors. So
 >       interval: 5s
 >       baseEjectionTime: 1m
 >       maxEjectionPercent: 50
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f httpbin-broken-500-pod.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl rollout status -n bookinfo deploy/httpbin-broken-500
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin-gateway-errors-only.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_status; count_status
 > ```
 >
@@ -101,6 +127,11 @@ There is one more rule from the API. Gateway errors also count as 5xx errors. So
 >
 > ```sh
 > kubectl apply -f destinationrule-httpbin-outlier-detection.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_status; count_status
 > ```
 >
@@ -110,6 +141,11 @@ Clean up before the next step:
 
 ```sh
 kubectl delete -f httpbin-broken-500-pod.yaml
+```
+
+Apply it:
+
+```sh
 kubectl apply -f httpbin-broken-pod.yaml
 ```
 

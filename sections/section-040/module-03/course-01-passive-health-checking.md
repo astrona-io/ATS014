@@ -11,8 +11,9 @@ Add a third pod behind the `httpbin` Service. It carries the same `app: httpbin`
 > [!TIP]
 > **Try it — a Service with one broken endpoint**
 >
-> ```sh
-> cat > httpbin-broken-pod.yaml <<'EOF'
+> Save this as `httpbin-broken-pod.yaml`:
+>
+> ```yaml
 > apiVersion: apps/v1
 > kind: Deployment
 > metadata:
@@ -39,8 +40,17 @@ Add a third pod behind the `httpbin` Service. It carries the same `app: httpbin`
 >         - -text=broken
 >         ports:
 >         - containerPort: 8080
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f httpbin-broken-pod.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl rollout status -n bookinfo deploy/httpbin-broken
 > kubectl get pods -n bookinfo -l app=httpbin
 > count_status
@@ -112,8 +122,9 @@ A pod that fails only *some* requests is a different story. If it fails every ot
 > [!TIP]
 > **Try it — apply the detection and watch the failures stop**
 >
-> ```sh
-> cat > destinationrule-httpbin-outlier-detection.yaml <<'EOF'
+> Save this as `destinationrule-httpbin-outlier-detection.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -127,8 +138,17 @@ A pod that fails only *some* requests is a different story. If it fails every ot
 >       interval: 5s
 >       baseEjectionTime: 1m
 >       maxEjectionPercent: 50
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin-outlier-detection.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_status
 > count_status
 > ```

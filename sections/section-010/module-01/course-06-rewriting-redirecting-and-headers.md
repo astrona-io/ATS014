@@ -2,7 +2,7 @@
 
 So far a matched rule has done one thing: chosen a destination. That is the most common job of a rule, but not the only one. Astronaut, a communications officer can do more than point a signal somewhere. A rule can also answer the signal itself with a redirect. It can change the path before sending the request on. It can add or remove headers in both directions. And it can handle browser CORS checks without the app knowing CORS exists.
 
-These are extra fields on the same `http` rule you have been writing since Part 2. The object, the matching and the order all work exactly as before.
+These are extra fields on the same `http` rule you already use to route signals. The object, the matching and the order all work exactly as before.
 
 This part uses **`probe`** instead of `scout`. `probe` is a test app in the playground (port `8000`) that echoes back what it receives: `/headers` shows the request headers, and `/anything` shows the path and headers it got. That makes the proxy's changes visible. The rules below send to the `probe` Service without a subset, so they need no `DestinationRule`.
 
@@ -21,17 +21,17 @@ flowchart TB
 
 Once a rule matches, the proxy first checks for `redirect`. If it is there, the proxy replies `301` to the caller itself, nothing is sent on, and the request ends. If not, it applies `rewrite` (the path or the authority), then the request `headers`, sends the request to the route's destination, and finally applies the response `headers` before handing the answer back. `redirect` and `route` are alternatives, not partners. A rule that redirects never reaches a destination, and Istio rejects an object that tries to do both.
 
-The fields on one `http` rule, and which of them this module teaches:
+The fields on one `http` rule, and which of them this part teaches:
 
-| Field | Does | Covered |
+| Field | Does | In this part |
 | --- | --- | --- |
-| `route` | choose a destination | Part 2 |
-| `redirect` | answer the caller with a 3xx instead of sending the request on | here |
-| `rewrite` | change the path or `Host` before sending the request on | here |
-| `headers` | add, set or remove request and response headers | here |
-| `corsPolicy` | answer browser preflight checks and add CORS response headers | here |
-| `timeout`, `retries` | give up, or try again | not in this module |
-| `fault` | inject a delay or an error on purpose | not in this module |
+| `route` | choose a destination | you already use it |
+| `redirect` | answer the caller with a 3xx instead of sending the request on | yes |
+| `rewrite` | change the path or `Host` before sending the request on | yes |
+| `headers` | add, set or remove request and response headers | yes |
+| `corsPolicy` | answer browser preflight checks and add CORS response headers | yes |
+| `timeout`, `retries` | give up, or try again | no |
+| `fault` | inject a delay or an error on purpose | no |
 | `mirror` | send a copy elsewhere | not in this module |
 
 The last group are fields on the object you already know. Most of the rest of this course is this table filling up.
@@ -54,8 +54,9 @@ The proxy replies to the caller with a `301` and a `Location` header. Nothing re
 > [!TIP]
 > **Try it: a rule that never reaches a pod**
 >
-> ```sh
-> cat > virtualservice-probe-redirect.yaml <<'EOF'
+> Save this as `virtualservice-probe-redirect.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -73,8 +74,17 @@ The proxy replies to the caller with a `301` and a `Location` header. Nothing re
 >   - route:
 >     - destination:
 >         host: probe
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-probe-redirect.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl exec -n starfleet deploy/shuttle -- \
 >   curl -s -o /dev/null -w 'status=%{http_code} location=%{redirect_url}\n' http://probe:8000/old
 > ```
@@ -110,8 +120,9 @@ Two things do prove it. The compiled route shows the rewrite as a field called `
 > [!TIP]
 > **Try it: the rewrite, seen from both sides**
 >
-> ```sh
-> cat > virtualservice-probe-rewrite.yaml <<'EOF'
+> Save this as `virtualservice-probe-rewrite.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -132,8 +143,17 @@ Two things do prove it. The compiled route shows the rewrite as a field called `
 >   - route:
 >     - destination:
 >         host: probe
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-probe-rewrite.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > istioctl proxy-config routes deploy/shuttle -n starfleet --name 8000 -o json \
 >   | grep -E '"/beta"|prefixRewrite'
 > kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/beta/test | grep '"url"'
@@ -175,8 +195,9 @@ Each scope takes `request` and `response`, and each of those takes three operati
 > [!TIP]
 > **Try it: headers the app never sent, and one it never sees**
 >
-> ```sh
-> cat > virtualservice-probe-headers.yaml <<'EOF'
+> Save this as `virtualservice-probe-headers.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -198,8 +219,17 @@ Each scope takes `request` and `response`, and each of those takes three operati
 >     route:
 >     - destination:
 >         host: probe
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-probe-headers.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl exec -n starfleet deploy/shuttle -- \
 >   curl -s -H "x-internal-token: secret" http://probe:8000/headers
 > kubectl exec -n starfleet deploy/shuttle -- \
@@ -224,15 +254,16 @@ A browser that calls an API on another site first sends an `OPTIONS` request, ca
       host: probe
 ```
 
-`allowOrigins` takes the same string match forms as Part 2: `exact`, `prefix` or `regex`. So a wildcard is `regex: ".*"`, not a plain `*`. The proxy answers preflights itself and adds the response headers to normal cross-site requests.
+`allowOrigins` takes the same string match forms as a header match: `exact`, `prefix` or `regex`. So a wildcard is `regex: ".*"`, not a plain `*`. The proxy answers preflights itself and adds the response headers to normal cross-site requests.
 
 The important limit: **CORS is not a security control.** It is a browser rule, enforced by the browser. A `corsPolicy` does not stop `curl`, a script or any other non-browser client. That is what authorization policy is for.
 
 > [!TIP]
 > **Try it: the header a browser looks for**
 >
-> ```sh
-> cat > virtualservice-probe-cors.yaml <<'EOF'
+> Save this as `virtualservice-probe-cors.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -249,8 +280,17 @@ The important limit: **CORS is not a security control.** It is a browser rule, e
 >     route:
 >     - destination:
 >         host: probe
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-probe-cors.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl exec -n starfleet deploy/shuttle -- \
 >   curl -s -D - -o /dev/null -H "Origin: https://shop.example.com" http://probe:8000/get \
 >   | grep -i 'access-control'

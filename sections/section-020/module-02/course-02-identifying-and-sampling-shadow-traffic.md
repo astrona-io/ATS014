@@ -84,6 +84,11 @@ As with weighted routing, the sidecar decides for each request on its own. So th
 >
 > ```sh
 > kubectl apply -f virtualservice-probe.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > mark_start; send_requests 30; count_received
 > ```
 >

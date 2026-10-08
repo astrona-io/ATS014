@@ -13,9 +13,24 @@ The course uses this on purpose. Many steps change the same `VirtualService` cal
 >
 > ```sh
 > kubectl apply -f virtualservice-scout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl get virtualservice -n starfleet
 > sed 's/subset: v1/subset: v3/' virtualservice-scout.yaml > virtualservice-scout-v3.yaml
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout-v3.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl get virtualservice -n starfleet
 > ```
 >

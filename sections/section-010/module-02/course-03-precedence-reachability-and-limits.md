@@ -35,7 +35,11 @@ The supported shape is therefore: one namespace default, plus non-overlapping se
 >
 > ```sh
 > istioctl proxy-config cluster deploy/tester -n sidecar-demo | grep -c istio-system
-> kubectl apply -f - <<'EOF'
+> ```
+>
+> Save this as `sidecar-tester-only.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: Sidecar
 > metadata:
@@ -48,7 +52,17 @@ The supported shape is therefore: one namespace default, plus non-overlapping se
 >   egress:
 >     - hosts:
 >         - "./*"
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f sidecar-tester-only.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 3
 > istioctl proxy-config cluster deploy/tester -n sidecar-demo | grep -c istio-system
 > kubectl -n sidecar-demo delete sidecar tester-only

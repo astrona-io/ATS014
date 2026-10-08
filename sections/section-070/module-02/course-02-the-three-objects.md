@@ -109,8 +109,9 @@ Some endpoints tolerate its absence — a host with a single certificate has not
 > [!TIP]
 > **Try it — apply all three and call over plain HTTP**
 >
-> ```sh
-> kubectl apply -f - <<'EOF'
+> Save this as `serviceentry-httpbin-ext.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: ServiceEntry
 > metadata:
@@ -160,7 +161,17 @@ Some endpoints tolerate its absence — a host with a single certificate has not
 >         tls:
 >           mode: SIMPLE
 >           sni: httpbin.org
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f serviceentry-httpbin-ext.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 3
 > kubectl -n tlsorig-demo exec deploy/tester -- \
 >   curl -s -o /dev/null -w 'http:// call: %{http_code}\n' --max-time 15 http://httpbin.org/get

@@ -74,8 +74,9 @@ In a real cluster the gap is short, so the wrong order may *look* fine when you 
 > [!TIP]
 > **Try it: the route before the subsets**
 >
-> ```sh
-> cat > virtualservice-scout.yaml <<'EOF'
+> Save this as `virtualservice-scout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -89,16 +90,26 @@ In a real cluster the gap is short, so the wrong order may *look* fine when you 
 >     - destination:
 >         host: scout
 >         subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://scout:9080/reviews/0
 > kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 > ```
 >
-> You should get `503`, and a flight log line with the flag `NC`: the route names subset `v1`, and no `DestinationRule` has defined it yet. Now make the subsets exist:
+> You should get `503`, and a flight log line with the flag `NC`: the route names subset `v1`, and no `DestinationRule` has defined it yet. Now make the subsets exist.
 >
-> ```sh
-> cat > destinationrule-scout.yaml <<'EOF'
+> Save this as `destinationrule-scout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -116,8 +127,17 @@ In a real cluster the gap is short, so the wrong order may *look* fine when you 
 >   - name: v3
 >     labels:
 >       version: v3
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-scout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > istioctl proxy-status
 > kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://scout:9080/reviews/0
 > ```

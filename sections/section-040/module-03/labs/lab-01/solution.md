@@ -45,8 +45,9 @@ You need at least 50% for one of two endpoints to be removable. `100` is the rig
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > destinationrule-httpbin.yaml <<'EOF'
+Save this as `destinationrule-httpbin.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -60,8 +61,17 @@ spec:
       interval: 5s
       baseEjectionTime: 30s
       maxEjectionPercent: 100
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-httpbin.yaml
+```
+
+Then check the result:
+
+```sh
 istioctl proxy-config cluster deploy/tester -n outlier-demo \
   --fqdn httpbin.outlier-demo.svc.cluster.local -o json | grep -A6 outlierDetection
 ```

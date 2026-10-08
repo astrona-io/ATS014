@@ -44,8 +44,9 @@ kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 \
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > destinationrule-httpbin.yaml <<'EOF'
+Save this as `destinationrule-httpbin.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -67,7 +68,11 @@ spec:
       trafficPolicy:
         loadBalancer:
           simple: ROUND_ROBIN
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-httpbin.yaml
 ```
 
@@ -85,8 +90,9 @@ Three placement details the grader checks:
 
 ## Step 3: The VirtualService
 
-```sh
-cat > virtualservice-httpbin.yaml <<'EOF'
+Save this as `virtualservice-httpbin.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -108,8 +114,17 @@ spec:
         - destination:
             host: httpbin
             subset: stable
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-httpbin.yaml
+```
+
+Then check the result:
+
+```sh
 istioctl analyze -n lb-demo
 ```
 

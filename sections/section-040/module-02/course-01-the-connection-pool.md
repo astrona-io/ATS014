@@ -90,10 +90,11 @@ Testing a circuit breaker with one request at a time, and then deciding it does 
 > [!TIP]
 > **Try it — apply the limits, then stay inside them**
 >
-> Write the rule to a file, apply it, and send requests one at a time:
+> Write the rule to a file, apply it, and send requests one at a time.
 >
-> ```sh
-> cat > destinationrule-httpbin-connection-pool.yaml <<'EOF'
+> Save this as `destinationrule-httpbin-connection-pool.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -108,8 +109,17 @@ Testing a circuit breaker with one request at a time, and then deciding it does 
 >       http:
 >         http1MaxPendingRequests: 1
 >         maxRequestsPerConnection: 1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin-connection-pool.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > load_test 1
 > ```
 >
@@ -150,8 +160,9 @@ The waiting queue, `http1MaxPendingRequests`, has a default that is close to unl
 > [!TIP]
 > **Try it — only `maxConnections`, the common mistake**
 >
-> ```sh
-> cat > destinationrule-httpbin-max-connections-only.yaml <<'EOF'
+> Save this as `destinationrule-httpbin-max-connections-only.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -163,8 +174,17 @@ The waiting queue, `http1MaxPendingRequests`, has a default that is close to unl
 >     connectionPool:
 >       tcp:
 >         maxConnections: 1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin-max-connections-only.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > load_test 3
 > ```
 >

@@ -88,7 +88,11 @@ Istio lets you configure the harmful combination, and nothing warns you. It only
 > pending_overflow() { kubectl exec -n bookinfo deploy/fortio -c istio-proxy -- \
 >   pilot-agent request GET stats 2>/dev/null | grep 'httpbin.bookinfo.*pending_overflow' | awk -F': ' '{print $2}'; }
 > BEFORE=$(pending_overflow)
-> cat > virtualservice-httpbin-retry-5xx.yaml <<'EOF'
+> ```
+>
+> Save this as `virtualservice-httpbin-retry-5xx.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -106,8 +110,17 @@ Istio lets you configure the harmful combination, and nothing warns you. It only
 >         perTryTimeout: 1s
 >         retryOn: 5xx
 >       timeout: 10s
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-httpbin-retry-5xx.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 3
 > load_test 4
 > AFTER=$(pending_overflow)

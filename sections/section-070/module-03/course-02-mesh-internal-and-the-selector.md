@@ -59,16 +59,25 @@ The mTLS row carries a practical consequence: with `MESH_INTERNAL`, Istio expect
 > [!TIP]
 > **Try it — give the workload a name and a place in the registry**
 >
+> First, find the address of the stand-in machine:
+>
 > ```sh
 > VM_IP=$(kubectl -n vm-demo get pod -l app=legacy-backend -o jsonpath='{.items[0].status.podIP}')
-> kubectl apply -f - <<EOF
+> echo $VM_IP
+> ```
+>
+> Replace `<VM_IP>` in the YAML below with that address.
+>
+> Save this as `workloadentry-legacy-vm-1.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: WorkloadEntry
 > metadata:
 >   name: legacy-vm-1
 >   namespace: vm-demo
 > spec:
->   address: $VM_IP
+>   address: <VM_IP>
 >   labels:
 >     app: legacy-backend
 >   serviceAccount: legacy-sa
@@ -90,7 +99,17 @@ The mTLS row carries a practical consequence: with `MESH_INTERNAL`, Istio expect
 >   workloadSelector:
 >     labels:
 >       app: legacy-backend
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f workloadentry-legacy-vm-1.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 3
 > kubectl -n vm-demo exec deploy/tester -- \
 >   curl -s -o /dev/null -w 'by name: %{http_code}\n' --max-time 10 http://legacy.vm-demo.svc:8080/get
@@ -104,7 +123,7 @@ The mTLS row carries a practical consequence: with `MESH_INTERNAL`, Istio expect
 > by name: 200
 > ```
 >
-> Note the heredoc is **unquoted** (`<<EOF`) so the shell substitutes `$VM_IP` — the address has to be baked in, which is the practical difference between declaring a VM and labelling a pod. The call now works **by hostname**, which it could not do at all before.
+> You had to write the address into the `WorkloadEntry` yourself. That is the practical difference between declaring a virtual machine and labelling a pod: a pod's address is found for you, a machine's is not. The call now works **by hostname**, which it could not do at all before.
 
 ## Seeing it as a first-class endpoint
 

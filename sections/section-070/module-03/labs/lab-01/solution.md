@@ -39,14 +39,20 @@ Note `1/1` for the machines and `2/2` for `tester`: the stand-ins have no sideca
 
 ```sh
 VM1=$(cat /tmp/vm1-ip); VM2=$(cat /tmp/vm2-ip)
-cat > legacy-vm-1-manifests.yaml <<'EOF'
+```
+
+Replace `<VM1>`, `<VM2>` in the YAML below with the real addresses from the step above. To see them, run `echo $VM1` `echo $VM2`.
+
+Save this as `legacy-vm-1-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: WorkloadEntry
 metadata:
   name: legacy-vm-1
   namespace: vm-demo
 spec:
-  address: $VM1
+  address: <VM1>
   labels:
     app: legacy-backend
   serviceAccount: legacy-sa
@@ -57,11 +63,15 @@ metadata:
   name: legacy-vm-2
   namespace: vm-demo
 spec:
-  address: $VM2
+  address: <VM2>
   labels:
     app: legacy-backend
   serviceAccount: legacy-sa
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f legacy-vm-1-manifests.yaml
 ```
 
@@ -77,8 +87,9 @@ Applying these alone changes nothing observable: there is still no hostname.
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > serviceentry-legacy.yaml <<'EOF'
+Save this as `serviceentry-legacy.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -96,7 +107,11 @@ spec:
   workloadSelector:
     labels:
       app: legacy-backend
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f serviceentry-legacy.yaml
 ```
 
@@ -134,8 +149,9 @@ If you see only one endpoint, one of the entries has a different label than the 
 
 ## Step 5: The Template For A Real Fleet
 
-```sh
-cat > workloadgroup-legacy.yaml <<'EOF'
+Save this as `workloadgroup-legacy.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: WorkloadGroup
 metadata:
@@ -149,8 +165,17 @@ spec:
     serviceAccount: legacy-sa
     ports:
       http: 8080
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f workloadgroup-legacy.yaml
+```
+
+Then check the result:
+
+```sh
 kubectl -n vm-demo get workloadgroup,workloadentry
 ```
 

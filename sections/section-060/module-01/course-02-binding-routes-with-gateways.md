@@ -80,6 +80,11 @@ That attaches the same routes to the gateway **and** to callers inside the mesh.
 >
 > ```sh
 > kubectl apply -f virtualservice-bookinfo.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 2
 > gateway_status /productpage
 > gateway_status /admin
@@ -179,6 +184,11 @@ spec:
 >
 > ```sh
 > kubectl apply -f virtualservice-bookinfo-reviews-api.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > for i in 1 2 3; do curl -s -H "Host: bookinfo.example.com" http://localhost:8080/reviews/0 | grep -o 'reviews-v[0-9]'; done
 > ```
 >

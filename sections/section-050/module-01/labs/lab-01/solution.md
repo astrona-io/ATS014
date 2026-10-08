@@ -59,8 +59,9 @@ timeout only fires against a delay that some *other* proxy is producing.
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > virtualservice-notification.yaml <<'EOF'
+Save this as `virtualservice-notification.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -89,9 +90,17 @@ spec:
     - route:
         - destination:
             host: notification-service
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-notification.yaml
-cat > virtualservice-booking.yaml <<'EOF'
+```
+
+Save this as `virtualservice-booking.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -105,8 +114,17 @@ spec:
       route:
         - destination:
             host: booking-service
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-booking.yaml
+```
+
+Then check the result:
+
+```sh
 istioctl analyze -n fault-demo
 ```
 

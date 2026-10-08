@@ -78,8 +78,9 @@ So switching to `REGISTRY_ONLY` does not break in-cluster traffic at all. It bre
 > [!TIP]
 > **Try it — outside calls are blocked, inside calls are not**
 >
-> ```sh
-> cat > sidecar-registry-only.yaml <<'EOF'
+> Save this as `sidecar-registry-only.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: Sidecar
 > metadata:
@@ -92,8 +93,17 @@ So switching to `REGISTRY_ONLY` does not break in-cluster traffic at all. It bre
 >     - hosts:
 >         - "./*"
 >         - "istio-system/*"
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f sidecar-registry-only.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > call_external https://httpbin.org/get
 > call_external http://httpbin:8000/get
 > kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=2

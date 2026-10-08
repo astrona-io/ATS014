@@ -23,7 +23,7 @@ no pass or fail. Explore, break things, `astrona destroy`, start over.
   - **`shuttle`**, your client pod inside the mesh. You send every test signal
     from it with the `curl` command.
   - **`probe`** v1 and v2 behind one Service on port `8000`. It echoes what
-    it receives (`/headers`, `/anything`), so parts 4 and 5 can show what the
+    it receives (`/headers`, `/anything`), so the rewriting and non-HTTP parts can show what the
     proxy changed.
 - Every pod (spaceship) shows `2/2`: the app plus its `istio-proxy` sidecar,
   the communications officer that every signal in or out goes through.
@@ -53,29 +53,31 @@ Use it like this: `count_versions $SCOUT/0`, or
 
 ## Things to try
 
-The YAML for each idea is in [`../examples/`](../examples/). The module's
-parts walk through the same files step by step.
+Each idea below is a small change to the files you made while reading the
+module. Edit your saved file (for example `virtualservice-scout.yaml`), apply
+it with `kubectl apply -f`, and watch what happens. The module's parts show the
+full YAML for every step.
 
 - Run `count_versions $SCOUT/0` with no rules at all. All three versions
-  answer. Then apply only the `DestinationRule`
-  (`examples/01-request-routing/01-destinationrule-scout-subsets.yaml`) and
-  run it again. Nothing changes: docking instructions alone steer no signal.
-- Apply `examples/01-request-routing/cases/c2-virtualservice-subset-typo.yaml`
-  and read the `503` and the `NC` flag in the access log. Then run
-  `istioctl analyze -n starfleet`.
-- Apply `examples/01-request-routing/cases/c3-destinationrule-label-mismatch.yaml`
-  with the "all to v1" rule in place and compare: `503` again, but `UH`.
-- Apply `examples/02-header-based-routing/02-virtualservice-scout-wrong-order.yaml`
-  and watch the jason rule go dead. `istioctl analyze` warns with `IST0130`.
-- Apply `examples/02-header-based-routing/cases/c6-virtualservice-no-catch-all.yaml`
-  and see a `404` with the `NR` flag. This time `analyze` says nothing.
-- Compare `examples/02-header-based-routing/cases/c3-virtualservice-and-match.yaml`
-  with `c4-virtualservice-or-match.yaml`. One `-` is the only difference.
+  answer. Then apply only the `DestinationRule` with the three subsets and run
+  it again. Nothing changes: docking instructions alone steer no signal.
+- In your `VirtualService`, change the subset to `v4`, a name the
+  `DestinationRule` does not define. Read the `503` and the `NC` flag in the
+  access log, then run `istioctl analyze -n starfleet`.
+- Put the subset back to `v1`, and instead change the `v1` subset's label in
+  the `DestinationRule` to `version: v9`. You get `503` again, but this time
+  with `UH`.
+- In the jason rule's `VirtualService`, move the catch-all route to the top.
+  The jason rule goes dead, and `istioctl analyze` warns with `IST0130`.
+- Remove the catch-all route completely and send a signal without the jason
+  header. You get a `404` with the `NR` flag, and `analyze` says nothing.
+- Write a `match` with a header and a path in one item, then split them into
+  two items. One `-` is the only difference between AND and OR.
 - Compare `istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080`
   before and after applying a `VirtualService`.
 
-The cases in `examples/02-header-based-routing/` need the `scout`
-`DestinationRule` from `examples/01-request-routing/` applied first.
+Apply the `scout` `DestinationRule` first. Every `VirtualService` here sends
+signals to its subsets.
 
 For exam-style practice with checked solutions, see
 [practice.md](./practice.md).

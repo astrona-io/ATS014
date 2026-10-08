@@ -20,8 +20,11 @@ VirtualServices, because a route with a `fault` ignores its own `timeout`.
 
 ```bash
 kubectl apply -f examples/04-timeouts/02-destinationrule-ratings-subsets.yaml
+```
 
-cat > virtualservice-ratings-and-reviews.yaml <<'YAML'
+Save this as `virtualservice-ratings-and-reviews.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata: {name: ratings, namespace: bookinfo}
@@ -42,8 +45,17 @@ spec:
   - route:
     - destination: {host: reviews, subset: v3}
     timeout: 1s
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f virtualservice-ratings-and-reviews.yaml
+```
+
+Then check the result:
+
+```bash
 
 status_and_time http://reviews:9080/reviews/0   # 504 1.0s
 ```
@@ -57,8 +69,9 @@ status_and_time http://reviews:9080/reviews/0   # 504 1.0s
 
 <details><summary>Solution</summary>
 
-```bash
-cat > virtualservice-httpbin-retries.yaml <<'YAML'
+Save this as `virtualservice-httpbin-retries.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata: {name: httpbin, namespace: bookinfo}
@@ -71,8 +84,17 @@ spec:
       attempts: 2
       perTryTimeout: 500ms
       retryOn: "503"
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f virtualservice-httpbin-retries.yaml
+```
+
+Then check the result:
+
+```bash
 
 status_and_time http://httpbin:8000/status/503 ; count_received "status/503"   # 503 → 3 (1 + 2 retries)
 status_and_time http://httpbin:8000/status/500 ; count_received "status/500"   # 500 → 1 (not retried)

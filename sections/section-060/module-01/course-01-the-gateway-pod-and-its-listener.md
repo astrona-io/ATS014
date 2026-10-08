@@ -112,10 +112,11 @@ A listener with no routes serves nothing: the gate is open, but no flight plan t
 > [!TIP]
 > **Try it — open the listener, and get 404 instead of 000**
 >
-> Write the `Gateway` to a file, then apply it:
+> Write the `Gateway` to a file, then apply it.
 >
-> ```sh
-> cat > gateway-bookinfo.yaml <<'EOF'
+> Save this as `gateway-bookinfo.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: Gateway
 > metadata:
@@ -131,8 +132,17 @@ A listener with no routes serves nothing: the gate is open, but no flight plan t
 >       protocol: HTTP
 >     hosts:
 >     - bookinfo.example.com
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f gateway-bookinfo.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 2
 > gateway_status /productpage
 > kubectl logs -n istio-ingress deploy/istio-ingress --tail=1

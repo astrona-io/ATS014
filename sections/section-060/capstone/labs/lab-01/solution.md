@@ -30,8 +30,9 @@ The shared gateway is running, Istio's `GatewayClass` is registered, no `Ingress
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > native-gw-manifests.yaml <<'EOF'
+Save this as `native-gw-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -67,7 +68,11 @@ spec:
             host: native-app
             port:
               number: 80
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f native-gw-manifests.yaml
 ```
 
@@ -77,8 +82,9 @@ kubectl apply -f native-gw-manifests.yaml
 
 ## Step 3: B — Kubernetes Ingress
 
-```sh
-cat > ingressclass-and-ingress.yaml <<'EOF'
+Save this as `ingressclass-and-ingress.yaml`:
+
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: IngressClass
 metadata:
@@ -108,8 +114,17 @@ spec:
                 name: legacy-app
                 port:
                   number: 80
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f ingressclass-and-ingress.yaml
+```
+
+Then check the result:
+
+```sh
 
 kubectl -n istio-system create secret tls legacy-credential \
   --key=/tmp/legacy.key --cert=/tmp/legacy.crt
@@ -128,8 +143,9 @@ And the secret goes in **`istio-system`**, because that is where the pod that re
 
 ## Step 4: C — Gateway API
 
-```sh
-cat > modern-gw-manifests.yaml <<'EOF'
+Save this as `modern-gw-manifests.yaml`:
+
+```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -164,8 +180,17 @@ spec:
       backendRefs:
         - name: modern-app
           port: 80
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f modern-gw-manifests.yaml
+```
+
+Then check the result:
+
+```sh
 kubectl -n edge rollout status deployment modern-gw-istio --timeout=120s
 kubectl -n edge get deploy,svc | grep modern-gw
 ```

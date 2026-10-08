@@ -41,8 +41,9 @@ This is the shape to reach for by default, astronaut. It makes fault injection s
 > [!TIP]
 > **Try it — the fault applies only to the marked request**
 >
-> ```sh
-> cat > virtualservice-ratings-abort-jason.yaml <<'EOF'
+> Save this as `virtualservice-ratings-abort-jason.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -69,8 +70,17 @@ This is the shape to reach for by default, astronaut. It makes fault injection s
 >         - destination:
 >             host: ratings
 >             subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-ratings-abort-jason.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl exec -n bookinfo deploy/curl -- curl -s -H "end-user: jason" http://ratings:9080/ratings/0
 > kubectl exec -n bookinfo deploy/curl -- curl -s http://ratings:9080/ratings/0
 > ```
@@ -165,7 +175,11 @@ The third fails for the same reason. Outlier detection counts the answers that c
 >
 > ```sh
 > kubectl apply -f virtualservice-ratings-delay-2s.yaml   # the 2s delay from Part 1
-> cat > virtualservice-reviews-timeout.yaml <<'EOF'
+> ```
+>
+> Save this as `virtualservice-reviews-timeout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -180,8 +194,17 @@ The third fails for the same reason. Outlier detection counts the answers that c
 >             host: reviews
 >             subset: v2
 >       timeout: 0.5s
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-reviews-timeout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time http://reviews:9080/reviews/0
 > kubectl logs -n bookinfo deploy/reviews-v2 -c istio-proxy --tail=2 | grep ratings
 > ```

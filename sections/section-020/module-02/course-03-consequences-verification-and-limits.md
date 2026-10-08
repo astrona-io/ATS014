@@ -62,6 +62,11 @@ A mirror and a weighted split work together. Here, real traffic is split 50/50 b
 >
 > ```sh
 > kubectl apply -f virtualservice-probe.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > mark_start; send_requests 20; count_received
 > ```
 >

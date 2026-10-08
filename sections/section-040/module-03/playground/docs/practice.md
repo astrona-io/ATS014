@@ -16,10 +16,11 @@ on a cluster set up like this playground.
 
 <details><summary>Solution</summary>
 
-Write the rule to a file and apply it:
+Write the rule to a file and apply it.
 
-```bash
-cat > destinationrule-httpbin-practice.yaml <<'YAML'
+Save this as `destinationrule-httpbin-practice.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata: {name: httpbin, namespace: bookinfo}
@@ -34,8 +35,17 @@ spec:
       interval: 10s
       baseEjectionTime: 30s
       maxEjectionPercent: 50
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f destinationrule-httpbin-practice.yaml
+```
+
+Then check the result:
+
+```bash
 load_test 5                    # Code 200 : 7 (23.3 %) / Code 503 : 23 (76.7 %)
 load_test 1                    # Code 200 : 30 (100.0 %)
 ```

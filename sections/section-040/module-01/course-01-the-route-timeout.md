@@ -64,8 +64,9 @@ The flag for a timeout is **`UT`**, short for "upstream timeout". "Upstream" is 
 > [!TIP]
 > **Try it — give up after 1 second**
 >
-> ```sh
-> cat > virtualservice-httpbin-timeout.yaml <<'EOF'
+> Save this as `virtualservice-httpbin-timeout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -79,8 +80,17 @@ The flag for a timeout is **`UT`**, short for "upstream timeout". "Upstream" is 
 >     - destination:
 >         host: httpbin
 >     timeout: 1s
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-httpbin-timeout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time http://httpbin:8000/delay/3
 > status_and_time http://httpbin:8000/delay/0
 > kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=2
@@ -128,8 +138,9 @@ Two sidecars each do one job. The `reviews-v2` sidecar adds the delay, because t
 > [!TIP]
 > **Try it — make ratings slow**
 >
-> ```sh
-> cat > destinationrule-ratings.yaml <<'EOF'
+> Save this as `destinationrule-ratings.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -141,8 +152,11 @@ Two sidecars each do one job. The `reviews-v2` sidecar adds the delay, because t
 >   - name: v1
 >     labels:
 >       version: v1
-> EOF
-> cat > virtualservice-ratings-delay.yaml <<'EOF'
+> ```
+>
+> Save this as `virtualservice-ratings-delay.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -161,8 +175,17 @@ Two sidecars each do one job. The `reviews-v2` sidecar adds the delay, because t
 >     - destination:
 >         host: ratings
 >         subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-ratings.yaml -f virtualservice-ratings-delay.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time -H "end-user: jason" http://reviews:9080/reviews/0
 > ```
 >
@@ -173,8 +196,9 @@ Now add the limit on `reviews`. This VirtualService sends everyone to v2, with a
 > [!TIP]
 > **Try it — reviews gives up after 0.5 seconds**
 >
-> ```sh
-> cat > virtualservice-reviews-timeout.yaml <<'EOF'
+> Save this as `virtualservice-reviews-timeout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -189,8 +213,17 @@ Now add the limit on `reviews`. This VirtualService sends everyone to v2, with a
 >         host: reviews
 >         subset: v2
 >     timeout: 0.5s
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-reviews-timeout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time http://reviews:9080/reviews/0
 > kubectl logs -n bookinfo deploy/reviews-v2 -c istio-proxy --tail=2 | grep ratings
 > ```
@@ -237,8 +270,9 @@ It is tempting to test a timeout with one VirtualService that has both the delay
 > [!TIP]
 > **Try it — the timeout that never fires**
 >
-> ```sh
-> cat > virtualservice-ratings-delay-and-timeout.yaml <<'EOF'
+> Save this as `virtualservice-ratings-delay-and-timeout.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -258,8 +292,17 @@ It is tempting to test a timeout with one VirtualService that has both the delay
 >         host: ratings
 >         subset: v1
 >     timeout: 0.5s
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-ratings-delay-and-timeout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time http://ratings:9080/ratings/0
 > ```
 >

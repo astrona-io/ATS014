@@ -70,8 +70,9 @@ Use it when strict preference is wrong — for example to keep a warm connection
 > [!TIP]
 > **Try it — a deliberate 70/30 cross-zone split**
 >
-> ```sh
-> kubectl apply -f - <<'EOF'
+> Save this as `destinationrule-httpbin.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -88,7 +89,17 @@ Use it when strict preference is wrong — for example to keep a warm connection
 >             to:
 >               "local/zone-a/*": 70
 >               "local/zone-b/*": 30
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f destinationrule-httpbin.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 3
 > kubectl -n locality-demo exec deploy/tester -- sh -c \
 >   'for i in $(seq 1 100); do curl -s -o /dev/null http://httpbin:8000/get; done'

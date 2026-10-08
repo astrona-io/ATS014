@@ -18,8 +18,9 @@ run and checked on a real cluster.
 Apply the docking instructions (the subsets) first, then the flight plan (the
 route). That order means the route always has somewhere to go.
 
-```bash
-cat > destinationrule-scout.yaml <<'EOF'
+Save this as `destinationrule-scout.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata: {name: scout, namespace: starfleet}
@@ -32,10 +33,17 @@ spec:
     labels: {version: v2}
   - name: v3
     labels: {version: v3}
-EOF
-kubectl apply -f destinationrule-scout.yaml
+```
 
-cat > virtualservice-scout.yaml <<'EOF'
+Apply it:
+
+```bash
+kubectl apply -f destinationrule-scout.yaml
+```
+
+Save this as `virtualservice-scout.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata: {name: scout, namespace: starfleet}
@@ -44,8 +52,17 @@ spec:
   http:
   - route:
     - destination: {host: scout, subset: v2}
-EOF
+```
+
+Apply it:
+
+```bash
 kubectl apply -f virtualservice-scout.yaml
+```
+
+Then check the result:
+
+```bash
 
 count_versions $SCOUT/0                               # 10 scout-v2
 kubectl exec -n starfleet deploy/shuttle -- curl -s http://bridge:9080/productpage | grep -c glyphicon-star
@@ -64,8 +81,9 @@ kubectl exec -n starfleet deploy/shuttle -- curl -s http://bridge:9080/productpa
 This needs the `scout` DestinationRule from task 1 (subsets `v1`, `v2`,
 `v3`).
 
-```bash
-cat > virtualservice-scout.yaml <<'EOF'
+Save this as `virtualservice-scout.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata: {name: scout, namespace: starfleet}
@@ -79,8 +97,17 @@ spec:
     - destination: {host: scout, subset: v3}
   - route:
     - destination: {host: scout, subset: v1}
-EOF
+```
+
+Apply it:
+
+```bash
 kubectl apply -f virtualservice-scout.yaml
+```
+
+Then check the result:
+
+```bash
 
 count_versions -H "x-canary: true" $SCOUT/0      #  10 scout-v3
 count_versions $SCOUT/0                          #  10 scout-v1

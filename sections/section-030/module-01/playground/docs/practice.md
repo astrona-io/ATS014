@@ -12,10 +12,11 @@ checked on the playground cluster.
 
 <details><summary>Solution</summary>
 
-Write the DestinationRule to a file, then apply it:
+Write the DestinationRule to a file, then apply it.
 
-```bash
-cat > destinationrule-httpbin.yaml <<'YAML'
+Save this as `destinationrule-httpbin.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata: {name: httpbin, namespace: bookinfo}
@@ -24,8 +25,17 @@ spec:
   trafficPolicy:
     loadBalancer:
       consistentHash: {httpHeaderName: x-session-id}
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f destinationrule-httpbin.yaml
+```
+
+Then check the result:
+
+```bash
 count_pods -H "x-session-id: abc" $HOSTNAME_URL     #   8 × one pod
 count_pods -H "x-session-id: xyz" $HOSTNAME_URL     #   8 × one (maybe other) pod
 ```

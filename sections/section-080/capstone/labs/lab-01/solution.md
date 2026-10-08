@@ -31,7 +31,13 @@ Both endpoints reachable directly, and the gate carrying no signals.
 
 ```sh
 PLAIN=$(cat /tmp/plain-ip); SECURE=$(cat /tmp/secure-ip)
-cat > plain-manifests.yaml <<'EOF'
+```
+
+Replace `<PLAIN>`, `<SECURE>` in the YAML below with the real addresses from the step above. To see them, run `echo $PLAIN` `echo $SECURE`.
+
+Save this as `plain-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -39,13 +45,13 @@ metadata:
   namespace: edge-egress
 spec:
   hosts: [plain.partner.example]
-  addresses: [$PLAIN]
+  addresses: [<PLAIN>]
   ports:
     - { number: 8080, name: http, protocol: HTTP }
   location: MESH_EXTERNAL
   resolution: STATIC
   endpoints:
-    - address: $PLAIN
+    - address: <PLAIN>
 ---
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
@@ -54,15 +60,19 @@ metadata:
   namespace: edge-egress
 spec:
   hosts: [secure.partner.example]
-  addresses: [$SECURE]
+  addresses: [<SECURE>]
   ports:
     - { number: 8081, name: http,  protocol: HTTP }
     - { number: 8443, name: https, protocol: HTTPS }
   location: MESH_EXTERNAL
   resolution: STATIC
   endpoints:
-    - address: $SECURE
-EOF
+    - address: <SECURE>
+```
+
+Apply it:
+
+```sh
 kubectl apply -f plain-manifests.yaml
 ```
 
@@ -74,8 +84,9 @@ The plain host needs one port; the secure host needs **two** — 8081 where the 
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > egress-gateway-manifests.yaml <<'EOF'
+Save this as `egress-gateway-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -100,7 +111,11 @@ spec:
   subsets:
     - name: plain
     - name: secure
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f egress-gateway-manifests.yaml
 ```
 
@@ -112,8 +127,9 @@ Two label-less subsets, one per partner. They narrow nothing; they exist so each
 
 ## Step 4: Partner A — Plain, Restricted
 
-```sh
-cat > virtualservice-plain-through-egress.yaml <<'EOF'
+Save this as `virtualservice-plain-through-egress.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -139,7 +155,11 @@ spec:
         - destination:
             host: plain.partner.example
             port: { number: 8080 }
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-plain-through-egress.yaml
 ```
 
@@ -149,8 +169,9 @@ Module 1's chain exactly, with `sourceLabels` on stage 1.
 
 ## Step 5: Partner B — TLS At The Gateway
 
-```sh
-cat > secure-through-egress-manifests.yaml <<'EOF'
+Save this as `secure-through-egress-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -196,7 +217,11 @@ spec:
           mode: SIMPLE
           sni: secure.partner.example
           insecureSkipVerify: true
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f secure-through-egress-manifests.yaml
 ```
 

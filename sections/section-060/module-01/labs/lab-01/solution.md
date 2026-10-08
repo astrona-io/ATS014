@@ -32,8 +32,9 @@ The pod is `1/1` — a standalone proxy, no application container. It is healthy
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > gateway-public-gateway.yaml <<'EOF'
+Save this as `gateway-public-gateway.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -50,7 +51,11 @@ spec:
       hosts:
         - booking.ica.local
         - catalog.ica.local
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f gateway-public-gateway.yaml
 ```
 
@@ -82,8 +87,9 @@ Expected. A listener with no routes attached serves nothing.
 
 ## Step 3: Attach Both Route Sets
 
-```sh
-cat > booking-manifests.yaml <<'EOF'
+Save this as `booking-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -123,8 +129,17 @@ spec:
             host: catalog-service
             port:
               number: 80
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f booking-manifests.yaml
+```
+
+Then check the result:
+
+```sh
 istioctl analyze -n ingress-demo
 ```
 

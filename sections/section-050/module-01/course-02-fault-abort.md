@@ -48,8 +48,9 @@ As with every percentage in this course the decision is per request and independ
 > [!TIP]
 > **Try it — half the calls fail, none of them reach the upstream**
 >
-> ```sh
-> cat > virtualservice-ratings-abort-50.yaml <<'EOF'
+> Save this as `virtualservice-ratings-abort-50.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -68,8 +69,17 @@ As with every percentage in this course the decision is per request and independ
 >         - destination:
 >             host: ratings
 >             subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-ratings-abort-50.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_ratings_status
 > kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=10 | grep ' 500 '
 > ```
@@ -124,8 +134,9 @@ The two percentages are independent draws. They do not need to sum to anything.
 > [!TIP]
 > **Try it — 50% slow, 20% failing, on one rule**
 >
-> ```sh
-> cat > virtualservice-ratings-delay-and-abort.yaml <<'EOF'
+> Save this as `virtualservice-ratings-delay-and-abort.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -148,8 +159,17 @@ The two percentages are independent draws. They do not need to sum to anything.
 >         - destination:
 >             host: ratings
 >             subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-ratings-delay-and-abort.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > for i in $(seq 1 20); do
 >   kubectl exec -n bookinfo deploy/curl -- curl -s -o /dev/null -w "%{http_code} %{time_total}\n" http://ratings:9080/ratings/0 \
 >     | awk '{print $1, ($2 > 0.9 ? "slow" : "fast")}'

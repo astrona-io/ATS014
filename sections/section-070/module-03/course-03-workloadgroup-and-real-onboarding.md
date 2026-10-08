@@ -72,8 +72,9 @@ If you want to see auto-registration, it needs a real machine. What you can do h
 > [!TIP]
 > **Try it — the template beside the instance it would create**
 >
-> ```sh
-> kubectl apply -f - <<'EOF'
+> Save this as `workloadgroup-legacy.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: WorkloadGroup
 > metadata:
@@ -87,7 +88,17 @@ If you want to see auto-registration, it needs a real machine. What you can do h
 >     serviceAccount: legacy-sa
 >     ports:
 >       http: 8080
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f workloadgroup-legacy.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl -n vm-demo get workloadgroup,workloadentry
 > kubectl -n vm-demo get workloadentry -o custom-columns=NAME:.metadata.name,ADDRESS:.spec.address,SA:.spec.serviceAccount,LABELS:.spec.labels
 > ```

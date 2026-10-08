@@ -49,8 +49,9 @@ Three entries, and each one is there for a reason:
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > sidecar-default.yaml <<'EOF'
+Save this as `sidecar-default.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: Sidecar
 metadata:
@@ -62,7 +63,11 @@ spec:
         - "./*"
         - "istio-system/*"
         - "sidecar-other/*"
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f sidecar-default.yaml
 ```
 

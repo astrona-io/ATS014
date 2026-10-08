@@ -20,8 +20,9 @@ First, the direct path. Register `httpbin.org` with a `ServiceEntry` (section 07
 > [!TIP]
 > **Try it — straight to the internet, past an idle gateway**
 >
-> ```sh
-> cat > serviceentry-httpbin-org.yaml <<'EOF'
+> Save this as `serviceentry-httpbin-org.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: ServiceEntry
 > metadata:
@@ -36,8 +37,17 @@ First, the direct path. Register `httpbin.org` with a `ServiceEntry` (section 07
 >       protocol: TLS
 >   location: MESH_EXTERNAL
 >   resolution: DNS
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f serviceentry-httpbin-org.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl get pods -n istio-egress -l istio=egress
 > call_external
 > log_hop1_sidecar

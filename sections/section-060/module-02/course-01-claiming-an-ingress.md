@@ -63,8 +63,9 @@ The tell is in `kubectl get ingress`: the **`CLASS`** column, and the **`ADDRESS
 > [!TIP]
 > **Try it — an `Ingress` nobody implements**
 >
-> ```sh
-> kubectl apply -f - <<'EOF'
+> Save this as `ingress-booking.yaml`:
+>
+> ```yaml
 > apiVersion: networking.k8s.io/v1
 > kind: Ingress
 > metadata:
@@ -82,7 +83,17 @@ The tell is in `kubectl get ingress`: the **`CLASS`** column, and the **`ADDRESS
 >                 name: booking-service
 >                 port:
 >                   number: 80
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f ingress-booking.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl -n k8s-ingress-demo get ingress booking
 > curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
 > ```
@@ -105,15 +116,26 @@ Create the class and point the `Ingress` at it, and the same object starts worki
 > [!TIP]
 > **Try it — create the class and claim the object**
 >
-> ```sh
-> kubectl apply -f - <<'EOF'
+> Save this as `ingressclass-istio.yaml`:
+>
+> ```yaml
 > apiVersion: networking.k8s.io/v1
 > kind: IngressClass
 > metadata:
 >   name: istio
 > spec:
 >   controller: istio.io/ingress-controller
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f ingressclass-istio.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl -n k8s-ingress-demo patch ingress booking --type merge \
 >   -p '{"spec":{"ingressClassName":"istio"}}'
 > sleep 3

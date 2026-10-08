@@ -97,8 +97,9 @@ Treat `./*` and `istio-system/*` as the floor that every namespace-wide `Sidecar
 > [!TIP]
 > **Try it — scope the namespace down and watch the configuration shrink**
 >
-> ```sh
-> kubectl apply -f - <<'EOF'
+> Save this as `sidecar-default.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: Sidecar
 > metadata:
@@ -109,7 +110,17 @@ Treat `./*` and `istio-system/*` as the floor that every namespace-wide `Sidecar
 >     - hosts:
 >         - "./*"
 >         - "istio-system/*"
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
+> kubectl apply -f sidecar-default.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 3
 > istioctl proxy-config cluster deploy/tester -n sidecar-demo | wc -l
 > istioctl proxy-config cluster deploy/tester -n sidecar-demo | grep sidecar-other

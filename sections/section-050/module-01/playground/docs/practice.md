@@ -12,10 +12,11 @@ checked on this environment.
 
 <details><summary>Solution</summary>
 
-Write the VirtualService to a file:
+Write the VirtualService to a file.
 
-```bash
-cat > virtualservice-details.yaml <<'YAML'
+Save this as `virtualservice-details.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata: {name: details, namespace: bookinfo}
@@ -30,13 +31,17 @@ spec:
     - destination: {host: details}
   - route:
     - destination: {host: details}
-YAML
 ```
 
 Apply it and check both paths:
 
 ```bash
 kubectl apply -f virtualservice-details.yaml
+```
+
+Then check the result:
+
+```bash
 status_and_time http://details:9080/details/0           # 200 0.01s  (curl → details: fast)
 status_and_time http://productpage:9080/productpage     # 200 3.0s   (productpage → details: slow)
 ```

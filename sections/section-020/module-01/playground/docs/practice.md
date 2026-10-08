@@ -12,8 +12,9 @@ checked on a cluster like this one.
 
 <details><summary>Solution</summary>
 
-```bash
-cat > virtualservice-scout.yaml <<'YAML'
+Save this as `virtualservice-scout.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata: {name: scout, namespace: starfleet}
@@ -25,8 +26,17 @@ spec:
       weight: 90
     - destination: {host: scout, subset: v2}
       weight: 10
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f virtualservice-scout.yaml
+```
+
+Then check the result:
+
+```bash
 count_versions 40
 #  38 scout-v1
 #   2 scout-v2      (about 4 expected – random)

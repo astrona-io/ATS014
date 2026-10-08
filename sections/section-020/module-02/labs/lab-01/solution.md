@@ -30,8 +30,9 @@ Both versions currently answer callers. The finished state must show only `["EMA
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > destinationrule-notification-service.yaml <<'EOF'
+Save this as `destinationrule-notification-service.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -46,7 +47,11 @@ spec:
     - name: v2
       labels:
         version: v2
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-notification-service.yaml
 ```
 
@@ -66,8 +71,9 @@ ENDPOINT            STATUS    OUTLIER CHECK   CLUSTER
 
 ## Step 3: Route To v1, Mirror To v2
 
-```sh
-cat > virtualservice-notification.yaml <<'EOF'
+Save this as `virtualservice-notification.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -87,8 +93,17 @@ spec:
         subset: v2
       mirrorPercentage:
         value: 100.0
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-notification.yaml
+```
+
+Then check the result:
+
+```sh
 istioctl analyze -n mirror-demo
 ```
 

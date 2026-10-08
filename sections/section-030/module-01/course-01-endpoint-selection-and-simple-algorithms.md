@@ -83,10 +83,11 @@ spec:
 > [!TIP]
 > **Try it — round robin over four pods**
 >
-> Write the DestinationRule to a file, then apply it:
+> Write the DestinationRule to a file, then apply it.
 >
-> ```sh
-> cat > destinationrule-httpbin.yaml <<'EOF'
+> Save this as `destinationrule-httpbin.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -97,8 +98,17 @@ spec:
 >   trafficPolicy:
 >     loadBalancer:
 >       simple: ROUND_ROBIN
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_pods $HOSTNAME_URL
 > ```
 >

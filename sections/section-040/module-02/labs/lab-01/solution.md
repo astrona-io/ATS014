@@ -25,8 +25,9 @@ Fifty requests, five at a time, all successful. Nothing is capping concurrency.
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > destinationrule-notification-service.yaml <<'EOF'
+Save this as `destinationrule-notification-service.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -41,7 +42,11 @@ spec:
       http:
         http1MaxPendingRequests: 1
         maxRequestsPerConnection: 1
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-notification-service.yaml
 ```
 

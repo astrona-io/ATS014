@@ -16,8 +16,9 @@ Start with a baseline: all traffic to v1, and nothing mirrored. You need a `Dest
 > [!TIP]
 > **Try it – answered = received**
 >
-> ```sh
-> cat > destinationrule-probe.yaml <<'EOF'
+> Save this as `destinationrule-probe.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -32,8 +33,11 @@ Start with a baseline: all traffic to v1, and nothing mirrored. You need a `Dest
 >   - name: v2
 >     labels:
 >       version: v2
-> EOF
-> cat > virtualservice-probe.yaml <<'EOF'
+> ```
+>
+> Save this as `virtualservice-probe.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -47,9 +51,18 @@ Start with a baseline: all traffic to v1, and nothing mirrored. You need a `Dest
 >     - destination:
 >         host: probe
 >         subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-probe.yaml
 > kubectl apply -f virtualservice-probe.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > mark_start; send_requests 5; count_received
 > ```
 >
@@ -121,6 +134,11 @@ The picture shows one request. v1's answer goes back to `shuttle`. v2's answer g
 >
 > ```sh
 > kubectl apply -f virtualservice-probe.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > mark_start; send_requests 5; count_received
 > ```
 >
@@ -141,10 +159,11 @@ The safety promise is easiest to believe when you watch it hold. Below is a pod 
 > [!TIP]
 > **Try it – the caller stays fine while the shadow fails**
 >
-> Write the three files, then apply them in this order:
+> Write the three files, then apply them in this order.
 >
-> ```sh
-> cat > c2-probe-broken-pod.yaml <<'EOF'
+> Save this as `c2-probe-broken-pod.yaml`:
+>
+> ```yaml
 > apiVersion: apps/v1
 > kind: Deployment
 > metadata:
@@ -168,8 +187,11 @@ The safety promise is easiest to believe when you watch it hold. Below is a pod 
 >         args: ["-listen=:8080", "-status-code=503", "-text=broken"]
 >         ports:
 >         - containerPort: 8080
-> EOF
-> cat > c2-destinationrule-with-broken-subset.yaml <<'EOF'
+> ```
+>
+> Save this as `c2-destinationrule-with-broken-subset.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -187,8 +209,11 @@ The safety promise is easiest to believe when you watch it hold. Below is a pod 
 >   - name: broken
 >     labels:
 >       version: broken
-> EOF
-> cat > c2-virtualservice-mirror-to-broken.yaml <<'EOF'
+> ```
+>
+> Save this as `c2-virtualservice-mirror-to-broken.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -207,11 +232,30 @@ The safety promise is easiest to believe when you watch it hold. Below is a pod 
 >       subset: broken
 >     mirrorPercentage:
 >       value: 100.0
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f c2-probe-broken-pod.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl rollout status -n starfleet deploy/probe-broken
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f c2-destinationrule-with-broken-subset.yaml
 > kubectl apply -f c2-virtualservice-mirror-to-broken.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > for i in $(seq 1 5); do
 >   kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://probe:8000/hostname
 > done | sort | uniq -c

@@ -16,10 +16,11 @@ checked on a playground cluster.
 
 <details><summary>Solution</summary>
 
-Write both objects to one file, then apply it:
+Write both objects to one file, then apply it.
 
-```bash
-cat > httpbin-gateway.yaml <<'YAML'
+Save this as `httpbin-gateway.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata: {name: httpbin-gateway, namespace: bookinfo}
@@ -41,8 +42,17 @@ spec:
     - uri: {exact: /headers}
     route:
     - destination: {host: httpbin, port: {number: 8000}}
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f httpbin-gateway.yaml
+```
+
+Then check the result:
+
+```bash
 gateway_status /get httpbin.example.com          # 200
 gateway_status /headers httpbin.example.com      # 200
 gateway_status /status/200 httpbin.example.com   # 404

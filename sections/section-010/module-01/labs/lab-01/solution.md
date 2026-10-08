@@ -43,8 +43,9 @@ kubectl -n routing-demo exec deploy/tester -- sh -c \
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > destinationrule-notification-service.yaml <<'EOF'
+Save this as `destinationrule-notification-service.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -59,7 +60,11 @@ spec:
     - name: v2
       labels:
         version: v2
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-notification-service.yaml
 ```
 
@@ -87,8 +92,9 @@ Re-run the baseline loop now and the split is unchanged. That is correct: subset
 
 The three match rules go above the default. Envoy evaluates top down and stops at the first match, so a rule with no `match` block can only ever be last.
 
-```sh
-cat > virtualservice-notification-service.yaml <<'EOF'
+Save this as `virtualservice-notification-service.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -125,7 +131,11 @@ spec:
         - destination:
             host: notification-service
             subset: v1
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-notification-service.yaml
 ```
 

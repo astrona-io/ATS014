@@ -76,6 +76,11 @@ When you want a real task, try the two exam-style drills in
 ```sh
 kubectl delete virtualservice httpbin ratings -n bookinfo
 kubectl delete destinationrule ratings -n bookinfo
+```
+
+Apply it:
+
+```sh
 kubectl apply -f bootstrap/manifests/reviews-header-routing.yaml   # back to the jason → v2 route
 ```
 

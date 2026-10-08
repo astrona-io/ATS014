@@ -10,8 +10,9 @@ checked on a cluster like this one.
 
 <details><summary>Solution</summary>
 
-```bash
-cat > destinationrule-probe.yaml <<'YAML'
+Save this as `destinationrule-probe.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata: {name: probe, namespace: starfleet}
@@ -22,10 +23,17 @@ spec:
     labels: {version: v1}
   - name: v2
     labels: {version: v2}
-YAML
-kubectl apply -f destinationrule-probe.yaml
+```
 
-cat > virtualservice-probe.yaml <<'YAML'
+Apply it:
+
+```bash
+kubectl apply -f destinationrule-probe.yaml
+```
+
+Save this as `virtualservice-probe.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata: {name: probe, namespace: starfleet}
@@ -36,8 +44,17 @@ spec:
     - destination: {host: probe, subset: v1}
     mirror: {host: probe, subset: v2}
     mirrorPercentage: {value: 50.0}
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f virtualservice-probe.yaml
+```
+
+Then check the result:
+
+```bash
 
 mark_start; send_requests 20; count_received
 #  20 probe-v1

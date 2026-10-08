@@ -28,8 +28,9 @@ Task 3 routes to `v2`, so the subset names have to exist first.
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > destinationrule-notification-service.yaml <<'EOF'
+Save this as `destinationrule-notification-service.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -44,7 +45,11 @@ spec:
     - name: v2
       labels:
         version: v2
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-notification-service.yaml
 ```
 
@@ -113,10 +118,11 @@ It goes first because the rules below it are broader. Put the catch-all above it
 
 Two details worth getting right: `remove` is a **list of header names**, not a map, and `allowOrigins` takes string matches, so an origin is `exact: <url>` rather than a bare string.
 
-Apply the whole object:
+Apply the whole object.
 
-```sh
-cat > virtualservice-notification-service.yaml <<'EOF'
+Save this as `virtualservice-notification-service.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -165,7 +171,11 @@ spec:
         - destination:
             host: notification-service
             subset: v1
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-notification-service.yaml
 ```
 

@@ -18,7 +18,7 @@ Istio decides per **Service port** (think of each port as a radio channel), in t
 
 | Name (or prefix) | Treated as | What you get |
 | --- | --- | --- |
-| `http`, `http2`, `grpc` | HTTP | everything in Parts 2 to 4: paths, headers, retries, timeouts |
+| `http`, `http2`, `grpc` | HTTP | every HTTP feature: paths, headers, retries, timeouts |
 | `https`, `tls` | TLS passthrough | routing by SNI only. The proxy does not decrypt |
 | `tcp` | plain TCP | routing by port and source only |
 | `mongo`, `mysql`, `redis` | TCP that Istio understands | TCP routing, plus extra metrics for that protocol |
@@ -85,8 +85,9 @@ What still works is the destination half. Subsets, weights and `DestinationRule`
 > [!TIP]
 > **Try it: pin a TCP port to one subset**
 >
-> ```sh
-> cat > destinationrule-probe.yaml <<'EOF'
+> Save this as `destinationrule-probe.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -101,8 +102,11 @@ What still works is the destination half. Subsets, weights and `DestinationRule`
 >   - name: v2
 >     labels:
 >       version: v2
-> EOF
-> cat > virtualservice-probe-tcp.yaml <<'EOF'
+> ```
+>
+> Save this as `virtualservice-probe-tcp.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -118,9 +122,18 @@ What still works is the destination half. Subsets, weights and `DestinationRule`
 >     - destination:
 >         host: probe
 >         subset: v2
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-probe.yaml
 > kubectl apply -f virtualservice-probe-tcp.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > sleep 2
 > for i in $(seq 1 10); do
 >   kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/hostname | grep -o 'probe-v[0-9]'

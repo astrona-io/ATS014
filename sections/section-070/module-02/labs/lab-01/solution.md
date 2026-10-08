@@ -37,7 +37,13 @@ Three facts established. The endpoint refuses open (plaintext) signals. It answe
 
 ```sh
 SECURE=$(cat /tmp/secure-ip)
-cat > serviceentry-secure-api.yaml <<'EOF'
+```
+
+Replace `<SECURE>` in the YAML below with the real address from the step above. To see it, run `echo $SECURE`.
+
+Save this as `serviceentry-secure-api.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -47,7 +53,7 @@ spec:
   hosts:
     - secure.example.com
   addresses:
-    - $SECURE
+    - <SECURE>
   ports:
     - number: 8080
       name: http
@@ -58,8 +64,12 @@ spec:
   location: MESH_EXTERNAL
   resolution: STATIC
   endpoints:
-    - address: $SECURE
-EOF
+    - address: <SECURE>
+```
+
+Apply it:
+
+```sh
 kubectl apply -f serviceentry-secure-api.yaml
 ```
 
@@ -73,8 +83,9 @@ Note the unquoted heredoc so `$SECURE` is substituted.
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > virtualservice-secure-api.yaml <<'EOF'
+Save this as `virtualservice-secure-api.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -91,7 +102,11 @@ spec:
             host: secure.example.com
             port:
               number: 8443
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-secure-api.yaml
 ```
 
@@ -115,8 +130,9 @@ The traffic now reaches port 8443 — as plaintext, which the endpoint drops. Ea
 
 ## Step 4: Originate the TLS
 
-```sh
-cat > destinationrule-secure-api.yaml <<'EOF'
+Save this as `destinationrule-secure-api.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -132,7 +148,11 @@ spec:
           mode: SIMPLE
           sni: secure.example.com
           insecureSkipVerify: true
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-secure-api.yaml
 ```
 

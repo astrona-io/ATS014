@@ -8,10 +8,11 @@ Try it on your own first, then open the solution. The solution was run and check
 
 <details><summary>Solution</summary>
 
-Lock the namespace down first. This is the same `Sidecar` as Part 1 of the module:
+Lock the namespace down first. This is the same `Sidecar` as Part 1 of the module.
 
-```bash
-cat > sidecar-registry-only.yaml <<'YAML'
+Save this as `sidecar-registry-only.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: Sidecar
 metadata:
@@ -24,14 +25,19 @@ spec:
   - hosts:
     - "./*"
     - "istio-system/*"
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f sidecar-registry-only.yaml
 ```
 
-Then put the one allowed host on the star chart:
+Then put the one allowed host on the star chart.
 
-```bash
-cat > serviceentry-google.yaml <<'YAML'
+Save this as `serviceentry-google.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata: {name: google, namespace: bookinfo}
@@ -40,8 +46,17 @@ spec:
   ports: [{number: 443, name: https, protocol: HTTPS}]
   location: MESH_EXTERNAL
   resolution: DNS
-YAML
+```
+
+Apply it:
+
+```bash
 kubectl apply -f serviceentry-google.yaml
+```
+
+Then check the result:
+
+```bash
 call_external https://www.google.com         # 200
 call_external https://httpbin.org/get        # 000  exit=35
 ```

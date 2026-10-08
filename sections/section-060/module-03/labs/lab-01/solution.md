@@ -33,8 +33,9 @@ CRDs present, `GatewayClass` accepted, neither namespace carries `gateway-access
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > gateway-shared-gateway.yaml <<'EOF'
+Save this as `gateway-shared-gateway.yaml`:
+
+```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -56,8 +57,17 @@ spec:
           selector:
             matchLabels:
               gateway-access: "true"
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f gateway-shared-gateway.yaml
+```
+
+Then check the result:
+
+```sh
 kubectl -n gwapi-demo rollout status deployment shared-gateway-istio --timeout=120s
 kubectl -n gwapi-demo get deploy,svc -l gateway.networking.k8s.io/gateway-name=shared-gateway
 ```
@@ -115,8 +125,9 @@ Gateway is rejected.
 
 ## Step 4: The Same-Namespace Route
 
-```sh
-cat > httproute-booking.yaml <<'EOF'
+Save this as `httproute-booking.yaml`:
+
+```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -135,7 +146,11 @@ spec:
       backendRefs:
         - name: booking-service
           port: 80
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f httproute-booking.yaml
 ```
 
@@ -145,8 +160,9 @@ No `namespace` in `parentRefs` is needed — the route and the Gateway are both 
 
 ## Step 5: The Cross-Namespace Route
 
-```sh
-cat > httproute-catalog.yaml <<'EOF'
+Save this as `httproute-catalog.yaml`:
+
+```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -166,7 +182,11 @@ spec:
       backendRefs:
         - name: catalog-service
           port: 80
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f httproute-catalog.yaml
 ```
 

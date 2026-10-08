@@ -11,8 +11,9 @@ But a `200` proves nothing on its own. The next mistake returns `200` too.
 > [!TIP]
 > **Try it — `mesh` missing: it works, and skips the gateway**
 >
-> ```sh
-> cat > virtualservice-without-mesh.yaml <<'EOF'
+> Save this as `virtualservice-without-mesh.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -43,8 +44,17 @@ But a `200` proves nothing on its own. The next mistake returns `200` too.
 >             host: httpbin.org
 >             port:
 >               number: 443
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-without-mesh.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > call_external
 > log_hop1_sidecar
 > ```
@@ -68,8 +78,9 @@ The opposite mistakes do fail. But the failure shows up at the client as a bare 
 > [!TIP]
 > **Try it — hop 2 missing**
 >
-> ```sh
-> cat > virtualservice-missing-hop-2.yaml <<'EOF'
+> Save this as `virtualservice-missing-hop-2.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -92,8 +103,17 @@ The opposite mistakes do fail. But the failure shows up at the client as a bare 
 >             subset: httpbin-org
 >             port:
 >               number: 443
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-missing-hop-2.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > call_external
 > log_hop2_egress
 > ```
@@ -108,6 +128,11 @@ Restore the working object again with `kubectl apply -f virtualservice-httpbin-o
 kubectl delete -f destinationrule-egress-gateway.yaml
 call_external            # 000  exit=35
 log_hop1_sidecar         # "- - -" 0 NC ...   ← subset httpbin-org not found
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-egress-gateway.yaml
 ```
 

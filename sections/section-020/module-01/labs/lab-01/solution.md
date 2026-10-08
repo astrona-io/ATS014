@@ -43,8 +43,9 @@ That is kube-proxy round robin, not a weight. It only looks similar to a 50/50 s
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > destinationrule-notification-service.yaml <<'EOF'
+Save this as `destinationrule-notification-service.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -59,7 +60,11 @@ spec:
     - name: v2
       labels:
         version: v2
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f destinationrule-notification-service.yaml
 ```
 
@@ -73,8 +78,9 @@ destinationrule.networking.istio.io/notification-service created
 
 The header rule goes **first**. Evaluation is top down and stops at the first match, so a rule placed after the catch-all weighted rule would never run.
 
-```sh
-cat > virtualservice-notification.yaml <<'EOF'
+Save this as `virtualservice-notification.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -101,7 +107,11 @@ spec:
             host: notification-service
             subset: v2
           weight: 30
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f virtualservice-notification.yaml
 ```
 

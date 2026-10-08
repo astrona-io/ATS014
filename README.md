@@ -56,9 +56,9 @@ Section [000](sections/section-000) is not an exam topic. It is pre-flight train
 | [070](sections/section-070) | Connecting In-Mesh Workloads To External Workloads And Services | 3 | Connecting In-Mesh Workloads to External Workloads and Services |
 | [080](sections/section-080) | Configuring Ingress And Egress Traffic — Egress | 2 | Configuring Ingress and Egress Traffic |
 
-**20 modules · 65 deep-dive parts · 21 graded labs · 8 capstones · 20 playgrounds.**
+**20 modules · 67 deep-dive parts · 21 graded labs · 8 capstones · 20 playgrounds.**
 
-The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml) — 156 entries across the briefing and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
+The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml) — 158 entries across the briefing and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
 
 Sections are ordered so each needs only what came before. Section 000 is foundations — what a sidecar is, how `istiod` programs it, and how to read a proxy's live configuration — because every section after it assumes all three. `VirtualService` and `DestinationRule` are introduced first because everything else is a field on one of them; `ServiceEntry` (070) precedes the egress gateway (080) that depends on it.
 

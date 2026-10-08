@@ -34,8 +34,9 @@ Set `timeout: 1.5s` against that policy, and the request is cut off soon after t
 > [!TIP]
 > **Try it — the overall timeout cuts the retries short**
 >
-> ```sh
-> cat > virtualservice-httpbin-short-budget.yaml <<'EOF'
+> Save this as `virtualservice-httpbin-short-budget.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -53,8 +54,17 @@ Set `timeout: 1.5s` against that policy, and the request is cut off soon after t
 >       attempts: 3
 >       perTryTimeout: 1s
 >       retryOn: 5xx
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-httpbin-short-budget.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time http://httpbin:8000/delay/3
 > sleep 3; kubectl logs -n bookinfo -l app=httpbin -c istio-proxy --since=10s | grep -c delay/3
 > ```
@@ -101,6 +111,11 @@ The route that `istiod` sent to the sidecar holds both numbers. Reading them is 
 >
 > ```sh
 > kubectl apply -f virtualservice-httpbin-short-budget.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > istioctl proxy-config routes deploy/curl -n bookinfo -o json \
 >   | grep -E '"timeout"|retryOn|numRetries|perTryTimeout' | head
 > ```
@@ -133,6 +148,11 @@ A request is **idempotent** when running it twice does no more harm than running
 >
 > ```sh
 > kubectl apply -f virtualservice-httpbin-retries.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > status_and_time -X POST http://httpbin:8000/status/503
 > count_received "POST /status/503"
 > ```

@@ -31,6 +31,12 @@ Strict guidelines:
   has a task, a step-by-step solution and a short intro. Keep each file to its
   job. Do not add "Prerequisite: ... Next: ..." navigation lines to pages;
   the landing page and the course outline already give the order.
+- **Keep each part short.** One idea per part, about 5 to 8 minutes of
+  reading and at most about 8 command blocks, so a learner can finish it with
+  the playground in one sitting of about 15 minutes. Split at a natural seam
+  where each half ends with something the learner has seen work. Never split
+  only to hit a number. When you split, renumber the files, fix every "Part N"
+  reference in the module, the wrap-up links and `astrona.yaml`.
 - **Every heading gets an intro.** A `##` section that has `###`
   subsections starts with one to three sentences that say what the section
   is about and why it matters, before the first `###`. Never put a `###`
@@ -39,7 +45,10 @@ Strict guidelines:
   modules: no "see section 040", "as module 3 showed", "you met this in
   section 000", and no links to pages in another module. If the reader needs
   a fact from elsewhere, state the fact directly in one or two sentences.
-  Links between the parts of the same module, and to official docs, are fine.
+  This also goes for parts of the same module: never write "Part 2 shows",
+  "from Part 1" or "as in Part 3". Say the fact itself ("the commands below
+  need the `scout` `DestinationRule` applied"). The wrap-up page is the one
+  exception: it recaps each part and links to it.
   The landing page does not have a "Where this fits" section.
 - **Write words out in full.** Do not use informal short forms in prose:
   write "communications", "configuration", "repository", "administrator",
@@ -97,8 +106,21 @@ Strict guidelines:
   reader actually uses in a command or browser (`http://127.0.0.1:9080`,
   `curl https://httpbin.org`), and the Mission Briefing's contributors and
   "report a mistake" links.
-- **Configuration goes to a file first.** In labs, write each configuration
-  file to a named file first, then apply it, so the reader can open and fix it.
+- **Configuration goes to a file first.** Whenever the reader should apply
+  YAML (course parts, playground docs, labs), use three separate steps:
+  1. "Save this as `virtualservice-scout.yaml`:" followed by a plain
+     ` ```yaml ` block with only the YAML. No `cat > file <<'EOF'`, no
+     `kubectl apply -f - <<EOF`, no shell around it.
+  2. "Apply it:" followed by a ` ```sh ` block with only
+     `kubectl apply -f virtualservice-scout.yaml`.
+  3. "Then check the result:" followed by the check commands, if any.
+  The file name says the kind and the object. If a value must come from the
+  reader's cluster (an IP address), use a placeholder like `<PARTNER>` in the
+  YAML and say how to get the value (`echo $PARTNER`); never put shell
+  variables inside YAML. Apply an object the first time its YAML appears; do
+  not show it once "to read" and paste it again later. Never tell the reader
+  to apply something from the playground's `examples/` folder: they start the
+  playground with `astrona run`, so that folder is not on their machine.
 - **Helpers have readable names.** Shell helper functions and variables use
   names that say what they do (`check_route`, `count_versions`,
   `$SERVICE_URL`), never single letters.

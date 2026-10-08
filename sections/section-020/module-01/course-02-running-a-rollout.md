@@ -29,10 +29,11 @@ When the canary looks healthy, you raise its share. At 100, the old version gets
 > [!TIP]
 > **Try it – 50/50, then 100% v3**
 >
-> Start from the 80/20 canary in Part 1. Write step 2 and step 3 to files, then apply them one at a time:
+> Start from the 80/20 canary in Part 1. Write step 2 and step 3 to files, then apply them one at a time.
 >
-> ```sh
-> cat > virtualservice-scout-50-50.yaml <<'EOF'
+> Save this as `virtualservice-scout-50-50.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -51,8 +52,11 @@ When the canary looks healthy, you raise its share. At 100, the old version gets
 >         host: scout
 >         subset: v3
 >       weight: 50
-> EOF
-> cat > virtualservice-scout-v3.yaml <<'EOF'
+> ```
+>
+> Save this as `virtualservice-scout-v3.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -66,10 +70,29 @@ When the canary looks healthy, you raise its share. At 100, the old version gets
 >     - destination:
 >         host: scout
 >         subset: v3
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout-50-50.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_versions
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout-v3.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_versions
 > ```
 >
@@ -96,8 +119,9 @@ Rollback needs no special procedure. It is the old numbers, applied again. Compa
 > [!TIP]
 > **Try it – roll back**
 >
-> ```sh
-> cat > virtualservice-scout-v1.yaml <<'EOF'
+> Save this as `virtualservice-scout-v1.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -111,8 +135,17 @@ Rollback needs no special procedure. It is the old numbers, applied again. Compa
 >     - destination:
 >         host: scout
 >         subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f virtualservice-scout-v1.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_versions
 > ```
 >
@@ -177,6 +210,11 @@ The first rule matches jason, so the weights never apply to him. Everyone else f
 >
 > ```sh
 > kubectl apply -f virtualservice-scout.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_versions 5 -H "end-user: jason"
 > count_versions 30
 > ```

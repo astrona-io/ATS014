@@ -50,10 +50,11 @@ The safe habit: when you add a subset-level `trafficPolicy`, write out **everyth
 > [!TIP]
 > **Try it — a different load balancer for one subset**
 >
-> Write the DestinationRule above and a `VirtualService` that sends all httpbin traffic to subset `v1`, then apply both:
+> Write the DestinationRule above and a `VirtualService` that sends all httpbin traffic to subset `v1`, then apply both.
 >
-> ```sh
-> cat > destinationrule-httpbin.yaml <<'EOF'
+> Save this as `destinationrule-httpbin.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -75,8 +76,11 @@ The safe habit: when you add a subset-level `trafficPolicy`, write out **everyth
 >   - name: v2
 >     labels:
 >       version: v2
-> EOF
-> cat > virtualservice-httpbin.yaml <<'EOF'
+> ```
+>
+> Save this as `virtualservice-httpbin.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: VirtualService
 > metadata:
@@ -90,9 +94,18 @@ The safe habit: when you add a subset-level `trafficPolicy`, write out **everyth
 >     - destination:
 >         host: httpbin
 >         subset: v1
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin.yaml
 > kubectl apply -f virtualservice-httpbin.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_pods -H "x-user: alice" $HOSTNAME_URL
 > count_pods $HOSTNAME_URL
 > ```

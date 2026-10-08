@@ -47,8 +47,9 @@ That second fact is the "consistent" in consistent hashing. A simple `hash(value
 >
 > Write a DestinationRule that hashes the `x-user` header, then apply it. It has the same name as the one from Part 1, so it replaces it.
 >
-> ```sh
-> cat > destinationrule-httpbin.yaml <<'EOF'
+> Save this as `destinationrule-httpbin.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -60,8 +61,17 @@ That second fact is the "consistent" in consistent hashing. A simple `hash(value
 >     loadBalancer:
 >       consistentHash:
 >         httpHeaderName: x-user
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > count_pods -H "x-user: alice" $HOSTNAME_URL
 > count_pods -H "x-user: bob" $HOSTNAME_URL
 > ```
@@ -117,8 +127,9 @@ If you leave `ttl` out, Istio only hashes a cookie the client already sends. Tha
 > [!TIP]
 > **Try it — the sidecar hands out a cookie**
 >
-> ```sh
-> cat > destinationrule-httpbin.yaml <<'EOF'
+> Save this as `destinationrule-httpbin.yaml`:
+>
+> ```yaml
 > apiVersion: networking.istio.io/v1
 > kind: DestinationRule
 > metadata:
@@ -132,8 +143,17 @@ If you leave `ttl` out, Istio only hashes a cookie the client already sends. Tha
 >         httpCookie:
 >           name: session
 >           ttl: 3600s
-> EOF
+> ```
+>
+> Apply it:
+>
+> ```sh
 > kubectl apply -f destinationrule-httpbin.yaml
+> ```
+>
+> Then check the result:
+>
+> ```sh
 > kubectl exec -n bookinfo deploy/curl -- curl -s -i $HOSTNAME_URL | grep -i -E 'set-cookie|hostname'
 > count_pods -b "session=abc123" $HOSTNAME_URL
 > ```

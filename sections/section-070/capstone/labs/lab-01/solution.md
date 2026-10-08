@@ -35,7 +35,13 @@ Everything refused. Note `legacy-vm` is refused too, even though it is on an inj
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
-cat > serviceentry-partner.yaml <<'EOF'
+```
+
+Replace `<PARTNER>` in the YAML below with the real address from the step above. To see it, run `echo $PARTNER`.
+
+Save this as `serviceentry-partner.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -45,7 +51,7 @@ spec:
   hosts:
     - partner.example.com
   addresses:
-    - $PARTNER
+    - <PARTNER>
   ports:
     - number: 8080
       name: http
@@ -56,10 +62,14 @@ spec:
   location: MESH_EXTERNAL
   resolution: STATIC
   endpoints:
-    - address: $PARTNER
+    - address: <PARTNER>
   exportTo:
     - "."
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f serviceentry-partner.yaml
 ```
 
@@ -71,8 +81,9 @@ kubectl apply -f serviceentry-partner.yaml
 
 Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
 
-```sh
-cat > partner-manifests.yaml <<'EOF'
+Save this as `partner-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -105,8 +116,17 @@ spec:
           mode: SIMPLE
           sni: partner.example.com
           insecureSkipVerify: true
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f partner-manifests.yaml
+```
+
+Then check the result:
+
+```sh
 sleep 3
 PARTNER=$(cat /tmp/partner-ip)
 kubectl -n integrations exec deploy/tester -- curl -s --max-time 15 "http://$PARTNER:8080/"
@@ -126,14 +146,20 @@ A plain `http://` call, and the endpoint — which speaks only TLS — reports i
 
 ```sh
 VM=$(cat /tmp/vm-ip)
-cat > legacy-vm-manifests.yaml <<'EOF'
+```
+
+Replace `<VM>` in the YAML below with the real address from the step above. To see it, run `echo $VM`.
+
+Save this as `legacy-vm-manifests.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: WorkloadEntry
 metadata:
   name: legacy-vm
   namespace: integrations
 spec:
-  address: $VM
+  address: <VM>
   labels:
     app: legacy
   serviceAccount: legacy-sa
@@ -155,8 +181,17 @@ spec:
   workloadSelector:
     labels:
       app: legacy
-EOF
+```
+
+Apply it:
+
+```sh
 kubectl apply -f legacy-vm-manifests.yaml
+```
+
+Then check the result:
+
+```sh
 sleep 3
 kubectl -n integrations exec deploy/tester -- \
   curl -s -o /dev/null -w 'by name: %{http_code}\n' --max-time 10 http://legacy.integrations.svc:8080/get
