@@ -150,7 +150,6 @@ You can now choose which failures a retry policy retries, and prove the choice b
 > - **Retrying a `500` with `5xx`.** A `500` is usually an application bug that fails the same way every time. `gateway-error` or an exact code skips it.
 > - **Retrying most 4xx codes.** A `400` or `404` is the client's own mistake. A retry gets the same response, only slower.
 > - **Writing an exact status code without quotes.** Write `retryOn: "503"`, with the number in quotes.
-> - **Adding spaces to the `retryOn` list.** Separate the conditions with commas only: `connect-failure,reset,503`.
 
 ## Your mission: Retry Only One Status Code Lab
 
