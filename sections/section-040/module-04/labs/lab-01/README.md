@@ -2,15 +2,15 @@
 estimated_duration: 5m
 ---
 
-# Locality Load Balancing And Failover
+# Fail Over From A Failing Zone With Outlier Detection
 
-Welcome to a failover mission, astronaut. The ship in your own orbit answers `503` to every signal, yet it stays ready, so Kubernetes keeps it in the list. Locality settings on their own never notice that.
+In this lab, the endpoint in the client's own zone returns `503` to every request, yet it stays ready, so Kubernetes keeps it in the Service's endpoint list. Locality settings on their own never notice that.
 
-Your job is to make signals leave the failing orbit for the healthy one, by configuring the thing that decides what "failing" means.
+Your job is to move the requests from the failing zone to the healthy one, by configuring outlier detection, the proxy feature that decides which endpoints count as failing.
 
 ## Launching the Lab
 
-Run this command to start the cluster with the failing ship already in place:
+Run this command to start the cluster with the failing endpoint already in place:
 
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-04/labs/lab-01

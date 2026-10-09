@@ -870,13 +870,13 @@ modules:
         title: "Locality Load Balancing And Failover"
         path: sections/section-040/module-04/course.md
       - type: reading
-        title: "Where Locality Comes From"
-        path: sections/section-040/module-04/course-01-where-locality-comes-from.md
+        title: "Read Endpoint Locality From Node And Pod Labels"
+        path: sections/section-040/module-04/course-01-read-endpoint-locality-from-node-and-pod-labels.md
       - type: reading
         title: Question
         path: sections/section-040/module-04/labs/lab-02/question.md
       - type: lab
-        title: "Give Every Ship Its Orbit Lab"
+        title: "Fix An Endpoint In The Wrong Locality Lab"
         path: sections/section-040/module-04/labs/lab-02
         difficulty: beginner
         estimated_duration: 15m
@@ -884,9 +884,9 @@ modules:
         task_kind: troubleshooting
         tags: [locality-failover, load-balancing, outlier-detection, destinationrule, proxy-config]
         learning_goals:
-          - Read every endpoint's locality from the sender's proxy
+          - Read every endpoint's locality from the client's sidecar proxy
           - Give a pod its own locality with the istio-locality label on its pod template
-          - Prove that signals stay in the sender's own zone
+          - Prove that requests stay in the client's own zone
         resources:
           - name: "Locality load balancing"
             url: https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/
@@ -895,13 +895,13 @@ modules:
           - name: "Istio labels reference"
             url: https://istio.io/latest/docs/reference/config/labels/
       - type: reading
-        title: "Preference, Distribute And Failover"
-        path: sections/section-040/module-04/course-02-preference-distribute-and-failover.md
+        title: "Configure Locality Preference, Distribute And Failover"
+        path: sections/section-040/module-04/course-02-configure-locality-preference-distribute-and-failover.md
       - type: reading
         title: Question
         path: sections/section-040/module-04/labs/lab-03/question.md
       - type: lab
-        title: "Split Signals Between Two Orbits Lab"
+        title: "Split Traffic Between Two Zones With Distribute Lab"
         path: sections/section-040/module-04/labs/lab-03
         difficulty: intermediate
         estimated_duration: 15m
@@ -911,20 +911,20 @@ modules:
         learning_goals:
           - Split traffic between zones with localityLbSetting distribute
           - Write locality patterns and weights that Istio accepts
-          - Prove the split with live signals
+          - Prove the split with live requests
         resources:
           - name: "Locality weighted distribution"
             url: https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/distribute/
           - name: "LocalityLoadBalancerSetting reference"
             url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#LocalityLoadBalancerSetting
       - type: reading
-        title: "The Health Dependency And Scope"
-        path: sections/section-040/module-04/course-03-the-health-dependency-and-scope.md
+        title: "Fail Over A Zone With Outlier Detection"
+        path: sections/section-040/module-04/course-03-fail-over-a-zone-with-outlier-detection.md
       - type: reading
         title: Question
         path: sections/section-040/module-04/labs/lab-01/question.md
       - type: lab
-        title: "Locality Load Balancing And Failover Lab"
+        title: "Fail Over From A Failing Zone With Outlier Detection Lab"
         path: sections/section-040/module-04/labs/lab-01
         difficulty: intermediate
         estimated_duration: 25m
@@ -934,7 +934,7 @@ modules:
         learning_goals:
           - Fail over away from a zone whose endpoint answers 503 while it stays ready
           - Combine outlierDetection with localityLbSetting and a maxEjectionPercent that can eject
-          - Prove the ejection from the sender's endpoint list
+          - Prove the ejection from the client's endpoint list
         resources:
           - name: "Locality failover"
             url: https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/failover/
@@ -943,14 +943,14 @@ modules:
           - name: "Locality load balancing"
             url: https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-040/module-04/course-04-wrap-up.md
+        title: "Summary"
+        path: sections/section-040/module-04/course-04-summary.md
 
       - type: reading
         title: Question
         path: sections/section-040/capstone/labs/lab-01/question.md
       - type: lab
-        title: "A Resilient Payment Path Capstone Lab"
+        title: "Combine Timeouts, Retries, Circuit Breaking And Outlier Detection Capstone Lab"
         path: sections/section-040/capstone/labs/lab-01
         difficulty: advanced
         estimated_duration: 60m

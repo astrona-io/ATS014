@@ -1,10 +1,10 @@
-# Solution: Give Every Ship Its Orbit
+# Solution: Fix An Endpoint In The Wrong Locality
 
-The `DestinationRule` was correct all along. `probe-zone-b` had lost its `istio-locality` label, so it took the node's orbit, `local/zone-a`. The shuttle saw two "nearby" probes and split its signals between them.
+The `DestinationRule` was correct all along. The `probe-zone-b` pod template had lost its `istio-locality` label, so the pod took the node's locality, `local/zone-a`. The proxy of `shuttle` saw two probes in its own zone and split its requests between them.
 
-## Step 1: Find the ship in the wrong orbit
+## Step 1: Find the pod in the wrong locality
 
-Send 20 signals from the shuttle:
+Send 20 requests from `shuttle`:
 
 ```sh
 for i in $(seq 1 20); do
@@ -19,7 +19,7 @@ You should see a mix, for example:
   14 probe-zone-b
 ```
 
-The preference is active, yet both probes answer. Ask the shuttle's proxy which locality each probe endpoint has:
+The preference is active, yet both probes answer. Ask the sidecar proxy of `shuttle` which locality each probe endpoint has:
 
 ```sh
 istioctl proxy-config endpoints deploy/shuttle -n starfleet \
@@ -36,7 +36,7 @@ istioctl proxy-config endpoints deploy/shuttle -n starfleet \
                     "zone": "zone-a"
 ```
 
-Both endpoints are in `zone-a`. Find out which pod is in the wrong orbit:
+Both endpoints are in `zone-a`. Find out which pod is in the wrong locality:
 
 ```sh
 kubectl get pods -n starfleet -l app=probe -L istio-locality,topology.kubernetes.io/zone
@@ -50,7 +50,7 @@ probe-zone-b-857f449bf8-8sbns   2/2     Running   0          4m4s               
 
 `probe-zone-b` has no `istio-locality` label, so it inherits the node's zone, `zone-a`.
 
-## Step 2: Give the ship its orbit
+## Step 2: Give the pod its locality
 
 Put the label back on the **pod template**. The value uses a dot, because a label value cannot contain a slash:
 
@@ -67,9 +67,9 @@ deployment.apps/probe-zone-b patched
 deployment "probe-zone-b" successfully rolled out
 ```
 
-Changing the pod template starts a new pod, and Istio reads the locality when the pod starts.
+Changing the pod template makes Kubernetes start a new pod, and Istio reads the locality when the pod starts.
 
-## Step 3: Check the orbits again
+## Step 3: Check the localities again
 
 ```sh
 kubectl get pods -n starfleet -l app=probe -L istio-locality
@@ -96,9 +96,9 @@ istioctl proxy-config endpoints deploy/shuttle -n starfleet \
                     "zone": "zone-b"
 ```
 
-One probe in each orbit.
+Now there is one probe in each zone.
 
-## Step 4: Prove the signals stay close
+## Step 4: Prove the requests stay in the client's zone
 
 ```sh
 for i in $(seq 1 20); do
@@ -110,11 +110,11 @@ done | sort | uniq -c
   20 probe-zone-a
 ```
 
-Every signal stays in the shuttle's own orbit. `probe-zone-b` is now a fallback, used only when `zone-a` has no healthy probe left.
+Every request stays in the zone of `shuttle`. `probe-zone-b` is now a fallback, used only when `zone-a` has no healthy probe left.
 
 ## Common mistakes
 
 - **Putting the label on the Deployment's own `metadata`.** Only labels on the pod template reach the pods.
 - **Writing `local/zone-b`.** Kubernetes rejects a slash in a label value. Use `local.zone-b`.
-- **Relabelling the node.** The node holds the shuttle and both probes, so moving it moves every ship together.
-- **Adding `distribute` to the `DestinationRule`.** Fixed weights hide the problem instead of fixing the ship's orbit.
+- **Relabelling the node.** The node runs `shuttle` and both probes, so a new node label moves every pod together.
+- **Adding `distribute` to the `DestinationRule`.** Fixed weights hide the problem instead of fixing the pod's locality.

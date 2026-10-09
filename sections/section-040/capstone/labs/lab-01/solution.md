@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Astronaut, this is the full mission debrief. Two objects, four features, and three places where getting one right depends on having got another right. Build the `VirtualService` first, then the `DestinationRule`, then verify each feature separately.
+The solution has two objects and four features. In three places, one setting only works if another setting is right too. Build the `VirtualService` first, then the `DestinationRule`, then check each feature on its own.
 
 ---
 
@@ -21,7 +21,7 @@ Code 200 : 20 (66.7 %)
 Code 503 : 10 (33.3 %)
 ```
 
-Three endpoints, one poisoned, all `1/1` Running — Kubernetes has no complaint. One request in three fails.
+There are three endpoints, and one of them is broken. All three ledger pods show `1/1` `Running`, so Kubernetes reports no problem. One request in three fails.
 
 ---
 
@@ -35,13 +35,13 @@ attempts: 2  →  2 retries + 1 original  =  3 attempts
 plus headroom                           →  timeout: 4s
 ```
 
-`4s` satisfies the grader's `(attempts + 1) × perTryTimeout` check with a second to spare. `3s` would be exactly at the limit and leaves nothing for connection setup; `2s` truncates the retries.
+`4s` passes the grader's `(attempts + 1) × perTryTimeout` check with one second to spare. `3s` would be exactly at the limit and leaves no time to open connections. `2s` cuts off the retries.
 
 ---
 
-## Step 3: The VirtualService — Writes First
+## Step 3: The VirtualService, Writes First
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+Write the manifest to a file and apply the file. On the exam this habit pays off: you can read the file again, edit it and apply it again.
 
 Save this as `virtualservice-ledger.yaml`:
 
@@ -86,12 +86,12 @@ kubectl apply -f virtualservice-ledger.yaml
 
 Two details that fail the task if wrong:
 
-- **`attempts: 0`, not an omitted block.** Omitting `retries` leaves Istio's implicit default of 2 attempts on connection-level failures. For a payment, that is a duplicate.
-- **`retryOn: gateway-error`, not `5xx`.** This matters more here than in the module, because the next step adds a connection pool — and a pool rejection is a `503`. Under `5xx` those rejections would be retried, adding concurrent work to a pool that just told you it was full.
+- **`attempts: 0`, not a missing block.** Without a `retries` block, Istio's default of 2 retries on connection failures still applies. For a payment, a retry is a duplicate.
+- **`retryOn: gateway-error`, not `5xx`.** The next step adds a connection pool, and the proxy answers a pool rejection with a `503`. With `5xx`, the proxy would retry those rejections and add more concurrent requests to a pool that is already full.
 
 ---
 
-## Step 4: The DestinationRule — All Three Policies
+## Step 4: The DestinationRule, All Three Policies
 
 Save this as `destinationrule-ledger.yaml`:
 
@@ -136,9 +136,9 @@ destinationrule.networking.istio.io/ledger created
 ✔ No validation issues found when analyzing namespace: payments.
 ```
 
-`maxEjectionPercent` again: three endpoints at the 10% default is `0.3`, rounded down to zero. You need at least 34 for one endpoint; `100` is right here because one of three is genuinely broken and you would rather route around it entirely.
+Look at `maxEjectionPercent` again. With three endpoints, the 10% default gives `0.3`, which rounds down to zero. You need at least 34 to eject one endpoint. `100` is right here, because one of the three is really broken and you want the proxy to avoid it completely.
 
-`localityLbSetting` is the cheap part — and note it only does anything *because* `outlierDetection` sits beside it.
+`localityLbSetting` is the easy part. Note that it only has an effect *because* `outlierDetection` is in the same `trafficPolicy`.
 
 ---
 
@@ -160,7 +160,7 @@ GET attempts: 3
 POST attempts: 1
 ```
 
-Same path, same status, different method — three attempts versus one, because the method match put them on different rules.
+The path and the status are the same, only the method differs. The `GET` request reached the service three times and the `POST` request once, because the method match sent them to different rules.
 
 ---
 
@@ -184,7 +184,7 @@ pending_overflow +19
 19
 ```
 
-Eight concurrent callers against a pool of two connections plus two pending slots. Nineteen rejections carrying `UO` — and note the 503 count is higher than that, because some of those are the poisoned replica answering. Two different causes of 503 in the same run, distinguished only by the flag.
+Eight concurrent clients send requests to a pool of two connections plus two pending requests. The proxy rejected nineteen requests with the `UO` flag. The `503` count is higher than that, because some `503` responses came from the broken replica. So one run has two different causes of `503`, and only the response flag tells them apart.
 
 ---
 
@@ -209,9 +209,9 @@ ENDPOINT            STATUS    OUTLIER CHECK   CLUSTER
 10.244.0.24:8080    HEALTHY   FAILED          outbound|8000||ledger...
 ```
 
-`10.244.0.24` is `ledger-bad`. Still `HEALTHY` to Kubernetes, `FAILED` to this proxy.
+`10.244.0.24` is `ledger-bad`. Its `STATUS` is still `HEALTHY`, because that column comes from Kubernetes readiness. Its `OUTLIER CHECK` is `FAILED`, because the `fortio` proxy ejected it.
 
-Worth noticing: the read path's retries were hiding most of these failures from the caller the whole time — and outlier detection still saw every one of them, because it observes attempts, not caller-visible outcomes. That combination is the one genuinely free win in this section.
+Note one more thing. The retries on the read rule hid most of these failures from the client the whole time. Outlier detection still counted every one of them, because it looks at each attempt, not at the result the client sees. So retries and outlier detection work well together.
 
 Confirm the ledger is now healthy and nothing was removed:
 
@@ -231,11 +231,11 @@ ledger   10.244.0.22:8080,10.244.0.23:8080,10.244.0.24:8080      18m
 
 ## Common Mistakes
 
-- **`retryOn: 5xx` with a connection pool.** Pool rejections are 503s; retrying them adds concurrency to a full pool. Use `gateway-error`.
-- **Omitting `retries` on the POST rule.** The implicit default still retries. Use `attempts: 0`.
-- **A read timeout of 2s.** Shorter than `(2 + 1) × 1s`; the retries are truncated and the caller gets a 504.
-- **`maxEjectionPercent` at the default.** 10% of three endpoints is zero — nothing ejects, and `localityLbSetting` does nothing either.
+- **`retryOn: 5xx` with a connection pool.** Pool rejections are `503` responses, and retrying them adds more concurrent requests to a full pool. Use `gateway-error`.
+- **Leaving out `retries` on the POST rule.** The default still retries. Use `attempts: 0`.
+- **A read timeout of 2s.** It is shorter than `(2 + 1) × 1s`, so the proxy cuts off the retries and the client gets a `504`.
+- **`maxEjectionPercent` at the default.** 10% of three endpoints is zero, so nothing is ejected, and `localityLbSetting` has no effect either.
 - **Putting the catch-all rule first.** The POST rule becomes unreachable.
-- **Testing the pool sequentially.** `-c 1` never trips a concurrency limit however many requests you send.
+- **Testing the pool one request at a time.** `-c 1` never reaches a concurrency limit, however many requests you send.
 - **Scaling or deleting `ledger-bad`.** The grader checks all three replica counts.
-- **Reading the 503 count alone.** Two different causes are mixed in one run; the `UO` flag is what separates them.
+- **Reading the `503` count alone.** One run mixes two different causes, and the `UO` flag is what separates them.

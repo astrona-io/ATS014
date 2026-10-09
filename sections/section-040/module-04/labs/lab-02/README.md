@@ -2,11 +2,11 @@
 estimated_duration: 5m
 ---
 
-# Give Every Ship Its Orbit
+# Fix An Endpoint In The Wrong Locality
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the flight plan for the probe is correct: it keeps signals in the shuttle's own orbit. Yet the shuttle's signals still spread over two probes. One ship sits in the wrong orbit.
+In this lab, the `probe` `DestinationRule` in namespace `starfleet` is correct: it should keep the requests of the `shuttle` pod in its own zone. Yet those requests still go to two probe pods, because one probe pod runs in the wrong locality.
 
-Your job is to find that ship with the shuttle's endpoint list, put it in its own orbit, and prove that the shuttle's signals stay close to home.
+Your job is to find that pod with the endpoint list of the `shuttle` proxy, give it the correct locality, and prove that the requests of `shuttle` stay in its own zone.
 
 ## Launching the Lab
 

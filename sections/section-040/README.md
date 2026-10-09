@@ -28,7 +28,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 - Ejection expiring and lengthening with each repeat, producing a cycle rather than a steady state.
 - Why an ejection is one proxy's private verdict while `kubectl get endpoints` never moves.
 - Locality from `topology.kubernetes.io/region` and `/zone`, with the `istio-locality` pod-label override.
-- That locality preference is already the default, and `localityLbSetting` exists to change it.
+- That locality preference is on by default but only takes effect when `outlierDetection` is set, and that `localityLbSetting` exists to change it.
 - `distribute` versus `failover`, their mutual exclusion, and why `failover` is region-level.
 - **The section's headline fact:** locality failover has no health checker of its own, so without `outlierDetection` it never fires.
 - Reading it all back with `istioctl proxy-config` and `pilot-agent request GET stats`.
@@ -78,17 +78,17 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 3 parts and 3 labs:
 
-1. Where Locality Comes From
-   - Lab: Give Every Ship Its Orbit Lab
-2. Preference, Distribute And Failover
-   - Lab: Split Signals Between Two Orbits Lab
-3. The Health Dependency And Scope
-   - Lab: Locality Load Balancing And Failover Lab
-4. Wrap-Up: Mission Debrief
+1. Read Endpoint Locality From Node And Pod Labels
+   - Lab: Fix An Endpoint In The Wrong Locality Lab
+2. Configure Locality Preference, Distribute And Failover
+   - Lab: Split Traffic Between Two Zones With Distribute Lab
+3. Fail Over A Zone With Outlier Detection
+   - Lab: Fail Over From A Failing Zone With Outlier Detection Lab
+4. Summary
 
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **A Resilient Payment Path Capstone Lab**.
+The section ends with a capstone lab that uses everything in it: **Combine Timeouts, Retries, Circuit Breaking And Outlier Detection Capstone Lab**.
 
 ---
 

@@ -1,28 +1,34 @@
-# Give Every Ship Its Orbit
+# Question
 
-Astronaut, the planet `starfleet` has one node, labelled region `local` and zone `zone-a`. Three ships fly there:
+Solve this question on: `terminal`
 
-| Ship | Meant to fly in |
+The `shuttle` should only talk to the probe in its own zone, but one probe has lost track of where it runs.
+
+The namespace `starfleet` runs on a cluster with one node. The node has the labels region `local` and zone `zone-a`. Three Deployments run there:
+
+| Deployment | Meant to run in locality |
 | --- | --- |
-| `shuttle` | the node's orbit, `local/zone-a`. You send every signal from here |
+| `shuttle` | the node's locality, `local/zone-a`. You send every test request from here |
 | `probe-zone-a` | `local/zone-a` |
 | `probe-zone-b` | `local/zone-b` |
 
-Both probes answer to the `probe` beacon on port `8000`. Its `/hostname` path answers with the name of the pod that served the signal.
+A **locality** is the region and zone a pod runs in. Istio takes it from the node's `topology.kubernetes.io/region` and `topology.kubernetes.io/zone` labels, unless the pod template sets its own with the `istio-locality` label (format `region.zone`, with a dot).
 
-The `probe` `DestinationRule` is correct. It has `outlierDetection` and `localityLbSetting: {enabled: true}`, so the shuttle should keep every signal in its own orbit, `zone-a`. Instead, its signals land on both probes.
+Both probe Deployments sit behind the `probe` Service on port `8000`. Its `/hostname` path returns the name of the pod that served the request.
+
+The `probe` `DestinationRule` is correct. It has `outlierDetection` and `localityLbSetting: {enabled: true}`, so the sidecar proxy of `shuttle` should send every request to its own zone, `zone-a`. Instead, its requests go to both probes.
 
 ## Your task
 
-1. Find out, from the shuttle's endpoint list, which locality each probe endpoint has.
-2. Put the ship that sits in the wrong orbit into the orbit it is meant to fly in.
-3. Prove that 20 signals from the shuttle all reach `probe-zone-a`.
+1. Find out, from the endpoint list of the `shuttle` proxy, which locality each probe endpoint has.
+2. Give the probe that runs in the wrong locality the locality it is meant to run in.
+3. Prove that 20 requests from `shuttle` all reach `probe-zone-a`.
 
 ## Rules
 
-- Do not change the node's labels, the `shuttle`, `probe-zone-a`, the `probe` Service or the `probe` `DestinationRule`.
-- Do not add or remove ships.
-- The cluster has a single node, so the fix belongs on the ship itself.
+- Do not change the node's labels, the `shuttle` Deployment, the `probe-zone-a` Deployment, the `probe` Service or the `probe` `DestinationRule`.
+- Do not add or remove Deployments.
+- The cluster has a single node, so the fix belongs on the probe pod itself.
 
 ## Useful commands
 
