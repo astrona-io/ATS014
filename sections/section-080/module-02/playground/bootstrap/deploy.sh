@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Deploy what the 080-02 playground needs (runs after install-istio.sh):
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
-#   - shuttle, the test client every signal is sent from
-#   - the planet outpost (no sidecars): a partner server that only accepts
+#   - shuttle, the test client every request is sent from
+#   - namespace outpost (no sidecars): a partner server that only accepts
 #     HTTPS with a client certificate signed by its own certificate authority
 #   - the partner's client certificate, handed over as the Secret
 #     partner-client-cert in namespace starfleet
@@ -23,7 +23,7 @@ kubectl apply -f manifests/namespace.yaml -f manifests/access-logs.yaml
 echo "==> Shuttle"
 kubectl apply -f manifests/shuttle.yaml
 
-echo "==> Certificates for the partner outpost"
+echo "==> Certificates for the partner server in outpost"
 # One certificate authority signs the partner's server certificate and your
 # client certificate. The partner only answers clients that show a certificate
 # from this authority.
@@ -40,13 +40,13 @@ openssl req -newkey rsa:2048 -nodes -subj "/CN=starfleet-departure-gate" \
 openssl x509 -req -in "$CERTS/client.csr" -CA "$CERTS/ca.crt" -CAkey "$CERTS/ca.key" \
   -CAcreateserial -days 365 -out "$CERTS/client.crt" 2>/dev/null
 
-echo "==> Partner outpost"
+echo "==> Partner server in namespace outpost"
 kubectl apply -f manifests/outpost.yaml
 kubectl -n outpost create secret generic partner-server-cert \
   --from-file=tls.crt="$CERTS/server.crt" --from-file=tls.key="$CERTS/server.key" \
   --from-file=ca.crt="$CERTS/ca.crt" --dry-run=client -o yaml | kubectl apply -f -
 
-echo "==> The partner's client certificate, delivered to the planet starfleet"
+echo "==> The partner's client certificate, stored as a Secret in namespace starfleet"
 kubectl -n starfleet create secret generic partner-client-cert \
   --from-file=tls.crt="$CERTS/client.crt" --from-file=tls.key="$CERTS/client.key" \
   --from-file=ca.crt="$CERTS/ca.crt" --dry-run=client -o yaml | kubectl apply -f -

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# The lab's starting state: the partner route through the departure gate,
-# with MUTUAL origination at the gate, and two faults:
-#   - stage 2 of the VirtualService sends the signal to port 80 of the partner,
+# The lab's starting state: the partner route through the egress gateway,
+# with MUTUAL origination at the gateway, and two faults:
+#   - stage 2 of the VirtualService sends the request to port 80 of the partner,
 #     where nothing listens, so the TLS settings for 443 are never used (fault 1)
 #   - the client certificate Secret only exists in starfleet; credentialName is
-#     read from the gate's own namespace, istio-egress (fault 2)
-# The ServiceEntry, the Gateway, the gate's DestinationRule and the MUTUAL
+#     read from the gateway's own namespace, istio-egress (fault 2)
+# The ServiceEntry, the Gateway, the gateway's DestinationRule and the MUTUAL
 # DestinationRule are correct.
 set -euo pipefail
 
@@ -108,4 +108,4 @@ spec:
 YAML
 
 echo
-echo "==> Starting state applied: signals to partner.outpost.example do not get through yet"
+echo "==> Starting state applied: requests to partner.outpost.example do not get through yet"

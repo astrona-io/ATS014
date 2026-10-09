@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deploy what the 080-01 playground needs (runs after install-istio.sh):
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
-#   - shuttle, the test client every signal is sent from
+#   - shuttle, the test client every request is sent from
 # No ServiceEntry, Gateway, DestinationRule or VirtualService is created:
 # writing them is the module. The mesh stays at its ALLOW_ANY default.
 set -euo pipefail

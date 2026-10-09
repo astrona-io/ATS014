@@ -11,7 +11,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/01-install-istio.sh"
     - name: "lab-080-02-02-workloads"
-      description: "Creates the starfleet namespace with the shuttle and access logs, the outpost partner that only accepts mutual TLS, and the partner's client certificate as a Secret in starfleet"
+      description: "Creates the starfleet namespace with the shuttle and access logs, the partner server in namespace outpost that only accepts mutual TLS, and the partner's client certificate as a Secret in starfleet"
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-080-02-02-fault"
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-mutual-tls-at-the-gate"
-      description: "Confirms stage 2 routes to port 443, the MUTUAL DestinationRule is unchanged, the client certificate Secret is in istio-egress and loaded by the gate, the shuttle holds no TLS settings or keys for the partner, and a live plain signal reaches the partner with verify=SUCCESS through the gate"
+      description: "Confirms stage 2 routes to port 443, the MUTUAL DestinationRule is unchanged, the client certificate Secret is in istio-egress and loaded by the egress gateway, the shuttle holds no TLS settings or keys for the partner, and a live plain request reaches the partner with verify=SUCCESS through the egress gateway"
       type: "file"
       source: "validation/validate-completed.sh"
 
