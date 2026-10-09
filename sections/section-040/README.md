@@ -37,53 +37,53 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 
 ## Modules In This Section
 
-Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
+Work through the modules in this order. Each part teaches one idea. A graded lab comes right after the part it practises, and the last page of each module is a summary. The capstone lab at the end uses everything in the section at once.
 
 ### Timeouts And Retries
 
-4 parts and 3 missions:
+4 parts and 3 labs:
 
 1. Set An Abort Window
 2. Test A Timeout Across Two Ships
-   - Mission: Free The Shuttle From A Slow Navcom Lab
+   - Lab: Free The Shuttle From A Slow Navcom Lab
 3. Re-Send Lost Signals
-   - Mission: Retry Only The Signals Worth Re-Sending Lab
+   - Lab: Retry Only The Signals Worth Re-Sending Lab
 4. Share One Clock, Retry What Is Safe
-   - Mission: Timeouts And Retries Lab
+   - Lab: Timeouts And Retries Lab
 5. Wrap-Up: Mission Debrief
 
 ### Circuit Breaking With Connection Pool Limits
 
-3 parts and 2 missions:
+3 parts and 2 labs:
 
-1. The Connection Pool
-2. Overflow And Its Signatures
-   - Mission: Circuit Breaking With Connection Pool Limits Lab
-3. Scope, Verification And Retry Amplification
-   - Mission: Calm The Retry Storm Lab
-4. Wrap-Up: Mission Debrief
+1. Limit Concurrent Requests With A Connection Pool
+2. Identify Overflow With The UO Flag And Counters
+   - Lab: Configure And Prove A Connection Pool Circuit Breaker Lab
+3. Verify Limits On Both Proxies And Control Retries
+   - Lab: Limit Retries To Connection Failures Lab
+4. Summary
 
 ### Outlier Detection And Endpoint Ejection
 
-3 parts and 2 missions:
+3 parts and 2 labs:
 
 1. Passive Health Checking
 2. Ejection Mechanics And Limits
-   - Mission: Outlier Detection And Endpoint Ejection Lab
+   - Lab: Outlier Detection And Endpoint Ejection Lab
 3. Local, Temporary, And Verified
-   - Mission: Raise Both Shields Lab
+   - Lab: Raise Both Shields Lab
 4. Wrap-Up: Mission Debrief
 
 ### Locality Load Balancing And Failover
 
-3 parts and 3 missions:
+3 parts and 3 labs:
 
 1. Where Locality Comes From
-   - Mission: Give Every Ship Its Orbit Lab
+   - Lab: Give Every Ship Its Orbit Lab
 2. Preference, Distribute And Failover
-   - Mission: Split Signals Between Two Orbits Lab
+   - Lab: Split Signals Between Two Orbits Lab
 3. The Health Dependency And Scope
-   - Mission: Locality Load Balancing And Failover Lab
+   - Lab: Locality Load Balancing And Failover Lab
 4. Wrap-Up: Mission Debrief
 
 ### Capstone

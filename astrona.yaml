@@ -749,25 +749,25 @@ modules:
         title: "Circuit Breaking With Connection Pool Limits"
         path: sections/section-040/module-02/course.md
       - type: reading
-        title: "The Connection Pool"
-        path: sections/section-040/module-02/course-01-the-connection-pool.md
+        title: "Limit Concurrent Requests With A Connection Pool"
+        path: sections/section-040/module-02/course-01-limit-concurrent-requests-with-a-connection-pool.md
       - type: reading
-        title: "Overflow And Its Signatures"
-        path: sections/section-040/module-02/course-02-overflow-and-its-signatures.md
+        title: "Identify Overflow With The UO Flag And Counters"
+        path: sections/section-040/module-02/course-02-identify-overflow-with-the-uo-flag-and-counters.md
       - type: reading
         title: Question
         path: sections/section-040/module-02/labs/lab-01/question.md
       - type: lab
-        title: "Circuit Breaking With Connection Pool Limits Lab"
+        title: "Configure And Prove A Connection Pool Circuit Breaker Lab"
         path: sections/section-040/module-02/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
         topic: resilience
         task_kind: build
-        tags: [destinationrule, connection-pool, circuit-breaking, 503-uo, access-log]
+        tags: [destinationrule, connection-pool, circuit-breaking, 503-uo, access-log, proxy-config]
         learning_goals:
           - Limit concurrent connections and pending requests with a connection pool
-          - Prove the circuit breaker trips under load with 503 UO in the access log
+          - Prove the circuit breaker trips under concurrent load with 503 UO in the access log and the pending-overflow counter
         resources:
           - name: "DestinationRule reference"
             url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
@@ -776,13 +776,13 @@ modules:
           - name: "Envoy access logs"
             url: https://istio.io/latest/docs/tasks/observability/logs/access-log/
       - type: reading
-        title: "Scope, Verification And Retry Amplification"
-        path: sections/section-040/module-02/course-03-scope-verification-and-retry-amplification.md
+        title: "Verify Limits On Both Proxies And Control Retries"
+        path: sections/section-040/module-02/course-03-verify-limits-on-both-proxies-and-control-retries.md
       - type: reading
         title: Question
         path: sections/section-040/module-02/labs/lab-02/question.md
       - type: lab
-        title: "Calm The Retry Storm Lab"
+        title: "Limit Retries To Connection Failures Lab"
         path: sections/section-040/module-02/labs/lab-02
         difficulty: intermediate
         estimated_duration: 20m
@@ -791,8 +791,8 @@ modules:
         tags: [virtualservice, retries, connection-pool, circuit-breaking, access-log, proxy-config]
         learning_goals:
           - Measure how a 5xx retry policy multiplies the load on a failing service
-          - Limit retries to signals that never reached the service with connect-failure and refused-stream
-          - Verify the new retry policy in the sender's route with istioctl proxy-config
+          - Limit retries to requests that never reached the service with connect-failure and refused-stream
+          - Verify the new retry policy in the client proxy's route with istioctl proxy-config
         resources:
           - name: "VirtualService HTTPRetry reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRetry
@@ -803,8 +803,8 @@ modules:
           - name: "Traffic management concepts"
             url: https://istio.io/latest/docs/concepts/traffic-management/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-040/module-02/course-04-wrap-up.md
+        title: "Summary"
+        path: sections/section-040/module-02/course-04-summary.md
 
       - type: reading
         title: "Outlier Detection And Endpoint Ejection"

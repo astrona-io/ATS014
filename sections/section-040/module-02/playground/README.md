@@ -5,10 +5,10 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A sandbox (a training solar system) with the echo `probe` in two versions, the
-`shuttle` and the `fortio` load generator. It spins up, installs Istio, and
-stays running so you can raise the shields on a clean cluster. Nothing to
-submit.
+A sandbox with the `probe` HTTP echo server in two versions, the `shuttle`
+test client and the `fortio` load generator. It starts, installs Istio, and
+stays running so you can try connection pool limits on a clean cluster.
+Nothing to submit.
 
 ## Run it
 
@@ -30,4 +30,4 @@ astrona destroy ats-014-playground-040-02
 | `bootstrap/deploy.sh` | Namespace `starfleet`, access logs, `shuttle`, `probe` v1/v2, `fortio` |
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/` | The module's connection-pool `DestinationRule`, plus two variations in `cases/` |
-| `docs/overview.md` | What the environment contains, the helpers, ideas to try |
+| `docs/overview.md` | What the environment contains, the helpers, practice tasks |
