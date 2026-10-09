@@ -30,28 +30,28 @@ The two features solve the same problem from opposite ends, so choosing between 
 
 ## Modules In This Section
 
-Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
+Work through the modules in this order. Each part teaches one idea. A graded lab comes right after the part it practises, and the last page of each module is a summary. The capstone lab at the end uses everything in the section at once.
 
 ### Shift Traffic With Weighted Routing
 
-3 parts and 2 missions:
+3 parts and 2 labs:
 
-1. Weighted Destinations
-   - Mission: Split The Scout Three Ways Lab
-2. Running A Rollout
-3. Weight Versus Replicas, And Proof
-   - Mission: Shift Traffic With Weighted Routing Lab
-4. Wrap-Up: Mission Debrief
+1. Split Traffic With Weighted Destinations
+   - Lab: Split Traffic Three Ways With Weights Lab
+2. Run A Canary Rollout And Roll It Back
+3. Traffic Share, Replica Count And The Route Table
+   - Lab: Run A Canary With A Header Rule Above The Split Lab
+4. Summary
 
 ### Mirror Live Traffic To A Shadow Service
 
-3 parts and 2 missions:
+3 parts and 2 labs:
 
 1. Mirror As A Sibling Of Route
 2. Identifying And Sampling Shadow Traffic
-   - Mission: Mirror Live Traffic To A Shadow Service Lab
+   - Lab: Mirror Live Traffic To A Shadow Service Lab
 3. Consequences, Verification And Limits
-   - Mission: Find The Quiet Shadow Lab
+   - Lab: Find The Quiet Shadow Lab
 4. Wrap-Up: Mission Debrief
 
 ### Capstone

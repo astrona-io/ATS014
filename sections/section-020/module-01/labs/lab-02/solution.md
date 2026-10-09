@@ -1,18 +1,18 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The docking instructions are already correct, so this mission is only about the flight plan: one route, three destinations, three weights that add up to 100.
+A `DestinationRule` defines **subsets**, named groups of a Service's pods selected by a label. A `VirtualService` tells the sidecar proxies where to send requests for a host. The `DestinationRule` is already correct, so this lab is only about the `VirtualService`: one route, three destinations, and three weights that add up to 100.
 
 ---
 
 ## Step 1: Read the starting state
 
-Look at the flight plan you were given:
+Look at the `VirtualService` you were given:
 
 ```sh
 kubectl get virtualservice scout -n starfleet -o yaml
 ```
 
-You should see (trimmed to `spec`):
+You should see this (shortened to `spec`):
 
 ```text
 spec:
@@ -25,7 +25,7 @@ spec:
         subset: v1
 ```
 
-One destination, no weight. Count where the signals go today:
+It has one destination and no weight. Count where the requests go today:
 
 ```sh
 for i in $(seq 1 20); do
@@ -39,13 +39,13 @@ You should see:
   20 scout-v1
 ```
 
-Every signal flies to v1. v2 and v3 are running, but nothing sends them a signal.
+Every request goes to v1. The v2 and v3 pods are running, but no route sends them a request.
 
 ---
 
 ## Step 2: Write the three-way split
 
-Put all three destinations in the **same** route list, and give each one a `weight` next to its `destination` (not inside it). Save this as `virtualservice-scout.yaml`:
+Put all three destinations in the **same** route list, and give each one a `weight` next to its `destination` (not inside it). The weight is the destination's share of the requests. Save this as `virtualservice-scout.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -82,13 +82,13 @@ kubectl apply -f virtualservice-scout.yaml
 virtualservice.networking.istio.io/scout configured
 ```
 
-The object keeps its name, so `kubectl apply` replaces the old flight plan. You do not delete anything first.
+The object keeps its name, so `kubectl apply` replaces the old `VirtualService`. You do not delete anything first.
 
 ---
 
 ## Step 3: Check the weights reached the proxy
 
-Ask the shuttle's proxy for the weights it holds:
+`istiod`, Istio's control plane, sends the new route to every sidecar proxy. Ask the `shuttle` proxy for the weights it holds:
 
 ```sh
 istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080 -o json \
@@ -106,13 +106,13 @@ You should see:
                                         "weight": 10
 ```
 
-One cluster per subset, each with the weight you wrote. The flight plan has arrived.
+There is one Envoy **cluster** (a named destination) per subset, each with the weight you wrote. The new route has reached the proxy.
 
 ---
 
 ## Step 4: Measure the split
 
-Count 100 signals:
+Count 100 requests:
 
 ```sh
 for i in $(seq 1 100); do
@@ -128,7 +128,7 @@ You should see something like:
    8 scout-v3
 ```
 
-Close to 60/30/10, but not exact: each signal is a separate random roll. Your numbers will be a little different.
+The split is close to 60/30/10, but not exact: the proxy makes a separate random pick for each request. Your numbers will be a little different.
 
 ---
 
@@ -138,7 +138,7 @@ Close to 60/30/10, but not exact: each signal is a separate random roll. Your nu
 astrona submit -c sections/section-020/module-01/labs/lab-02
 ```
 
-You should see (trimmed):
+You should see this (shortened):
 
 ```text
 PASS: one flight plan sends the scout v1 60, v2 30 and v3 10, the shuttle's proxy holds those weights, the docking instructions and ships are unchanged, and 200 live signals split v1=129 v2=54 v3=17 of 200
@@ -152,7 +152,7 @@ PROCTOR: PASS
 - **Leaving a destination without a weight.** On the starting state the grader reports `the route sends [v1=no weight]`. Every destination in a split needs its own weight.
 - **Nesting `weight` inside `destination`.** Kubernetes rejects the object, so nothing changes.
 - **Weights that do not add up to 100**, such as 60, 30 and 20. Istio accepts them as a ratio, but the grader expects exactly 60, 30 and 10.
-- **Three separate `http` rules.** The first rule with no `match` takes every signal, so nothing is split. Put all three destinations in one route list.
-- **A `match` on the rule.** The split must apply to every scout signal.
-- **Scaling the ships.** The grader checks that every scout version still runs 1 replica. The share is set by weights, not by pod count.
-- **A second `VirtualService` for the scout.** Two flight plans for one beacon have no set order. Change the existing one.
+- **Three separate `http` rules.** The first rule with no `match` takes every request, so nothing is split. Put all three destinations in one route list.
+- **A `match` on the rule.** The split must apply to every `scout` request.
+- **Scaling the Deployments.** The grader checks that every `scout` version still runs 1 replica. The share is set by weights, not by pod count.
+- **A second `VirtualService` for `scout`.** Two `VirtualService` objects for one host have no set order. Change the existing one.
