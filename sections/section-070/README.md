@@ -60,17 +60,17 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 4 parts and 2 labs:
 
-1. `WorkloadEntry`: One Old Ship
-2. `MESH_INTERNAL` And The Selector
-3. Two Ships, One Beacon
-   - Lab: Bring The Lost Freighters Back Lab
-4. `WorkloadGroup` And Real Onboarding
-   - Lab: Bring Two Old Ships Into The Mesh Lab
-5. Wrap-Up: Mission Debrief
+1. Describe A Machine Outside Kubernetes With WorkloadEntry
+2. Name The Machines With A MESH_INTERNAL ServiceEntry
+3. Put Several Machines Behind One Host With workloadSelector
+   - Lab: Fix A ServiceEntry Selector And WorkloadEntry Labels Lab
+4. Register Virtual Machines With WorkloadGroup
+   - Lab: Add Two Virtual Machines To The Mesh With WorkloadEntry Lab
+5. Summary
 
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **A Deny-By-Default Integration Layer Capstone Lab**.
+The section ends with a capstone lab that uses everything in it: **Register An External API And A Virtual Machine In A REGISTRY_ONLY Mesh Capstone Lab**.
 
 ---
 

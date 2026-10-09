@@ -1,15 +1,37 @@
-# Capstone: A Deny-By-Default Integration Layer
+---
+estimated_duration: 60m
+---
 
-This is the Section 070 integration challenge, astronaut. The mesh refuses every destination that is not on its star chart, and you have three jobs at once: let a partner's TLS-only API through and make it visible to the mesh, bring one of your own non-Kubernetes machines in as a first-class member, and leave a third endpoint firmly blocked.
+# Register An External API And A Virtual Machine In A REGISTRY_ONLY Mesh Capstone Lab
 
-The three modules meet here. All of them are the same `ServiceEntry` object with different fields, and choosing the wrong value for `location` or `protocol` produces a configuration that works for traffic and fails the requirement.
+This is the integration lab for the section on connecting in-mesh workloads to external workloads and services. The mesh blocks every outbound destination that is not in its service registry (`outboundTrafficPolicy.mode: REGISTRY_ONLY`). You have three jobs at once:
 
-There is no step-by-step guide until you have tried it. Work from the mission briefing.
+- Let a partner API that only accepts TLS through, with the sidecar proxy originating the TLS connection.
+- Add one machine that runs outside Kubernetes as a member of the mesh, with an identity.
+- Leave a third endpoint blocked.
+
+All three jobs use the same `ServiceEntry` kind with different fields. A wrong value for `location` or `protocol` gives a configuration where requests work and the requirement still fails.
+
+There is no step-by-step guide until you have tried it. Work from the task in `question.md`.
 
 This capstone needs **no outbound internet access**.
 
-## Launching the Lab
-Run the following command in your terminal to boot the kind Kubernetes cluster:
+## Running the lab
+
+Start the cluster with the starting state in place:
+
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/capstone/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-070/capstone/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
+astrona destroy ats-014-capstone-070
 ```

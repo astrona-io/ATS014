@@ -1485,19 +1485,19 @@ modules:
         title: "Add External Workloads With WorkloadEntry"
         path: sections/section-070/module-03/course.md
       - type: reading
-        title: "`WorkloadEntry`: One Old Ship"
-        path: sections/section-070/module-03/course-01-workloadentry-one-instance.md
+        title: "Describe A Machine Outside Kubernetes With WorkloadEntry"
+        path: sections/section-070/module-03/course-01-describe-a-machine-with-workloadentry.md
       - type: reading
-        title: "`MESH_INTERNAL` And The Selector"
-        path: sections/section-070/module-03/course-02-mesh-internal-and-the-selector.md
+        title: "Name The Machines With A MESH_INTERNAL ServiceEntry"
+        path: sections/section-070/module-03/course-02-name-the-machines-with-a-mesh-internal-serviceentry.md
       - type: reading
-        title: "Two Ships, One Beacon"
-        path: sections/section-070/module-03/course-03-two-ships-one-beacon.md
+        title: "Put Several Machines Behind One Host With workloadSelector"
+        path: sections/section-070/module-03/course-03-put-several-machines-behind-one-host.md
       - type: reading
         title: Question
         path: sections/section-070/module-03/labs/lab-02/question.md
       - type: lab
-        title: "Bring The Lost Freighters Back Lab"
+        title: "Fix A ServiceEntry Selector And WorkloadEntry Labels Lab"
         path: sections/section-070/module-03/labs/lab-02
         difficulty: intermediate
         estimated_duration: 20m
@@ -1515,13 +1515,13 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "`WorkloadGroup` And Real Onboarding"
-        path: sections/section-070/module-03/course-04-workloadgroup-and-real-onboarding.md
+        title: "Register Virtual Machines With WorkloadGroup"
+        path: sections/section-070/module-03/course-04-register-virtual-machines-with-workloadgroup.md
       - type: reading
         title: Question
         path: sections/section-070/module-03/labs/lab-01/question.md
       - type: lab
-        title: "Bring Two Old Ships Into The Mesh Lab"
+        title: "Add Two Virtual Machines To The Mesh With WorkloadEntry Lab"
         path: sections/section-070/module-03/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
@@ -1542,14 +1542,14 @@ modules:
           - name: "Virtual machine installation"
             url: https://istio.io/latest/docs/setup/install/virtual-machine/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-070/module-03/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-070/module-03/course-05-summary.md
 
       - type: reading
         title: Question
         path: sections/section-070/capstone/labs/lab-01/question.md
       - type: lab
-        title: "A Deny-By-Default Integration Layer Capstone Lab"
+        title: "Register An External API And A Virtual Machine In A REGISTRY_ONLY Mesh Capstone Lab"
         path: sections/section-070/capstone/labs/lab-01
         difficulty: advanced
         estimated_duration: 60m
