@@ -36,13 +36,13 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 4 parts and 2 labs:
 
-1. The Outbound Traffic Policy
-2. The `ServiceEntry` Object
-3. A Registered Host Is An Ordinary Host
-   - Lab: Open Exactly One Route Out Lab
-4. When A Correct ServiceEntry Is Refused
-   - Lab: Reach The Hidden Relay Lab
-5. Wrap-Up: Mission Debrief
+1. Block Unknown Hosts With REGISTRY_ONLY
+2. Add An External Host With ServiceEntry
+3. Apply Timeouts And Connection Pools To An External Host
+   - Lab: Allow One External Host Under REGISTRY_ONLY Lab
+4. Fix A ServiceEntry Hidden By exportTo Or A Sidecar
+   - Lab: Fix A Hidden ServiceEntry And Its Port Protocol Lab
+5. Summary
 
 ### TLS Origination For External Services
 

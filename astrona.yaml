@@ -1369,19 +1369,19 @@ modules:
         title: "Control External Access With ServiceEntry"
         path: sections/section-070/module-01/course.md
       - type: reading
-        title: "The Outbound Traffic Policy"
-        path: sections/section-070/module-01/course-01-the-outbound-traffic-policy.md
+        title: "Block Unknown Hosts With REGISTRY_ONLY"
+        path: sections/section-070/module-01/course-01-block-unknown-hosts-with-registry-only.md
       - type: reading
-        title: "The `ServiceEntry` Object"
-        path: sections/section-070/module-01/course-02-the-serviceentry-object.md
+        title: "Add An External Host With ServiceEntry"
+        path: sections/section-070/module-01/course-02-add-an-external-host-with-serviceentry.md
       - type: reading
-        title: "A Registered Host Is An Ordinary Host"
-        path: sections/section-070/module-01/course-03-a-registered-host-is-an-ordinary-host.md
+        title: "Apply Timeouts And Connection Pools To An External Host"
+        path: sections/section-070/module-01/course-03-apply-timeouts-and-connection-pools-to-an-external-host.md
       - type: reading
         title: Question
         path: sections/section-070/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Open Exactly One Route Out Lab"
+        title: "Allow One External Host Under REGISTRY_ONLY Lab"
         path: sections/section-070/module-01/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
@@ -1389,8 +1389,8 @@ modules:
         task_kind: build
         tags: [serviceentry, external-services, registry-only, timeouts, 504-ut, proxy-config]
         learning_goals:
-          - Register an outside endpoint with a ServiceEntry under REGISTRY_ONLY
-          - Apply a timeout to the external host and limit the entry to one namespace
+          - Register one outside endpoint with a ServiceEntry while the mesh stays REGISTRY_ONLY, and prove a second endpoint is still refused
+          - Apply a VirtualService timeout to the external host and limit the entry to its own namespace with exportTo
         resources:
           - name: "ServiceEntry reference"
             url: https://istio.io/latest/docs/reference/config/networking/service-entry/
@@ -1399,13 +1399,13 @@ modules:
           - name: "Request timeouts"
             url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
       - type: reading
-        title: "When A Correct ServiceEntry Is Refused"
-        path: sections/section-070/module-01/course-04-when-a-correct-serviceentry-is-refused.md
+        title: "Fix A ServiceEntry Hidden By exportTo Or A Sidecar"
+        path: sections/section-070/module-01/course-04-fix-a-serviceentry-hidden-by-exportto-or-a-sidecar.md
       - type: reading
         title: Question
         path: sections/section-070/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Reach The Hidden Relay Lab"
+        title: "Fix A Hidden ServiceEntry And Its Port Protocol Lab"
         path: sections/section-070/module-01/labs/lab-02
         difficulty: intermediate
         estimated_duration: 25m
@@ -1424,8 +1424,8 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-070/module-01/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-070/module-01/course-05-summary.md
 
       - type: reading
         title: "TLS Origination For External Services"

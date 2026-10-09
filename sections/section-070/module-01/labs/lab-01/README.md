@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Open Exactly One Route Out
+# Allow One External Host Under REGISTRY_ONLY
 
-Welcome to a build mission, astronaut. The mesh is already deny-by-default: ships may signal only charted planets, so every external destination is refused. You will chart exactly one of them, prove the other is still blocked, and then put a timeout on the one you allowed, because a charted host is an ordinary host.
+This is a build lab. The mesh already refuses every host that is not in the service registry (`REGISTRY_ONLY`). You add exactly one external endpoint to the registry with a `ServiceEntry`, prove that a second endpoint is still refused, and put a 2 second `VirtualService` timeout on the endpoint you allowed.
 
-This lab needs **no outbound internet access**: the "external" endpoints are ordinary pods deliberately left out of the mesh registry.
+This lab needs **no outbound internet access**: the "external" endpoints are ordinary pods that are left out of the service registry on purpose.
 
 ## Launching the Lab
 

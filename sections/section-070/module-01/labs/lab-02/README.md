@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Reach The Hidden Relay
+# Fix A Hidden ServiceEntry And Its Port Protocol
 
-Welcome to a repair mission, astronaut. The planet `starfleet` is closed to every host off its star chart. A `ServiceEntry` charts the relay, a host in another solar system, and a flight plan gives it a 2 second timeout. Still, every signal from the shuttle to the relay falls into the black hole.
+This is a troubleshooting lab. The `starfleet` namespace refuses every host that is not in the service registry (`REGISTRY_ONLY` on its `Sidecar` resource). A `ServiceEntry` adds an external host called `relay` to the registry, and a `VirtualService` gives it a 2 second timeout. Still, the `shuttle` pod's sidecar proxy refuses every request to the relay.
 
-Your job is to find out why with the flight log and the shuttle's own proxy, fix every fault, and prove that the relay answers, the timeout fires, and the rogue host stays blocked. This lab needs no outbound internet access.
+Your job is to find out why with the access log and `istioctl proxy-config`, fix every fault, and prove that the relay answers, the timeout fires, and the `rogue` host stays blocked. This lab needs no outbound internet access.
 
 ## Launching the Lab
 
