@@ -2,15 +2,25 @@
 estimated_duration: 3m
 ---
 
-# Find The Quiet Shadow
+# Troubleshoot A Mirror That Sends No Copies Lab
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, a test ship should be receiving a copy of every signal, and it receives nothing. The senders are perfectly happy, so nothing looks wrong.
+This graded lab checks one skill: finding out why a mirror sends no copies when the client gets normal responses.
 
-Your job is to find out why the shadow is quiet, using the shuttle's proxy, the mirror cluster's endpoints and `istioctl analyze`, fix it, and prove that the copies arrive.
+## What you will practise
 
-## Launching the Lab
+In the `starfleet` namespace, a `VirtualService` routes every request to `probe` v1 and mirrors every request to `probe` v2. The release candidate `probe-v2` should receive a copy of every request, and it receives nothing. Clients get correct responses, so nothing looks wrong.
 
-Run this command to start the cluster with the fault already in place:
+You find the cause with three checks: the mirror policy in the proxy of `shuttle`, the endpoints of the mirror cluster, and `istioctl analyze`. Then you fix it and prove that the copies arrive.
+
+## What is in the lab
+
+- A `kind` Kubernetes cluster with **Istio 1.30.5** installed with Helm, and `istioctl` ready to use.
+- The namespace `starfleet` with `probe` v1 and v2, the `shuttle` client and access logs switched on.
+- A `VirtualService` and a `DestinationRule` named `probe`, with the fault already in place.
+
+## Running the lab
+
+Start the cluster with the fault already in place:
 
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/module-02/labs/lab-02

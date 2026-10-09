@@ -1,10 +1,12 @@
 # Solution Walkthrough
 
-One `VirtualService` carrying both of the section's features. The second rule does two things at once — splits caller traffic between two ship classes and copies every signal to a test ship — and keeping those two straight is the whole exercise.
+One `VirtualService` carries both features of traffic shifting. The second rule does two jobs at once: it splits client requests between two subsets, and it copies every request to a separate shadow Service. Keeping those two jobs apart in the YAML is the whole task.
 
 ---
 
-## Step 1: Read the Starting State
+## Step 1: Read the starting state
+
+List the pods with their labels, the replica count of each Deployment, and the Istio routing objects:
 
 ```sh
 kubectl -n checkout get pods --show-labels
@@ -25,7 +27,7 @@ tester                    1
 No resources found in checkout namespace.
 ```
 
-Note that `notification-shadow` is a **separate Service**, not a subset. It has no route to it and currently receives nothing:
+`notification-shadow` is a **separate Service**, not a subset of `notification-service`. Nothing routes to it, so its sidecar proxy has logged no requests yet:
 
 ```sh
 kubectl -n checkout logs -l app=notification-shadow -c istio-proxy --tail=-1 | wc -l
@@ -37,9 +39,9 @@ kubectl -n checkout logs -l app=notification-shadow -c istio-proxy --tail=-1 | w
 
 ---
 
-## Step 2: Define the Subsets
+## Step 2: Define the subsets
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+A subset is a named group of a Service's pods, selected by labels. Both rules of the `VirtualService` send requests to subsets, so the `DestinationRule` comes first.
 
 Save this as `destinationrule-notification-service.yaml`:
 
@@ -66,11 +68,11 @@ Apply it:
 kubectl apply -f destinationrule-notification-service.yaml
 ```
 
-The shadow needs no subset — it is a whole Service, addressed by host.
+The shadow needs no subset. It is a whole Service, and the mirror names it by host.
 
 ---
 
-## Step 3: Both Rules, In Order
+## Step 3: Write both rules, in order
 
 Save this as `virtualservice-notification.yaml`:
 
@@ -124,18 +126,20 @@ virtualservice.networking.istio.io/notification created
 ✔ No validation issues found when analyzing namespace: checkout.
 ```
 
-Read the second rule's indentation carefully, because this is the capstone's real test:
+Read the indentation of the second rule carefully, because this is the real test:
 
-- `route` holds **two** destinations whose weights sum to 100. That is the canary.
-- `mirror` and `mirrorPercentage` are **siblings of `route`**, at the same indentation. The mirror is not a third destination and carries no weight.
+- `route` holds **two** destinations whose weights add up to 100. That is the canary split.
+- `mirror` and `mirrorPercentage` are **siblings of `route`**, at the same indentation. The mirror is not a third destination and has no weight.
 
-Adding `notification-shadow` as a third route entry instead would make it a weighted destination — callers would start receiving shadow responses, and the grader rejects it explicitly.
+If you add `notification-shadow` as a third `route` entry instead, it becomes a weighted destination. Clients then start to get responses from the shadow, and the grader rejects it.
 
-Note also that the mirror is on the **second** rule only. Internal-tester traffic matches rule 1 and is not mirrored, because each `http` rule carries its own mirror settings. If the task had wanted internal traffic shadowed too, it would need its own `mirror` block.
+The mirror is on the **second** rule only. Requests from internal testers match rule 1, so the proxy does not copy them, because each `http` rule has its own mirror settings. If the task wanted internal traffic copied too, rule 1 would need its own `mirror`.
 
 ---
 
-## Step 4: Confirm the Proxy Holds Both Features
+## Step 4: Check that the proxy holds both features
+
+The sidecar proxy of the client makes the routing decision and sends the copy, so both features must be in the route table of the `tester` proxy:
 
 ```sh
 istioctl proxy-config routes deploy/tester -n checkout -o json | grep -cE 'weightedClusters|requestMirrorPolicies'
@@ -149,11 +153,11 @@ istioctl proxy-config routes deploy/tester -n checkout -o json | grep -A4 reques
     "cluster": "outbound|80||notification-shadow.checkout.svc.cluster.local",
 ```
 
-Two features, one rule. The mirror cluster has empty subset pipes (`|80||`) because the shadow is addressed as a whole Service.
+`weightedClusters` holds the 80/20 split and `requestMirrorPolicies` holds the mirror. The mirror cluster name has an empty subset field (`|80||`) because the mirror names the shadow as a whole Service, with no subset.
 
 ---
 
-## Step 5: Verify Internal Testers Bypass the Split
+## Step 5: Check that internal testers skip the split
 
 ```sh
 for i in 1 2 3 4 5; do
@@ -170,13 +174,13 @@ done
 ["EMAIL","SMS"]
 ```
 
-Five for five. If any of these returned `["EMAIL"]`, the header rule is below the weighted rule and never runs.
+Five out of five reached `v2`. If any of these returned `["EMAIL"]`, the header rule is below the catch-all rule. The proxy uses the first rule that matches, so a rule below the catch-all never runs.
 
 ---
 
-## Step 6: Measure the Split and the Shadow Together
+## Step 6: Measure the split and the mirror together
 
-Baseline the shadow first, then send enough traffic for the proportion to mean something:
+Count the lines in the shadow's access log before and after the test, because the log may hold lines from earlier runs. Then send 200 requests, enough for the share to mean something:
 
 ```sh
 BEFORE=$(kubectl -n checkout logs -l app=notification-shadow -c istio-proxy --tail=-1 | grep -c -- -shadow)
@@ -193,23 +197,13 @@ echo "mirrored: $((AFTER - BEFORE)) of 200"
 mirrored: 200 of 200
 ```
 
-158 of 200 is 79% — a correct 80/20 split, and the grader accepts 65–92% because each request is an independent draw. Every one of the 200 was also copied to the shadow, which is what `mirrorPercentage: 100` on the same rule buys you.
+158 of 200 is 79%, a correct 80/20 split. The proxy picks a destination for each request on its own, at random, so the grader accepts 65% to 92%. All 200 requests were also copied to the shadow, which is what `mirrorPercentage: 100` on the same rule does.
 
-Confirm the copies carry the rewritten authority:
-
-```sh
-kubectl -n checkout logs -l app=notification-shadow -c istio-proxy --tail=2 | grep -i shadow
-```
-
-```text
-[2026-09-27T14:02:55.118Z] "POST /notify HTTP/1.1" 200 - via_upstream - "-" 0 16 1 1 "-" "curl/8.5.0" "..." "notification-shadow-shadow" "10.244.0.22:8084" ...
-```
-
-The doubled `-shadow` looks odd and is correct: the host is already named `notification-shadow`, and Istio appends its own suffix to the authority of every copy.
+The `grep -c -- -shadow` counts the lines that contain the text `-shadow`. On Istio 1.30 that text does not come from the host name of the copy. Istio 1.30 sends the copy unchanged, so its authority (the host name the request was sent to) stays `notification-service`. Older Istio releases added a `-shadow` suffix to it, but 1.30 does not. The text matches because each inbound line in the shadow's access log ends with the server name of the mTLS (mutual TLS) connection the copy arrived on, `outbound_.80_._.notification-shadow.checkout.svc.cluster.local`, and that name contains `notification-shadow`. The grader counts the lines the same way.
 
 ---
 
-## Step 7: Confirm Nothing Was Scaled
+## Step 7: Check that nothing was scaled
 
 ```sh
 kubectl -n checkout get deploy -o custom-columns=NAME:.metadata.name,REPLICAS:.spec.replicas
@@ -224,12 +218,12 @@ tester                    1
 
 ---
 
-## Common Mistakes
+## Common mistakes
 
-- **The shadow added as a third route destination.** It becomes a weighted destination, callers see its responses, and the weights no longer sum correctly either.
-- **`mirror` indented inside the route list.** It is a sibling of `route` on the same rule.
-- **The mirror on the wrong rule.** Each `http` rule has its own mirror settings; on rule 1 it would shadow only internal testers.
-- **Header rule below the weighted rule.** The catch-all matches everything, so the header rule never runs.
-- **Measuring the split with 10 requests.** Independent per-request draws; use 200.
-- **Counting shadow log lines without a baseline.** Take a `BEFORE` count and subtract.
-- **Scaling Deployments to shape the split.** Weights are applied before endpoint selection, so it would not work anyway — and the grader checks.
+- **The shadow added as a third `route` destination.** It becomes a weighted destination, clients get its responses, and the weights no longer add up as intended.
+- **`mirror` indented inside the `route` list.** It is a sibling of `route` on the same rule.
+- **The mirror on the wrong rule.** Each `http` rule has its own mirror settings. On rule 1, the mirror would copy only the internal testers' requests.
+- **The header rule below the catch-all rule.** The catch-all rule matches every request, so the header rule never runs.
+- **Measuring the split with 10 requests.** The proxy picks a destination for each request at random. Use 200.
+- **Counting the shadow's log lines without a baseline.** Take a `BEFORE` count and subtract it.
+- **Scaling Deployments to shape the split.** The proxy applies the weights before it picks a pod, so replica counts do not change the split. The grader also checks that every Deployment still runs 1 replica.

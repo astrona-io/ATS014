@@ -1,10 +1,12 @@
 # Solution Walkthrough
 
-Two objects, and the trick is that the thing you are building is invisible from where you normally look — the test ship's replies never come back to you. The caller's output is identical whether the mirror works or not, so the verification is the interesting half.
+You need two objects: a `DestinationRule` with the subsets and a `VirtualService` with a route and a mirror. The hard part is the proof. The proxy throws away the release candidate's responses, so the client's output is the same whether the mirror works or not. You must check the receiving side.
 
 ---
 
-## Step 1: Read the Starting State
+## Step 1: Read the starting state
+
+List the pods with their labels, check that no Istio routing objects exist, and send 20 requests from `tester`:
 
 ```sh
 kubectl -n mirror-demo get pods --show-labels
@@ -22,13 +24,13 @@ No resources found in mirror-demo namespace.
    8 ["EMAIL","SMS"]
 ```
 
-Both versions currently answer callers. The finished state must show only `["EMAIL"]` — while `v2` is busier than it is now.
+Right now both versions send responses to clients, because the Service selects pods on the `app` label only. At the end, clients must get only `["EMAIL"]`, while `v2` receives more requests than it does now.
 
 ---
 
-## Step 2: Define the Subsets
+## Step 2: Define the subsets
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+A subset is a named group of a Service's pods, selected by labels. A `DestinationRule` defines subsets, and both the route and the mirror refer to them by name.
 
 Save this as `destinationrule-notification-service.yaml`:
 
@@ -55,7 +57,7 @@ Apply it:
 kubectl apply -f destinationrule-notification-service.yaml
 ```
 
-The `v2` subset matters more than usual here. A `mirror` pointing at a subset that does not exist, or at one whose labels select no pod, **silently does nothing** — and the caller cannot tell. Confirm it selects something:
+The `v2` subset matters more than usual here. A `mirror` that points at a subset that does not exist, or at one whose labels select no pod, **silently sends nothing**, and the client cannot tell. Check that the `v2` cluster in the `tester` proxy has an endpoint (a pod address):
 
 ```sh
 istioctl proxy-config endpoints deploy/tester -n mirror-demo \
@@ -67,9 +69,11 @@ ENDPOINT            STATUS    OUTLIER CHECK   CLUSTER
 10.244.0.15:8084    HEALTHY   OK              outbound|80|v2|notification-service...
 ```
 
+One healthy endpoint, so the mirror will have a pod to send copies to.
+
 ---
 
-## Step 3: Route To v1, Mirror To v2
+## Step 3: Route to v1 and mirror to v2
 
 Save this as `virtualservice-notification.yaml`:
 
@@ -112,13 +116,15 @@ virtualservice.networking.istio.io/notification created
 ✔ No validation issues found when analyzing namespace: mirror-demo.
 ```
 
-The indentation is the whole exercise. `mirror` and `mirrorPercentage` are **siblings of `route`** on the same `http` rule — not entries inside the route list. Writing `v2` as a second destination in `route` would make it a weighted split, callers would start seeing `["EMAIL","SMS"]`, and the grader rejects it.
+The indentation is the whole task. `mirror` and `mirrorPercentage` are **siblings of `route`** on the same `http` rule, not entries inside the `route` list. If you write `v2` as a second destination in `route`, you get a weighted split. Clients then start to get `["EMAIL","SMS"]`, and the grader rejects it.
 
-Note also that `mirror` is a single destination with no `weight`. The copy is extra traffic on top of the route, not a share of it.
+`mirror` is also a single destination with no `weight`. The copy is extra traffic on top of the route, not a share of it.
 
 ---
 
-## Step 4: Confirm the Caller Sees Only v1
+## Step 4: Check that clients get only v1
+
+Send 30 requests, as the grader does:
 
 ```sh
 kubectl -n mirror-demo exec deploy/tester -- sh -c \
@@ -129,15 +135,17 @@ kubectl -n mirror-demo exec deploy/tester -- sh -c \
   30 ["EMAIL"]
 ```
 
-Thirty requests, one distinct answer. Any `["EMAIL","SMS"]` here means `v2` ended up in the route block rather than in the mirror.
+Thirty requests, one distinct response. Any `["EMAIL","SMS"]` here means that `v2` ended up in the `route` list instead of in the `mirror`.
 
-This output is exactly what you would get with no mirror at all, which is why it proves only half the task.
+This output is exactly what you would get with no mirror at all. So it proves only half of the task.
 
 ---
 
-## Step 5: Prove the Shadow Received the Copies
+## Step 5: Prove that v2 received the copies
 
-The evidence is on the **receiving** side, in the proxy access log. Nothing routes caller traffic to `v2`, so every request its proxy records is a copy. Take a baseline first — the log may already hold copies from an earlier attempt:
+The proof is on the **receiving** side, in the access log of the `v2` sidecar proxy. The access log has one line per request that passes through the proxy. The route sends nothing to `v2`, so every request in its access log is a copy.
+
+The log may already hold copies from an earlier try, so count the lines before and after a test and take the difference:
 
 ```sh
 BEFORE=$(kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=-1 | grep -c 'POST /notify')
@@ -152,7 +160,7 @@ echo "mirrored this run: $((AFTER - BEFORE)) of 40"
 mirrored this run: 40 of 40
 ```
 
-Look at one of the lines to see why it counts as proof:
+All 40 requests were copied to `v2`. Look at one of the lines to see why it counts as proof:
 
 ```sh
 kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=3
@@ -162,46 +170,45 @@ kubectl -n mirror-demo logs -l version=v2 -c istio-proxy --tail=3
 [2026-09-28T18:11:49.139Z] "POST /notify HTTP/1.1" 200 - via_upstream - "-" 0 15 0 0 "10.244.0.10" "curl/8.22.0" "c03f8616..." "notification-service" "10.244.0.9:8084" inbound|8084|| ...
 ```
 
-The authority is the plain `notification-service`: Istio 1.30 sends the copy unchanged, so the older `-shadow` suffix you may read about elsewhere is not there. What makes the line proof is that it exists at all — the route sends 100% of traffic to `v1`, so `v2` can only be seeing mirrored copies. The `200` next to it is the shadow's own response, which the caller never saw. If `v2` were returning 500s, this is where it would show, with the caller still perfectly happy.
+The authority (the host name the request was sent to) is the plain `notification-service`. Istio 1.30 sends the copy unchanged; older Istio releases added a `-shadow` suffix, but it is not there now. The line is proof because it exists at all: the route sends 100% of client requests to `v1`, so `v2` can only see copies. The `200` is the response of `v2`, which the client never saw. If `v2` returned `500` errors, they would show here, and the client would still get normal responses.
 
 ---
 
-## Step 6: Confirm the Policy Is in the Client Proxy
+## Step 6: Check the mirror policy in the client's proxy
 
-This is the check that separates "the mirror is misconfigured" from "the mirror target has no endpoints":
+The sidecar proxy of the **client** sends the copy, so the mirror policy lives in the route table of the `tester` proxy. This check tells "the mirror is not configured" apart from "the mirror target has no endpoints":
 
 ```sh
 istioctl proxy-config routes deploy/tester -n mirror-demo -o json | grep -i -A6 requestMirrorPolicies
 ```
 
+You should see (shortened):
+
 ```text
 "requestMirrorPolicies": [
   {
     "cluster": "outbound|80|v2|notification-service.mirror-demo.svc.cluster.local",
-    "runtimeFraction": {
-      "defaultValue": {
-        "numerator": 100,
 ```
 
-Note it is the **caller's** proxy that holds this — the caller is what dispatches the copy.
+The `|v2|` in the cluster name shows that the copies go to the `v2` subset.
 
-Three states worth remembering:
+The two checks together give three states:
 
-| `requestMirrorPolicies` | Shadow log | Means |
+| `requestMirrorPolicies` | Access log of v2 | Means |
 | --- | --- | --- |
-| absent | empty | no `mirror` in the object, or it never reached the proxy |
+| missing | empty | no `mirror` in the object, or the configuration never reached the proxy |
 | present | empty | the mirror cluster has no endpoints |
-| present | logs requests the route never sent it | working |
+| present | shows requests the route never sent it | working |
 
 ---
 
-## Common Mistakes
+## Common mistakes
 
-- **`mirror` indented as an entry of `route`.** It is a sibling of `route`, and a single destination rather than a list.
-- **Putting `v2` in the route block as a weighted destination.** That is traffic shifting, and callers start seeing the candidate's output.
-- **Mirroring to an undefined subset.** Silent — the caller is unaffected and the shadow is quiet. `istioctl analyze` names it.
-- **Counting shadow log lines without a baseline.** The log holds copies from earlier runs; take a `BEFORE` count.
-- **Reading application logs instead of the proxy log.** The request record is in the `istio-proxy` container's log.
-- **Grepping for a `-shadow` authority.** Older Istio appended it; 1.30 does not, and the grep silently returns nothing.
-- **Expecting the mirrored response to matter.** It is discarded, along with its latency. Mirroring cannot compare outputs.
-- **Omitting `mirrorPercentage` and assuming nothing is mirrored.** The default is 100%; the task asks you to state it anyway.
+- **`mirror` indented as an entry of `route`.** It is a sibling of `route`, and a single destination, not a list.
+- **Putting `v2` in the `route` list as a weighted destination.** That is traffic shifting, and clients start to get the release candidate's responses.
+- **Mirroring to an undefined subset.** It fails silently: the client is fine and `v2` receives nothing. `istioctl analyze` names the problem.
+- **Counting the access log of v2 without a baseline.** The log holds copies from earlier runs. Take a `BEFORE` count first.
+- **Reading the application log instead of the proxy's access log.** The grader counts the lines in the `istio-proxy` container's log.
+- **Searching for a `-shadow` authority.** Older Istio added it; 1.30 does not, so the search finds nothing.
+- **Expecting the mirrored response to matter.** The proxy throws it away, together with its delay. Mirroring cannot compare responses.
+- **Leaving out `mirrorPercentage` and assuming nothing is mirrored.** The default is 100%. The task asks you to set it anyway.

@@ -45,18 +45,19 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 ### Mirror Live Traffic To A Shadow Service
 
-3 parts and 2 labs:
+4 parts and 2 labs:
 
-1. Mirror As A Sibling Of Route
-2. Identifying And Sampling Shadow Traffic
-   - Lab: Mirror Live Traffic To A Shadow Service Lab
-3. Consequences, Verification And Limits
-   - Lab: Find The Quiet Shadow Lab
-4. Wrap-Up: Mission Debrief
+1. Add A Mirror Destination To An HTTP Route
+2. Mirror Requests To A Failing Version
+3. Find Mirrored Requests And Sample Them
+   - Lab: Route To v1 And Mirror Every Request To v2 Lab
+4. Diagnose A Silent Mirror And Plan For Side Effects
+   - Lab: Troubleshoot A Mirror That Sends No Copies Lab
+5. Summary
 
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **Canary And Shadow At The Same Time Capstone Lab**.
+The section ends with a capstone lab that uses everything in it: **Combine A Header Rule, A Weighted Canary And A Mirror Capstone Lab**.
 
 ---
 

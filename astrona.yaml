@@ -462,47 +462,50 @@ modules:
         title: "Mirror Live Traffic To A Shadow Service"
         path: sections/section-020/module-02/course.md
       - type: reading
-        title: "Mirror As A Sibling Of Route"
-        path: sections/section-020/module-02/course-01-mirror-as-a-sibling-of-route.md
+        title: "Add A Mirror Destination To An HTTP Route"
+        path: sections/section-020/module-02/course-01-add-a-mirror-destination-to-an-http-route.md
       - type: reading
-        title: "Identifying And Sampling Shadow Traffic"
-        path: sections/section-020/module-02/course-02-identifying-and-sampling-shadow-traffic.md
+        title: "Mirror Requests To A Failing Version"
+        path: sections/section-020/module-02/course-02-mirror-requests-to-a-failing-version.md
+      - type: reading
+        title: "Find Mirrored Requests And Sample Them"
+        path: sections/section-020/module-02/course-03-find-mirrored-requests-and-sample-them.md
       - type: reading
         title: Question
         path: sections/section-020/module-02/labs/lab-01/question.md
       - type: lab
-        title: "Mirror Live Traffic To A Shadow Service Lab"
+        title: "Route To v1 And Mirror Every Request To v2 Lab"
         path: sections/section-020/module-02/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
         topic: traffic-shifting
         task_kind: build
-        tags: [virtualservice, mirroring, subsets]
+        tags: [virtualservice, destinationrule, subsets, mirroring, proxy-config, access-log]
         learning_goals:
-          - Route all traffic to one version while mirroring every request to another
-          - Prove that callers only see the primary and the shadow really receives copies
+          - Route every request to subset v1 and mirror every request to subset v2 on the same HTTP rule
+          - Prove that clients only get responses from v1 while the access log of v2 shows a copy of each request
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
           - name: "Mirroring task"
             url: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
       - type: reading
-        title: "Consequences, Verification And Limits"
-        path: sections/section-020/module-02/course-03-consequences-verification-and-limits.md
+        title: "Diagnose A Silent Mirror And Plan For Side Effects"
+        path: sections/section-020/module-02/course-04-diagnose-a-silent-mirror-and-plan-for-side-effects.md
       - type: reading
         title: Question
         path: sections/section-020/module-02/labs/lab-02/question.md
       - type: lab
-        title: "Find The Quiet Shadow Lab"
+        title: "Troubleshoot A Mirror That Sends No Copies Lab"
         path: sections/section-020/module-02/labs/lab-02
         difficulty: intermediate
         estimated_duration: 15m
         topic: traffic-shifting
         task_kind: troubleshooting
-        tags: [mirroring, destinationrule, subsets, proxy-config]
+        tags: [destinationrule, subsets, mirroring, ist0173, istioctl-analyze, proxy-config]
         learning_goals:
-          - Find why a mirror delivers no copies although the caller sees no error
-          - Fix the subset the mirror points at and prove the shadow receives copies
+          - Find why a mirror sends no copies with istioctl analyze, the mirror policy and the endpoints of the mirror cluster
+          - Fix the subset labels the mirror points at and prove that v2 receives a copy of every request
         resources:
           - name: "Mirroring task"
             url: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
@@ -511,23 +514,23 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-020/module-02/course-04-wrap-up.md
+        title: "Summary"
+        path: sections/section-020/module-02/course-05-summary.md
 
       - type: reading
         title: Question
         path: sections/section-020/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Canary And Shadow At The Same Time Capstone Lab"
+        title: "Combine A Header Rule, A Weighted Canary And A Mirror Capstone Lab"
         path: sections/section-020/capstone/labs/lab-01
         difficulty: advanced
         estimated_duration: 45m
         topic: traffic-shifting
         task_kind: build
-        tags: [virtualservice, weighted-routing, canary, mirroring, header-matching]
+        tags: [virtualservice, destinationrule, header-matching, rule-order, weighted-routing, canary, mirroring]
         learning_goals:
-          - Combine a header rule, an 80/20 canary split and a mirror to a shadow host
-          - Prove no caller response ever comes from the shadow
+          - Combine a header rule, an 80/20 weighted split and a mirror to a separate Service in one VirtualService
+          - Prove that no client response comes from the shadow Service while it receives a copy of each request
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
