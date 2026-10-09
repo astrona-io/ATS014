@@ -811,38 +811,42 @@ modules:
         title: "Outlier Detection And Endpoint Ejection"
         path: sections/section-040/module-03/course.md
       - type: reading
-        title: "Passive Health Checking"
-        path: sections/section-040/module-03/course-01-passive-health-checking.md
+        title: "Eject A Failing Endpoint With Outlier Detection"
+        path: sections/section-040/module-03/course-01-eject-a-failing-endpoint-with-outlier-detection.md
       - type: reading
-        title: "Ejection Mechanics And Limits"
-        path: sections/section-040/module-03/course-02-ejection-mechanics-and-limits.md
+        title: "Control Ejection Time And Which Errors Count"
+        path: sections/section-040/module-03/course-02-control-ejection-time-and-which-errors-count.md
+      - type: reading
+        title: "Limit Ejections With maxEjectionPercent And minHealthPercent"
+        path: sections/section-040/module-03/course-03-limit-ejections-with-maxejectionpercent-and-minhealthpercent.md
       - type: reading
         title: Question
         path: sections/section-040/module-03/labs/lab-01/question.md
       - type: lab
-        title: "Outlier Detection And Endpoint Ejection Lab"
+        title: "Eject A Failing Endpoint On A Two-Endpoint Service Lab"
         path: sections/section-040/module-03/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
         topic: resilience
         task_kind: build
-        tags: [destinationrule, outlier-detection, proxy-config]
+        tags: [destinationrule, outlier-detection, load-balancing, proxy-config]
         learning_goals:
           - Eject a failing endpoint with outlier detection while Kubernetes still lists it
-          - Prove the ejection from proxy statistics and the endpoint list
+          - Raise maxEjectionPercent so that one of two endpoints can be ejected
+          - Prove the ejection from the client proxy's endpoint list
         resources:
           - name: "DestinationRule reference"
             url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Local, Temporary, And Verified"
-        path: sections/section-040/module-03/course-03-local-temporary-and-verified.md
+        title: "Verify Ejections And Combine Them With A Connection Pool"
+        path: sections/section-040/module-03/course-04-verify-ejections-and-add-a-connection-pool.md
       - type: reading
         title: Question
         path: sections/section-040/module-03/labs/lab-02/question.md
       - type: lab
-        title: "Raise Both Shields Lab"
+        title: "Combine A Connection Pool And Outlier Detection Lab"
         path: sections/section-040/module-03/labs/lab-02
         difficulty: intermediate
         estimated_duration: 20m
@@ -863,8 +867,8 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-040/module-03/course-04-wrap-up.md
+        title: "Summary"
+        path: sections/section-040/module-03/course-05-summary.md
 
       - type: reading
         title: "Locality Load Balancing And Failover"

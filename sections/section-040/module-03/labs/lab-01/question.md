@@ -2,32 +2,32 @@
 
 Solve this question on: `terminal`
 
-Astronaut, your mission: pull a damaged ship out of formation, even though Kubernetes says it is fine.
+One pod behind the `httpbin` Service fails every request, yet Kubernetes reports it as ready. Make the client's sidecar proxy stop using it, without removing it from Kubernetes.
 
-Namespace `outlier-demo` has one Service with two endpoints, one of which is poison:
+The namespace `outlier-demo` holds:
 
-* `httpbin-good` — 1 replica, answers normally
-* `httpbin-bad` — 1 replica of nginx that returns **503 to every request**, while passing its readiness probe. Kubernetes considers it perfectly healthy.
-* `httpbin` — one Service on port 8000 in front of **both**
-* `tester` — a client pod with `curl`
+* `httpbin-good`: 1 replica of an HTTP echo server that answers normally.
+* `httpbin-bad`: 1 replica of nginx that answers **every request with `503`**. It has no readiness probe that fails, so Kubernetes treats it as ready.
+* `httpbin`: one Service on port `8000` in front of **both** pods.
+* `tester`: a client pod with `curl`. Send test requests from here.
 
-Istio is installed, every pod is injected, and there is no `DestinationRule`. Roughly half of all traffic currently fails.
+Istio is installed, every pod in `outlier-demo` has a sidecar proxy, and there is no `DestinationRule`. About half of all requests to `http://httpbin:8000/get` fail.
 
-Make the client proxy notice the bad endpoint and stop using it.
+Do the following:
 
-1.  Create a `DestinationRule` named `httpbin` for host `httpbin`.
-2.  In its `trafficPolicy.outlierDetection`, set:
-    *   `consecutive5xxErrors` to **3**
-    *   `interval` to **`5s`**
-    *   `baseEjectionTime` to **`30s`**
-    *   `maxEjectionPercent` to a value that lets an ejection **actually happen on a two-endpoint service**. Think about what the default does here before you pick a number.
-3.  Do **not** add a `VirtualService`, do not scale or delete `httpbin-bad`, and do not change the Service selector. The bad endpoint must be removed by the proxy's own judgement, not by you removing it.
+1. Create a `DestinationRule` named `httpbin` for the host `httpbin` in `outlier-demo`.
+2. In its `trafficPolicy.outlierDetection`, set:
+   * `consecutive5xxErrors` to **3**
+   * `interval` to **`5s`**
+   * `baseEjectionTime` to **`30s`**
+   * `maxEjectionPercent` to a value that lets an ejection **really happen on a Service with two endpoints**. Think about what the default value does here before you pick a number.
+3. Do **not** create any `VirtualService` in `outlier-demo`. Do not scale or delete `httpbin-bad`, and do not change the Service selector. The `tester` proxy must remove the bad endpoint on its own; you must not remove it.
 
 **What the grader checks**
 
-4.  The four fields are present with the required values, and `maxEjectionPercent` is high enough to eject one of two endpoints.
-5.  The policy is live in the `tester` proxy's cluster configuration.
-6.  After driving traffic, `outlier_detection.ejections_active` for the `httpbin` cluster is at least 1, **or** `ejections_total` has increased — an ejection really happened.
-7.  `istioctl proxy-config endpoints` shows one endpoint with `OUTLIER CHECK: FAILED`.
-8.  `kubectl get endpoints httpbin` still lists **both** addresses, and `httpbin-bad` is still running. The ejection is the proxy's opinion, not a change to the Kubernetes object.
-9.  Traffic measured after the ejection is substantially healthier than the 50% failure rate you started with.
+4. `httpbin-good`, `httpbin-bad` and `tester` each have a ready replica, the `httpbin` Service lists exactly two endpoint addresses, and `outlier-demo` has no `VirtualService`.
+5. The `DestinationRule` `httpbin` has `consecutive5xxErrors: 3`, `interval: 5s`, `baseEjectionTime: 30s`, and `maxEjectionPercent` of at least **50**.
+6. The `tester` proxy's cluster configuration for `httpbin` contains the outlier detection settings.
+7. After the grader sends requests from `tester` (up to 240 of them), one endpoint in the `tester` proxy carries the outlier detection failure flag, and `istioctl proxy-config endpoints` shows it with `OUTLIER CHECK: FAILED`.
+8. The `httpbin` Service still lists **both** addresses, and `httpbin-bad` is still ready. The ejection lives only in the proxy, not in the Kubernetes objects.
+9. At least 32 of 40 new requests from `tester` return `200`.

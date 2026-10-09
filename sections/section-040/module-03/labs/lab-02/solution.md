@@ -1,12 +1,10 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The probe had no shields at all. One `DestinationRule` with a small connection pool and outlier detection raises both, as long as the ejection limit lets one ship of three be removed.
-
----
+The `probe` Service had no protection at all. One `DestinationRule` with a small connection pool and outlier detection adds both, as long as `maxEjectionPercent` allows one endpoint of three to be ejected.
 
 ## Step 1: Confirm the starting state
 
-Send 15 single signals from the shuttle, and look for a `DestinationRule`:
+Send 15 single requests from the `shuttle` pod, count the status codes, and look for a `DestinationRule`:
 
 ```sh
 for i in $(seq 1 15); do
@@ -21,13 +19,13 @@ kubectl get destinationrule -n starfleet
 No resources found in starfleet namespace.
 ```
 
-About one signal in three lands on the broken ship and fails, and nothing protects the probe yet.
+About one request in three reaches the broken pod and fails, and no `DestinationRule` exists yet.
 
-## Step 2: Raise both shields in one rule
+## Step 2: Write both halves in one rule
 
-Both halves live under the same `trafficPolicy`. Keep them in one rule: two rules for one host do not combine reliably.
+The **connection pool** (`connectionPool`) limits how many connections and waiting requests the client's sidecar proxy may have open to the `probe`. **Outlier detection** (`outlierDetection`) makes the client's proxy eject an endpoint, that is, remove it from its load-balancing pool for a while, after it fails too often in a row. Both go under the same `trafficPolicy`. Keep them in one rule, because two rules for one host do not combine reliably.
 
-The value that matters most is `maxEjectionPercent`. Its default is 10%, and with three ships one ejection is 33% of the list, so with the default nothing is ever ejected. `50` lets one ship of three out.
+The value that matters most is `maxEjectionPercent`, the largest share of the pool that may be ejected at the same time. Its default is 10%. With three endpoints, one ejection is 33% of the pool, so with the default nothing is ever ejected. The value `50` allows one endpoint of three to be ejected.
 
 Save this as `destinationrule-probe.yaml`:
 
@@ -63,9 +61,9 @@ kubectl apply -f destinationrule-probe.yaml
 destinationrule.networking.istio.io/probe created
 ```
 
-## Step 3: Prove both halves work
+## Step 3: Prove that both halves work
 
-**The connection pool.** Fire 30 signals over 3 parallel connections from fortio, then read fortio's overflow counter:
+Start with the connection pool. Send 30 requests over 3 parallel connections from `fortio`, then read the overflow counter of the `fortio` proxy:
 
 ```sh
 kubectl exec -n starfleet deploy/fortio -c fortio -- \
@@ -80,9 +78,9 @@ Code 503 : 21 (70.0 %)
 cluster.outbound|8000||probe.starfleet.svc.cluster.local;.upstream_rq_pending_overflow: 19
 ```
 
-`upstream_rq_pending_overflow: 19` counts the signals the pool refused at once, with `503 UO`. Most of the `503`s here are the shield doing its job, not the broken ship.
+`upstream_rq_pending_overflow: 19` counts the requests that the connection pool refused at once, with `503` and the response flag `UO` (upstream overflow). Most of the `503` responses here come from the connection pool, not from the broken pod.
 
-**Outlier detection.** Send two rounds of 15 single signals from the shuttle:
+Next, outlier detection. Send two rounds of 15 single requests from the `shuttle` pod:
 
 ```sh
 for r in 1 2; do
@@ -98,7 +96,7 @@ done
   15 200
 ```
 
-Three `503`s in a row from the broken ship, then a clean round. Now read the shuttle's own verdict, and the broken ship's IP to compare with:
+Three `503` responses in a row came from the broken pod, then the second round had no errors. Now read the `shuttle` proxy's endpoint list, the address of the broken pod to compare with, and the proxy's ejection counters:
 
 ```sh
 istioctl proxy-config endpoints deploy/shuttle -n starfleet \
@@ -108,7 +106,7 @@ kubectl exec -n starfleet deploy/shuttle -c istio-proxy -- pilot-agent request G
   | grep -E 'probe.starfleet.*outlier_detection.ejections_(active|total):'
 ```
 
-You should see (the pod list trimmed to the name and IP columns):
+You should see (the pod list is shortened to the name and IP columns):
 
 ```text
 ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
@@ -121,7 +119,7 @@ cluster.outbound|8000||probe.starfleet.svc.cluster.local;.outlier_detection.ejec
 cluster.outbound|8000||probe.starfleet.svc.cluster.local;.outlier_detection.ejections_total: 1
 ```
 
-The broken ship, `10.244.0.10`, is `FAILED` in the shuttle's view. Kubernetes still lists it:
+The broken pod, `10.244.0.10`, has `OUTLIER CHECK: FAILED` in the `shuttle` proxy's list. Kubernetes still lists it as an endpoint of the Service:
 
 ```sh
 kubectl get endpointslices -n starfleet -l kubernetes.io/service-name=probe
@@ -138,12 +136,10 @@ Now submit:
 astrona submit -c sections/section-040/module-03/labs/lab-02
 ```
 
----
+## Common mistakes
 
-## Common Mistakes
-
-- **Leaving out `maxEjectionPercent`.** The rule looks right and counts the failures, but the 10% default blocks every ejection on three ships. The grader says: `outlierDetection.maxEjectionPercent is 'unset (10%)'. With three probe ships, one ejection is 33% of the list, so the limit must be at least 34 or nothing is ever ejected`.
-- **Splitting the shields over two `DestinationRule`s.** The grader wants exactly one rule for the probe host.
-- **Leaving out `http1MaxPendingRequests`.** Without a small queue, waiting signals pile up instead of being refused, and fortio's proxy shows no overflow.
-- **Deleting or scaling down `probe-broken`.** The signals succeed, but that is Kubernetes removing the ship, not the proxy. The grader checks that all five Deployments are still there and that the Service still lists the broken ship.
-- **Checking too soon after the ejection time.** With `baseEjectionTime: 30s` the broken ship comes back after about 30 seconds. If every row says `OK`, send a round of signals and look again.
+- **Leaving out `maxEjectionPercent`.** The rule looks right and counts the failures, but the 10% default blocks every ejection with three endpoints. The grader says: `outlierDetection.maxEjectionPercent is 'unset (10%)'. With three probe ships, one ejection is 33% of the list, so the limit must be at least 34 or nothing is ever ejected`.
+- **Splitting the connection pool and outlier detection over two `DestinationRule` objects.** The grader wants exactly one rule for the `probe` host.
+- **Leaving out `http1MaxPendingRequests`.** Without a small queue, waiting requests pile up instead of being refused, and the `fortio` proxy shows no overflow.
+- **Deleting or scaling down `probe-broken`.** The requests then succeed, but Kubernetes removed the pod, not the proxy. The grader checks that all five Deployments still exist and that the Service still lists the broken pod.
+- **Checking too soon after the ejection time.** With `baseEjectionTime: 30s`, the broken pod comes back after about 30 seconds. If every row says `OK`, send a round of requests and check again.

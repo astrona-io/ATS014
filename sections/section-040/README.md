@@ -65,14 +65,15 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 ### Outlier Detection And Endpoint Ejection
 
-3 parts and 2 labs:
+4 parts and 2 labs:
 
-1. Passive Health Checking
-2. Ejection Mechanics And Limits
-   - Lab: Outlier Detection And Endpoint Ejection Lab
-3. Local, Temporary, And Verified
-   - Lab: Raise Both Shields Lab
-4. Wrap-Up: Mission Debrief
+1. Eject A Failing Endpoint With Outlier Detection
+2. Control Ejection Time And Which Errors Count
+3. Limit Ejections With maxEjectionPercent And minHealthPercent
+   - Lab: Eject A Failing Endpoint On A Two-Endpoint Service Lab
+4. Verify Ejections And Combine Them With A Connection Pool
+   - Lab: Combine A Connection Pool And Outlier Detection Lab
+5. Summary
 
 ### Locality Load Balancing And Failover
 

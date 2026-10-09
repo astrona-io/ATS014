@@ -78,7 +78,7 @@ Each module is a landing page, its ordered parts and a closing page. The landing
 | 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | 4 | 3 |
 | 040-01 | [Timeouts And Retries](sections/section-040/module-01/course.md) | 4 | 3 |
 | 040-02 | [Circuit Breaking With Connection Pool Limits](sections/section-040/module-02/course.md) | 3 | 2 |
-| 040-03 | [Outlier Detection And Endpoint Ejection](sections/section-040/module-03/course.md) | 3 | 2 |
+| 040-03 | [Outlier Detection And Endpoint Ejection](sections/section-040/module-03/course.md) | 4 | 2 |
 | 040-04 | [Locality Load Balancing And Failover](sections/section-040/module-04/course.md) | 3 | 3 |
 | 050-01 | [Fault Injection With Delays And Aborts](sections/section-050/module-01/course.md) | 4 | 3 |
 | 060-01 | [Expose A Service With An Istio Ingress Gateway](sections/section-060/module-01/course.md) | 4 | 3 |
