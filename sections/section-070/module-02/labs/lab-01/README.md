@@ -2,11 +2,11 @@
 estimated_duration: 30m
 ---
 
-# Seal Signals To A Secure Planet
+# Originate TLS To A TLS-Only External Service
 
-Welcome to your mission, astronaut. The endpoint you must reach accepts **only** sealed signals (TLS), and the client calls it over plain `http://`. The sidecar, your ship's communications officer, has to seal each signal on the way out. The endpoint itself reports which scheme it was reached over, so there is no guessing whether it worked.
+The endpoint in this lab accepts **only** TLS (Transport Layer Security) connections, and the client calls it over plain `http://`. The client's sidecar proxy must originate TLS, that is, open the TLS connection itself on the way out. The endpoint reports which scheme it received, so there is no guessing whether it worked.
 
-This lab needs **no outbound internet access**: the TLS endpoint runs inside the cluster, outside the mesh registry.
+This lab needs **no outbound internet access**: the TLS endpoint runs inside the cluster, outside the mesh's service registry.
 
 ## Launching the Lab
 

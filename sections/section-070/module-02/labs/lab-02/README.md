@@ -2,11 +2,11 @@
 estimated_duration: 20m
 ---
 
-# Repair The Sealed Channel
+# Fix A Broken TLS Origination
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the shuttle sends open signals to a vault on the planet `outpost`, and its communications officer is supposed to seal them with TLS on the way out. Someone already wrote the three Istio objects for this, but every signal fails.
+In `starfleet`, the `shuttle` sends plain HTTP requests to a TLS-only `vault` pod in `outpost`, and its sidecar proxy should originate TLS (open the TLS connection itself) on the way out. The three Istio objects for this already exist, but every request fails.
 
-Your job is to find the two mistakes with the flight log and the shuttle's proxy, fix them, and prove that the vault was reached over a sealed channel. This lab needs no internet access: the vault runs inside the cluster.
+The task is to find the two mistakes with the access log and the shuttle's proxy configuration, fix them, and prove that the vault received the request over TLS. This lab needs no internet access: the vault runs inside the cluster.
 
 ## Launching the Lab
 

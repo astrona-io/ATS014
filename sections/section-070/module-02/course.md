@@ -1,48 +1,54 @@
 # TLS Origination For External Services
 
-Astronaut, a planet from another solar system becomes part of the star chart as soon as you write a `ServiceEntry` for it. If its signals are plain HTTP, the ship's communications officer (the sidecar proxy) can read them, so timeouts, retries and routing rules work for it.
+An external service is a service that runs outside the mesh, for example a public API on the internet. Istio adds it to the mesh's service registry when you write a `ServiceEntry` for it. If the application calls it over plain HTTP, the sidecar proxy can read each request, so timeouts, retries and routing rules work for it.
 
-Most real outside services only speak HTTPS. When an application calls `https://api.example.com/`, the crew seals the signal before the communications officer ever sees it. The proxy sees a stream of encrypted bytes and nothing else: no method, no path, no headers, no status code. Its flight log gets one line saying that bytes moved.
+Most external services only accept HTTPS. When an application calls `https://api.example.com/`, the application encrypts the request before the sidecar proxy receives it. The proxy then sees only encrypted bytes: no method, no path, no headers and no status code. Its access log gets one line that says bytes moved, and nothing more.
 
-**TLS origination** moves the seal. TLS (Transport Layer Security) is the encryption behind HTTPS. With origination, the application sends a plain HTTP signal to its own proxy. The proxy reads it, applies your rules, and then **the proxy** seals it with TLS before it leaves the ship. The signal on the wire is still HTTPS, but now the mesh can see and steer every request.
-
-> TLS origination lets the application speak plain HTTP while the sidecar seals the connection with TLS.
+**TLS origination** moves the encryption into the proxy. TLS (Transport Layer Security) is the encryption protocol behind HTTPS. With TLS origination, the application sends a plain HTTP request to its own sidecar proxy. The proxy reads the request, applies your rules, and then opens a TLS connection to the external service. The request on the network is still HTTPS, but the mesh can now see and control every request.
 
 ## Learning objectives
 
 After this module you can:
 
-- Explain why the mesh cannot see an application's own HTTPS calls.
-- Build the three objects TLS origination needs, and say what each one does.
+- Explain why the sidecar proxy cannot read an application's own HTTPS calls.
+- Build the three objects that TLS origination needs, and say what each one does.
 - Put `tls.mode: SIMPLE` under `portLevelSettings` for the right port, and explain what breaks otherwise.
 - Explain what `sni` is and why you set it.
-- Prove that origination happened, from the outside service's own view and from the proxy.
-- Describe what changes for `MUTUAL` TLS, and where the client certificate has to live.
+- Prove that TLS origination happened, from the external service's view and from the proxy's configuration.
+- Describe what changes for `MUTUAL` TLS, and where the client certificate must be stored.
 
 ## What you need first
 
 You should know three Istio objects and what each one does:
 
-- A **`ServiceEntry`** adds a planet from another solar system to the star chart, so the mesh knows its name and ports.
-- A **`VirtualService`** is the flight plan: it decides where a signal goes, based on what it carries.
-- A **`DestinationRule`** holds the docking instructions: how a proxy connects to a destination, including TLS.
+- A **`ServiceEntry`** adds a host outside the mesh to the mesh's service registry, so the proxies know its name and its ports.
+- A **`VirtualService`** holds routing rules: it decides where a request goes, based on what the request contains.
+- A **`DestinationRule`** holds the traffic policy for a destination: how a proxy connects to it, including TLS settings.
 
-TLS origination is those three objects working together. None of them is new; only the way they combine is.
+TLS origination uses these three objects together. None of them is new. Only the way they work together is new.
 
 ## Your playground
 
-The playground is a `kind` cluster (a training solar system in the simulator) with **Istio 1.30.5** installed. The planet `starfleet` holds the `shuttle`, a client with `curl` that sends every test signal, and the `probe`, an echo service. Every pod in `starfleet` has its sidecar, and every proxy writes a flight log (access log). No `ServiceEntry`, `VirtualService` or `DestinationRule` exists yet, and the mesh is at its `ALLOW_ANY` default, so ships may signal any outside planet.
+The playground is a single-node `kind` cluster with **Istio 1.30.5** installed. The namespace `starfleet` holds two workloads. The `shuttle` is a client pod with `curl`, and you send every test request from it. The `probe` is an HTTP echo server. Every pod in `starfleet` has a sidecar proxy (Envoy), and every proxy writes an access log, one line per request or connection.
 
-The commands call `httpbin.org` on the internet. **Without outbound internet access you will see network errors instead of mesh behaviour.** The graded missions do not need the internet: their TLS service runs inside the cluster.
+No `ServiceEntry`, `VirtualService` or `DestinationRule` exists yet. The mesh uses its default outbound traffic policy, `ALLOW_ANY`, so pods may connect to any host outside the mesh.
 
-Launch your playground now, and keep it running next to you while you read the parts:
+The commands call `httpbin.org` on the internet. **Without outbound internet access you see network errors instead of mesh behaviour.** The graded labs do not need the internet, because their TLS service runs inside the cluster.
+
+Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
 ## The parts
 
-1. **[Why HTTPS Is Opaque](./course-01-why-https-is-opaque.md)**: what the proxy can and cannot see in an encrypted signal, and what that costs you.
-2. **[The Three Objects](./course-02-the-three-objects.md)**: the `ServiceEntry` with two ports, the port redirect, and the `DestinationRule` that seals the signal, built one at a time.
-3. **[Two Ways To Break It](./course-03-two-ways-to-break-it.md)**: the seal on every port, and an application that still calls `https://`. Then the mission *Repair The Sealed Channel Lab*.
-4. **[Proving It, And Mutual TLS](./course-04-proving-it-and-mutual-tls.md)**: evidence from the destination and from the proxy, a timeout on the outside call, and what `MUTUAL` changes. Then the mission *Seal Signals To A Secure Planet Lab*.
-5. **[Wrap-Up](./course-05-wrap-up.md)**: what you learned, your missions, and questions to check yourself.
+The module has four parts and a summary, in this order.
+
+The first part, **Why The Proxy Cannot Read HTTPS Calls**, shows what the sidecar proxy can and cannot see when the application encrypts a request itself, and which Istio features stop working because of it.
+
+The second part, **Originate TLS With Three Istio Objects**, builds the `ServiceEntry` with two ports, the `VirtualService` that moves requests from port `80` to port `443`, and the `DestinationRule` that turns on TLS. It adds one object at a time and shows the result of each.
+
+The third part, **Troubleshoot Top-Level TLS And Double Encryption**, shows the two most common mistakes: TLS set on every port, and an application that still calls `https://`. The lab *Fix A Broken TLS Origination Lab* follows it.
+
+The fourth part, **Verify TLS Origination And Configure Mutual TLS**, collects proof from the external service and from the proxy, adds a timeout to the external call, and explains what `MUTUAL` TLS changes. The lab *Originate TLS To A TLS-Only External Service Lab* follows it.
+
+The **Summary** closes the module.

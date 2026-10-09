@@ -30,42 +30,42 @@ The order matters. `ServiceEntry` is the object all three modules use, so it com
 
 ## Modules In This Section
 
-Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
+Work through the modules in this order. Each part teaches one idea. A graded lab comes right after the part it practises, and the last page of each module is a summary. The capstone lab at the end uses everything in the section at once.
 
 ### Control External Access With ServiceEntry
 
-4 parts and 2 missions:
+4 parts and 2 labs:
 
 1. The Outbound Traffic Policy
 2. The `ServiceEntry` Object
 3. A Registered Host Is An Ordinary Host
-   - Mission: Open Exactly One Route Out Lab
+   - Lab: Open Exactly One Route Out Lab
 4. When A Correct ServiceEntry Is Refused
-   - Mission: Reach The Hidden Relay Lab
+   - Lab: Reach The Hidden Relay Lab
 5. Wrap-Up: Mission Debrief
 
 ### TLS Origination For External Services
 
-4 parts and 2 missions:
+4 parts and 2 labs:
 
-1. Why HTTPS Is Opaque
-2. The Three Objects
-3. Two Ways To Break It
-   - Mission: Repair The Sealed Channel Lab
-4. Proving It, And Mutual TLS
-   - Mission: Seal Signals To A Secure Planet Lab
-5. Wrap-Up: Mission Debrief
+1. Why The Proxy Cannot Read HTTPS Calls
+2. Originate TLS With Three Istio Objects
+3. Troubleshoot Top-Level TLS And Double Encryption
+   - Lab: Fix A Broken TLS Origination Lab
+4. Verify TLS Origination And Configure Mutual TLS
+   - Lab: Originate TLS To A TLS-Only External Service Lab
+5. Summary
 
 ### Add External Workloads With WorkloadEntry
 
-4 parts and 2 missions:
+4 parts and 2 labs:
 
 1. `WorkloadEntry`: One Old Ship
 2. `MESH_INTERNAL` And The Selector
 3. Two Ships, One Beacon
-   - Mission: Bring The Lost Freighters Back Lab
+   - Lab: Bring The Lost Freighters Back Lab
 4. `WorkloadGroup` And Real Onboarding
-   - Mission: Bring Two Old Ships Into The Mesh Lab
+   - Lab: Bring Two Old Ships Into The Mesh Lab
 5. Wrap-Up: Mission Debrief
 
 ### Capstone

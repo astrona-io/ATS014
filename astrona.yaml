@@ -1415,19 +1415,19 @@ modules:
         title: "TLS Origination For External Services"
         path: sections/section-070/module-02/course.md
       - type: reading
-        title: "Why HTTPS Is Opaque"
-        path: sections/section-070/module-02/course-01-why-https-is-opaque.md
+        title: "Why The Proxy Cannot Read HTTPS Calls"
+        path: sections/section-070/module-02/course-01-why-the-proxy-cannot-read-https-calls.md
       - type: reading
-        title: "The Three Objects"
-        path: sections/section-070/module-02/course-02-the-three-objects.md
+        title: "Originate TLS With Three Istio Objects"
+        path: sections/section-070/module-02/course-02-originate-tls-with-three-istio-objects.md
       - type: reading
-        title: "Two Ways To Break It"
-        path: sections/section-070/module-02/course-03-two-ways-to-break-it.md
+        title: "Troubleshoot Top-Level TLS And Double Encryption"
+        path: sections/section-070/module-02/course-03-troubleshoot-top-level-tls-and-double-encryption.md
       - type: reading
         title: Question
         path: sections/section-070/module-02/labs/lab-02/question.md
       - type: lab
-        title: "Repair The Sealed Channel Lab"
+        title: "Fix A Broken TLS Origination Lab"
         path: sections/section-070/module-02/labs/lab-02
         difficulty: intermediate
         estimated_duration: 20m
@@ -1435,9 +1435,9 @@ modules:
         task_kind: troubleshooting
         tags: [serviceentry, virtualservice, destinationrule, tls-origination, access-log, istioctl-analyze, proxy-config]
         learning_goals:
-          - Find a port redirect and a TLS setting placed on the wrong port from the flight log
-          - Seal only the outgoing port with portLevelSettings and sni
-          - Prove with istioctl proxy-config that only port 8443 carries a TLS transport socket
+          - Find a port redirect and a TLS setting on the wrong port from the proxy's access log
+          - Turn on TLS for the outbound port only with portLevelSettings and sni
+          - Prove with istioctl proxy-config that only port 8443 has a TLS transport socket
         resources:
           - name: "DestinationRule reference"
             url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
@@ -1446,13 +1446,13 @@ modules:
           - name: "Debugging Envoy and Istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Proving It, And Mutual TLS"
-        path: sections/section-070/module-02/course-04-proving-it-and-mutual-tls.md
+        title: "Verify TLS Origination And Configure Mutual TLS"
+        path: sections/section-070/module-02/course-04-verify-tls-origination-and-configure-mutual-tls.md
       - type: reading
         title: Question
         path: sections/section-070/module-02/labs/lab-01/question.md
       - type: lab
-        title: "Seal Signals To A Secure Planet Lab"
+        title: "Originate TLS To A TLS-Only External Service Lab"
         path: sections/section-070/module-02/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
@@ -1460,8 +1460,8 @@ modules:
         task_kind: build
         tags: [serviceentry, virtualservice, destinationrule, tls-origination, external-services, proxy-config]
         learning_goals:
-          - Let the sidecar originate TLS so the app keeps calling plain HTTP
-          - Prove the endpoint saw an encrypted connection
+          - Make the sidecar proxy originate TLS so the application keeps calling plain HTTP
+          - Prove that the external endpoint received an encrypted connection
         resources:
           - name: "ServiceEntry reference"
             url: https://istio.io/latest/docs/reference/config/networking/service-entry/
@@ -1470,8 +1470,8 @@ modules:
           - name: "Egress TLS origination task"
             url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-070/module-02/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-070/module-02/course-05-summary.md
 
       - type: reading
         title: "Add External Workloads With WorkloadEntry"
