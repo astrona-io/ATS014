@@ -1,0 +1,22 @@
+# Make navcom slow: every request waits 2s before it is forwarded.
+# The delay is added by the CALLER's sidecar (here: the scout pod), not by
+# the navcom pod. Used to test the timeout in the next step.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: navcom
+  namespace: starfleet
+spec:
+  hosts:
+  - navcom
+  http:
+  - fault:
+      delay:
+        # 100% of requests.
+        percentage:
+          value: 100
+        fixedDelay: 2s
+    route:
+    - destination:
+        host: navcom
+        subset: v1

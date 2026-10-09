@@ -315,3 +315,32 @@ That is what a clean result looks like. `analyze` is a quick first check, not pr
 > - **Checking too fast.** `kubectl apply` returns before mission control's new orders reach the proxy. A listing taken straight away can still show the old state.
 
 > *A `DestinationRule` builds clusters, not behaviour. It names destinations so that something else can choose between them.*
+
+## Your mission: Fix The Docking Instructions
+
+You can now write docking instructions, read which ships each subset holds, and spot a subset that selects nothing. Now prove it in a graded mission: a `DestinationRule` with one wrong label has broken jason's signals, and you have to find and fix it.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-010-01
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-03
+```
+
+Read the task in [`question.md`](./labs/lab-03/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-010/module-01/labs/lab-03
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-010-01-03
+astrona start ats-014-playground-010-01
+```

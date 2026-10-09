@@ -1,0 +1,43 @@
+# Same as 02, plus a second rule: /reviews/* from outside goes straight to the
+# scout, v3 only. Shows that gateway VirtualServices use the same
+# match/route/subset features as in-mesh ones.
+# Needs the scout DestinationRule (subset v3). The playground applies it at
+# startup from bootstrap/manifests/scout-subsets.yaml.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bridge
+  namespace: starfleet
+spec:
+  hosts:
+  - starfleet.example.com
+  gateways:
+  - starfleet-gateway
+  http:
+  # Rule 1: /reviews/<id> (the scout) -> scout v3.
+  - match:
+    - uri:
+        prefix: /reviews/
+    route:
+    - destination:
+        host: scout
+        subset: v3
+        port:
+          number: 9080
+  # Rule 2: the paths the bridge serves.
+  - match:
+    - uri:
+        exact: /productpage
+    - uri:
+        prefix: /static
+    - uri:
+        exact: /login
+    - uri:
+        exact: /logout
+    - uri:
+        prefix: /api/v1/products
+    route:
+    - destination:
+        host: bridge
+        port:
+          number: 9080

@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-060-02-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base, istiod and the istio-ingressgateway gateway) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-060-02-02-workloads"
+      description: "Creates the starfleet namespace with the echo probe (v1 and v2), the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-060-02-02-fault"
+      description: "Applies the starting state: an IngressClass istio whose controller string no controller answers, and a correct Ingress that claims it"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-claimed-ingress"
+      description: "Confirms the IngressClass istio names istio.io/ingress-controller, the Ingress is unchanged and claimed by it, no Gateway or VirtualService was added, and live signals through the ingress gateway reach the probe"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

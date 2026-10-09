@@ -5,7 +5,7 @@ apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
   name: egress-gateway
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   # Egress gateway pods, by label. Check with:
   #   kubectl get pods -A -l 'istio in (egress,egressgateway)' --show-labels

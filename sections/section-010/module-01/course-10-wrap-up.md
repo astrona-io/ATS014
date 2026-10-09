@@ -1,6 +1,6 @@
 # Wrap-Up: Mission Debrief
 
-Well flown, astronaut. Before you take this module's two graded missions, look back at what you learned, check yourself, and land the playground cleanly.
+Well flown, astronaut. You have finished every part and every mission in this module. Before you move on, look back at what you learned, check yourself, and land the playground cleanly.
 
 ## What you learned
 
@@ -72,6 +72,20 @@ This module was about the two objects that steer signals inside the mesh: the `D
 - A `tls` rule matches on the SNI name with `sniHosts`, because the proxy does not decrypt the traffic.
 - TCP load balancing happens per connection, not per request.
 
+## Your missions
+
+You proved each skill in a graded mission, right after the part that taught it:
+
+| Mission | After the part | What you proved |
+| --- | --- | --- |
+| [Fix The Docking Instructions](./labs/lab-03/README.md) | Name The Ship Classes | find and fix a subset that selects no ship |
+| [Route Requests By Header, URI And Query Parameter](./labs/lab-01/README.md) | Put Your Rules In Order | route by header, path and query, with every rule reachable |
+| [Find Out Why The Flight Plan Does Nothing](./labs/lab-04/README.md) | Read The Flight Log And The Proxy's Orders | repair a flight plan with more than one hidden fault |
+| [Reshape A Request](./labs/lab-02/README.md) | Rewriting, Redirecting And Headers | redirect, rewrite, change headers and answer browser checks |
+| [Bring HTTP Routing Back](./labs/lab-05/README.md) | Routing Non-HTTP Traffic | find the port name that switched HTTP routing off |
+
+If you skipped one, go back to it now. Each mission is short, and the exam asks for exactly these skills.
+
 ## Check yourself
 
 Try to answer each question before you open the answer.
@@ -83,73 +97,79 @@ No. The proxy gets new clusters, one per subset, but nothing uses them yet. Traf
 </details>
 
 <details>
-<summary>2. A <code>match</code> has a <code>headers</code> condition and a <code>uri</code> condition in the same <code>-</code> item. When does the rule fire?</summary>
+<summary>2. A signal carries <code>End-User: Jason</code>. Your rule says <code>end-user</code> with <code>exact: jason</code>. Does it match?</summary>
+
+No. The header **name** matches, because names ignore upper and lower case. The **value** does not: `exact` compares letter for letter, and `Jason` is not `jason`. Use `regex: "(?i)jason"` if the value must ignore case.
+</details>
+
+<details>
+<summary>3. A <code>match</code> has a <code>headers</code> condition and a <code>uri</code> condition in the same <code>-</code> item. When does the rule fire?</summary>
 
 Only when both are true. Conditions inside one item are combined with AND. Put a `-` in front of `uri` and they become two items, combined with OR.
 </details>
 
 <details>
-<summary>3. Your catch-all rule is first in the list, and the jason rule is second. What happens to jason?</summary>
+<summary>4. Your catch-all rule is first in the list, and the jason rule is second. What happens to jason?</summary>
 
-Jason gets the catch-all destination. The proxy stops at the first rule that fits, and a rule without `match` fits everything. `istioctl analyze` warns with `IST0130`.
+jason gets the catch-all destination. The proxy stops at the first rule that fits, and a rule without `match` fits everything. `istioctl analyze` warns with `IST0130`.
 </details>
 
 <details>
-<summary>4. The caller gets a bare <code>503</code>. The access log shows <code>NC</code>. Where do you look?</summary>
+<summary>5. <code>kubectl</code> accepted your <code>VirtualService</code>, but nothing changes. <code>istioctl analyze -n starfleet</code> is clean. What do you check first?</summary>
+
+Where the object lives: `kubectl get virtualservice -A`. A short host name is filled in from the object's own namespace, so a flight plan on the wrong planet describes a beacon that does not exist. `istioctl analyze -n <that namespace>`, or `-A`, reports it as `IST0101 Referenced host not found`.
+</details>
+
+<details>
+<summary>6. The sender gets a bare <code>503</code>. The flight log shows <code>NC</code>. Where do you look?</summary>
 
 At the subset name and the `DestinationRule`. `NC` means the route names a subset with no cluster: a typo in `subset:`, or a `DestinationRule` that is missing, in another namespace, or not pushed yet. `UH` would mean the subset exists but selects no pods.
 </details>
 
 <details>
-<summary>5. Which of <code>redirect</code>, <code>rewrite</code>, <code>headers</code> and <code>corsPolicy</code> ends the request at the proxy?</summary>
+<summary>7. Every <code>http</code> rule for one Service stopped working, with no error anywhere. What do you suspect?</summary>
 
-`redirect`. The proxy answers the caller itself, and the request never reaches a pod. The others change the request or the response on its way.
+The Service port's protocol. A port named `tcp`, or with `appProtocol: tcp`, turns off every HTTP feature for that Service. The Service disappears from `istioctl proxy-config routes`, and `istioctl analyze` stays clean.
+</details>
+
+<details>
+<summary>8. Which of <code>redirect</code>, <code>rewrite</code>, <code>headers</code> and <code>corsPolicy</code> ends the signal's journey at the proxy?</summary>
+
+`redirect`. The proxy answers the sender itself, and the signal never reaches a ship. The others change the signal or the answer on its way.
 </details>
 
 ## Clean up the playground
 
-The playground is a whole Kubernetes cluster running on your machine. Each graded lab builds its own, separate cluster. Remove the playground first, so the two do not compete for memory and you cannot send a command to the wrong solar system by accident.
+Your playground is a whole Kubernetes cluster running on your machine. When you are done with this module, remove it, and any mission that is still running.
 
-**Step 1.** Destroy the playground. The command takes the playground's **name**, not its folder path:
-
-```sh
-astrona destroy ats-014-playground-010-01
-```
-
-**Step 2.** Check that it is gone:
+First, see what is still running:
 
 ```sh
 astrona list
 ```
 
-`ats-014-playground-010-01` should no longer be in the list.
-
-You can start the playground again at any time with the same `astrona run` command from the module's landing page. It always starts clean, so nothing you broke carries over.
-
-## Your next missions
-
-This module has two graded labs. Take them in order, and run only one at a time.
-
-**Mission 1: [Route Requests By Header, URI And Query Parameter](./labs/lab-01/README.md).** Split one Service into subsets, and route single requests by header, URI prefix and query parameter. Read the task in [`question.md`](./labs/lab-01/question.md).
+Remove the playground. The command takes its **name**, not its folder path:
 
 ```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-01
+astrona destroy ats-014-playground-010-01
 ```
 
-When you think you are done, send it for grading:
+If `astrona list` also showed a mission, remove it the same way, for example:
 
 ```sh
-astrona submit -c sections/section-010/module-01/labs/lab-01
+astrona destroy ats-014-lab-010-01-05
 ```
 
-**Mission 2: [Reshape A Request](./labs/lab-02/README.md).** Use a redirect, a rewrite, header changes and a CORS policy on matched rules. Read the task in [`question.md`](./labs/lab-02/question.md). Destroy the first lab before you start this one (`astrona destroy ats-014-lab-010-01`).
+Then check that everything is gone:
 
 ```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-02
+astrona list
 ```
 
-```sh
-astrona submit -c sections/section-010/module-01/labs/lab-02
+```text
+No astrona labs running.
 ```
 
-Try each one on your own first. Keep [Put Your Rules In Order](./course-05-put-your-rules-in-order.md) and [Read The Flight Log And The Proxy's Orders](./course-07-read-the-flight-log-and-the-proxys-orders.md) open next to you: most failed submissions come down to rule order or a host name.
+You can start the playground again at any time with the `astrona run` command from the module's landing page. It always starts clean, so nothing you broke carries over.
+
+> *Two objects steer every signal in the mesh: the `DestinationRule` names the ship classes, and the `VirtualService` decides which signals fly to which class.*

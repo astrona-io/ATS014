@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-010-03-01"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-010-03-01-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-010-03-01-start"
+      description: "Applies the starting state in the safe order (scout DestinationRule with v1, v2 and v3, then a VirtualService sending everything to v1) and starts the patrol ship that keeps sending signals"
+      type: "file"
+      source: "bootstrap/03-seed-start.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-ship-class-retired"
+      description: "Confirms jason flies to scout-v3 and everyone else to scout-v2, the DestinationRule holds only v2 and v3, no route points at a missing subset, and the patrol ship logged no failed signal during the change"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

@@ -1,0 +1,29 @@
+# A broken extra ship behind the probe Service: answers every signal with 503.
+# Same label app=probe, so the Service sends it about a third of the signals.
+# It has no readiness probe to fail, so Kubernetes lists it as healthy.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-broken
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      version: broken
+  template:
+    metadata:
+      labels:
+        app: probe
+        version: broken
+    spec:
+      containers:
+      - name: http-echo
+        image: hashicorp/http-echo:1.0
+        args:
+        - -listen=:8080
+        - -status-code=503
+        - -text=broken
+        ports:
+        - containerPort: 8080

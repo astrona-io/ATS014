@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-080-01-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 with Helm: istio-base, istiod with DNS capture, and the egress gateway in istio-egress"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-080-01-02-workloads"
+      description: "Creates the starfleet namespace with the shuttle client and mesh-wide access logs, and the outpost namespace with the relay, a bare pod that is not in the mesh registry"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-080-01-02-fault"
+      description: "Applies the starting state: a correct ServiceEntry and DestinationRule, a Gateway that names the wrong host, and a two-stage VirtualService without mesh in its top-level gateways"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-departure-gate"
+      description: "Confirms the shuttle's route for the relay points at the egress gateway, a live call returns 200, and the gateway's own access log records it"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

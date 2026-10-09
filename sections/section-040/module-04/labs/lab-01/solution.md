@@ -16,19 +16,22 @@ kubectl -n locality-demo exec deploy/tester -- sh -c \
 ```
 
 ```text
-httpbin-zone-a-...   1/1   Running   10.244.0.21
-httpbin-zone-b-...   1/1   Running   10.244.0.22
-tester-...           1/1   Running   10.244.0.23
-"address": "10.244.0.21",
-"zone": "zone-a",
-"address": "10.244.0.22",
-"zone": "zone-b",
-503 503 503 503 503 503 503 503 503 503 503 503 503 503 503 503 503 503 503 503
+NAME                              READY   STATUS    RESTARTS   AGE   IP            NODE                                     NOMINATED NODE   READINESS GATES
+httpbin-zone-a-6788dbbdd8-d2zq8   2/2     Running   0          30s   10.244.0.9    astro-ats-014-lab-040-04-control-plane   <none>           <none>
+httpbin-zone-b-679bd5d96-q8v8m    2/2     Running   0          31s   10.244.0.8    astro-ats-014-lab-040-04-control-plane   <none>           <none>
+tester-69699fd775-7p784           2/2     Running   0          30s   10.244.0.10   astro-ats-014-lab-040-04-control-plane   <none>           <none>
+                "address": {
+                        "address": "10.244.0.9",
+                    "zone": "zone-a"
+                "address": {
+                        "address": "10.244.0.8",
+                    "zone": "zone-b"
+200 200 200 200 503 503 200 503 200 200 503 200 503 503 200 200 200 503 200 503
 ```
 
-Every request fails. Both endpoints are healthy as far as Kubernetes is concerned, both carry a locality — and Istio's **default preference** is sending everything to `zone-a`, the caller's own locality, which happens to be the broken one.
+About half the requests fail. Both endpoints are healthy as far as Kubernetes is concerned, and both carry a locality. With no `DestinationRule` there is no locality preference at all: Istio only applies it to a host that has `outlierDetection`. So the signals spread over both endpoints, and every one that lands on `zone-a` gets its `503`.
 
-That is worth sitting with: the default that normally saves you latency and money is, here, routing 100% of traffic into a failing endpoint. Preference alone has no notion of health.
+Nothing in the mesh knows that `zone-a` is broken. That is the gap to close.
 
 ---
 
@@ -48,7 +51,7 @@ The instinct is to reach for `failover`. It would not help.
 
 So the object needs **both** blocks: one to make the endpoint unhealthy, one to make locality awareness explicit.
 
-And `maxEjectionPercent` needs deciding, for module 3's reason: 10% of two endpoints is zero, so the default would count the failures and eject nothing.
+And `maxEjectionPercent` needs deciding: 10% of two endpoints is zero, so the default would count the failures and eject nothing.
 
 ---
 
@@ -105,7 +108,7 @@ Note both keys sit under the same `trafficPolicy` — `outlierDetection` and `lo
 
 ## Step 4: Drive Traffic
 
-Detection is passive. It needs two consecutive failures on `zone-a`, which — since preference is sending it nearly everything — arrive quickly here.
+Detection is passive. It needs two consecutive failures on `zone-a`. With `outlierDetection` in place, the locality preference now sends the tester's signals to `zone-a` first, so those failures arrive quickly.
 
 ```sh
 kubectl -n locality-demo exec deploy/tester -- sh -c \
@@ -116,7 +119,7 @@ kubectl -n locality-demo exec deploy/tester -- sh -c \
 503 503 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 ...
 ```
 
-Two failures, then the ejection lands and everything after it succeeds. The transition is much sharper than in module 3 because locality preference was concentrating traffic on the bad endpoint rather than diluting it — the thing that made the problem worse makes the detection faster.
+Two failures, then the ejection lands and everything after it succeeds. The transition is sharp because the locality preference sends the first signals straight to the nearby, broken endpoint, so the two failures needed for an ejection arrive at once.
 
 ---
 
@@ -200,7 +203,7 @@ kubectl -n locality-demo exec deploy/tester -- sh -c \
 
 - **`localityLbSetting` with no `outlierDetection`.** The headline failure. Locality has no health checker of its own.
 - **`maxEjectionPercent` left at 10%.** Two endpoints, zero ejectable — the two defaults compound into complete inaction.
-- **Reaching for `failover`.** It is region-level and there is one region here; the default preference already handles zone spillover.
+- **Reaching for `failover`.** It is region-level and there is one region here; with `outlierDetection` in place, the locality preference already handles zone spillover.
 - **Scaling `httpbin-zone-a` to zero.** That is endpoint removal and it works without outlier detection — it proves nothing, and the grader checks the replica count.
 - **Not checking localities first.** An endpoint with an empty locality makes every setting here a no-op, with no error.
 - **Testing with too few requests.** Passive detection needs the failures to arrive first.

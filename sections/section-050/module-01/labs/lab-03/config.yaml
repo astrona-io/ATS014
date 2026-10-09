@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-050-01-03"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-050-01-03-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the probe v1/v2, the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-050-01-03-fault"
+      description: "Applies the starting state: every scout signal goes to scout v2, and a forgotten abort drill fails every signal to navcom with 500"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-scoped-drill"
+      description: "Confirms navcom's flight plan has exactly two rules, the abort drill only for end-user: tester and a plain rule below it, that ordinary scout answers carry star ratings again, and that tester's signals still meet the drill with FI in the shuttle's flight log"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

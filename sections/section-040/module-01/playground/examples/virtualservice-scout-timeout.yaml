@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  hosts:
+  - scout
+  http:
+  - route:
+    - destination:
+        host: scout
+        subset: v2
+    timeout: 0.5s

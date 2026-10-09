@@ -63,7 +63,7 @@ Apply it:
 kubectl apply -f serviceentry-partner.yaml
 ```
 
-Section 070's object, unchanged: it puts the partner on the star chart. Without it neither stage below has a host to route.
+The usual `ServiceEntry`: it puts the partner on the star chart. Without it neither stage below has a host to route.
 
 ---
 

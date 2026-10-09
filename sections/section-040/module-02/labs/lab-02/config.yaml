@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-040-02-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-02-02-workloads"
+      description: "Creates the starfleet namespace with the shuttle, the probe v1/v2 and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-040-02-02-storm"
+      description: "Applies the starting state: correct connection pool shields on the probe, and a flight plan whose retry policy sends every failing signal six times"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-retry-storm-calmed"
+      description: "Confirms the probe DestinationRule is unchanged, the probe VirtualService still retries connection failures with at most 2 attempts and no longer retries the probe's own 5xx answers, and that 5 failing signals reach the probe exactly 5 times"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

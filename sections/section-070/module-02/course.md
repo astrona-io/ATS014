@@ -1,49 +1,48 @@
 # TLS Origination For External Services
 
-<!-- astrona:playground -->
-> [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
->
-> ```sh
-> astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-070/module-02/playground
-> astrona destroy ats-014-playground-070-02
-> ```
+Astronaut, a planet from another solar system becomes part of the star chart as soon as you write a `ServiceEntry` for it. If its signals are plain HTTP, the ship's communications officer (the sidecar proxy) can read them, so timeouts, retries and routing rules work for it.
 
-Astronaut, module 1 charted a planet from another solar system and immediately got timeouts, retries and routing for it. That worked because the signals were plain HTTP on port 80, so the communications officer (the sidecar) could read them.
+Most real outside services only speak HTTPS. When an application calls `https://api.example.com/`, the crew seals the signal before the communications officer ever sees it. The proxy sees a stream of encrypted bytes and nothing else: no method, no path, no headers, no status code. Its flight log gets one line saying that bytes moved.
 
-Most real external services are HTTPS. When an application calls `https://api.example.com/`, the crew seals the signal before the communications officer ever sees it. The sidecar sees an encrypted TCP stream and nothing else: no method, no path, no headers, no status codes. Every layer-7 feature in this course is unavailable, and the access log has one line saying bytes moved.
+**TLS origination** moves the seal. TLS (Transport Layer Security) is the encryption behind HTTPS. With origination, the application sends a plain HTTP signal to its own proxy. The proxy reads it, applies your rules, and then **the proxy** seals it with TLS before it leaves the ship. The signal on the wire is still HTTPS, but now the mesh can see and steer every request.
 
-TLS origination moves the encryption boundary. The crew hands the communications officer an open message: the application speaks plain HTTP to its own sidecar. The sidecar applies layer-7 rules in the clear. Then **the sidecar** seals the signal, performing the TLS handshake with the external service, before it leaves the ship. The bytes leaving the node are still HTTPS — nothing is less secure on the wire — but the mesh can now see and govern the request.
-
-> TLS origination lets the app speak plain HTTP while the sidecar upgrades the connection to HTTPS.
-
-## How this module is organised
-
-1. **[Why HTTPS Is Opaque](./course-01-why-https-is-opaque.md)** — what the sidecar can and cannot see in an encrypted stream, and what that costs you.
-2. **[The Three Objects](./course-02-the-three-objects.md)** — the `ServiceEntry` with two ports, the port redirect, and the `DestinationRule` that performs the handshake — plus the two placement details that break it.
-3. **[Proving It, And Mutual TLS](./course-03-proving-it-and-mutual-tls.md)** — evidence from the destination's own view and from the proxy, what `MUTUAL` changes, and where this belongs relative to section 080.
+> TLS origination lets the application speak plain HTTP while the sidecar seals the connection with TLS.
 
 ## Learning objectives
 
 After this module you can:
 
-- Explain why an application making its own HTTPS calls is invisible to the mesh.
-- Build the three objects TLS origination needs, and say what each contributes.
-- Place `tls.mode: SIMPLE` under `portLevelSettings` for the right port, and explain what goes wrong otherwise.
-- Explain what `sni` is and when omitting it breaks the handshake.
-- Prove origination happened from the destination's own view of the request.
-- Describe what changes for `MUTUAL`, and where the client certificate has to live.
+- Explain why the mesh cannot see an application's own HTTPS calls.
+- Build the three objects TLS origination needs, and say what each one does.
+- Put `tls.mode: SIMPLE` under `portLevelSettings` for the right port, and explain what breaks otherwise.
+- Explain what `sni` is and why you set it.
+- Prove that origination happened, from the outside service's own view and from the proxy.
+- Describe what changes for `MUTUAL` TLS, and where the client certificate has to live.
 
-## Before you start
+## What you need first
 
-This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+You should know three Istio objects and what each one does:
 
-You need `ServiceEntry` from module 1, `VirtualService` routing from section 010, and `DestinationRule.trafficPolicy` from section 030. This module is those three objects cooperating; none of them is new.
+- A **`ServiceEntry`** adds a planet from another solar system to the star chart, so the mesh knows its name and ports.
+- A **`VirtualService`** is the flight plan: it decides where a signal goes, based on what it carries.
+- A **`DestinationRule`** holds the docking instructions: how a proxy connects to a destination, including TLS.
 
-The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`tlsorig-demo`**, injected, with a `tester` client pod. No Istio configuration exists, and the mesh is at its `ALLOW_ANY` default — this module is about **visibility**, not permission.
+TLS origination is those three objects working together. None of them is new; only the way they combine is.
 
-The commands reach `httpbin.org`. **Without outbound internet access** you will see network errors rather than mesh behaviour.
+## Your playground
 
-## Where this fits
+The playground is a `kind` cluster (a training solar system in the simulator) with **Istio 1.30.5** installed. The planet `starfleet` holds the `shuttle`, a client with `curl` that sends every test signal, and the `probe`, an echo service. Every pod in `starfleet` has its sidecar, and every proxy writes a flight log (access log). No `ServiceEntry`, `VirtualService` or `DestinationRule` exists yet, and the mesh is at its `ALLOW_ANY` default, so ships may signal any outside planet.
 
-Origination here happens in the **client's own sidecar**, which means every workload calling the external service originates its own TLS — and any client certificate has to be available to every one of those pods. Section 080 module 2 moves the same operation to a dedicated egress gateway, so the certificate lives in one place. The objects are recognisably these ones with an extra hop, which is why this module comes first.
+The commands call `httpbin.org` on the internet. **Without outbound internet access you will see network errors instead of mesh behaviour.** The graded missions do not need the internet: their TLS service runs inside the cluster.
+
+Launch your playground now, and keep it running next to you while you read the parts:
+
+<!-- astrona:playground -->
+
+## The parts
+
+1. **[Why HTTPS Is Opaque](./course-01-why-https-is-opaque.md)**: what the proxy can and cannot see in an encrypted signal, and what that costs you.
+2. **[The Three Objects](./course-02-the-three-objects.md)**: the `ServiceEntry` with two ports, the port redirect, and the `DestinationRule` that seals the signal, built one at a time.
+3. **[Two Ways To Break It](./course-03-two-ways-to-break-it.md)**: the seal on every port, and an application that still calls `https://`. Then the mission *Repair The Sealed Channel Lab*.
+4. **[Proving It, And Mutual TLS](./course-04-proving-it-and-mutual-tls.md)**: evidence from the destination and from the proxy, a timeout on the outside call, and what `MUTUAL` changes. Then the mission *Seal Signals To A Secure Planet Lab*.
+5. **[Wrap-Up](./course-05-wrap-up.md)**: what you learned, your missions, and questions to check yourself.

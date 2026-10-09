@@ -6,17 +6,16 @@ Built and verified against **Istio 1.30.5**.
 
 Welcome aboard, astronaut. Your missions here all deal with one thing: **signals**. Every request one spaceship (a pod) sends to another is a signal. Istio puts a communications officer (the sidecar proxy) on every ship, and mission control (`istiod`) tells each communications officer where signals may fly, how long to wait for a reply, and what to do when a ship is damaged. This course trains you to give those orders, and to prove they work, on a real solar system (a Kubernetes cluster).
 
-The repository has three layers:
+The repository has four layers:
 
 | Layer | Path | What it is |
 | --- | --- | --- |
 | **Manifest** | `astrona.yaml` | The course outline the platform reads — every reading and lab, in order |
-| **Reading** | `sections/section-0N0/module-0M/` | A short landing page plus ordered deep-dive parts, each with hands-on "Try it" checkpoints |
-| **Practice** | `.../module-0M/labs/lab-0N/` and `.../playground/` | At least one graded lab per module, and one ungraded sandbox per module |
+| **Reading** | `sections/section-0N0/module-0M/` | A short landing page, ordered parts that teach one idea each with hands-on steps, and a wrap-up |
+| **Practice** | `.../module-0M/labs/lab-0N/` and `.../playground/` | Graded labs (missions) placed right after the part they practise, and one ungraded sandbox per module |
 | **Integration** | `sections/section-0N0/capstone/labs/lab-01/` | One graded capstone per section, combining that section's modules |
-| **Source** | `domains/traffic-management/` | The original exam-style study labs each module was built from |
 
-Your flight path for each module: read its parts, fly its playground alongside (your training simulator), then take the module lab without looking at the solution. Finish each section with its capstone, the bigger mission that combines everything in that section.
+Your flight path for each module: read its parts with its playground open alongside (your training simulator). When a part ends with **Your mission**, pause the playground and take that lab without looking at the solution. The wrap-up page lists the missions and cleans up the playground. Finish each section with its capstone, the bigger mission that combines everything in that section.
 
 ---
 
@@ -56,9 +55,9 @@ Section [000](sections/section-000) is not an exam topic. It is pre-flight train
 | [070](sections/section-070) | Connecting In-Mesh Workloads To External Workloads And Services | 3 | Connecting In-Mesh Workloads to External Workloads and Services |
 | [080](sections/section-080) | Configuring Ingress And Egress Traffic — Egress | 2 | Configuring Ingress and Egress Traffic |
 
-**20 modules · 69 deep-dive parts · 21 graded labs · 8 capstones · 20 playgrounds.**
+**20 modules · 80 parts · 48 graded labs · 8 capstones · 20 playgrounds.**
 
-The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml) — 160 entries across the briefing and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
+The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml): 245 entries across the briefing and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
 
 Sections are ordered so each needs only what came before. Section 000 is foundations — what a sidecar is, how `istiod` programs it, and how to read a proxy's live configuration — because every section after it assumes all three. `VirtualService` and `DestinationRule` are introduced first because everything else is a field on one of them; `ServiceEntry` (070) precedes the egress gateway (080) that depends on it.
 
@@ -66,30 +65,30 @@ Sections are ordered so each needs only what came before. Section 000 is foundat
 
 ## Modules
 
-Each module is a landing page plus its ordered parts. The landing page links them in order.
+Each module is a landing page, its ordered parts and a wrap-up. The landing page links them in order, and each section's overview lists every part with the missions that follow it.
 
-| Module | Reader | Graded lab | Source lab |
+| Module | Reader | Parts | Graded labs |
 | --- | --- | --- | --- |
-| 000-01 | [How A Request Moves Through The Mesh](sections/section-000/module-01/course.md) | [lab](sections/section-000/module-01/labs/lab-01) | — |
-| 010-01 | [Route Requests Within The Mesh](sections/section-010/module-01/course.md) | [lab 1](sections/section-010/module-01/labs/lab-01) · [lab 2](sections/section-010/module-01/labs/lab-02) | [`01-request-routing…`](domains/traffic-management/01-request-routing-headers-uri-query) |
-| 010-02 | [Scope Proxy Configuration With The Sidecar Resource](sections/section-010/module-02/course.md) | [lab](sections/section-010/module-02/labs/lab-01) | [`17-sidecar-resource-scoping`](domains/traffic-management/17-sidecar-resource-scoping) |
-| 010-03 | [Apply And Remove Traffic Rules Safely](sections/section-010/module-03/course.md) | — | — |
-| 020-01 | [Shift Traffic With Weighted Routing](sections/section-020/module-01/course.md) | [lab](sections/section-020/module-01/labs/lab-01) | [`02-traffic-shifting…`](domains/traffic-management/02-traffic-shifting-weighted-canary) |
-| 020-02 | [Mirror Live Traffic To A Shadow Service](sections/section-020/module-02/course.md) | [lab](sections/section-020/module-02/labs/lab-01) | [`03-traffic-mirroring`](domains/traffic-management/03-traffic-mirroring) |
-| 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | [lab 1](sections/section-030/module-01/labs/lab-01) · [lab 2](sections/section-030/module-01/labs/lab-02) | [`08-load-balancing…`](domains/traffic-management/08-load-balancing-and-session-affinity) |
-| 040-01 | [Timeouts And Retries](sections/section-040/module-01/course.md) | [lab](sections/section-040/module-01/labs/lab-01) | [`04-timeouts-and-retries`](domains/traffic-management/04-timeouts-and-retries) |
-| 040-02 | [Circuit Breaking With Connection Pool Limits](sections/section-040/module-02/course.md) | [lab](sections/section-040/module-02/labs/lab-01) | [`05-circuit-breaking…`](domains/traffic-management/05-circuit-breaking-connection-pool) |
-| 040-03 | [Outlier Detection And Endpoint Ejection](sections/section-040/module-03/course.md) | [lab](sections/section-040/module-03/labs/lab-01) | [`06-outlier-detection-ejection`](domains/traffic-management/06-outlier-detection-ejection) |
-| 040-04 | [Locality Load Balancing And Failover](sections/section-040/module-04/course.md) | [lab](sections/section-040/module-04/labs/lab-01) | [`09-locality-load-balancing…`](domains/traffic-management/09-locality-load-balancing-and-failover) |
-| 050-01 | [Fault Injection With Delays And Aborts](sections/section-050/module-01/course.md) | [lab](sections/section-050/module-01/labs/lab-01) | [`07-fault-injection…`](domains/traffic-management/07-fault-injection-delay-abort) |
-| 060-01 | [Expose A Service With An Istio Ingress Gateway](sections/section-060/module-01/course.md) | [lab](sections/section-060/module-01/labs/lab-01) | [`10-ingress-gateway-http`](domains/traffic-management/10-ingress-gateway-http) |
-| 060-02 | [Expose A Service With A Kubernetes Ingress](sections/section-060/module-02/course.md) | [lab](sections/section-060/module-02/labs/lab-01) | [`11-ingress-with-kubernetes-ingress`](domains/traffic-management/11-ingress-with-kubernetes-ingress) |
-| 060-03 | [Ingress With The Kubernetes Gateway API](sections/section-060/module-03/course.md) | [lab](sections/section-060/module-03/labs/lab-01) | [`12-ingress-with-gateway-api`](domains/traffic-management/12-ingress-with-gateway-api) |
-| 070-01 | [Control External Access With ServiceEntry](sections/section-070/module-01/course.md) | [lab](sections/section-070/module-01/labs/lab-01) | [`13-egress-serviceentry…`](domains/traffic-management/13-egress-serviceentry-external-access) |
-| 070-02 | [TLS Origination For External Services](sections/section-070/module-02/course.md) | [lab](sections/section-070/module-02/labs/lab-01) | [`14-egress-tls-origination`](domains/traffic-management/14-egress-tls-origination) |
-| 070-03 | [Add External Workloads With WorkloadEntry](sections/section-070/module-03/course.md) | [lab](sections/section-070/module-03/labs/lab-01) | [`18-workloadentry…`](domains/traffic-management/18-workloadentry-external-workloads) |
-| 080-01 | [Route External Traffic Through An Egress Gateway](sections/section-080/module-01/course.md) | [lab](sections/section-080/module-01/labs/lab-01) | [`15-egress-gateway-routing`](domains/traffic-management/15-egress-gateway-routing) |
-| 080-02 | [TLS Origination At The Egress Gateway](sections/section-080/module-02/course.md) | [lab](sections/section-080/module-02/labs/lab-01) | [`16-egress-gateway-tls-origination`](domains/traffic-management/16-egress-gateway-tls-origination) |
+| 000-01 | [How A Request Moves Through The Mesh](sections/section-000/module-01/course.md) | 5 | 2 |
+| 010-01 | [Route Requests Within The Mesh](sections/section-010/module-01/course.md) | 9 | 5 |
+| 010-02 | [Scope Proxy Configuration With The Sidecar Resource](sections/section-010/module-02/course.md) | 4 | 2 |
+| 010-03 | [Apply And Remove Traffic Rules Safely](sections/section-010/module-03/course.md) | 2 | 1 |
+| 020-01 | [Shift Traffic With Weighted Routing](sections/section-020/module-01/course.md) | 3 | 2 |
+| 020-02 | [Mirror Live Traffic To A Shadow Service](sections/section-020/module-02/course.md) | 3 | 2 |
+| 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | 4 | 3 |
+| 040-01 | [Timeouts And Retries](sections/section-040/module-01/course.md) | 4 | 3 |
+| 040-02 | [Circuit Breaking With Connection Pool Limits](sections/section-040/module-02/course.md) | 3 | 2 |
+| 040-03 | [Outlier Detection And Endpoint Ejection](sections/section-040/module-03/course.md) | 3 | 2 |
+| 040-04 | [Locality Load Balancing And Failover](sections/section-040/module-04/course.md) | 3 | 3 |
+| 050-01 | [Fault Injection With Delays And Aborts](sections/section-050/module-01/course.md) | 4 | 3 |
+| 060-01 | [Expose A Service With An Istio Ingress Gateway](sections/section-060/module-01/course.md) | 4 | 3 |
+| 060-02 | [Expose A Service With A Kubernetes Ingress](sections/section-060/module-02/course.md) | 3 | 2 |
+| 060-03 | [Ingress With The Kubernetes Gateway API](sections/section-060/module-03/course.md) | 4 | 3 |
+| 070-01 | [Control External Access With ServiceEntry](sections/section-070/module-01/course.md) | 4 | 2 |
+| 070-02 | [TLS Origination For External Services](sections/section-070/module-02/course.md) | 4 | 2 |
+| 070-03 | [Add External Workloads With WorkloadEntry](sections/section-070/module-03/course.md) | 4 | 2 |
+| 080-01 | [Route External Traffic Through An Egress Gateway](sections/section-080/module-01/course.md) | 5 | 2 |
+| 080-02 | [TLS Origination At The Egress Gateway](sections/section-080/module-02/course.md) | 5 | 2 |
 
 ---
 
@@ -97,7 +96,7 @@ Each module is a landing page plus its ordered parts. The landing page links the
 
 Every module has one. Think of it as a training solar system in the simulator: a **kind** cluster with Istio 1.30.5 installed and the module's starting workloads applied. It has deliberately no Istio traffic configuration, because writing that is your mission.
 
-Most playgrounds now run **Bookinfo**, the sample app the Istio docs use, in namespace `bookinfo`. They install Istio with Helm (only `istiod`, plus a gateway where the module needs one), so you need `istioctl` on your own machine. Each one has `examples/` with ready YAML files, and most also have `docs/practice.md` with an exam-style task. The playgrounds not moved over yet (000-01, 010-02, 040-04, 060-02, 060-03, 070-02, 070-03, 080-02) still use the `demo` profile and their own small apps. The graded labs and capstones are unchanged.
+Every playground runs **the Starfleet**: the Bookinfo sample app from the Istio documentation, with space names (`bridge`, `cargo`, `scout` v1, v2 and v3, `navcom`) in namespace `starfleet`, plus the `shuttle` test client and any extra ships the module needs. The playgrounds install Istio with Helm (`istiod`, plus a gateway where the module needs one), so you need `istioctl` on your own machine. Each one has `examples/` with ready YAML files, and most also have `docs/practice.md` with an exam-style task. A few older graded labs and capstones still use their own small apps.
 
 ```bash
 astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-010/module-01/playground
@@ -122,14 +121,6 @@ Labs are your real missions: they are **graded** against the live state of the s
 ## Environment notes
 
 - **No load balancer.** On `kind`, a gateway Service's `EXTERNAL-IP` stays `<pending>`. The ingress and egress material uses `kubectl port-forward`; this is expected, not a fault.
-- **Outbound internet.** The section 070 and 080 *playgrounds* reach real hosts (`httpbin.org`, `example.com`). Without outbound access you will see network errors rather than mesh behaviour. **Every graded lab and capstone runs entirely offline** — their "external" endpoints are pods deliberately kept out of the mesh registry.
-- **Locality (040-04).** Deriving locality from node labels needs a multi-node cluster, so that playground declares it with the `istio-locality` pod label instead. Its `docs/overview.md` says what that changes; the matching lab under `domains/` targets a real multi-node cluster.
-- **Gateway API version.** Section 060 module 3 and its lab pin a Gateway API CRD release. Gateway API and Istio release on their own schedules — check the Istio release notes for the supported pairing before changing either version.
-
----
-
-## Working the source labs
-
-`domains/traffic-management/` holds the original exam-style study lab each module was derived from, with `manifests/lab-start.yaml` and `manifests/solution.yaml`. They assume a cluster with Istio already installed and are written for the exam's own rhythm: read the task, write the objects, verify against live cluster state.
-
-See [`domains/traffic-management/README.md`](domains/traffic-management/README.md) for the full list and which upstream Killercoda scenario each derives from.
+- **Outbound internet.** The *playgrounds* for 070-01, 070-02, 080-01 and 080-02 reach real hosts on the internet (for example `httpbin.org`). Without outbound access you will see network errors rather than mesh behaviour. **Every graded lab and capstone runs entirely offline** — their "external" endpoints are pods deliberately kept out of the mesh registry.
+- **Locality (040-04).** Deriving locality from node labels needs a multi-node cluster, so that playground declares it with the `istio-locality` pod label instead. Its `docs/overview.md` says what that changes.
+- **Gateway API version.** The Gateway API module (060-03) and its labs pin a Gateway API CRD release. Gateway API and Istio release on their own schedules — check the Istio release notes for the supported pairing before changing either version.

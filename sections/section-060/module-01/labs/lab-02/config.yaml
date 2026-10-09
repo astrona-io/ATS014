@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-060-01-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base, istiod and the ingress gateway in istio-ingress) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-060-01-02-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-060-01-02-fault"
+      description: "Applies the starting state: a Gateway whose selector matches no gateway pod, and a correct VirtualService for the bridge linked to it"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-open-gate"
+      description: "Confirms the Gateway selects the real gateway pods with one HTTP server on port 80 for starfleet.example.com, the gateway proxy holds the listener and the bridge routes, the VirtualService is unchanged, and live signals through the gate reach the bridge"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

@@ -3,8 +3,8 @@
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
-  name: bookinfo-gateway
-  namespace: bookinfo
+  name: starfleet-gateway
+  namespace: starfleet
 spec:
   selector:
     istio: ingress
@@ -19,19 +19,19 @@ spec:
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: bookinfo
-  namespace: bookinfo
+  name: bridge
+  namespace: starfleet
 spec:
   hosts:
   - "*"
   gateways:
-  - bookinfo-gateway
+  - starfleet-gateway
   http:
   - match:
     - uri:
         exact: /productpage
     route:
     - destination:
-        host: productpage
+        host: bridge
         port:
           number: 9080

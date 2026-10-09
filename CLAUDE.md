@@ -92,6 +92,17 @@ Strict guidelines:
   `## Common pitfalls` `> [!WARNING]` block for that part only. Use a Mermaid
   diagram for a flow, an order or a state change, keep it under about 12
   boxes, and follow it with one sentence that says what it shows.
+- **Labs come right after the part they practise.** Do not collect all
+  graded labs at the end of a module. In `astrona.yaml`, put each lab (its
+  `question.md` reading and the `lab` entry) right after the reading part it
+  tests. If a part teaches a gradeable skill and no lab covers it, create a
+  new lab. That part then ends with a `## Your mission: <lab title>` section:
+  one sentence on what the reader can now do, one on what the mission asks,
+  then pause the playground (`astrona stop <playground name>`), the
+  `astrona run` and `astrona submit` commands, and finally
+  `astrona destroy <lab name>` plus `astrona start <playground name>`. The
+  wrap-up lists the missions and ends with cleaning up the playground
+  (`astrona list`, `astrona destroy <playground name>`).
 - **Renew the playground before hands-on work.** Every reading part that
   runs commands has `<!-- astrona:playground:renew -->` exactly once, on its
   own line, right before the first hands-on step (the first "Save this as"
@@ -110,7 +121,8 @@ Strict guidelines:
   - Anything longer (cluster names, full hostnames) goes in the sentence under
     the diagram.
 - **No links to outside sources.** Course pages, labs and playground docs do
-  not link to or point at outside websites (official docs, GitHub, blogs,
+  not link to or point at outside websites (the one exception is the
+  `resources` field of a lab entry in `astrona.yaml`) (official docs, GitHub, blogs,
   RFCs), and they have no "Reference" or "Official docs" lists. Everything the
   reader needs is explained on the page itself. Not affected: addresses the
   reader actually uses in a command or browser (`http://127.0.0.1:9080`,
@@ -163,8 +175,8 @@ section is only true for this one.
   the API reference.
 - **The sample app:** the playgrounds run **the Starfleet**: the Istio docs'
   Bookinfo sample with space names (`scout` v1, v2 and v3 instead of
-  `reviews`; see the fleet table below). Playgrounds not renamed yet still use
-  the Bookinfo names, and the graded labs still use `notification-service`.
+  `reviews`; see the fleet table below). A few older graded labs still use
+  their own small apps, such as `notification-service`.
 
 ### Space analogy glossary
 
@@ -263,10 +275,12 @@ Built into the images and **unchanged**: the URL paths `/productpage`,
 `bootstrap/manifests/starfleet.yaml` in each renamed playground.
 
 Rename status (playground + module text):
-- Renamed and checked on a cluster: 010-01.
-- Renamed, partly checked: 020-01 (part 3 scaling step and practice task not re-run).
-- Renamed, not yet checked on a cluster: 010-03, 020-02.
-- Not renamed yet: 030-01, 040-01, 040-02, 040-03, 050-01, 060-01, 070-01, 080-01.
+- Every module playground runs the Starfleet, and every module was checked on
+  a cluster in Istio 1.30.5.
+- Graded labs still on their old small apps (`notification-service` and
+  similar): 010-01 lab-01 and lab-02, 020-01 lab-01, 020-02 lab-01, 040-02
+  lab-01, 050-01 lab-01, and the 020 and 050 capstones. Capstones have not had
+  the full rework yet.
 - Test clusters on the maintainer's machine: one at a time (it also runs the
   platform stack; parallel clusters ran it out of memory).
 
@@ -282,11 +296,68 @@ Rename status (playground + module text):
 | Ungraded sandbox for a module | `.../playground/` (`docs/overview.md` says what is in the box) |
 | One graded integration lab per section | `sections/section-0N0/capstone/labs/lab-01/` |
 
-Work in progress: playgrounds are moving to Bookinfo. Moved so far: 010-01,
-010-03, 020-01, 020-02, 030-01, 040-01, 040-02, 040-03, 050-01, 060-01,
-070-01, 080-01. The graded labs and capstones still use their own small apps
-(`notification-service` and similar), so say so when a reading page points
-at them.
+Every module playground runs the Starfleet. A few older graded labs and
+capstones still use their own small apps (see the rename status above), so
+say so when a reading page points at them.
+
+### Lab metadata in `astrona.yaml`
+
+Every `type: lab` entry (module labs and capstones) carries these fields, in
+this order:
+
+```yaml
+      - type: lab
+        title: "Fix The Docking Instructions Lab"
+        path: sections/section-010/module-01/labs/lab-03
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: destination-rules
+        tags: [destinationrule, subsets, troubleshooting, 503-uh, ist0173, proxy-config]
+        learning_goals:
+          - Define subsets that select pods by their labels
+          - Find a subset that selects no pod from a 503 UH and istioctl
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+```
+
+- `difficulty`: `beginner`, `intermediate` or `advanced`.
+- `estimated_duration`: realistic time to solve it, for example `15m`, `30m`, `45m`.
+- `topic`: exactly one of `foundations`, `routing`, `traffic-shifting`,
+  `destination-rules`, `resilience`, `fault-injection`, `ingress-egress`,
+  `external-services`.
+- `task_kind`: exactly one of `build` (write the configuration from
+  scratch), `troubleshooting` (find and fix what is broken) or `migration`
+  (move a working setup to another API or layout). The platform filters labs
+  by it, so it is a field of its own, never a tag.
+- `tags`: 4 to 8 ids, only from the tag list below. Add a new tag to the list
+  first if nothing fits.
+- `learning_goals`: 2 or 3 plain sentences, each starting with a verb, saying
+  what the learner proves in this lab.
+- `resources`: 1 to 4 documentation pages, each with a `name` and a `url`
+  that loads. This is the **only** place outside links are allowed: the
+  platform shows them as optional further reading next to the lab.
+
+**Tag list** (lower case, hyphens, never synonyms):
+
+- Istio objects: `virtualservice`, `destinationrule`, `gateway`,
+  `serviceentry`, `sidecar`, `workloadentry`, `workloadgroup`, `gateway-api`,
+  `ingress-resource`, `peerauthentication`
+- Routing: `header-matching`, `uri-matching`, `query-matching`, `rule-order`,
+  `catch-all`, `subsets`, `short-hosts`, `fqdn`, `weighted-routing`,
+  `canary`, `mirroring`, `rewrite`, `redirect`, `headers`, `cors`,
+  `tcp-routing`, `tls-routing`, `protocol-selection`
+- Traffic policy: `load-balancing`, `session-affinity`, `consistent-hash`,
+  `connection-pool`, `circuit-breaking`, `outlier-detection`,
+  `locality-failover`
+- Resilience and testing: `timeouts`, `retries`, `fault-injection`, `delay`,
+  `abort`
+- Edge and outside: `ingress-gateway`, `allowed-routes`, `egress-gateway`, `tls-origination`,
+  `tls-termination`, `registry-only`, `external-services`,
+  `virtual-machines`, `sidecar-scoping`, `sidecar-injection`
+- Failure signatures: `404-nr`, `503-nc`, `503-uh`, `503-uo`, `504-ut`,
+  `ist0101`, `ist0130`, `ist0173`
+- Tools: `proxy-config`, `proxy-status`, `istioctl-analyze`, `access-log`
 
 ### Running things
 
@@ -299,6 +370,16 @@ astrona destroy ats-014-playground-010-01   # takes metadata.name from config.ya
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-01
 astrona submit -c sections/section-010/module-01/labs/lab-01
 ```
+
+A lab's `config.yaml` names its docs with `metadata.docs.question:
+"question.md"` and `metadata.docs.solution: "solution.md"`. The platform
+reads these names to show the task and the solution. Never rename them,
+even if a local `astrona validate` complains about them. A new lab's `metadata.name` is
+`ats-014-lab-<section>-<module>-<lab>`, for example `ats-014-lab-020-01-02`, so
+two labs can never share a name. Lab bootstrap scripts do not pin a kube context:
+astrona sets `KUBECONFIG` for the lab, and `astrona test` runs on a cluster
+with a different name. Every lab must pass `astrona validate` and
+`astrona test`.
 
 Graders check **behaviour** (send real traffic, read the proxy's configuration),
 not just that an object exists. A lab's `question.md` and `solution.md` must

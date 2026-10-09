@@ -4,7 +4,7 @@ apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
   name: egress-gateway-for-httpbin-org
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   # Full name: the egress gateway Service lives in namespace istio-egress.
   host: istio-egress.istio-egress.svc.cluster.local

@@ -217,3 +217,32 @@ All of this assumes one `VirtualService` per host. If you write two `VirtualServ
 > - **Two `VirtualService` objects for one host.** There is no set order between them. Keep one per host.
 
 > *The proxy reads the flight plan from the top and uses the first rule that fits. Put the most specific rule first and the catch-all last.*
+
+## Your mission: Route Requests By Header, URI And Query Parameter
+
+You can now write flight plans that read headers, paths and query parameters, and put the rules in an order where every one of them can fire. Now prove it in a graded mission: send three kinds of signals to v2 and everything else to v1, with every rule reachable.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-010-01
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-01
+```
+
+Read the task in [`question.md`](./labs/lab-01/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-010/module-01/labs/lab-01
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-010-01
+astrona start ats-014-playground-010-01
+```

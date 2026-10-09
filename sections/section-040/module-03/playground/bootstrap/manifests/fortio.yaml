@@ -1,12 +1,12 @@
-# Fortio load-testing client inside the mesh.
+# Fortio: the load generator, a swarm of signals fired at once.
 # Sends many requests in parallel, used to trip the circuit breaker:
-#   kubectl exec -n bookinfo deploy/fortio -c fortio -- \
-#     fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://httpbin:8000/get
+#   kubectl exec -n starfleet deploy/fortio -c fortio -- \
+#     fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://probe:8000/get
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fortio
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   replicas: 1
   selector:

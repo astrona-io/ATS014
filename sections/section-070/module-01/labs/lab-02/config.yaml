@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-070-01-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-070-02-workloads"
+      description: "Creates the starfleet namespace with the shuttle client and mesh-wide access logs, and the outpost namespace with two bare pods (relay and rogue) that are not in the mesh registry"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-070-02-fault"
+      description: "Applies the starting state: a REGISTRY_ONLY Sidecar in starfleet, a relay ServiceEntry in the charts namespace with port 8080 declared TCP, and a correct VirtualService with a 2s timeout"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-relay-route"
+      description: "Confirms the starfleet Sidecar is still REGISTRY_ONLY, the VirtualService is unchanged, one ServiceEntry registers the relay with an HTTP port and reaches the shuttle's proxy, and live signals reach the relay, hit the 2s timeout and still cannot reach the rogue"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

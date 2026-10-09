@@ -1,6 +1,8 @@
 # The `ServiceEntry` Object
 
-A `ServiceEntry` adds a planet from another solar system to the star chart (the service registry). It has four fields, each answering one question. This part is what each decides, and why one of them gates everything the rest of the course can do with an external host.
+Astronaut, a `ServiceEntry` adds a planet from another solar system to the star chart. It has four fields that matter, and each one answers one question. One of them, the port's `protocol`, decides how much of Istio you can use on that planet later.
+
+The commands below need the `REGISTRY_ONLY` `Sidecar` applied in your playground, and the `call_external` helper pasted into your terminal.
 
 ## The object
 
@@ -9,208 +11,225 @@ apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
   name: httpbin-org
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   hosts:
-    - httpbin.org
+  - httpbin.org
   ports:
-    - number: 443
-      name: https
-      protocol: HTTPS
+  - number: 443
+    name: https
+    protocol: HTTPS
   location: MESH_EXTERNAL
   resolution: DNS
 ```
 
 | Field | Answers |
 | --- | --- |
-| `hosts` | what is it called? |
-| `ports` | on which port, speaking what? |
-| `location` | is it ours or somebody else's? |
-| `resolution` | how does the proxy find an address for it? |
+| `hosts` | What is it called? |
+| `ports` | On which port, speaking which protocol? |
+| `location` | Is it part of the mesh, or somebody else's? |
+| `resolution` | How does the proxy find an address for it? |
 
 ## `hosts`
 
-The DNS names this entry covers. Wildcards are allowed — `*.example.com` registers the whole subdomain, which is how you cover a service whose hostnames you cannot enumerate.
+The names this entry covers. A wildcard such as `*.example.com` covers every name under that domain, which is how you chart a service whose host names you cannot list.
 
-One subtlety: for `resolution: DNS`, the host must be a name the **proxy** can resolve. It is resolved from inside the pod, using the cluster's DNS, so a name that only resolves on your laptop will not work.
+With `resolution: DNS`, the **proxy** looks the name up, from inside the pod, with the cluster's DNS (the Domain Name System, which turns host names into addresses). A name that only resolves on your laptop does not work.
 
-## `ports` — and why `protocol` is the important word
+## `ports`, and why `protocol` is the important word
 
-Each entry is a number (think of it as a radio channel), a name, and a **protocol**. The protocol tells the communications officer what language the signals on that channel speak, and that decides how much of Istio applies:
+Each port has a number (think of it as a radio channel), a name, and a **protocol**. The protocol tells the communications officer which language the signals on that channel speak. That decides how much of Istio applies:
 
 | `protocol` | The proxy will |
 | --- | --- |
-| `HTTP` | parse requests — so `VirtualService` rules, timeouts, retries, per-path routing and useful telemetry all work |
-| `HTTPS` | treat it as an opaque TLS stream (unless you originate TLS yourself — module 2) |
-| `TLS` | inspect SNI only |
-| `TCP` | move bytes, with no layer-7 awareness at all |
-| `GRPC`, `MONGO`, `MYSQL`, … | protocol-specific handling |
+| `HTTP` | read every request, so `VirtualService` rules, timeouts, retries and path routing all work |
+| `HTTPS` | pass an encrypted stream through, reading only the host name in the TLS (Transport Layer Security) handshake, called SNI (Server Name Indication) |
+| `TLS` | the same: read only the SNI |
+| `TCP` | move bytes, with no idea what they say |
 
-Declaring `TCP` when the traffic is HTTP is not an error and produces a working connection — with none of the features you probably wanted. The symptom is a `VirtualService` on that host doing nothing at all, which is a confusing thing to debug backwards.
+Declaring `TCP` when the traffic is HTTP is not an error. The connection works, with none of the features you probably wanted. The symptom is a `VirtualService` on that host that does nothing at all. Keep the port `name` in line with the `protocol` too: a port named `http` and declared `TCP` only confuses the next reader.
 
-The `name` matters too, though less obviously: Istio uses the port name as a fallback protocol hint in some contexts, so naming a port `http` and declaring it `TCP` is a contradiction worth avoiding.
-
-## `location` — `MESH_EXTERNAL` or `MESH_INTERNAL`
+## `location`: `MESH_EXTERNAL` or `MESH_INTERNAL`
 
 | Value | Means | Use for |
 | --- | --- | --- |
-| `MESH_EXTERNAL` | not part of the mesh | a third party's API — this module |
-| `MESH_INTERNAL` | part of the mesh, just not in Kubernetes | a VM you run — module 3 |
+| `MESH_EXTERNAL` | not part of the mesh | a third party's API |
+| `MESH_INTERNAL` | part of the mesh, just not in Kubernetes | a virtual machine you run with a sidecar |
 
-The difference is not cosmetic. `MESH_INTERNAL` tells Istio to treat the endpoints as mesh members, which brings mutual TLS and workload identity into play. `MESH_EXTERNAL` gives you routing and policy but no identity — which is correct, because you do not issue certificates to somebody else's API. mTLS (mutual TLS) is a secret handshake that both ships check before they talk, and a planet in another solar system does not know Istio's handshake.
+The difference is real. `MESH_INTERNAL` tells Istio the endpoints are mesh members, so mutual TLS (mTLS, the secret handshake both ships check before they talk) and workload identity apply. `MESH_EXTERNAL` gives you routing and policy, but no identity. That is correct for somebody else's API: a planet in another solar system does not know Istio's handshake. `MESH_EXTERNAL` is the default.
 
-For a third-party service, `MESH_EXTERNAL` is the answer, and it is the default.
-
-## `resolution` — how an address is found
+## `resolution`: how an address is found
 
 | Value | The proxy | Use with |
 | --- | --- | --- |
-| `DNS` | resolves the hostname itself and keeps the result fresh | a public hostname |
-| `STATIC` | uses the addresses listed in `endpoints` | fixed IPs, or `WorkloadEntry` selection (module 3) |
-| `NONE` | passes the original destination address through unresolved | a destination that resolves itself, or a wildcard host |
-| `DNS_ROUND_ROBIN` | resolves lazily and uses one address at a time | an endpoint behind a load balancer where you want connection affinity to a single resolved IP |
+| `DNS` | looks the host name up itself, and keeps the answer fresh | a public host name |
+| `STATIC` | uses the addresses listed under `endpoints` | fixed IP addresses |
+| `NONE` | forwards to the address the application already chose | a wildcard host |
+| `DNS_ROUND_ROBIN` | looks the name up and uses one address at a time | an endpoint behind a load balancer |
 
-`DNS` is right for nearly every public API. `NONE` is what you use with a wildcard host, because there is nothing concrete to resolve.
+`DNS` is right for nearly every public API. `NONE` is what a wildcard needs, because there is no single name to look up.
+
+## Chart your first planet
+
+Time to put a real planet on the chart. `httpbin.org` is a public test API, so the four answers are simple: its name, port `443` speaking `HTTPS`, somebody else's (`MESH_EXTERNAL`), and found by `DNS`.
 
 <!-- astrona:playground:renew -->
 
-> [!TIP]
-> **Try it — `httpbin.org` allowed over HTTPS only**
->
-> This builds on the `REGISTRY_ONLY` `Sidecar` from Part 1.
->
-> Save this as `serviceentry-httpbin-org.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: ServiceEntry
-> metadata:
->   name: httpbin-org
->   namespace: bookinfo
-> spec:
->   hosts:
->     - httpbin.org
->   ports:
->     - number: 443
->       name: https
->       protocol: HTTPS
->   location: MESH_EXTERNAL
->   resolution: DNS
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f serviceentry-httpbin-org.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> call_external https://httpbin.org/get
-> call_external http://httpbin.org/get
-> kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=2
-> ```
->
-> Expect `200`, then `000`, because only port `443` is listed. The log now names a real cluster for the HTTPS call: `outbound|443||httpbin.org`. One port allowed, everything else still refused. That pair of results is the whole point of `REGISTRY_ONLY` plus `ServiceEntry`: egress becomes a list of charted planets you maintain, rather than an assumption you inherit.
+### Chart `httpbin.org` for HTTPS only
 
-## Confirming registration
+Save this as `serviceentry-httpbin-org.yaml`:
 
-A registered external host gets a cluster in every proxy allowed to see it, exactly like an in-cluster Service. The new planet is now on every ship's star chart. This is the check that answers "is this host registered for this workload?" without sending traffic.
+```yaml
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: httpbin-org
+  namespace: starfleet
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: DNS
+```
 
-> [!TIP]
-> **Try it — the external host in the proxy's cluster list**
->
-> ```sh
-> istioctl proxy-config cluster deploy/curl -n bookinfo | grep -iE 'httpbin.org|wikipedia' || echo "(no match)"
-> ```
->
-> Expect one line for `httpbin.org` on port `443`, direction `outbound`, with the type `STRICT_DNS`, and no line for Wikipedia yet. `STRICT_DNS` is Envoy's discovery type for `resolution: DNS` — the proxy resolves the name itself and refreshes it. Compare it with the `EDS` you saw for in-cluster Services in section 010: different mechanisms, same cluster abstraction.
+Apply it:
+
+```sh
+kubectl apply -f serviceentry-httpbin-org.yaml
+```
+
+Then call the planet over HTTPS and over plain HTTP, and read the flight log:
+
+```sh
+call_external https://httpbin.org/get
+call_external http://httpbin.org/get
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
+```
+
+You should see (log lines trimmed):
+
+```text
+200 0.502151s
+  exit=0
+000 0.005651s
+command terminated with exit code 56
+  exit=56
+[...] "- - -" 0 UH - - "-" 0 0 0 - "-" "-" "-" "-" "-" BlackHoleCluster - 100.56.179.159:80 ...
+[...] "- - -" 0 - - - "-" 901 4875 617 - "-" "-" "-" "-" "34.227.237.26:443" outbound|443||httpbin.org ... httpbin.org -
+```
+
+HTTPS gets `200`, and the flight log now names a real cluster, `outbound|443||httpbin.org`. Plain HTTP still falls into the black hole, because only port `443` is on the chart. The two lines can appear in either order: the proxy writes a line for a TCP connection when it closes.
+
+One port allowed, everything else still refused. That pair of results is the whole point of `REGISTRY_ONLY` plus `ServiceEntry`: egress becomes a list of charted planets that you keep, not something you inherit.
+
+## Confirm the planet is on the chart
+
+A charted external host gets a cluster in every proxy that may see it, exactly like a Service inside the cluster. You can check that without sending a signal.
+
+### Find the planet in the shuttle's proxy
+
+```sh
+istioctl proxy-config cluster deploy/shuttle -n starfleet | grep -iE 'httpbin.org|wikipedia' || echo "(no match)"
+istioctl proxy-config endpoints deploy/shuttle -n starfleet --cluster "outbound|443||httpbin.org"
+```
+
+You should see (endpoint list trimmed):
+
+```text
+httpbin.org                               443       -          outbound      STRICT_DNS
+ENDPOINT               STATUS      OUTLIER CHECK     CLUSTER
+100.56.179.159:443     HEALTHY     OK                outbound|443||httpbin.org
+18.233.182.23:443      HEALTHY     OK                outbound|443||httpbin.org
+3.225.83.162:443       HEALTHY     OK                outbound|443||httpbin.org
+...
+```
+
+One line for `httpbin.org` on port `443`, and no line for Wikipedia yet. The type `STRICT_DNS` is how Envoy shows `resolution: DNS`: the proxy looks the name up itself, and every address it got back becomes an endpoint.
 
 ## Wildcards
 
-For a service whose hostnames you cannot list — a CDN, an object store with per-bucket names, every language edition of a website — a wildcard plus `resolution: NONE` is the shape. A wildcard is a pattern that matches many names, so `*.wikipedia.org` matches every subdomain: a whole star cluster charted with one entry.
+For a service whose host names you cannot list, such as a content delivery network, an object store with a name per bucket, or every language edition of a website, use a wildcard host with `resolution: NONE`. `*.wikipedia.org` matches every name under `wikipedia.org`: a whole star cluster charted with one entry.
+
+It is `NONE` because DNS cannot look up a wildcard: which name should it look up? The proxy forwards the signal to the address the application already looked up itself. This is broad, because it allows every host under that domain. Use it on purpose, not by default.
+
+### Chart a whole domain with one entry
+
+First, see that Wikipedia is refused:
+
+```sh
+call_external https://de.wikipedia.org/
+```
+
+```text
+000 0.101233s
+command terminated with exit code 35
+  exit=35
+```
+
+Save this as `serviceentry-wikipedia.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
   name: wikipedia
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   hosts:
-    - "*.wikipedia.org"
+  - "*.wikipedia.org"
   ports:
-    - number: 443
-      name: https
-      protocol: HTTPS
+  - number: 443
+    name: https
+    protocol: HTTPS
   location: MESH_EXTERNAL
   resolution: NONE
 ```
 
-`NONE` because DNS cannot look up a wildcard — which name should it look up? The proxy forwards to the address the application already resolved itself. This is broad — it permits every host under that suffix — so it is a deliberate trade of precision for practicality, not a default. (`protocol: TLS` works here too; with no TLS origination the proxy can only read the SNI name either way.)
+Apply it:
 
-> [!TIP]
-> **Try it — a whole domain with one entry**
->
-> Save this as `serviceentry-wikipedia.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: ServiceEntry
-> metadata:
->   name: wikipedia
->   namespace: bookinfo
-> spec:
->   hosts:
->     - "*.wikipedia.org"
->   ports:
->     - number: 443
->       name: https
->       protocol: HTTPS
->   location: MESH_EXTERNAL
->   resolution: NONE
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f serviceentry-wikipedia.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> call_external https://de.wikipedia.org/
-> call_external https://en.wikipedia.org/wiki/Istio
-> kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=1 | grep wikipedia
-> ```
->
-> Expect:
->
-> ```text
-> 301 ...
->   exit=0
-> 404 ...
->   exit=0
-> ... outbound|443||*.wikipedia.org ... de.wikipedia.org
-> ```
->
-> (Times trimmed.) Any HTTP status code means the connection got out — the code is Wikipedia's own answer, and `404` only means that page does not exist. The log names the wildcard cluster. Remove it again with `kubectl delete -f serviceentry-wikipedia.yaml`.
+```sh
+kubectl apply -f serviceentry-wikipedia.yaml
+```
 
-> *The declared `protocol` decides how much of Istio applies to an external host; `TCP` gets you a working connection and nothing else.*
+Then call two different Wikipedia hosts, and read the flight log:
+
+```sh
+call_external https://de.wikipedia.org/
+call_external https://en.wikipedia.org/wiki/Istio
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
+```
+
+You should see (log lines trimmed):
+
+```text
+301 0.095577s
+  exit=0
+404 0.819689s
+  exit=0
+[...] "185.15.59.224:443" outbound|443||*.wikipedia.org ... de.wikipedia.org -
+[...] "185.15.59.224:443" outbound|443||*.wikipedia.org ... en.wikipedia.org -
+```
+
+Any HTTP status code means the connection got out: `301` and `404` are Wikipedia's own answers, not the mesh's. Both hosts went through one cluster, `outbound|443||*.wikipedia.org`, and the flight log shows the real host name the proxy read from the TLS handshake.
+
+Remove the wildcard, so Wikipedia is closed again:
+
+```sh
+kubectl delete -f serviceentry-wikipedia.yaml
+```
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Naming the port wrong.** `protocol` on a `ServiceEntry` port decides whether you get HTTP routing or an opaque byte stream, exactly as a Service port name does in section 010.
->
-> **Choosing the wrong `resolution`.** `DNS` makes the proxy resolve the name itself; `STATIC` requires `endpoints`; `NONE` passes through to whatever address the caller used. They are not interchangeable.
->
-> **Leaving `location` at the default when the host is in-mesh.** `MESH_EXTERNAL` and `MESH_INTERNAL` differ in whether mTLS and identity apply, which module 3 depends on.
->
-> **Assuming a `ServiceEntry` is private to its namespace.** It is exported mesh-wide unless `exportTo` says otherwise.
->
-> **Expecting a wildcard host to work like a DNS name.** A `*.example.com` entry cannot be resolved by the proxy, so it needs `resolution: NONE` or a gateway in front of it.
->
-> **Registering HTTPS and calling plain HTTP.** A `ServiceEntry` with only port `443` does nothing for `http://` on port `80`. Every port the application uses must be listed.
+> - **Declaring the wrong protocol.** `protocol` on a `ServiceEntry` port decides whether you get HTTP features or a sealed byte stream. `TCP` gives a working connection and nothing else.
+> - **Choosing the wrong `resolution`.** `DNS` makes the proxy look the name up; `STATIC` needs `endpoints`; `NONE` forwards to whatever address the caller used. They are not interchangeable.
+> - **Using `MESH_EXTERNAL` for a workload that is part of the mesh.** `MESH_EXTERNAL` and `MESH_INTERNAL` differ in whether mutual TLS and identity apply.
+> - **Using `resolution: DNS` with a wildcard host.** There is no single name to look up. Use `NONE`.
+> - **Charting HTTPS and calling plain HTTP.** A `ServiceEntry` with only port `443` does nothing for `http://` on port `80`. List every port the application uses.
+> - **Forgetting who looks the name up.** With `resolution: DNS`, the host name must resolve from inside the pod, not from your machine.
+
+> *A `ServiceEntry` charts a planet with four answers: its name, its ports and their protocol, whose it is, and how to find its address.*

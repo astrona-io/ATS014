@@ -1,4 +1,4 @@
-# Lock down outgoing traffic for the bookinfo namespace.
+# Lock down outgoing traffic for the starfleet namespace.
 # REGISTRY_ONLY: sidecars only let traffic out to hosts that are in Istio's
 # service registry (Kubernetes Services + ServiceEntries). Anything else is
 # blocked. The mesh default is ALLOW_ANY (everything goes out).
@@ -9,7 +9,7 @@ metadata:
   # No workloadSelector -> applies to all pods in the namespace.
   # Only one such Sidecar per namespace; "default" is the usual name.
   name: default
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   outboundTrafficPolicy:
     mode: REGISTRY_ONLY

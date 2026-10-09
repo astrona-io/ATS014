@@ -1,16 +1,20 @@
 # Timeout of 2s for plain-HTTP calls to the external host httpbin.org.
 # Works only because the ServiceEntry (03) registers httpbin.org with an
 # HTTP port. Same VirtualService features as for in-mesh services.
+# httpbin.org has two ports (80 and 443), so the route names port 80;
+# without it istioctl analyze reports IST0112.
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
   name: httpbin-org
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   hosts:
   - httpbin.org
   http:
-  - route:
+  - timeout: 2s
+    route:
     - destination:
         host: httpbin.org
-    timeout: 2s
+        port:
+          number: 80

@@ -1,0 +1,53 @@
+# The cargo ship: a small service on the starfleet planet itself (port 9080).
+# It answers /details/0. In this module it is the "local" destination that a
+# Sidecar with ./* must keep reachable.
+apiVersion: v1
+kind: Service
+metadata:
+  name: cargo
+  labels:
+    app: cargo
+    service: cargo
+  namespace: starfleet
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: cargo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: starfleet-cargo
+  labels:
+    account: cargo
+  namespace: starfleet
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cargo-v1
+  labels:
+    app: cargo
+    version: v1
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cargo
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: cargo
+        version: v1
+    spec:
+      serviceAccountName: starfleet-cargo
+      containers:
+      - name: cargo
+        image: registry.istio.io/release/examples-bookinfo-details-v1:1.20.3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080

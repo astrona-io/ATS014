@@ -1,0 +1,29 @@
+# The outpost: a planet WITHOUT sidecar injection, on purpose.
+# The drifter is an old ship with no communications officer on board (1/1).
+# It is the contrast for the module: the same client image as the shuttle,
+# but its signals never pass through a proxy on the way out.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outpost
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drifter
+  namespace: outpost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drifter
+  template:
+    metadata:
+      labels:
+        app: drifter
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: drifter
+        image: curlimages/curl:8.11.1
+        command: ["sleep", "infinity"]

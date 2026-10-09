@@ -75,7 +75,7 @@ Apply it:
 kubectl apply -f legacy-vm-1-manifests.yaml
 ```
 
-Unquoted heredoc so the addresses are substituted — a VM's address has to be baked in, which is the practical difference between declaring a machine and labelling a pod.
+You write the addresses into the entries yourself. That is the practical difference between describing a machine and labelling a pod: a pod's address is found for you, a machine's is not.
 
 **The same `app: legacy-backend` label on both** is what makes them one service in the next step. **`serviceAccount: legacy-sa`** is what gives each a SPIFFE identity of `spiffe://cluster.local/ns/vm-demo/sa/legacy-sa` — the same shape a pod running under that account would have, and the reason an `AuthorizationPolicy` can name them.
 
@@ -115,10 +115,10 @@ Apply it:
 kubectl apply -f serviceentry-legacy.yaml
 ```
 
-Three fields differ from module 1's external `ServiceEntry`, and each matters:
+Three fields differ from a `ServiceEntry` for somebody else's service, and each matters:
 
 - **`location: MESH_INTERNAL`.** These are your workloads. This is what brings identity, mTLS expectations and `AuthorizationPolicy` coverage. `MESH_EXTERNAL` would give you a working hostname and none of that — which is why the grader checks it explicitly: the configuration *looks* fine either way.
-- **`resolution: STATIC`.** The addresses are declared in the entries, so there is nothing to resolve. `DNS` would try to resolve `legacy.vm-demo.svc`, which resolves nowhere, and the selector would be ignored.
+- **`resolution: STATIC`.** The addresses are declared in the entries, so there is nothing to resolve. `STATIC` says exactly that, and the grader checks it.
 - **`workloadSelector`.** The join to the entries, by label, exactly as a Service selects pods.
 
 ---
@@ -196,7 +196,7 @@ Compare the group's `template` with an entry's fields: same service account, sam
 ## Common Mistakes
 
 - **`location: MESH_EXTERNAL`.** Routes correctly, gives no identity. The single most likely way to fail this task while appearing to succeed.
-- **`resolution: DNS`.** The hostname resolves nowhere and the selector is ignored.
+- **`resolution: DNS`.** The entries already hold the addresses, so the task asks for `STATIC`, and the grader checks it.
 - **Mismatched labels.** The `workloadSelector` and the entries' `labels` must agree — otherwise zero or one endpoint, with no validation error.
 - **Omitting `serviceAccount`.** No identity; policies that name principals cannot match.
 - **Creating a Service for the pods.** That registers them through the back door and the grader rejects it.

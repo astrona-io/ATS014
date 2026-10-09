@@ -1,14 +1,13 @@
 # Ingress With The Kubernetes Gateway API — Playground
 
-- **ID:** PLAYGROUND
 - **Slug:** ats-014-playground-060-03
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-
-
-A training solar system that spins up, runs Operating system preparation, and stays running so
-you can explore the module's topic on a clean machine. Nothing to submit.
+A training solar system in the simulator: it starts a `kind` cluster with the
+Gateway API objects, Istio and the Starfleet (the Istio docs' Bookinfo sample,
+renamed), then waits for you, astronaut. Use it alongside the module's parts.
+Nothing to submit.
 
 ## Run it
 
@@ -17,15 +16,15 @@ astrona run -c .
 astrona destroy ats-014-playground-060-03
 ```
 
-`astrona destroy` takes the environment name (`metadata.name` = `ats-014-playground-060-03`), not
-the configuration path. `astrona submit` and `astrona test` do not apply — there is no
-grading.
+`astrona destroy` takes the environment name (`metadata.name`), not the configuration
+path. `astrona submit` and `astrona test` do not apply: there is no grading.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
-| `config.yaml` | Environment definition (runtime + bootstrap only) |
-| `bootstrap/prepare.sh` | Operating system preparation run once at startup: istioctl + Istio control plane + sidecar check |
-| `manifests/lab-start.yaml` | Starting workloads applied at bootstrap (copied from the matching `domains/` lab) |
-| `docs/overview.md` | What the environment contains and ideas to try |
+| `config.yaml` | Environment definition: kind runtime, port forward to the bridge, the two bootstrap scripts |
+| `bootstrap/install-istio.sh` | Installs the Gateway API objects (v1.3.0), then Istio 1.30.5 (`istio-base` + `istiod`) with Helm, and waits for the `istio` GatewayClass |
+| `bootstrap/deploy.sh` | Namespaces `starfleet` and `outpost` with injection, access logs, the Starfleet and `shuttle` in `starfleet`, `probe` v1/v2 in `outpost` |
+| `bootstrap/manifests/` | The YAML `deploy.sh` applies |
+| `docs/overview.md` | What is in the box, things to try |

@@ -1,107 +1,167 @@
-# `WorkloadEntry`: One Instance
+# `WorkloadEntry`: One Old Ship
 
-One object describing one machine: you add one old ship to the star chart. Three fields, and the third is the one that separates this module from the previous two.
+Astronaut, before you add a ship to the star chart, look at how the fleet sees it today. Then write one object that describes one machine. It has three fields, and the third one is what makes this more than a name in a phone book.
 
-## Reachable, and anonymous
+## Reachable, but anonymous
 
-Start from what you have. The stand-in workload has an IP and answers signals, and mission control knows nothing about it.
+The old freighter `freighter-vm-1` has an address and answers signals. Mission control knows nothing about it. That is the starting point for every machine outside Kubernetes.
 
 <!-- astrona:playground:renew -->
 
-> [!TIP]
-> **Try it — reachable, but anonymous**
->
-> ```sh
-> VM_IP=$(kubectl -n vm-demo get pod -l app=legacy-backend -o jsonpath='{.items[0].status.podIP}')
-> echo "stand-in VM address: $VM_IP"
-> kubectl -n vm-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w 'by address: %{http_code}\n' --max-time 10 "http://$VM_IP:8080/get"
-> istioctl proxy-config cluster deploy/tester -n vm-demo | grep -c legacy
-> kubectl -n vm-demo get pods -o wide
-> ```
->
-> Expect something like:
->
-> ```text
-> stand-in VM address: 10.244.0.31
-> by address: 200
-> 0
-> NAME                      READY   STATUS    IP
-> legacy-backend-...        1/1     Running   10.244.0.31
-> tester-...                2/2     Running   10.244.0.32
-> ```
->
-> The call works — flat pod networking carries it — but the `0` is the interesting number: the client proxy has **no cluster** for this workload. Note also `1/1` versus `2/2`: the stand-in has no sidecar. There is no hostname to call it by, no policy that can name it, no telemetry attributing traffic to it, and if its address changes every caller breaks.
+### Find the freighter's address
 
-## The object
+List the ships on the planet:
+
+```sh
+kubectl get pods -n starfleet -o wide
+```
+
+You should see (the `NODE` columns trimmed):
+
+```text
+NAME                              READY   STATUS    RESTARTS   AGE   IP
+freighter-vm-1-684c9b8695-65dlz   1/1     Running   0          11s   10.244.0.9
+freighter-vm-2-745547488b-m5244   1/1     Running   0          11s   10.244.0.10
+shuttle-7b5db664c-d27cb           2/2     Running   0          45s   10.244.0.6
+```
+
+Look at the `READY` column. The shuttle shows `2/2`: its app plus its communications officer (the `istio-proxy` sidecar). The freighters show `1/1`: no officer on board. Your addresses will be different.
+
+Keep the first freighter's address in a variable, so you do not have to type it:
+
+```sh
+FREIGHTER_VM_1=$(kubectl get pod -n starfleet -l ship=freighter-vm-1 -o jsonpath='{.items[0].status.podIP}')
+echo $FREIGHTER_VM_1
+```
+
+```text
+10.244.0.9
+```
+
+### Signal the freighter by its address
+
+Send a signal from the shuttle to that address, and ask the shuttle's proxy whether it knows the freighter:
+
+```sh
+kubectl exec -n starfleet deploy/shuttle -- curl -s http://$FREIGHTER_VM_1:8080/hostname
+istioctl proxy-config cluster deploy/shuttle -n starfleet | grep freighter
+```
+
+You should see:
+
+```text
+{
+  "hostname": "freighter-vm-1-684c9b8695-65dlz"
+}
+```
+
+The signal arrives, but the second command prints nothing. The shuttle's proxy has no cluster (its list of known destinations) for the freighter. Now read the last line of the shuttle's flight log:
+
+```sh
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
+```
+
+You should see (trimmed):
+
+```text
+[2026-10-08T23:00:46.585Z] "- - -" 0 - - - "-" 87 247 9 - "-" "-" "-" "-" "10.244.0.9:8080" PassthroughCluster ...
+```
+
+`PassthroughCluster` means "an address I do not know, let it through". The proxy did not even read the signal as HTTP: `"- - -"` is how a raw connection looks in the log. So there is no name to call the freighter by, no policy can point at it, and if its address changes, every caller breaks.
+
+## The `WorkloadEntry` object
+
+A **`WorkloadEntry`** is a hand-written record for one machine that never launched from your fleet. Think of it as a pod record you type yourself: Kubernetes writes one for every pod, but nobody writes one for a virtual machine. It has three fields that matter:
+
+| Field | Its job |
+| --- | --- |
+| `address` | Where the machine is. It must already be reachable from the pods. The object describes a machine; it does not build a network path to it |
+| `labels` | How a `ServiceEntry` will find it, the same way a Service finds pods by their labels |
+| `serviceAccount` | The identity the machine runs as. Without it, the machine has no crew papers |
+
+There are a few more fields, for example `network` for a mesh across several networks, `locality` for where the machine sits, `weight` and `ports`. The three above are what a task normally asks for.
+
+**One `WorkloadEntry` describes one machine.** Three machines of the same service need three entries with the same labels.
+
+### Write the first entry
+
+Write the record for the first freighter. Replace `<FREIGHTER_VM_1>` with the address you got from `echo $FREIGHTER_VM_1`. Save this as `workloadentry-freighter-vm-1.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: WorkloadEntry
 metadata:
-  name: legacy-vm-1
-  namespace: vm-demo
+  name: freighter-vm-1
+  namespace: starfleet
 spec:
-  address: 10.244.0.31
+  address: <FREIGHTER_VM_1>
   labels:
-    app: legacy-backend
-  serviceAccount: legacy-sa
+    app: freighter
+  serviceAccount: freighter
 ```
 
-A `WorkloadEntry` is, in effect, a **manually written pod record**: a hand-written entry on the star chart for a ship that never launched from your fleet. Three fields, each with a clear job:
+Apply it:
 
-- **`address`** — where the instance is. For a real VM this is its routable IP, and it must be reachable from the pod network. The object declares a workload; it does not create connectivity.
-- **`labels`** — how a `ServiceEntry` will select it, exactly as a Kubernetes Service selects pods by label. Part 2 uses these.
-- **`serviceAccount`** — the identity the workload gets, and the reason this is not just a fancy DNS entry.
+```sh
+kubectl apply -f workloadentry-freighter-vm-1.yaml
+```
 
-There are further fields — `network` for multi-network meshes, `locality` (which feeds section 040 module 4's locality settings), `weight`, and `ports` for port remapping — but the three above are what a task will ask for.
+Then check the result:
 
-**One entry describes one instance.** Several instances of the same service means several entries carrying the same labels.
+```sh
+kubectl get workloadentry -n starfleet
+istioctl proxy-config cluster deploy/shuttle -n starfleet | grep freighter
+```
 
-## What `serviceAccount` buys you
+You should see:
 
-This is the field that makes the workload a first-class mesh member.
+```text
+NAME             AGE   ADDRESS
+freighter-vm-1   0s    10.244.0.9
+```
 
-Istio issues the workload a **SPIFFE identity** — the same identity format every pod in the mesh gets:
+The entry exists, and the shuttle's proxy still has no cluster for the freighter: the second command prints nothing again. A `WorkloadEntry` describes one machine, but it has no name and no port that a caller could use. A `ServiceEntry` with a `workloadSelector` adds those, and it is the next step on the way.
+
+## What `serviceAccount` gives the machine
+
+The `serviceAccount` field is what turns the freighter from "an address the mesh can route to" into "a member the mesh can govern". Istio gives every workload an identity in one fixed format, called SPIFFE (Secure Production Identity Framework For Everyone). It is the name printed on the crew papers:
 
 ```text
 spiffe://<trust-domain>/ns/<namespace>/sa/<service-account>
 
 for this entry:
-spiffe://cluster.local/ns/vm-demo/sa/legacy-sa
+spiffe://cluster.local/ns/starfleet/sa/freighter
 ```
 
-That is exactly the shape a pod running under `legacy-sa` in `vm-demo` would have. The consequence is that every policy that names identities applies to it:
+That is exactly the identity a pod running as the `freighter` ServiceAccount in `starfleet` would have. So every rule that names identities can name the freighter too:
 
-| Object | Can now name this workload |
+| Object | What it can do with the identity |
 | --- | --- |
-| `AuthorizationPolicy` | `source.principals` / `to` rules |
-| `PeerAuthentication` | mTLS requirements |
-| Telemetry and access logs | attributed to a named identity rather than a bare IP |
+| `AuthorizationPolicy` | allow or deny signals from this identity |
+| `PeerAuthentication` | demand the secret handshake (mutual TLS) from it |
+| Telemetry and access logs | show the identity instead of a bare address |
 
-Omit `serviceAccount` and you get a reachable, named endpoint with no identity — policies that reference principals simply cannot match it. That is the difference between "the mesh can route to it" and "the mesh can govern it".
+Leave `serviceAccount` out and the machine still gets a name and routing, but no identity. A policy that names identities can never match it.
 
-For a **real** VM the identity is not merely declared — the VM proves it, by presenting a token at startup and receiving a certificate. Part 3 covers what that requires. In this playground the declaration is all there is, which is one of the places the stand-in stops being faithful.
-
-## Where it lives
-
-A `WorkloadEntry` is a **namespaced** object, and the namespace matters twice: it is part of the SPIFFE identity, and the `serviceAccount` it names must exist in that same namespace.
+The ServiceAccount must exist in the **same namespace** as the `WorkloadEntry`, because the namespace is part of the identity. Your playground already has it:
 
 ```sh
-kubectl -n vm-demo get serviceaccount legacy-sa
+kubectl get serviceaccount freighter -n starfleet
 ```
 
-That ServiceAccount is a real Kubernetes object. It does not need to be used by any pod — it exists so the identity has something to refer to, and so RBAC and policy can be written against a name rather than an invention.
+```text
+NAME        AGE
+freighter   49s
+```
 
-> *`address` makes it reachable, `labels` make it selectable, and `serviceAccount` makes it governable.*
+On a **real** virtual machine, the identity is not only written down: the machine proves it. Its `istio-agent` shows a token when it starts and gets a certificate from mission control. Your stand-in cannot do that, because it has no sidecar. Here, the identity is a declaration only.
+
+> *`address` makes the machine reachable, `labels` make it selectable, and `serviceAccount` makes it governable.*
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Expecting a `WorkloadEntry` alone to be reachable by name.** It describes one instance. A `ServiceEntry` with a `workloadSelector` is what puts a name and ports in front of it.
->
-> **Leaving `serviceAccount` out.** The workload stays anonymous: no SPIFFE identity, so no `AuthorizationPolicy` or `PeerAuthentication` can name it.
->
-> **Creating it in the wrong namespace.** The identity it receives encodes the namespace, so the object's location is part of its meaning.
->
-> **Treating it as a substitute for network reachability.** The address still has to be routable from the mesh.
+> - **Expecting a `WorkloadEntry` alone to be callable by name.** It describes one machine. The proxy has no cluster for it until a `ServiceEntry` selects it.
+> - **Leaving `serviceAccount` out.** The machine gets no identity, so no `AuthorizationPolicy` or `PeerAuthentication` can name it.
+> - **Naming a ServiceAccount from another namespace.** The identity includes the namespace of the `WorkloadEntry`. Create the ServiceAccount there.
+> - **Treating the entry as a network path.** The address must already be reachable from the pods. The `WorkloadEntry` only describes it.

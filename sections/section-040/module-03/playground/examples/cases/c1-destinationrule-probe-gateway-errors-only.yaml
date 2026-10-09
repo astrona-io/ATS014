@@ -1,0 +1,18 @@
+# Case 1: count ONLY gateway errors (502, 503, 504) for ejection.
+# consecutive5xxErrors is 5 as soon as outlierDetection is set, so it must be
+# switched off with 0. Otherwise a ship answering 500 is still ejected after
+# 5 errors in a row.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      consecutive5xxErrors: 0
+      interval: 5s
+      baseEjectionTime: 1m
+      maxEjectionPercent: 50

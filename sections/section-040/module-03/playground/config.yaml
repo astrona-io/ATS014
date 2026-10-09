@@ -3,7 +3,7 @@
 #   astrona run -c .                           new kind cluster "astro-ats-014-playground-040-03" + Istio + apps
 #   astrona destroy ats-014-playground-040-03  delete the cluster again
 # Istio 1.30.5 is installed with Helm (istio-base + istiod, no gateways).
-# Namespace bookinfo holds curl, httpbin (v1 + v2) and fortio. See docs/overview.md.
+# Namespace starfleet holds the shuttle, the probe (v1 + v2) and fortio. See docs/overview.md.
 metadata:
   name: "ats-014-playground-040-03"
   docs:
@@ -16,7 +16,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace bookinfo with access logs, the curl client, httpbin v1/v2 and the fortio load generator"
+      description: "Namespace starfleet with access logs, the shuttle, the probe v1/v2 and the fortio load generator"
       type: "file"
       source: "bootstrap/deploy.sh"
 

@@ -1,0 +1,56 @@
+# The outpost: a planet outside the fleet's signal network.
+# No istio-injection label, so the vault ship flies without a communications
+# officer. The vault is a bare pod with NO Service, so it is not on the star
+# chart either: only a ServiceEntry can put it there.
+# The vault listens ONLY on port 8443, with TLS, and answers every signal with
+# the scheme it was reached over ("scheme=https"). Plain HTTP to 8443 gets a
+# 400 from nginx, so a working call proves the sidecar sealed the signal.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outpost
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-conf
+  namespace: outpost
+data:
+  default.conf: |
+    server {
+      listen 8443 ssl;
+      server_name vault.outpost.example;
+      ssl_certificate     /etc/nginx/certs/tls.crt;
+      ssl_certificate_key /etc/nginx/certs/tls.key;
+      location / {
+        add_header Content-Type text/plain;
+        return 200 "vault: scheme=$scheme\n";
+      }
+    }
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vault
+  namespace: outpost
+  labels:
+    app: vault
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.27-alpine
+    ports:
+    - containerPort: 8443
+    volumeMounts:
+    - name: conf
+      mountPath: /etc/nginx/conf.d
+    - name: certs
+      mountPath: /etc/nginx/certs
+      readOnly: true
+  volumes:
+  - name: conf
+    configMap:
+      name: vault-conf
+  - name: certs
+    secret:
+      secretName: vault-cert

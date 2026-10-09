@@ -1,0 +1,82 @@
+# The planet `outpost`: NOT injected, so it is not part of the mesh. It stands
+# in for a partner in another solar system, and needs no internet access.
+# The partner server (nginx) listens ONLY on 443, ONLY with TLS, and ONLY
+# answers clients that show a certificate signed by the outpost's certificate
+# authority. It answers with what it saw:
+#   client=<subject of the client certificate> verify=<SUCCESS|NONE|FAILED:...>
+# Its certificates come from the Secret partner-server-cert (made by deploy.sh).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outpost
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: partner-conf
+  namespace: outpost
+data:
+  default.conf: |
+    server {
+      listen 443 ssl;
+      server_name partner.outpost.example;
+      ssl_certificate         /etc/nginx/certs/tls.crt;
+      ssl_certificate_key     /etc/nginx/certs/tls.key;
+      ssl_client_certificate  /etc/nginx/certs/ca.crt;
+      ssl_verify_client       on;
+      location / {
+        default_type text/plain;
+        return 200 "client=$ssl_client_s_dn verify=$ssl_client_verify\n";
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partner
+  namespace: outpost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: partner
+  template:
+    metadata:
+      labels:
+        app: partner
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: nginx
+        image: nginx:1.27-alpine
+        ports:
+        - containerPort: 443
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/conf.d
+        - name: certs
+          mountPath: /etc/nginx/certs
+          readOnly: true
+      volumes:
+      - name: conf
+        configMap:
+          name: partner-conf
+      - name: certs
+        secret:
+          secretName: partner-server-cert
+---
+# A plain Kubernetes Service, so the partner keeps one stable address. The
+# mesh reaches it only through the ServiceEntry you write for
+# partner.outpost.example.
+apiVersion: v1
+kind: Service
+metadata:
+  name: partner
+  namespace: outpost
+spec:
+  selector:
+    app: partner
+  ports:
+  - name: https
+    port: 443
+    targetPort: 443

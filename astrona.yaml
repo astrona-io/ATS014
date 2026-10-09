@@ -60,18 +60,11 @@ modules:
         title: "How A Request Moves Through The Mesh"
         path: sections/section-000/module-01/course.md
       - type: reading
-        title: "The Sidecar And The Data Path"
-        path: sections/section-000/module-01/course-01-the-sidecar-and-the-data-path.md
+        title: "Meet The Communications Officer"
+        path: sections/section-000/module-01/course-01-meet-the-communications-officer.md
       - type: reading
-        title: "How The Proxy Gets Its Configuration"
-        path: sections/section-000/module-01/course-02-how-the-proxy-gets-its-configuration.md
-      - type: reading
-        title: "The Diagnostic Toolkit"
-        path: sections/section-000/module-01/course-03-the-diagnostic-toolkit.md
-      - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-000/module-01/course-04-wrap-up.md
-
+        title: "Follow A Signal Through Two Proxies"
+        path: sections/section-000/module-01/course-02-follow-a-signal-through-two-proxies.md
       - type: reading
         title: Question
         path: sections/section-000/module-01/labs/lab-01/question.md
@@ -79,6 +72,52 @@ modules:
         title: "Which Workloads Are Actually In The Mesh Lab"
         path: sections/section-000/module-01/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 15m
+        topic: foundations
+        task_kind: troubleshooting
+        tags: [sidecar-injection, proxy-status, istioctl-analyze]
+        learning_goals:
+          - Find workloads that run without a sidecar although nothing reports an error
+          - Enable injection for a namespace and remove a pod-level opt-out so every workload joins the mesh
+          - Prove with istioctl proxy-status that every workload is connected
+        resources:
+          - name: "Installing the sidecar"
+            url: https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "How Mission Control Sends Orders"
+        path: sections/section-000/module-01/course-03-how-mission-control-sends-orders.md
+      - type: reading
+        title: "Read The Proxy's Orders Layer By Layer"
+        path: sections/section-000/module-01/course-04-read-the-proxys-orders-layer-by-layer.md
+      - type: reading
+        title: "The Diagnostic Toolkit"
+        path: sections/section-000/module-01/course-05-the-diagnostic-toolkit.md
+      - type: reading
+        title: Question
+        path: sections/section-000/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Find The Missing Supply Ship Lab"
+        path: sections/section-000/module-01/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: foundations
+        task_kind: troubleshooting
+        tags: [503-uh, proxy-config, access-log]
+        learning_goals:
+          - Trace a 503 UH to a Service selector that matches no pod
+          - Prove with istioctl proxy-config endpoints that the cluster has a healthy endpoint again
+        resources:
+          - name: "Kubernetes Service concepts"
+            url: https://kubernetes.io/docs/concepts/services-networking/service/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+          - name: "Envoy access logs"
+            url: https://istio.io/latest/docs/tasks/observability/logs/access-log/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-000/module-01/course-06-wrap-up.md
 
   - id: module-010
     title: "Configuring Routing Within A Service Mesh"
@@ -104,6 +143,27 @@ modules:
         title: "Name The Ship Classes"
         path: sections/section-010/module-01/course-02-name-the-ship-classes.md
       - type: reading
+        title: Question
+        path: sections/section-010/module-01/labs/lab-03/question.md
+      - type: lab
+        title: "Fix The Docking Instructions Lab"
+        path: sections/section-010/module-01/labs/lab-03
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: destination-rules
+        task_kind: troubleshooting
+        tags: [destinationrule, subsets, 503-uh, ist0173, proxy-config]
+        learning_goals:
+          - Define subsets that select pods by their labels
+          - Find a subset that selects no pod from a 503 UH and istioctl
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+          - name: "istioctl analyze messages"
+            url: https://istio.io/latest/docs/reference/config/analysis/
+      - type: reading
         title: "Write A Flight Plan"
         path: sections/section-010/module-01/course-03-write-a-flight-plan.md
       - type: reading
@@ -113,29 +173,57 @@ modules:
         title: "Put Your Rules In Order"
         path: sections/section-010/module-01/course-05-put-your-rules-in-order.md
       - type: reading
-        title: "Put The Flight Plan On The Right Planet"
-        path: sections/section-010/module-01/course-06-put-the-flight-plan-on-the-right-planet.md
-      - type: reading
-        title: "Read The Flight Log And The Proxy's Orders"
-        path: sections/section-010/module-01/course-07-read-the-flight-log-and-the-proxys-orders.md
-      - type: reading
-        title: "Rewriting, Redirecting And Headers"
-        path: sections/section-010/module-01/course-08-rewriting-redirecting-and-headers.md
-      - type: reading
-        title: "Routing Non-HTTP Traffic"
-        path: sections/section-010/module-01/course-09-routing-non-http-traffic.md
-      - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-010/module-01/course-10-wrap-up.md
-
-      - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-01/question.md
       - type: lab
         title: "Route Requests By Header, URI And Query Parameter Lab"
         path: sections/section-010/module-01/labs/lab-01
         difficulty: intermediate
-
+        estimated_duration: 30m
+        topic: routing
+        task_kind: build
+        tags: [virtualservice, destinationrule, header-matching, uri-matching, query-matching, rule-order, catch-all]
+        learning_goals:
+          - Route single requests to a subset by header, URI prefix and query parameter
+          - Order the rules so every specific rule stays reachable above the catch-all
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Request routing task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/request-routing/
+      - type: reading
+        title: "Put The Flight Plan On The Right Planet"
+        path: sections/section-010/module-01/course-06-put-the-flight-plan-on-the-right-planet.md
+      - type: reading
+        title: "Read The Flight Log And The Proxy's Orders"
+        path: sections/section-010/module-01/course-07-read-the-flight-log-and-the-proxys-orders.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-01/labs/lab-04/question.md
+      - type: lab
+        title: "Find Out Why The Flight Plan Does Nothing Lab"
+        path: sections/section-010/module-01/labs/lab-04
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: routing
+        task_kind: troubleshooting
+        tags: [virtualservice, short-hosts, fqdn, rule-order, ist0101, ist0130, 503-nc]
+        learning_goals:
+          - Find a VirtualService that does nothing because it sits in the wrong namespace
+          - Repair rule order and a mistyped subset using istioctl analyze and the access log
+          - Prove that jason and every other caller reach the right version
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "istioctl analyze messages"
+            url: https://istio.io/latest/docs/reference/config/analysis/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Rewriting, Redirecting And Headers"
+        path: sections/section-010/module-01/course-08-rewriting-redirecting-and-headers.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-02/question.md
@@ -143,23 +231,53 @@ modules:
         title: "Reshape A Request Lab"
         path: sections/section-010/module-01/labs/lab-02
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: routing
+        task_kind: build
+        tags: [virtualservice, redirect, rewrite, headers, cors]
+        learning_goals:
+          - Answer a legacy path with a redirect and rewrite a new path prefix onto the existing one
+          - Add and remove headers and allow one browser origin with corsPolicy
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+      - type: reading
+        title: "Routing Non-HTTP Traffic"
+        path: sections/section-010/module-01/course-09-routing-non-http-traffic.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-01/labs/lab-05/question.md
+      - type: lab
+        title: "Bring HTTP Routing Back Lab"
+        path: sections/section-010/module-01/labs/lab-05
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: routing
+        task_kind: troubleshooting
+        tags: [protocol-selection, tcp-routing, virtualservice, proxy-config]
+        learning_goals:
+          - Find a Service port whose protocol declaration silently switched off HTTP routing
+          - Declare the port as HTTP so the http rules are read again, and prove it from the route table
+        resources:
+          - name: "Protocol selection"
+            url: https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-01/course-10-wrap-up.md
 
       - type: reading
         title: "Scope Proxy Configuration With The Sidecar Resource"
         path: sections/section-010/module-02/course.md
       - type: reading
-        title: "What A Proxy Is Programmed With"
-        path: sections/section-010/module-02/course-01-what-a-proxy-is-programmed-with.md
+        title: "Every Ship Carries The Whole Star Chart"
+        path: sections/section-010/module-02/course-01-every-ship-carries-the-whole-star-chart.md
       - type: reading
-        title: "The Sidecar Object And Its Host Language"
-        path: sections/section-010/module-02/course-02-the-sidecar-object-and-host-language.md
-      - type: reading
-        title: "Precedence, Reachability And What It Is Not"
-        path: sections/section-010/module-02/course-03-precedence-reachability-and-limits.md
-      - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-010/module-02/course-04-wrap-up.md
-
+        title: "Give A Ship A Smaller Star Chart"
+        path: sections/section-010/module-02/course-02-give-a-ship-a-smaller-star-chart.md
       - type: reading
         title: Question
         path: sections/section-010/module-02/labs/lab-01/question.md
@@ -167,6 +285,50 @@ modules:
         title: "Scope Proxy Configuration With The Sidecar Resource Lab"
         path: sections/section-010/module-02/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: routing
+        task_kind: build
+        tags: [sidecar, sidecar-scoping, proxy-config]
+        learning_goals:
+          - Limit a namespace's proxies to the hosts they need with a Sidecar resource
+          - Prove the reduction from the proxy's own cluster list while keeping the needed services reachable
+        resources:
+          - name: "Sidecar reference"
+            url: https://istio.io/latest/docs/reference/config/networking/sidecar/
+          - name: "Configuration scoping"
+            url: https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Which Star Chart A Ship Uses"
+        path: sections/section-010/module-02/course-03-which-star-chart-a-ship-uses.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Fix One Ship's Star Chart Lab"
+        path: sections/section-010/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: routing
+        task_kind: troubleshooting
+        tags: [sidecar, sidecar-scoping, registry-only, proxy-config]
+        learning_goals:
+          - Explain why a workload-selected Sidecar replaces the namespace default instead of adding to it
+          - Repair one ship's Sidecar so it reaches its own namespace, istio-system and another namespace again
+        resources:
+          - name: "Sidecar reference"
+            url: https://istio.io/latest/docs/reference/config/networking/sidecar/
+          - name: "Configuration scoping"
+            url: https://istio.io/latest/docs/ops/configuration/mesh/configuration-scoping/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "A Star Chart Is Not A Shield"
+        path: sections/section-010/module-02/course-04-a-star-chart-is-not-a-shield.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-02/course-05-wrap-up.md
 
       - type: reading
         title: "Apply And Remove Traffic Rules Safely"
@@ -174,6 +336,27 @@ modules:
       - type: reading
         title: "The Order To Apply And Remove Rules"
         path: sections/section-010/module-03/course-01-the-order-to-apply-and-remove-rules.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-03/labs/lab-01/question.md
+      - type: lab
+        title: "Retire A Ship Class Safely Lab"
+        path: sections/section-010/module-03/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: routing
+        task_kind: migration
+        tags: [virtualservice, destinationrule, subsets, 503-nc, access-log]
+        learning_goals:
+          - Retire a subset in the safe order: stop routing to it before you remove it
+          - Prove from a live caller's access log that no signal failed during the change
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Traffic management best practices"
+            url: https://istio.io/latest/docs/ops/best-practices/traffic-management/
       - type: reading
         title: "One Object Per Host, And The Defaults"
         path: sections/section-010/module-03/course-02-one-object-per-host-and-the-defaults.md
@@ -188,6 +371,20 @@ modules:
         title: "Route And Scope A Storefront Capstone Lab"
         path: sections/section-010/capstone/labs/lab-01
         difficulty: advanced
+        estimated_duration: 45m
+        topic: routing
+        task_kind: build
+        tags: [virtualservice, destinationrule, sidecar, header-matching, rule-order, sidecar-scoping]
+        learning_goals:
+          - Combine header, path and query routing with a catch-all in one VirtualService
+          - Scope a namespace's proxies with a Sidecar without breaking the routing you built
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Sidecar reference"
+            url: https://istio.io/latest/docs/reference/config/networking/sidecar/
 
   - id: module-020
     title: "Configuring Traffic Shifting"
@@ -209,12 +406,32 @@ modules:
         title: "Weighted Destinations"
         path: sections/section-020/module-01/course-01-weighted-destinations.md
       - type: reading
+        title: Question
+        path: sections/section-020/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Split The Scout Three Ways Lab"
+        path: sections/section-020/module-01/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: traffic-shifting
+        task_kind: build
+        tags: [virtualservice, weighted-routing, subsets, proxy-config]
+        learning_goals:
+          - Split traffic three ways with weights in one route
+          - Prove the split from the proxy's weighted clusters and from live traffic
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Traffic shifting task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
         title: "Running A Rollout"
         path: sections/section-020/module-01/course-02-running-a-rollout.md
       - type: reading
         title: "Weight Versus Replicas, And Proof"
         path: sections/section-020/module-01/course-03-weight-versus-replicas-and-proof.md
-
       - type: reading
         title: Question
         path: sections/section-020/module-01/labs/lab-01/question.md
@@ -222,6 +439,21 @@ modules:
         title: "Shift Traffic With Weighted Routing Lab"
         path: sections/section-020/module-01/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: traffic-shifting
+        task_kind: build
+        tags: [virtualservice, weighted-routing, canary, header-matching, rule-order]
+        learning_goals:
+          - Run a 70/30 canary split without changing replica counts
+          - Pin internal testers to the canary with a header rule placed above the split
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Traffic shifting task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-020/module-01/course-04-wrap-up.md
 
       - type: reading
         title: "Mirror Live Traffic To A Shadow Service"
@@ -233,16 +465,51 @@ modules:
         title: "Identifying And Sampling Shadow Traffic"
         path: sections/section-020/module-02/course-02-identifying-and-sampling-shadow-traffic.md
       - type: reading
-        title: "Consequences, Verification And Limits"
-        path: sections/section-020/module-02/course-03-consequences-verification-and-limits.md
-
-      - type: reading
         title: Question
         path: sections/section-020/module-02/labs/lab-01/question.md
       - type: lab
         title: "Mirror Live Traffic To A Shadow Service Lab"
         path: sections/section-020/module-02/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: traffic-shifting
+        task_kind: build
+        tags: [virtualservice, mirroring, subsets]
+        learning_goals:
+          - Route all traffic to one version while mirroring every request to another
+          - Prove that callers only see the primary and the shadow really receives copies
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Mirroring task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
+      - type: reading
+        title: "Consequences, Verification And Limits"
+        path: sections/section-020/module-02/course-03-consequences-verification-and-limits.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Find The Quiet Shadow Lab"
+        path: sections/section-020/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: traffic-shifting
+        task_kind: troubleshooting
+        tags: [mirroring, destinationrule, subsets, proxy-config]
+        learning_goals:
+          - Find why a mirror delivers no copies although the caller sees no error
+          - Fix the subset the mirror points at and prove the shadow receives copies
+        resources:
+          - name: "Mirroring task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-020/module-02/course-04-wrap-up.md
 
       - type: reading
         title: Question
@@ -251,6 +518,20 @@ modules:
         title: "Canary And Shadow At The Same Time Capstone Lab"
         path: sections/section-020/capstone/labs/lab-01
         difficulty: advanced
+        estimated_duration: 45m
+        topic: traffic-shifting
+        task_kind: build
+        tags: [virtualservice, weighted-routing, canary, mirroring, header-matching]
+        learning_goals:
+          - Combine a header rule, an 80/20 canary split and a mirror to a shadow host
+          - Prove no caller response ever comes from the shadow
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Traffic shifting task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/
+          - name: "Mirroring task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
 
   - id: module-030
     title: "Defining Traffic Policies With Destination Rules"
@@ -272,12 +553,33 @@ modules:
         title: "Endpoint Selection And The `simple` Algorithms"
         path: sections/section-030/module-01/course-01-endpoint-selection-and-simple-algorithms.md
       - type: reading
+        title: Question
+        path: sections/section-030/module-01/labs/lab-03/question.md
+      - type: lab
+        title: "Spread The Signals Evenly Lab"
+        path: sections/section-030/module-01/labs/lab-03
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: destination-rules
+        task_kind: troubleshooting
+        tags: [destinationrule, load-balancing, consistent-hash, proxy-config]
+        learning_goals:
+          - Find why every signal lands on one pod by reading the DestinationRule and the proxy's lbPolicy
+          - Replace a consistentHash policy with simple ROUND_ROBIN and prove the spread with live signals
+        resources:
+          - name: "DestinationRule load balancer settings"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings
+          - name: "Envoy load balancers"
+            url: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers
+      - type: reading
         title: "`consistentHash` And The Ring"
         path: sections/section-030/module-01/course-02-consistent-hash-and-the-ring.md
       - type: reading
+        title: "Sticky Cookies And Other Hash Sources"
+        path: sections/section-030/module-01/course-03-sticky-cookies-and-other-hash-sources.md
+      - type: reading
         title: "Policy Levels And Verification"
-        path: sections/section-030/module-01/course-03-policy-levels-and-verification.md
-
+        path: sections/section-030/module-01/course-04-policy-levels-and-verification.md
       - type: reading
         title: Question
         path: sections/section-030/module-01/labs/lab-01/question.md
@@ -285,7 +587,21 @@ modules:
         title: "Load Balancer Policy And Session Affinity Lab"
         path: sections/section-030/module-01/labs/lab-01
         difficulty: intermediate
-
+        estimated_duration: 30m
+        topic: destination-rules
+        task_kind: build
+        tags: [destinationrule, virtualservice, subsets, session-affinity, consistent-hash, load-balancing, proxy-config]
+        learning_goals:
+          - Keep one subset sticky by header with a host-level consistentHash policy
+          - Override the load balancer for one subset with ROUND_ROBIN and prove it per cluster
+          - Route signals to subsets by header so each policy is really used
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
         title: Question
         path: sections/section-030/module-01/labs/lab-02/question.md
@@ -293,6 +609,22 @@ modules:
         title: "Session Affinity For Browsers Lab"
         path: sections/section-030/module-01/labs/lab-02
         difficulty: intermediate
+        estimated_duration: 25m
+        topic: destination-rules
+        task_kind: build
+        tags: [destinationrule, session-affinity, consistent-hash, load-balancing]
+        learning_goals:
+          - Make the sidecar hand out a sticky cookie by giving httpCookie a ttl
+          - Apply a load balancer policy to one port with portLevelSettings
+          - Prove that a client with the cookie stays on one pod and a client without it does not
+        resources:
+          - name: "DestinationRule load balancer settings"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings
+          - name: "Envoy load balancers"
+            url: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-030/module-01/course-05-wrap-up.md
 
       - type: reading
         title: Question
@@ -301,6 +633,20 @@ modules:
         title: "Sticky Sessions With A Shadowed Canary Capstone Lab"
         path: sections/section-030/capstone/labs/lab-01
         difficulty: advanced
+        estimated_duration: 45m
+        topic: destination-rules
+        task_kind: build
+        tags: [destinationrule, consistent-hash, session-affinity, load-balancing, mirroring, subsets]
+        learning_goals:
+          - Combine host-level affinity with a different subset policy
+          - Mirror stable traffic to a canary that spreads its load
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Mirroring task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
 
   - id: module-040
     title: "Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries)"
@@ -318,15 +664,62 @@ modules:
         title: "Timeouts And Retries"
         path: sections/section-040/module-01/course.md
       - type: reading
-        title: "The Route Timeout"
-        path: sections/section-040/module-01/course-01-the-route-timeout.md
+        title: "Set An Abort Window"
+        path: sections/section-040/module-01/course-01-set-an-abort-window.md
       - type: reading
-        title: "The Retry Policy"
-        path: sections/section-040/module-01/course-02-the-retry-policy.md
+        title: "Test A Timeout Across Two Ships"
+        path: sections/section-040/module-01/course-02-test-a-timeout-across-two-ships.md
       - type: reading
-        title: "The Shared Budget And Idempotency"
-        path: sections/section-040/module-01/course-03-the-shared-budget-and-idempotency.md
-
+        title: Question
+        path: sections/section-040/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Free The Shuttle From A Slow Navcom Lab"
+        path: sections/section-040/module-01/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: resilience
+        task_kind: troubleshooting
+        tags: [virtualservice, timeouts, fault-injection, delay, 504-ut]
+        learning_goals:
+          - Find a timeout that never fires because it shares a rule with a fault
+          - Move the abort window to the caller's route and prove it with 504 UT in the access log
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Request timeouts task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
+          - name: "Fault injection task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/fault-injection/
+          - name: "Envoy access log response flags"
+            url: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage
+      - type: reading
+        title: "Re-Send Lost Signals"
+        path: sections/section-040/module-01/course-03-re-send-lost-signals.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-01/labs/lab-03/question.md
+      - type: lab
+        title: "Retry Only The Signals Worth Re-Sending Lab"
+        path: sections/section-040/module-01/labs/lab-03
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: resilience
+        task_kind: build
+        tags: [virtualservice, retries, timeouts, access-log]
+        learning_goals:
+          - Narrow a retry policy to one exact status code with attempts and perTryTimeout
+          - Size the route timeout to fit every try
+          - Count the real number of tries in the receiver's access log
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Traffic management concepts"
+            url: https://istio.io/latest/docs/concepts/traffic-management/
+          - name: "Envoy router filter"
+            url: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter
+      - type: reading
+        title: "Share One Clock, Retry What Is Safe"
+        path: sections/section-040/module-01/course-04-share-one-clock-and-retry-what-is-safe.md
       - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-01/question.md
@@ -334,6 +727,21 @@ modules:
         title: "Timeouts And Retries Lab"
         path: sections/section-040/module-01/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: resilience
+        task_kind: build
+        tags: [virtualservice, timeouts, retries, rule-order]
+        learning_goals:
+          - Give a write path a timeout with retries switched off
+          - Give the read path bounded retries with a per-try timeout
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Request timeouts task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-01/course-05-wrap-up.md
 
       - type: reading
         title: "Circuit Breaking With Connection Pool Limits"
@@ -345,16 +753,56 @@ modules:
         title: "Overflow And Its Signatures"
         path: sections/section-040/module-02/course-02-overflow-and-its-signatures.md
       - type: reading
-        title: "Scope, Verification And Retry Amplification"
-        path: sections/section-040/module-02/course-03-scope-verification-and-retry-amplification.md
-
-      - type: reading
         title: Question
         path: sections/section-040/module-02/labs/lab-01/question.md
       - type: lab
         title: "Circuit Breaking With Connection Pool Limits Lab"
         path: sections/section-040/module-02/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: resilience
+        task_kind: build
+        tags: [destinationrule, connection-pool, circuit-breaking, 503-uo, access-log]
+        learning_goals:
+          - Limit concurrent connections and pending requests with a connection pool
+          - Prove the circuit breaker trips under load with 503 UO in the access log
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Circuit breaking task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/circuit-breaking/
+          - name: "Envoy access logs"
+            url: https://istio.io/latest/docs/tasks/observability/logs/access-log/
+      - type: reading
+        title: "Scope, Verification And Retry Amplification"
+        path: sections/section-040/module-02/course-03-scope-verification-and-retry-amplification.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Calm The Retry Storm Lab"
+        path: sections/section-040/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: resilience
+        task_kind: troubleshooting
+        tags: [virtualservice, retries, connection-pool, circuit-breaking, access-log, proxy-config]
+        learning_goals:
+          - Measure how a 5xx retry policy multiplies the load on a failing service
+          - Limit retries to signals that never reached the service with connect-failure and refused-stream
+          - Verify the new retry policy in the sender's route with istioctl proxy-config
+        resources:
+          - name: "VirtualService HTTPRetry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRetry
+          - name: "Circuit breaking task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/circuit-breaking/
+          - name: "Envoy router filter (retry policies)"
+            url: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter
+          - name: "Traffic management concepts"
+            url: https://istio.io/latest/docs/concepts/traffic-management/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-02/course-04-wrap-up.md
 
       - type: reading
         title: "Outlier Detection And Endpoint Ejection"
@@ -366,16 +814,54 @@ modules:
         title: "Ejection Mechanics And Limits"
         path: sections/section-040/module-03/course-02-ejection-mechanics-and-limits.md
       - type: reading
-        title: "Local, Temporary, And Verified"
-        path: sections/section-040/module-03/course-03-local-temporary-and-verified.md
-
-      - type: reading
         title: Question
         path: sections/section-040/module-03/labs/lab-01/question.md
       - type: lab
         title: "Outlier Detection And Endpoint Ejection Lab"
         path: sections/section-040/module-03/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: resilience
+        task_kind: build
+        tags: [destinationrule, outlier-detection, proxy-config]
+        learning_goals:
+          - Eject a failing endpoint with outlier detection while Kubernetes still lists it
+          - Prove the ejection from proxy statistics and the endpoint list
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Local, Temporary, And Verified"
+        path: sections/section-040/module-03/course-03-local-temporary-and-verified.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-03/labs/lab-02/question.md
+      - type: lab
+        title: "Raise Both Shields Lab"
+        path: sections/section-040/module-03/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: resilience
+        task_kind: build
+        tags: [destinationrule, outlier-detection, circuit-breaking, connection-pool, proxy-config]
+        learning_goals:
+          - Combine a connection pool and outlier detection in one DestinationRule
+          - Raise maxEjectionPercent so an ejection can happen on a small service
+          - Prove each half from the proxy's overflow and ejection counters
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Circuit breaking task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/circuit-breaking/
+          - name: "Envoy outlier detection"
+            url: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/outlier
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-03/course-04-wrap-up.md
 
       - type: reading
         title: "Locality Load Balancing And Failover"
@@ -384,12 +870,53 @@ modules:
         title: "Where Locality Comes From"
         path: sections/section-040/module-04/course-01-where-locality-comes-from.md
       - type: reading
-        title: "Preference, `distribute` And `failover`"
+        title: Question
+        path: sections/section-040/module-04/labs/lab-02/question.md
+      - type: lab
+        title: "Give Every Ship Its Orbit Lab"
+        path: sections/section-040/module-04/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: resilience
+        task_kind: troubleshooting
+        tags: [locality-failover, load-balancing, outlier-detection, destinationrule, proxy-config]
+        learning_goals:
+          - Read every endpoint's locality from the sender's proxy
+          - Give a pod its own locality with the istio-locality label on its pod template
+          - Prove that signals stay in the sender's own zone
+        resources:
+          - name: "Locality load balancing"
+            url: https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/
+          - name: "Kubernetes topology labels"
+            url: https://kubernetes.io/docs/reference/labels-annotations-taints/#topologykubernetesiozone
+          - name: "Istio labels reference"
+            url: https://istio.io/latest/docs/reference/config/labels/
+      - type: reading
+        title: "Preference, Distribute And Failover"
         path: sections/section-040/module-04/course-02-preference-distribute-and-failover.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-04/labs/lab-03/question.md
+      - type: lab
+        title: "Split Signals Between Two Orbits Lab"
+        path: sections/section-040/module-04/labs/lab-03
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: destination-rules
+        task_kind: build
+        tags: [destinationrule, locality-failover, load-balancing, weighted-routing]
+        learning_goals:
+          - Split traffic between zones with localityLbSetting distribute
+          - Write locality patterns and weights that Istio accepts
+          - Prove the split with live signals
+        resources:
+          - name: "Locality weighted distribution"
+            url: https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/distribute/
+          - name: "LocalityLoadBalancerSetting reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#LocalityLoadBalancerSetting
       - type: reading
         title: "The Health Dependency And Scope"
         path: sections/section-040/module-04/course-03-the-health-dependency-and-scope.md
-
       - type: reading
         title: Question
         path: sections/section-040/module-04/labs/lab-01/question.md
@@ -397,6 +924,24 @@ modules:
         title: "Locality Load Balancing And Failover Lab"
         path: sections/section-040/module-04/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 25m
+        topic: resilience
+        task_kind: build
+        tags: [locality-failover, outlier-detection, destinationrule, load-balancing, proxy-config, 503-uh]
+        learning_goals:
+          - Fail over away from a zone whose endpoint answers 503 while it stays ready
+          - Combine outlierDetection with localityLbSetting and a maxEjectionPercent that can eject
+          - Prove the ejection from the sender's endpoint list
+        resources:
+          - name: "Locality failover"
+            url: https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/failover/
+          - name: "OutlierDetection reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#OutlierDetection
+          - name: "Locality load balancing"
+            url: https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-04/course-04-wrap-up.md
 
       - type: reading
         title: Question
@@ -405,6 +950,22 @@ modules:
         title: "A Resilient Payment Path Capstone Lab"
         path: sections/section-040/capstone/labs/lab-01
         difficulty: advanced
+        estimated_duration: 60m
+        topic: resilience
+        task_kind: build
+        tags: [timeouts, retries, connection-pool, circuit-breaking, outlier-detection, locality-failover]
+        learning_goals:
+          - Combine timeouts, safe retries and a circuit breaker on one service
+          - Add outlier detection and locality failover, and prove each behaviour with traffic
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Request timeouts task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
+          - name: "Circuit breaking task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/circuit-breaking/
 
   - id: module-050
     title: "Using Fault Injection"
@@ -422,15 +983,57 @@ modules:
         title: "Fault Injection With Delays And Aborts"
         path: sections/section-050/module-01/course.md
       - type: reading
-        title: "`fault.delay`"
-        path: sections/section-050/module-01/course-01-fault-delay.md
+        title: "Slow A Ship Down"
+        path: sections/section-050/module-01/course-01-slow-a-ship-down.md
       - type: reading
-        title: "`fault.abort`"
-        path: sections/section-050/module-01/course-02-fault-abort.md
+        title: "Fail A Signal Before It Leaves"
+        path: sections/section-050/module-01/course-02-fail-a-signal-before-it-leaves.md
       - type: reading
-        title: "Scoping, Composition And Hazards"
-        path: sections/section-050/module-01/course-03-scoping-composition-and-hazards.md
-
+        title: Question
+        path: sections/section-050/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Run Two Simulation Drills Lab"
+        path: sections/section-050/module-01/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: fault-injection
+        task_kind: build
+        tags: [virtualservice, fault-injection, delay, abort, access-log]
+        learning_goals:
+          - Put a delay drill and an abort drill on the flight plan of the ship you pretend is in trouble
+          - Prove each drill from the DI and FI flags in the sender's access log
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Fault injection task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/fault-injection/
+          - name: "Envoy access log response flags"
+            url: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage
+      - type: reading
+        title: "Scope A Drill To Your Own Signals"
+        path: sections/section-050/module-01/course-03-scope-a-drill-to-your-own-signals.md
+      - type: reading
+        title: Question
+        path: sections/section-050/module-01/labs/lab-03/question.md
+      - type: lab
+        title: "Stop The Drill That Never Ended Lab"
+        path: sections/section-050/module-01/labs/lab-03
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: fault-injection
+        task_kind: troubleshooting
+        tags: [virtualservice, fault-injection, abort, header-matching, rule-order, catch-all]
+        learning_goals:
+          - Find an unscoped abort drill that breaks every caller
+          - Scope the drill to one test user with a header match and a catch-all rule below it
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Fault injection task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/fault-injection/
+      - type: reading
+        title: "Drive Your Resilience Settings With Faults"
+        path: sections/section-050/module-01/course-04-drive-your-resilience-settings-with-faults.md
       - type: reading
         title: Question
         path: sections/section-050/module-01/labs/lab-01/question.md
@@ -438,6 +1041,21 @@ modules:
         title: "Fault Injection With Delays And Aborts Lab"
         path: sections/section-050/module-01/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: fault-injection
+        task_kind: build
+        tags: [virtualservice, fault-injection, delay, abort, timeouts, header-matching]
+        learning_goals:
+          - Inject a delay and an abort for one test user only
+          - Show how a caller timeout interacts with an injected delay
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Fault injection task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/fault-injection/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-050/module-01/course-05-wrap-up.md
 
       - type: reading
         title: Question
@@ -446,6 +1064,20 @@ modules:
         title: "A Controlled Chaos Experiment Capstone Lab"
         path: sections/section-050/capstone/labs/lab-01
         difficulty: advanced
+        estimated_duration: 45m
+        topic: fault-injection
+        task_kind: build
+        tags: [fault-injection, abort, delay, retries, timeouts, header-matching]
+        learning_goals:
+          - Run a controlled chaos experiment with scoped aborts and delays
+          - Prove whether retries and timeouts survive the injected failures
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Fault injection task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/fault-injection/
+          - name: "Request timeouts task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
 
   - id: module-060
     title: "Configuring Ingress And Egress Traffic — Ingress"
@@ -466,12 +1098,32 @@ modules:
         title: "The Gateway Pod And Its Listener"
         path: sections/section-060/module-01/course-01-the-gateway-pod-and-its-listener.md
       - type: reading
+        title: Question
+        path: sections/section-060/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Open The Closed Gate Lab"
+        path: sections/section-060/module-01/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: ingress-egress
+        task_kind: troubleshooting
+        tags: [gateway, ingress-gateway, ist0101, istioctl-analyze, proxy-config]
+        learning_goals:
+          - Find a Gateway selector that matches no gateway pod by comparing it with the pod labels
+          - Prove from the gateway proxy that a port 80 listener and the bridge routes exist after the fix
+        resources:
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+          - name: "IST0101 ReferencedResourceNotFound"
+            url: https://istio.io/latest/docs/reference/config/analysis/ist0101/
+          - name: "Installing gateways"
+            url: https://istio.io/latest/docs/setup/additional-setup/gateway/
+      - type: reading
         title: "Binding Routes With `gateways:`"
         path: sections/section-060/module-01/course-02-binding-routes-with-gateways.md
       - type: reading
-        title: "Diagnosing The Gateway"
-        path: sections/section-060/module-01/course-03-diagnosing-the-gateway.md
-
+        title: "Hosts And References At The Gate"
+        path: sections/section-060/module-01/course-03-hosts-and-references-at-the-gate.md
       - type: reading
         title: Question
         path: sections/section-060/module-01/labs/lab-01/question.md
@@ -479,6 +1131,47 @@ modules:
         title: "Expose A Service With An Istio Ingress Gateway Lab"
         path: sections/section-060/module-01/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: ingress-egress
+        task_kind: build
+        tags: [gateway, ingress-gateway, virtualservice, uri-matching, proxy-config]
+        learning_goals:
+          - Open one ingress listener for two host names with a Gateway
+          - Bind a VirtualService per host to the Gateway and prove each host only carries its own routes
+        resources:
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+          - name: "Ingress gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+      - type: reading
+        title: "Diagnosing The Gateway"
+        path: sections/section-060/module-01/course-04-diagnosing-the-gateway.md
+      - type: reading
+        title: Question
+        path: sections/section-060/module-01/labs/lab-03/question.md
+      - type: lab
+        title: "Repair The Arrival Gate Lab"
+        path: sections/section-060/module-01/labs/lab-03
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: ingress-egress
+        task_kind: troubleshooting
+        tags: [gateway, virtualservice, ingress-gateway, 404-nr, 503-nc, ist0101, istioctl-analyze, access-log]
+        learning_goals:
+          - Tell 404 NR and 503 NC apart at the gateway and trace each to its object
+          - Repair a missing gateways field, a Gateway host typo and a wrong destination one fault at a time
+        resources:
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+          - name: "IST0132 VirtualServiceHostNotFoundInGateway"
+            url: https://istio.io/latest/docs/reference/config/analysis/ist0132/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-060/module-01/course-05-wrap-up.md
 
       - type: reading
         title: "Expose A Service With A Kubernetes Ingress"
@@ -487,12 +1180,33 @@ modules:
         title: "Claiming An Ingress"
         path: sections/section-060/module-02/course-01-claiming-an-ingress.md
       - type: reading
+        title: Question
+        path: sections/section-060/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Claim The Unclaimed Ingress Lab"
+        path: sections/section-060/module-02/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: ingress-egress
+        task_kind: troubleshooting
+        tags: [ingress-resource, ingress-gateway, uri-matching, proxy-config]
+        learning_goals:
+          - Recognise an Ingress that no controller serves even though its CLASS column looks right
+          - Fix an IngressClass controller by deleting and recreating it, since the field is immutable
+          - Prove the gateway serves the Ingress with live signals and its route table
+        resources:
+          - name: "Kubernetes Ingress with Istio"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/
+          - name: "Kubernetes Ingress concepts"
+            url: https://kubernetes.io/docs/concepts/services-networking/ingress/
+          - name: "Mesh configuration reference (ingressClass, ingressService)"
+            url: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/
+      - type: reading
         title: "Rules, Path Types And Translation"
         path: sections/section-060/module-02/course-02-rules-path-types-and-translation.md
       - type: reading
         title: "TLS And The Feature Ceiling"
         path: sections/section-060/module-02/course-03-tls-and-the-feature-ceiling.md
-
       - type: reading
         title: Question
         path: sections/section-060/module-02/labs/lab-01/question.md
@@ -500,6 +1214,24 @@ modules:
         title: "Expose A Service With A Kubernetes Ingress Lab"
         path: sections/section-060/module-02/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: ingress-egress
+        task_kind: build
+        tags: [ingress-resource, ingress-gateway, tls-termination, uri-matching]
+        learning_goals:
+          - Serve a host through Istio with a Kubernetes Ingress and the istio IngressClass
+          - Choose between Prefix and Exact path types and predict which paths match
+          - Terminate TLS with a secret placed where the gateway can read it
+        resources:
+          - name: "Kubernetes Ingress with Istio"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/
+          - name: "Kubernetes Ingress concepts"
+            url: https://kubernetes.io/docs/concepts/services-networking/ingress/
+          - name: "Secure gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-060/module-02/course-04-wrap-up.md
 
       - type: reading
         title: "Ingress With The Kubernetes Gateway API"
@@ -511,16 +1243,75 @@ modules:
         title: "A Gateway That Creates Its Own Data Plane"
         path: sections/section-060/module-03/course-02-a-gateway-that-creates-its-own-data-plane.md
       - type: reading
-        title: "`HTTPRoute`, Status And What Stays In Istio"
-        path: sections/section-060/module-03/course-03-httproute-status-and-what-stays-in-istio.md
-
+        title: Question
+        path: sections/section-060/module-03/labs/lab-02/question.md
+      - type: lab
+        title: "Open The Spaceport Gate Lab"
+        path: sections/section-060/module-03/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: ingress-egress
+        task_kind: build
+        tags: [gateway-api, ingress-gateway, access-log, 404-nr]
+        learning_goals:
+          - Create a Gateway API Gateway that fits an HTTPRoute that is already waiting
+          - Find the gateway proxy that Istio builds in the Gateway's own namespace
+          - Prove with live signals that the gate serves only its own host name
+        resources:
+          - name: "Istio Gateway API task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
+          - name: "Gateway API documentation"
+            url: https://gateway-api.sigs.k8s.io/
+      - type: reading
+        title: "Attach An HTTPRoute And Read Its Status"
+        path: sections/section-060/module-03/course-03-attach-an-httproute-and-read-its-status.md
+      - type: reading
+        title: Question
+        path: sections/section-060/module-03/labs/lab-03/question.md
+      - type: lab
+        title: "Fix The Broken Flight Plans Lab"
+        path: sections/section-060/module-03/labs/lab-03
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: ingress-egress
+        task_kind: troubleshooting
+        tags: [gateway-api, ingress-gateway, istioctl-analyze, access-log, 404-nr, uri-matching]
+        learning_goals:
+          - Read HTTPRoute status conditions to find a backend that does not exist
+          - Find a route that never attached from its empty status
+          - Repair both routes without changing the Gateway
+        resources:
+          - name: "Istio Gateway API task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
+          - name: "istioctl analyze messages"
+            url: https://istio.io/latest/docs/reference/config/analysis/
+          - name: "Gateway API documentation"
+            url: https://gateway-api.sigs.k8s.io/
+      - type: reading
+        title: "Decide Who May Dock"
+        path: sections/section-060/module-03/course-04-decide-who-may-dock.md
       - type: reading
         title: Question
         path: sections/section-060/module-03/labs/lab-01/question.md
       - type: lab
-        title: "Ingress With The Kubernetes Gateway API Lab"
+        title: "Share One Gateway Between Two Planets Lab"
         path: sections/section-060/module-03/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: ingress-egress
+        task_kind: build
+        tags: [gateway-api, ingress-gateway, allowed-routes, uri-matching]
+        learning_goals:
+          - Create a Gateway API Gateway that deploys its own data plane
+          - Attach HTTPRoutes from two namespaces with a label-based allowedRoutes selector
+        resources:
+          - name: "Istio Gateway API task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
+          - name: "Gateway API documentation"
+            url: https://gateway-api.sigs.k8s.io/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-060/module-03/course-05-wrap-up.md
 
       - type: reading
         title: Question
@@ -529,6 +1320,20 @@ modules:
         title: "Three APIs, One Edge Capstone Lab"
         path: sections/section-060/capstone/labs/lab-01
         difficulty: advanced
+        estimated_duration: 60m
+        topic: ingress-egress
+        task_kind: build
+        tags: [gateway, ingress-resource, gateway-api, ingress-gateway, tls-termination]
+        learning_goals:
+          - Expose three services through Istio Gateway, Kubernetes Ingress and the Gateway API
+          - Prove each edge path serves only its own host
+        resources:
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+          - name: "Kubernetes Ingress with Istio"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/
+          - name: "Istio Gateway API task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
 
   - id: module-070
     title: "Connecting In-Mesh Workloads To External Workloads And Services"
@@ -554,14 +1359,55 @@ modules:
       - type: reading
         title: "A Registered Host Is An Ordinary Host"
         path: sections/section-070/module-01/course-03-a-registered-host-is-an-ordinary-host.md
-
       - type: reading
         title: Question
         path: sections/section-070/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Control External Access With ServiceEntry Lab"
+        title: "Open Exactly One Route Out Lab"
         path: sections/section-070/module-01/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: external-services
+        task_kind: build
+        tags: [serviceentry, external-services, registry-only, timeouts, 504-ut, proxy-config]
+        learning_goals:
+          - Register an outside endpoint with a ServiceEntry under REGISTRY_ONLY
+          - Apply a timeout to the external host and limit the entry to one namespace
+        resources:
+          - name: "ServiceEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/service-entry/
+          - name: "Accessing external services"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-control/
+          - name: "Request timeouts"
+            url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
+      - type: reading
+        title: "When A Correct ServiceEntry Is Refused"
+        path: sections/section-070/module-01/course-04-when-a-correct-serviceentry-is-refused.md
+      - type: reading
+        title: Question
+        path: sections/section-070/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Reach The Hidden Relay Lab"
+        path: sections/section-070/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: external-services
+        task_kind: troubleshooting
+        tags: [serviceentry, sidecar, sidecar-scoping, registry-only, external-services, protocol-selection, timeouts, proxy-config]
+        learning_goals:
+          - Find a ServiceEntry that a Sidecar's egress hosts hide from a workload
+          - Declare an HTTP port so a VirtualService timeout applies to an external host
+          - Confirm what a proxy can see with istioctl proxy-config
+        resources:
+          - name: "ServiceEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/service-entry/
+          - name: "Sidecar reference"
+            url: https://istio.io/latest/docs/reference/config/networking/sidecar/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-070/module-01/course-05-wrap-up.md
 
       - type: reading
         title: "TLS Origination For External Services"
@@ -573,37 +1419,121 @@ modules:
         title: "The Three Objects"
         path: sections/section-070/module-02/course-02-the-three-objects.md
       - type: reading
+        title: "Two Ways To Break It"
+        path: sections/section-070/module-02/course-03-two-ways-to-break-it.md
+      - type: reading
+        title: Question
+        path: sections/section-070/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Repair The Sealed Channel Lab"
+        path: sections/section-070/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: external-services
+        task_kind: troubleshooting
+        tags: [serviceentry, virtualservice, destinationrule, tls-origination, access-log, istioctl-analyze, proxy-config]
+        learning_goals:
+          - Find a port redirect and a TLS setting placed on the wrong port from the flight log
+          - Seal only the outgoing port with portLevelSettings and sni
+          - Prove with istioctl proxy-config that only port 8443 carries a TLS transport socket
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Egress TLS origination task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/
+          - name: "Debugging Envoy and Istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
         title: "Proving It, And Mutual TLS"
-        path: sections/section-070/module-02/course-03-proving-it-and-mutual-tls.md
-
+        path: sections/section-070/module-02/course-04-proving-it-and-mutual-tls.md
       - type: reading
         title: Question
         path: sections/section-070/module-02/labs/lab-01/question.md
       - type: lab
-        title: "TLS Origination For External Services Lab"
+        title: "Seal Signals To A Secure Planet Lab"
         path: sections/section-070/module-02/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: external-services
+        task_kind: build
+        tags: [serviceentry, virtualservice, destinationrule, tls-origination, external-services, proxy-config]
+        learning_goals:
+          - Let the sidecar originate TLS so the app keeps calling plain HTTP
+          - Prove the endpoint saw an encrypted connection
+        resources:
+          - name: "ServiceEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/service-entry/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Egress TLS origination task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-070/module-02/course-05-wrap-up.md
 
       - type: reading
         title: "Add External Workloads With WorkloadEntry"
         path: sections/section-070/module-03/course.md
       - type: reading
-        title: "`WorkloadEntry`: One Instance"
+        title: "`WorkloadEntry`: One Old Ship"
         path: sections/section-070/module-03/course-01-workloadentry-one-instance.md
       - type: reading
         title: "`MESH_INTERNAL` And The Selector"
         path: sections/section-070/module-03/course-02-mesh-internal-and-the-selector.md
       - type: reading
+        title: "Two Ships, One Beacon"
+        path: sections/section-070/module-03/course-03-two-ships-one-beacon.md
+      - type: reading
+        title: Question
+        path: sections/section-070/module-03/labs/lab-02/question.md
+      - type: lab
+        title: "Bring The Lost Freighters Back Lab"
+        path: sections/section-070/module-03/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: external-services
+        task_kind: troubleshooting
+        tags: [workloadentry, serviceentry, virtual-machines, 503-uh, proxy-config, access-log]
+        learning_goals:
+          - Find a workloadSelector and a WorkloadEntry label that match nothing from a 503 UH and the proxy's endpoint list
+          - Make a ServiceEntry for your own machines MESH_INTERNAL and prove both machines answer by name
+        resources:
+          - name: "ServiceEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/service-entry/
+          - name: "WorkloadEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/workload-entry/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
         title: "`WorkloadGroup` And Real Onboarding"
-        path: sections/section-070/module-03/course-03-workloadgroup-and-real-onboarding.md
-
+        path: sections/section-070/module-03/course-04-workloadgroup-and-real-onboarding.md
       - type: reading
         title: Question
         path: sections/section-070/module-03/labs/lab-01/question.md
       - type: lab
-        title: "Add External Workloads With WorkloadEntry Lab"
+        title: "Bring Two Old Ships Into The Mesh Lab"
         path: sections/section-070/module-03/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 30m
+        topic: external-services
+        task_kind: build
+        tags: [workloadentry, workloadgroup, serviceentry, virtual-machines, proxy-config]
+        learning_goals:
+          - Add machines outside Kubernetes to the mesh with WorkloadEntry and a MESH_INTERNAL ServiceEntry
+          - Prove the host resolves by name and the proxy holds one endpoint per machine
+          - Write the WorkloadGroup template that real virtual machines register against
+        resources:
+          - name: "WorkloadEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/workload-entry/
+          - name: "WorkloadGroup reference"
+            url: https://istio.io/latest/docs/reference/config/networking/workload-group/
+          - name: "ServiceEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/service-entry/
+          - name: "Virtual machine installation"
+            url: https://istio.io/latest/docs/setup/install/virtual-machine/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-070/module-03/course-05-wrap-up.md
 
       - type: reading
         title: Question
@@ -612,6 +1542,20 @@ modules:
         title: "A Deny-By-Default Integration Layer Capstone Lab"
         path: sections/section-070/capstone/labs/lab-01
         difficulty: advanced
+        estimated_duration: 60m
+        topic: external-services
+        task_kind: build
+        tags: [serviceentry, workloadentry, tls-origination, registry-only, external-services]
+        learning_goals:
+          - Reach a partner API over originated TLS from a REGISTRY_ONLY mesh
+          - Add a machine as a mesh member while leaving a third outside host unreachable
+        resources:
+          - name: "ServiceEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/service-entry/
+          - name: "WorkloadEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/workload-entry/
+          - name: "Egress TLS origination task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/
 
   - id: module-080
     title: "Configuring Ingress And Egress Traffic — Egress"
@@ -633,19 +1577,64 @@ modules:
         title: "A Gateway That Carries Nothing"
         path: sections/section-080/module-01/course-01-a-gateway-that-carries-nothing.md
       - type: reading
-        title: "The Two-Stage `VirtualService`"
-        path: sections/section-080/module-01/course-02-the-two-stage-virtualservice.md
+        title: "Open The Departure Gate"
+        path: sections/section-080/module-01/course-02-open-the-departure-gate.md
       - type: reading
-        title: "Restricting, Proving And The Trade-Off"
-        path: sections/section-080/module-01/course-03-restricting-proving-and-the-trade-off.md
-
+        title: "The Two-Stage `VirtualService`"
+        path: sections/section-080/module-01/course-03-the-two-stage-virtualservice.md
+      - type: reading
+        title: "Prove The Hop, And Break It"
+        path: sections/section-080/module-01/course-04-prove-the-hop-and-break-it.md
+      - type: reading
+        title: Question
+        path: sections/section-080/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Repair The Departure Gate Lab"
+        path: sections/section-080/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: ingress-egress
+        task_kind: troubleshooting
+        tags: [egress-gateway, gateway, virtualservice, serviceentry, access-log, proxy-config, istioctl-analyze]
+        learning_goals:
+          - Prove from both access logs whether a signal really flew through the egress gateway
+          - Find a two-stage VirtualService that never reaches the sidecars because mesh is missing
+          - Fix a Gateway that serves the wrong host, so the egress gateway answers 404 NR
+        resources:
+          - name: "Egress gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway/
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Choose Who Flies Through The Gate"
+        path: sections/section-080/module-01/course-05-choose-who-flies-through-the-gate.md
       - type: reading
         title: Question
         path: sections/section-080/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Route External Traffic Through An Egress Gateway Lab"
+        title: "Send One Ship Through The Departure Gate Lab"
         path: sections/section-080/module-01/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 45m
+        topic: ingress-egress
+        task_kind: build
+        tags: [egress-gateway, gateway, serviceentry, virtualservice, destinationrule, access-log, proxy-config]
+        learning_goals:
+          - Route one workload's external traffic through the egress gateway in two hops
+          - Prove the hop from the gateway's own access log and the sidecar's route
+          - Narrow the egress path with sourceLabels and show that other workloads still go direct
+        resources:
+          - name: "Egress gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway/
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+          - name: "ServiceEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/service-entry/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-080/module-01/course-06-wrap-up.md
 
       - type: reading
         title: "TLS Origination At The Egress Gateway"
@@ -654,19 +1643,62 @@ modules:
         title: "The Five-Step Chain"
         path: sections/section-080/module-02/course-01-the-five-step-chain.md
       - type: reading
-        title: "Where The `DestinationRule` Attaches"
-        path: sections/section-080/module-02/course-02-where-the-destinationrule-attaches.md
+        title: "Originate TLS At The Gate"
+        path: sections/section-080/module-02/course-02-originate-tls-at-the-gate.md
       - type: reading
-        title: "Mutual TLS And The Consolidation Argument"
-        path: sections/section-080/module-02/course-03-mutual-tls-and-consolidation.md
-
+        title: "Where The `DestinationRule` Attaches"
+        path: sections/section-080/module-02/course-03-where-the-destinationrule-attaches.md
       - type: reading
         title: Question
         path: sections/section-080/module-02/labs/lab-01/question.md
       - type: lab
-        title: "TLS Origination At The Egress Gateway Lab"
+        title: "Lock The Signal At The Departure Gate Lab"
         path: sections/section-080/module-02/labs/lab-01
         difficulty: intermediate
+        estimated_duration: 45m
+        topic: ingress-egress
+        task_kind: build
+        tags: [egress-gateway, tls-origination, destinationrule, serviceentry, virtualservice, proxy-config, access-log]
+        learning_goals:
+          - Build the five objects that route a plain HTTP call through the egress gateway and start TLS there
+          - Prove from both proxies' clusters that the gateway, not the sidecar, holds the TLS settings
+        resources:
+          - name: "Egress gateway TLS origination task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "A Partner That Checks IDs"
+        path: sections/section-080/module-02/course-04-a-partner-that-checks-ids.md
+      - type: reading
+        title: "Hand The Gate Its Keys"
+        path: sections/section-080/module-02/course-05-hand-the-gate-its-keys.md
+      - type: reading
+        title: Question
+        path: sections/section-080/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Open The Partner's Locked Door Lab"
+        path: sections/section-080/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: ingress-egress
+        task_kind: troubleshooting
+        tags: [egress-gateway, tls-origination, destinationrule, virtualservice, proxy-config, access-log]
+        learning_goals:
+          - Find a wrong onward port and a client certificate Secret in the wrong namespace from the gateway's flight log, istioctl proxy-config secret and the istiod log
+          - Present a client certificate from the egress gateway with MUTUAL and credentialName, and prove the partner accepts it
+        resources:
+          - name: "Egress gateway TLS origination task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-080/module-02/course-06-wrap-up.md
 
       - type: reading
         title: Question
@@ -675,3 +1707,17 @@ modules:
         title: "One Exit, Two Partners Capstone Lab"
         path: sections/section-080/capstone/labs/lab-01
         difficulty: advanced
+        estimated_duration: 60m
+        topic: ingress-egress
+        task_kind: build
+        tags: [egress-gateway, tls-origination, serviceentry, gateway, virtualservice]
+        learning_goals:
+          - Send two partners through one egress gateway, one restricted to a single workload
+          - Originate TLS at the gateway for one partner and prove both paths
+        resources:
+          - name: "Egress gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway/
+          - name: "Egress gateway TLS origination task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/

@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-030-01-03"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-030-01-03-workloads"
+      description: "Creates the starfleet namespace with the shuttle client, the probe squadron (3 v1 pods, 1 v2 pod) and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-030-01-03-fault"
+      description: "Applies the starting state: a probe DestinationRule that hashes the source IP, so every signal from the shuttle lands on one pod"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-even-spread"
+      description: "Confirms the probe DestinationRule uses simple ROUND_ROBIN at host level with no consistentHash, the shuttle's proxy holds a round robin cluster for the probe, live signals reach all four probe pods, and the ships were left alone"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

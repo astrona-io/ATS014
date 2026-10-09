@@ -206,3 +206,32 @@ When a flight plan does nothing, run these in order. The first one that shows a 
 > - **Trusting a clean `analyze`.** It checks objects against each other. It does not prove your rules are in a sensible order, or that signals take the path you expect.
 
 > *When a rule does nothing, check the planet, then the flight log, then the orders the proxy holds. The first check that shows a problem is your answer.*
+
+## Your mission: Find Out Why The Flight Plan Does Nothing
+
+You can now find a flight plan on the wrong planet, read a flight log line, and check the orders a proxy holds. Now prove it in a graded mission: a flight plan that does nothing is waiting for you, with more than one thing wrong in it.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-010-01
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-04
+```
+
+Read the task in [`question.md`](./labs/lab-04/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-010/module-01/labs/lab-04
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-010-01-04
+astrona start ats-014-playground-010-01
+```

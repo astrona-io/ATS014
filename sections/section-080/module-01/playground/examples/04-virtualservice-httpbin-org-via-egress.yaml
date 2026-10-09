@@ -7,7 +7,7 @@ apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
   name: httpbin-org-via-egress
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   hosts:
   - httpbin.org

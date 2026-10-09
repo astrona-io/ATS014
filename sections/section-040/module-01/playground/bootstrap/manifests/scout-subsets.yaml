@@ -1,0 +1,22 @@
+# Docking instructions for the scout beacon: three ship classes, one per version.
+# Already applied, so the flight plan below can name the subsets.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  host: scout
+  subsets:
+  # version=v1: no stars, does not call navcom.
+  - name: v1
+    labels:
+      version: v1
+  # version=v2: black stars, calls navcom.
+  - name: v2
+    labels:
+      version: v2
+  # version=v3: red stars, calls navcom.
+  - name: v3
+    labels:
+      version: v3

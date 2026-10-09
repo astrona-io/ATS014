@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-070-03-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod with DNS capture) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-070-03-02-workloads"
+      description: "Creates the starfleet namespace with mesh-wide access logs, the shuttle client and two uninjected freighters standing in for virtual machines"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-070-03-02-fault"
+      description: "Applies the starting state: two WorkloadEntry objects (one with a wrong label), a MESH_EXTERNAL ServiceEntry whose workloadSelector matches nothing, and the plain-HTTP DestinationRule for the stand-ins"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-freighters"
+      description: "Confirms the shuttle's proxy holds exactly the two freighter addresses behind freighter.starfleet.mesh, live signals by name reach both freighters, the ServiceEntry is MESH_INTERNAL and STATIC and selects app=freighter, and the entries, pods and DestinationRule were left as handed over"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

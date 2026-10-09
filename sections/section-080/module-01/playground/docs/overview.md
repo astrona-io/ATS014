@@ -2,51 +2,72 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab. The environment starts clean, installs Istio, an egress gateway and a few test apps, and then waits. There is no task, no `astrona submit`, and no pass/fail. Explore, break things, `astrona destroy`, start over.
-
-Welcome aboard, astronaut. Think of your cluster as a solar system and each namespace as a planet. Each pod is a spaceship, and its sidecar is the communications officer that every signal goes through. The egress gateway is the solar system's departure gate: one checked exit for signals leaving it. In this playground you make outgoing signals actually use that gate.
+This is a **playground**, not a lab: your training solar system, astronaut. It
+starts a fresh cluster, installs Istio, an egress gateway and the shuttle, and
+then waits. There is no task, no `astrona submit` and no pass or fail. Explore,
+break things, `astrona destroy`, start over.
 
 ## What's in the box
 
-- A single-node `kind` Kubernetes cluster with `kubectl` already pointed at it (context `kind-astro-ats-014-playground-080-01`).
-- **Istio 1.30.5**, installed with Helm: `istio-base`, `istiod`, and an **egress gateway** — release `istio-egress` in namespace `istio-egress`, pods labelled `istio: egress`, Service type `ClusterIP`. Running, and carrying no traffic.
-- The mesh at its `ALLOW_ANY` default.
-- Namespace **`bookinfo`**, labelled `istio-injection=enabled`, with a `curl` client pod and `httpbin` (versions `v1` and `v2`, port `8000`).
-- Mesh-wide access logs, so the sidecars **and** the egress gateway write one line per request.
-- **No `ServiceEntry`, `Gateway` or `VirtualService`.**
-- [`../examples/`](../examples/) holds the module's YAML, numbered in the order you apply it, plus [`../examples/cases/`](../examples/cases/) for the break-it cases. Use them if you cloned the repository; the course parts write the same YAML to files for you.
+- A single-node `kind` Kubernetes cluster. `kubectl` is already pointed at it.
+- **Istio 1.30.5**, installed with Helm: `istio-base`, `istiod`, and an
+  **egress gateway**, the solar system's departure gate: Helm release
+  `istio-egress` in the namespace `istio-egress`, pods labelled
+  `istio: egress`, Service type `ClusterIP` with ports `80` and `443`. It is
+  running and carries no traffic.
+- The mesh at its **`ALLOW_ANY`** default.
+- Mesh-wide **access logs**, so the shuttle's sidecar **and** the egress
+  gateway each write one line per signal into their flight log.
+- Namespace **`starfleet`** (the planet you work on), labelled
+  `istio-injection=enabled`, with **`shuttle`**, your client pod inside the
+  mesh. You send every test signal from it with the `curl` command.
+- **No `ServiceEntry`, `Gateway`, `DestinationRule` or `VirtualService`.**
 
 ### Outbound internet
 
-The commands reach `httpbin.org` and `www.google.com`. Without outbound internet access you will see network errors rather than mesh behaviour.
+This playground calls `https://httpbin.org` and `https://www.google.com`.
+Without outbound internet access you see network failures, not mesh
+decisions. Run a plain `curl https://httpbin.org/get` on your own machine
+first.
 
 ## Helpers
 
-Paste these once in each new terminal. The first sends a request (by default to `https://httpbin.org/get`). The other two show the newest access-log line of each hop.
+Paste these once in each new terminal. The first sends one signal from the
+shuttle (by default to `https://httpbin.org/get`). The other two print the
+newest line of each flight log: the shuttle's sidecar, and the egress gateway.
 
 ```sh
-call_external() { kubectl exec -n bookinfo deploy/curl -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "${1:-https://httpbin.org/get}"; echo "  exit=$?"; }
-log_hop1_sidecar() { kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=1; }     # curl's sidecar
-log_hop2_egress() { kubectl logs -n istio-egress deploy/istio-egress --tail=1; }        # egress gateway
+call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "${1:-https://httpbin.org/get}"; echo "  exit=$?"; }
+log_shuttle() { sleep 2; kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1; }
+log_gate() { sleep 2; kubectl logs -n istio-egress deploy/istio-egress --tail=1; }
 ```
 
 ## Things to try
 
-- Apply only [`01-serviceentry-httpbin-org.yaml`](../examples/01-serviceentry-httpbin-org.yaml) and call out. `log_hop1_sidecar` ends at an internet IP; the gateway logged nothing. A running egress gateway proves nothing about where traffic goes.
-- Apply [`02`](../examples/02-gateway-egress-httpbin-org.yaml), [`03`](../examples/03-destinationrule-egress-gateway.yaml) and then [`04`](../examples/04-virtualservice-httpbin-org-via-egress.yaml) — in that order, "make before break". Now hop 1 ends at the egress pod and only hop 2 reaches the internet.
-- Case 1: apply [`cases/c1-virtualservice-missing-hop-2.yaml`](../examples/cases/c1-virtualservice-missing-hop-2.yaml). The TLS handshake fails (`000 exit=35`): the gateway has no route onward.
-- Case 2: apply [`cases/c2-virtualservice-without-mesh.yaml`](../examples/cases/c2-virtualservice-without-mesh.yaml). The call returns `200` — and goes straight out, past the gateway. Only hop 1 in the log tells you.
-- Case 3: with `04` applied, delete `03` and call again. Hop 1 logs `NC`: the subset `httpbin-org` no longer exists. Re-apply `03`.
-- Put an *internal* hostname in the `Gateway`'s `servers[].hosts` and watch the gateway refuse the traffic.
-- Delete the `ServiceEntry` while leaving everything else and see what breaks.
-- Try the exam-style drill in [`practice.md`](practice.md).
+Each idea below uses the files you made while reading the module. The
+module's parts show the full YAML for every step.
 
-The plain-HTTP variant and `sourceLabels` are exercised by the module's graded lab, which runs on a `demo`-profile install.
+- Chart `httpbin.org` with a `ServiceEntry` only, and call it. `log_shuttle`
+  ends at an internet address, and the gate logged nothing.
+- Apply the `Gateway` and the `DestinationRule`, then run
+  `istioctl proxy-config listener deploy/istio-egress -n istio-egress`. Still
+  no listener on `443`: it appears only with the `VirtualService`.
+- Apply the two-stage `VirtualService`. Now hop 1 ends at the gate's pod, and
+  only hop 2 reaches the internet.
+- Remove `mesh` from the top-level `gateways`. `200`, straight out, and
+  `istioctl analyze` stays quiet.
+- Remove hop 2, or put the gate's own name in the `Gateway`'s
+  `servers[].hosts`. The shuttle logs `UF,URX` with `Connection_refused`.
+- Delete the `DestinationRule` while the `VirtualService` still names its
+  subset. The shuttle logs `NC`.
+- Add `sourceLabels` to hop 1, then label the shuttle's pod template with
+  `egress-allowed: "true"` and watch it switch from direct to the gate.
+- Try the exam-style task in [`practice.md`](practice.md).
 
 ## Start over without a new cluster
 
 ```sh
-kubectl delete vs,dr,se,gateways.networking.istio.io --all -n bookinfo
+kubectl delete virtualservice,destinationrule,serviceentry,gateways.networking.istio.io --all -n starfleet
 ```
 
 ## When you're done

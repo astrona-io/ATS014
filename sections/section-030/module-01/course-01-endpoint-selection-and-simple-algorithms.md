@@ -1,54 +1,76 @@
 # Endpoint Selection And The `simple` Algorithms
 
-Astronaut, this part shows where the choice of ship happens on a signal's path. It gives you a way to watch that choice. Then it covers the four standard algorithms. An **algorithm** here is just a fixed method for making the choice. All four of them spread traffic over the pods, and that is exactly what Part 2 will take away.
+Astronaut, before you change how a ship is picked, find out where that choice happens and how to watch it. Then meet the four standard ways to make it. Each one is an **algorithm**: a fixed method for picking a ship.
+
+The commands below need the `count_pods` helper pasted into your terminal.
 
 ## Where the choice happens
 
-Three decisions happen in order inside the **calling** proxy. Keeping them apart makes the rest of the course easier:
+Three decisions happen in order, all inside the communications officer of the ship that **sends** the signal:
 
 ```mermaid
 flowchart TB
-    R["request"] -->|"which http rule"| S1["1. route match"]
+    R["signal"] -->|"which http rule"| S1["1. rule match"]
     S1 -->|"weights"| S2["2. subset"]
     S2 -->|"pick one pod"| S3["3. endpoint"]
-    S3 --> O["10.244.0.12:8080"]
 ```
 
-Step 3 comes last, after the subset is already fixed.
+Step 1 picks the rule in the flight plan, step 2 picks the ship class (subset), and step 3 picks one ship in that class. Mission control (`istiod`) has told the communications officer which ships fly in each squadron, and the officer picks from that list alone. The receiving ship takes no part in it.
 
-Think of the proxy as the communications officer on the calling ship. Mission control (`istiod`) has told the officer which spaceships (pods) fly in each squadron. Steps 1 and 2 pick the squadron. Step 3 picks one ship in that squadron, for each signal. The officer makes this choice alone, from the list of pods `istiod` sent. The receiving ship takes no part in it.
+This order explains two facts:
 
-This order explains two things:
+- The number of ships in a subset never changes **which** subset is picked. Step 2 is finished before step 3 starts.
+- Stickiness only chooses among the ships of the subset that was already picked. It cannot keep a user on one **version** in a weighted split.
 
-- The number of pods in a subset can never change **which** subset was chosen. Step 2 is finished before step 3 starts.
-- Stickiness (Part 2) only chooses among the pods of the subset that was already picked. It cannot keep a user on one **version** in a weighted split.
+## Watch the proxy choose
 
-## Watching a proxy choose
-
-You need a quick way to see which pod answered. The playground's httpbin has a path, `/hostname`, that returns the name of the pod that served the request.
-
-Paste this helper into your terminal. It sends 8 requests from the `curl` pod and counts which pod answered each one. You can add extra `curl` options, such as a header. It also sets `$HOSTNAME_URL`, the address every "Try it" in this module calls. A shell function lasts only for the current terminal, so paste it again in each new window.
+Before you change anything, look at the squadron and at how the shuttle's proxy picks a ship today. You need this starting point to see what each algorithm changes.
 
 <!-- astrona:playground:renew -->
 
+### Four ships, no policy
+
+First, see the squadron. The probe Service has four pod addresses behind it:
+
 ```sh
-count_pods() { for i in $(seq 1 8); do
-  kubectl exec -n bookinfo deploy/curl -- curl -s "$@" | grep -o '"httpbin-[^"]*"'
-done | sort | uniq -c; }
-HOSTNAME_URL=http://httpbin:8000/hostname
+kubectl get endpointslices -n starfleet -l kubernetes.io/service-name=probe
 ```
 
-The pod name comes from the app. The proxy keeps its own record too. With access logs on, every line in the caller's sidecar log includes the **upstream host**: the address of the pod the proxy picked. That is the proxy's own note of its decision, written in the ship's black box flight log. You can read it with `kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=8`.
+```text
+NAME          ADDRESSTYPE   PORTS   ENDPOINTS                                      AGE
+probe-g28v5   IPv4          8080    10.244.0.7,10.244.0.8,10.244.0.9 + 1 more...   36s
+```
 
-> [!TIP]
-> **Try it — four pods, no policy, no stickiness**
->
-> ```sh
-> kubectl get endpoints httpbin -n bookinfo
-> count_pods -H "x-user: alice" $HOSTNAME_URL
-> ```
->
-> Expect four addresses on port `8080` in the endpoints list: three v1 pods and one v2 pod. The 8 answers spread over several of those pods; the exact counts change from run to run. Every request carried the same `x-user: alice` header, but the header means nothing to the proxy. Nothing has told it to care. This is the starting point that Part 2 changes.
+Now send 8 signals that all carry the same label, `x-user: alice`:
+
+```sh
+count_pods -H "x-user: alice" $HOSTNAME_URL
+```
+
+You should see a mix, for example:
+
+```text
+   1 "probe-v1-7888d6c6d5-57cqj"
+   4 "probe-v1-7888d6c6d5-6lfpq"
+   1 "probe-v1-7888d6c6d5-v2s9n"
+   2 "probe-v2-58767cc46-9srsh"
+```
+
+Every signal carried the same `x-user` header, but the header means nothing to the proxy yet. Nothing has told it to care. Your pod names and counts will be different.
+
+### Read the proxy's own record
+
+The pod name comes from the app. The communications officer keeps its own record too: every line in the shuttle's flight log names the pod address it picked:
+
+```sh
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
+```
+
+```text
+[2026-10-08T20:35:10.301Z] "GET /hostname HTTP/1.1" 200 - via_upstream - "-" 0 46 5 5 "-" "curl/8.11.1" "4343f3c1-9e48-4690-8786-84a596b53023" "probe:8000" "10.244.0.10:8080" outbound|8000||probe.starfleet.svc.cluster.local 10.244.0.6:57852 10.96.215.230:8000 10.244.0.6:49902 - default
+```
+
+`"10.244.0.10:8080"` is the ship the shuttle's proxy chose for this signal.
 
 ## The four `simple` algorithms
 
@@ -56,86 +78,137 @@ The pod name comes from the app. The proxy keeps its own record too. With access
 
 | Value | How it picks | Use it when |
 | --- | --- | --- |
-| `LEAST_REQUEST` | the pod with the fewest requests in progress. **This is the Istio default.** | requests have very different costs, so a pod stuck on a slow request should get fewer new ones |
-| `ROUND_ROBIN` | each pod in turn; the default in older Istio versions | requests cost about the same and you want an exactly even spread |
-| `RANDOM` | a random pod, with no memory of past choices | there are very many pods, and keeping track of each one costs more than it saves |
-| `PASSTHROUGH` | no choice at all: it connects to the address the request was already going to | the caller already chose an address and the proxy must not change it |
+| `LEAST_REQUEST` | the pod with the fewest signals in progress. **This is the Istio default.** | signals have very different costs, so a pod stuck on a slow one should get fewer new ones |
+| `ROUND_ROBIN` | each pod in turn | signals cost about the same and you want an even spread |
+| `RANDOM` | a random pod, with no memory of past choices | there are very many pods, and tracking each one costs more than it saves |
+| `PASSTHROUGH` | no choice at all: it connects to the address the signal was already going to | the sender already chose an address and the proxy must not change it |
 
-Two of these need one more sentence each.
+Two of these need one more sentence each:
 
-**`LEAST_REQUEST` does not check every pod.** Envoy, the proxy Istio uses, does it as "power of two choices". It picks two pods at random and sends the request to the one with fewer requests in progress. That gives nearly all the benefit of checking every pod, for much less work. It is also why the spread looks a little uneven. A perfectly even spread is the sign of round robin.
+- **`LEAST_REQUEST` does not check every pod.** Envoy, the proxy Istio uses, picks two pods at random and sends the signal to the one with fewer signals in progress. That is nearly as good as checking every pod, for much less work, and it is why the spread looks a little uneven.
+- **`PASSTHROUGH` switches the choice off.** The other three pick from the list of pods. `PASSTHROUGH` ignores the list and connects to the address the signal was already heading for.
 
-**`PASSTHROUGH` is the odd one out.** The other three pick from the list of pods. `PASSTHROUGH` ignores that list and connects to the address the request was already heading for. It is a way to switch load balancing **off**, not a way to set it up.
+### Round robin over four ships
 
-The field sits under `trafficPolicy`, where every decision the caller makes about a destination lives:
+Make the shuttle's proxy take the four ships in turn. Save this as `destinationrule-probe.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
-  name: httpbin
-  namespace: bookinfo
+  name: probe
+  namespace: starfleet
 spec:
-  host: httpbin
+  host: probe
   trafficPolicy:
     loadBalancer:
       simple: ROUND_ROBIN
 ```
 
-> [!TIP]
-> **Try it — round robin over four pods**
->
-> Write the DestinationRule to a file, then apply it.
->
-> Save this as `destinationrule-httpbin.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: DestinationRule
-> metadata:
->   name: httpbin
->   namespace: bookinfo
-> spec:
->   host: httpbin
->   trafficPolicy:
->     loadBalancer:
->       simple: ROUND_ROBIN
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f destinationrule-httpbin.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> count_pods $HOSTNAME_URL
-> ```
->
-> Expect each of the four pods about twice (the pod names vary):
->
-> ```text
->    2 "httpbin-v1-...-gfp4z"
->    2 "httpbin-v1-...-h2njm"
->    2 "httpbin-v1-...-sbs7c"
->    2 "httpbin-v2-...-qx7g7"
-> ```
->
-> Change `simple` to `LEAST_REQUEST` or `RANDOM`, apply the file again, and rerun `count_pods`. The spread is less even, but all four pods still answer. Every `simple` value spreads traffic. That is what they are for.
+Apply it:
+
+```sh
+kubectl apply -f destinationrule-probe.yaml
+```
+
+Then send 8 signals:
+
+```sh
+count_pods $HOSTNAME_URL
+```
+
+You should see each ship exactly twice:
+
+```text
+   2 "probe-v1-7888d6c6d5-57cqj"
+   2 "probe-v1-7888d6c6d5-6lfpq"
+   2 "probe-v1-7888d6c6d5-v2s9n"
+   2 "probe-v2-58767cc46-9srsh"
+```
+
+### Compare the other two
+
+Change `simple: ROUND_ROBIN` to `LEAST_REQUEST` in `destinationrule-probe.yaml`. Apply it:
+
+```sh
+kubectl apply -f destinationrule-probe.yaml
+```
+
+Then send 8 signals:
+
+```sh
+count_pods $HOSTNAME_URL
+```
+
+One run gave:
+
+```text
+   4 "probe-v1-7888d6c6d5-57cqj"
+   2 "probe-v1-7888d6c6d5-6lfpq"
+   2 "probe-v1-7888d6c6d5-v2s9n"
+```
+
+Then try `RANDOM` the same way. One run gave:
+
+```text
+   5 "probe-v1-7888d6c6d5-57cqj"
+   1 "probe-v1-7888d6c6d5-6lfpq"
+   1 "probe-v1-7888d6c6d5-v2s9n"
+   1 "probe-v2-58767cc46-9srsh"
+```
+
+Both spread the signals, but unevenly, and with only 8 signals one ship may get none at all. Every `simple` value spreads traffic. That is what they are for.
+
+### See which algorithm the proxy uses
+
+The shuttle's proxy stores the algorithm on each cluster, as `lbPolicy`. With `RANDOM` applied:
+
+```sh
+istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet.svc.cluster.local -o json | grep -m1 '"lbPolicy"'
+```
+
+```text
+        "lbPolicy": "RANDOM",
+```
+
+With `LEAST_REQUEST`, the line says `"lbPolicy": "LEAST_REQUEST"`, and it says the same with no `DestinationRule` at all, because that is Istio's default. With `ROUND_ROBIN`, the command prints **nothing**: round robin is Envoy's own built-in default, and the dump leaves default values out.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Expecting `LEAST_REQUEST` to spread perfectly evenly.** It picks two pods at random and uses the less busy one. A slightly uneven count means the algorithm is working.
->
-> **Reading `PASSTHROUGH` as an algorithm.** It switches pod selection off and connects to the original address.
->
-> **Setting `simple` and `consistentHash` together.** You can only use one of them, and the object is rejected.
->
-> **Looking for the decision on the server.** The pod is chosen in the **caller's** proxy. The server has no part in it.
->
-> **Judging a spread from a handful of requests.** Eight requests show the pattern of round robin. For the other algorithms, send more before you draw a conclusion. The same caution applies as in section 020.
+> - **Expecting `LEAST_REQUEST` to spread perfectly evenly.** It picks two pods at random and uses the less busy one. An uneven count means it is working.
+> - **Judging a spread from a handful of signals.** With 8 signals, `RANDOM` and `LEAST_REQUEST` can skip a ship completely. Send more before you draw a conclusion.
+> - **Reading a missing `lbPolicy` line as "no policy".** It means `ROUND_ROBIN`, Envoy's default.
+> - **Reading `PASSTHROUGH` as an algorithm.** It switches pod selection off and connects to the original address.
+> - **Looking for the decision on the receiving ship.** The pod is chosen by the **sender's** proxy.
 
-> *Picking a pod is the third decision in the path. The caller's proxy makes it for every request, and every `simple` algorithm spreads traffic across the pods.*
+> *Picking a ship is the third decision on a signal's path. The sender's proxy makes it for every signal, and every `simple` algorithm spreads the signals across the squadron.*
+
+## Your mission: Spread The Signals Evenly
+
+You can now pick a load balancing algorithm and read which one the proxy really uses. Now prove it in a graded mission: a squadron that sends every signal to the same ship has to be spread out again.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-030-01
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-030/module-01/labs/lab-03
+```
+
+Read the task in [`question.md`](./labs/lab-03/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-030/module-01/labs/lab-03
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-030-01-03
+astrona start ats-014-playground-030-01
+```

@@ -1,5 +1,5 @@
 # Expose A Service With An Istio Ingress Gateway (PLAYGROUND) — Playground environment
-# A clean sandbox: it spins up, installs Istio and Bookinfo, then stays running
+# A clean sandbox: it spins up, installs Istio, the ingress gateway and the Starfleet, then stays running
 # for free exploration. No task, no grading, no `astrona submit`.
 #   astrona run -c .                          new kind cluster "astro-ats-014-playground-060-01"
 #   astrona destroy ats-014-playground-060-01 delete the cluster again
@@ -12,20 +12,20 @@ metadata:
 runtime:
   type: kind
   portForwards:
-    - name: bookinfo-ui
-      resource: svc/productpage
-      namespace: bookinfo
+    - name: bridge-ui
+      resource: svc/bridge
+      namespace: starfleet
       hostPort: 9080
       targetPort: 9080
       scheme: http
-      description: "Bookinfo UI – open /productpage, refresh to see the stars change"
+      description: "The bridge – open /productpage, refresh to see the stars change"
     - name: ingress
       resource: svc/istio-ingress
       namespace: istio-ingress
       hostPort: 8080
       targetPort: 80
       scheme: http
-      description: "Ingress gateway HTTP – send Host: bookinfo.example.com"
+      description: "Ingress gateway HTTP – send Host: starfleet.example.com"
 
 bootstrap:
   init:
@@ -34,7 +34,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace bookinfo, access logs, Bookinfo, curl and httpbin, and the reviews subsets"
+      description: "Namespace starfleet, access logs, the Starfleet (bridge, cargo, scout v1-v3, navcom), shuttle, probe v1/v2 and the scout subsets"
       type: "file"
       source: "bootstrap/deploy.sh"
 

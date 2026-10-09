@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-040-01-03"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-01-03-workloads"
+      description: "Creates the starfleet namespace with the probe v1/v2, the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-040-01-03-fault"
+      description: "Applies the starting state: a probe flight plan that retries every 5xx three times, including the probe's own 500 errors"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-retry-only-503"
+      description: "Confirms the probe flight plan retries only 503, at most 2 times with a 1s per-try timeout and a route timeout that fits all tries, and counts at the probe that a 503 arrives 3 times while a 500 and a 502 arrive once"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

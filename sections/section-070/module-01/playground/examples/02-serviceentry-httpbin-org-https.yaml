@@ -4,8 +4,8 @@ apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
   name: httpbin-org
-  # In bookinfo, so the Sidecar's "./*" includes it.
-  namespace: bookinfo
+  # In starfleet, so the Sidecar's "./*" includes it.
+  namespace: starfleet
 spec:
   hosts:
   - httpbin.org

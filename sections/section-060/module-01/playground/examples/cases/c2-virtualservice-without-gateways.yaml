@@ -3,17 +3,17 @@
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: bookinfo
-  namespace: bookinfo
+  name: bridge
+  namespace: starfleet
 spec:
   hosts:
-  - bookinfo.example.com
+  - starfleet.example.com
   http:
   - match:
     - uri:
         exact: /productpage
     route:
     - destination:
-        host: productpage
+        host: bridge
         port:
           number: 9080

@@ -1,0 +1,18 @@
+# Sticky sessions by cookie, like a browser session.
+# If the request has cookie "session", its value picks the pod. If not, the
+# sidecar picks a pod and returns a Set-Cookie header, so the browser sends
+# the same cookie (and lands on the same pod) next time.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    loadBalancer:
+      consistentHash:
+        httpCookie:
+          name: session
+          # Lifetime of a cookie created by the sidecar.
+          ttl: 3600s

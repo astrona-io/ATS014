@@ -49,24 +49,11 @@ send_requests() { for i in $(seq 1 ${1:-5}); do
 done | sort | uniq -c; }
 ```
 
-## Ready-made YAML
-
-The folder [`../examples/`](../examples/) holds the files the module uses, in
-the order you apply them. If you cloned the repository, apply them from there.
-Otherwise the course parts show each one, ready to write to a file.
-
-| File | What it does |
-| --- | --- |
-| `01-destinationrule-probe-subsets.yaml` | Subsets `v1` and `v2` for `probe` |
-| `02-virtualservice-probe-v1-only.yaml` | Baseline: all traffic to v1, nothing mirrored |
-| `03-virtualservice-probe-mirror-v2.yaml` | All traffic to v1, and a copy of every request to v2 |
-| `cases/c1-…-mirror-20-percent.yaml` | Copy only 20% of requests |
-| `cases/c2-probe-broken-pod.yaml` | A pod that always answers 503, labelled `version: broken` |
-| `cases/c2-destinationrule-with-broken-subset.yaml` | Subsets `v1`, `v2` and `broken` |
-| `cases/c2-virtualservice-mirror-to-broken.yaml` | Mirror everything into the broken pod |
-| `cases/c3-…-split-and-mirror.yaml` | A 50/50 split plus a mirror to v2 |
-
 ## Things to try
+
+Each idea below is a small change to the files you made while reading the
+module. Edit your saved file, apply it with `kubectl apply -f`, and watch what
+happens. The module's parts show the full YAML for every step.
 
 - Route all traffic to v1 with no mirror. "Answered" and "received" match.
 - Add a mirror to v2. Callers still only see v1, but v2 receives every request.
@@ -75,12 +62,13 @@ Otherwise the course parts show each one, ready to write to a file.
   answers `503` to every copy.
 - Combine a 50/50 split with a mirror to v2, and work out how many requests v2
   receives in total.
-- Point the mirror at a subset no DestinationRule defines, and see that
-  nothing complains.
+- Point the mirror at a subset no DestinationRule defines. The sender is
+  still happy, the shadow is quiet, and `istioctl analyze -n starfleet`
+  reports `IST0101`.
 
 ## Exam-style practice
 
-Try the drill in [`practice.md`](practice.md). It has a checked solution.
+Try the task in [`practice.md`](practice.md). It has a checked solution.
 
 ## Start over without a new cluster
 

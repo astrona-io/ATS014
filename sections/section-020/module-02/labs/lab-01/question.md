@@ -18,7 +18,7 @@ Astronaut, the release candidate is a test ship: you want production traffic exe
 3.  The same rule must **mirror** those requests to subset **`v2`**.
 4.  Set `mirrorPercentage` explicitly to **100**.
 5.  Every caller response must come from `v1`. The grader sends 30 requests and fails if any of them returns the `v2` body — a mirrored response must never reach the caller.
-6.  The shadow must actually receive the copies. The grader counts requests arriving at `v2` carrying the rewritten `-shadow` authority, so a mirror that silently does nothing fails even though the caller is perfectly happy.
+6.  The shadow must actually receive the copies. The grader counts the requests that arrive at `v2`, so a mirror that silently does nothing fails even though the caller is perfectly happy.
 7.  Do not scale either Deployment, do not change the Service selector, and do not add a third Deployment.
 
 Hint: the caller's output cannot tell you whether the mirror works. Find the evidence on the receiving side.

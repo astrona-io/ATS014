@@ -4,8 +4,8 @@
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
-  name: bookinfo-gateway
-  namespace: bookinfo
+  name: starfleet-gateway
+  namespace: starfleet
 spec:
   selector:
     istio: ingressgateway
@@ -15,4 +15,4 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - bookinfo.example.com
+    - starfleet.example.com

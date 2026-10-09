@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-050-01-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-050-01-02-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the probe v1/v2, the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-050-01-02-routes"
+      description: "Applies the starting state: scout and navcom subsets, and jason flies to scout v2, which calls navcom. No drill runs yet"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-two-drills"
+      description: "Confirms navcom carries a 2s delay drill for every signal and the probe a 503 abort drill for every signal, that jason's signals through scout v2 still succeed about 2s late with DI in scout v2's flight log, and that signals to the probe fail at once with FI in the shuttle's flight log and never reach the probe"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

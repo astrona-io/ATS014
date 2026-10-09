@@ -1,9 +1,9 @@
-# Control External Access With ServiceEntry (PLAYGROUND) — Playground environment
-# A clean sandbox: it spins up, installs Istio and the test apps, then stays
-# running for free exploration. No task, no grading, no `astrona submit`.
-#   astrona run -c .                          new kind cluster "astro-ats-014-playground-070-01"
+# Control External Access With ServiceEntry — Playground environment
+# A clean sandbox: it spins up, installs Istio, the shuttle and the probe, then
+# stays running for free exploration. No task, no grading, no `astrona submit`.
+#   astrona run -c .                           new kind cluster "astro-ats-014-playground-070-01"
 #   astrona destroy ats-014-playground-070-01   delete the cluster again
-# Needs outbound internet access (httpbin.org).
+# Needs outbound internet access (httpbin.org, wikipedia.org, www.google.com).
 
 metadata:
   name: "ats-014-playground-070-01"
@@ -13,11 +13,11 @@ metadata:
 bootstrap:
   init:
     - name: "install-istio"
-      description: "Istio (istiod) with Helm"
+      description: "Istio 1.30.5 (istio-base + istiod) with Helm"
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace bookinfo (injected), mesh-wide access logs, curl client and httpbin v1/v2"
+      description: "Namespace starfleet (injected), mesh-wide access logs, the shuttle client and probe v1/v2"
       type: "file"
       source: "bootstrap/deploy.sh"
 

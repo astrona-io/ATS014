@@ -1,0 +1,69 @@
+# Two old freighters: stand-ins for virtual machines outside the fleet network.
+#
+# They are ordinary pods with sidecar injection switched OFF, so they have no
+# communications officer (no istio-proxy), no Service in front of them, and the
+# mesh knows nothing about them. They are only an address that answers HTTP on
+# port 8080, which is all a WorkloadEntry needs to point at.
+#
+# Their labels (ship: freighter-vm-1 / -2) are deliberately NOT the label the
+# course puts on the WorkloadEntry objects (app: freighter). A ServiceEntry
+# workloadSelector also selects pods, so a shared label would add each pod a
+# second time as an endpoint.
+#
+# The image is go-httpbin: /hostname answers with the pod name, so you can see
+# which freighter took a signal.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: freighter
+  namespace: starfleet
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: freighter-vm-1
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      ship: freighter-vm-1
+  template:
+    metadata:
+      labels:
+        ship: freighter-vm-1
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: freighter
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: freighter
+        image: mccutchen/go-httpbin:v2.15.0
+        command: ["/bin/go-httpbin", "-port", "8080", "-use-real-hostname"]
+        ports:
+        - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: freighter-vm-2
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      ship: freighter-vm-2
+  template:
+    metadata:
+      labels:
+        ship: freighter-vm-2
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: freighter
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: freighter
+        image: mccutchen/go-httpbin:v2.15.0
+        command: ["/bin/go-httpbin", "-port", "8080", "-use-real-hostname"]
+        ports:
+        - containerPort: 8080

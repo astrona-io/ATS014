@@ -1,4 +1,4 @@
-# Prerequisite: subsets v1, v2, v3 of the scout (from section 010).
+# Prerequisite: the subsets v1, v2 and v3 of the scout.
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:

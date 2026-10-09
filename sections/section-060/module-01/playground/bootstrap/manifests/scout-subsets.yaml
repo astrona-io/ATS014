@@ -1,0 +1,22 @@
+# Prerequisite: the docking instructions for the scout, with its three ship
+# classes. The gateway part routes /reviews/<id> to the v3 subset.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  host: scout
+  subsets:
+  # Ships labelled version=v1: no stars.
+  - name: v1
+    labels:
+      version: v1
+  # Ships labelled version=v2: black stars.
+  - name: v2
+    labels:
+      version: v2
+  # Ships labelled version=v3: red stars.
+  - name: v3
+    labels:
+      version: v3

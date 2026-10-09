@@ -11,7 +11,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/01-install-istio.sh"
     - name: "lab-040-04-setup"
-      description: "Creates the locality-demo namespace with a healthy zone-a backend, a zone-b backend that returns 503 to everything, and a tester client, with localities declared by pod label"
+      description: "Creates the locality-demo namespace with a zone-a backend that returns 503 to everything, a healthy zone-b backend, and a tester client, with localities declared by pod label"
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
 

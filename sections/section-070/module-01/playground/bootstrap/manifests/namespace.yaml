@@ -1,12 +1,11 @@
-# Namespace for all traffic management examples.
-# The istio-injection=enabled label makes Istio add an Envoy sidecar to every
-# pod created here (sidecar mode). All VirtualService/DestinationRule features
-# in these examples run in that sidecar.
+# The planet for this playground: namespace "starfleet".
+# The istio-injection=enabled label makes Istio put a sidecar proxy (the
+# communications officer) into every pod created here.
 # Pods created BEFORE the label was added get no sidecar; restart them with
-# "kubectl rollout restart deploy -n bookinfo".
+# "kubectl rollout restart deploy -n starfleet".
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: bookinfo
+  name: starfleet
   labels:
     istio-injection: enabled

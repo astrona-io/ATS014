@@ -1,164 +1,207 @@
 # A Gateway That Creates Its Own Data Plane
 
-The single biggest behavioural difference from module 1, and the permission model that follows from the three-owner split.
+Astronaut, with Istio's own `Gateway` object, the gate's proxy already runs, and the object only gives it orders. A Gateway API `Gateway` works the other way round: the object comes first, and Istio builds a brand new proxy for it. In this part you create one and watch the spaceport appear.
 
 ## Creating versus configuring
 
+The two `Gateway` kinds point in opposite directions. Istio's own `Gateway` finds a proxy that is already running and configures it. A Gateway API `Gateway` makes Istio create the proxy.
+
 ```mermaid
 flowchart TB
-    subgraph L["Istio Gateway"]
-      A2["Gateway object"] -->|"selector"| A1["existing pod"]
-    end
-    subgraph R["Gateway API Gateway"]
-      B1["Gateway object"] -->|"Istio creates"| B2["Deployment and Service"]
-    end
+    A1["Istio Gateway"] -->|"selector finds"| A2["running proxy"]
+    B1["Gateway API Gateway"] -->|"Istio creates"| B2["new Deployment and Service"]
 ```
 
-In the Gateway API, a `Gateway` with `gatewayClassName: istio` makes Istio create a Deployment and Service in the `Gateway`'s namespace. The arrows point in opposite directions. In the Istio API the pod comes first and the object points at it, like writing orders for a spaceport that is already built. In the Gateway API the object comes first and the pod is a consequence of it: the order itself builds the spaceport.
+The diagram shows the difference: on the left the proxy exists first, on the right the object comes first and the proxy follows it.
 
-So there is **no `selector` field**, and looking for your proxy in `istio-system` will not find it. The proxy's lifecycle is tied to the object: delete the `Gateway` and the Deployment goes with it.
-
-This is called **automated deployment**, and it is the default. Istio also supports a manual mode where you deploy the proxy yourself and label it for the `Gateway` to adopt — useful when you need control over the pod spec, and worth knowing exists rather than reaching for.
+This is called **automated deployment**, and it is how Istio works by default. The proxy Istio builds is called the gate's **data plane**: the part that carries the real signals. It runs in the `Gateway`'s own namespace, with the name `<gateway name>-istio`. So there is no `selector` field, and you will not find this proxy in `istio-system`. Its life is tied to the object: delete the `Gateway`, and the proxy goes too.
 
 ## The object
+
+A `Gateway` lists one or more **listeners**. A listener is one door of the spaceport: a port, a protocol, an optional host name, and a rule for which routes may use it.
+
+<!-- astrona:playground:renew -->
+
+### Create a Gateway
+
+Create a gate on port 80 for the host name `starfleet.example.com`. Save this as `gateway-starfleet.yaml`:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: booking-gateway
-  namespace: gwapi-demo
+  name: starfleet-gateway
+  namespace: starfleet
   annotations:
-    # kind has no load balancer: without this the Gateway's Service sits at
-    # EXTERNAL-IP <pending> and the Gateway reports Programmed=False.
     networking.istio.io/service-type: ClusterIP
 spec:
   gatewayClassName: istio
   listeners:
-    - name: http
-      port: 80
-      protocol: HTTP
-      hostname: booking.ica.local
-      allowedRoutes:
-        namespaces:
-          from: Same
+  - name: http
+    port: 80
+    protocol: HTTP
+    hostname: starfleet.example.com
+    allowedRoutes:
+      namespaces:
+        from: Same
 ```
 
-Differences from module 1's object beyond the missing selector:
+Each field has one job:
 
-- **`listeners` rather than `servers`**, and each listener has a **`name`** — which `HTTPRoute` can target with `sectionName` to attach to one listener specifically.
-- **`hostname` is singular**, one per listener. Where Istio's `Gateway` took a list of hosts on one server, here you write several listeners or use a wildcard.
-- **`allowedRoutes`** has no Istio equivalent at all.
+- `gatewayClassName: istio` hands the gate to Istio. This is the only link to Istio in the whole object.
+- `listeners` lists the doors. Each listener has a `name`, so a route can later pick one door by name.
+- `hostname` is a single name per listener. For more names, add more listeners or use a wildcard such as `*.example.com`.
+- `allowedRoutes` says which namespaces may attach routes. `Same` means only this `Gateway`'s own namespace.
+- The `networking.istio.io/service-type: ClusterIP` annotation is for your `kind` cluster. By default Istio creates a `LoadBalancer` Service, and `kind` has no load balancer, so the Service would never get an address.
 
-<!-- astrona:playground:renew -->
+Apply it:
 
-> [!TIP]
-> **Try it — create a Gateway and watch a data plane appear**
->
-> Save this as `gateway-booking-gateway.yaml`:
->
-> ```yaml
-> apiVersion: gateway.networking.k8s.io/v1
-> kind: Gateway
-> metadata:
->   name: booking-gateway
->   namespace: gwapi-demo
-> spec:
->   gatewayClassName: istio
->   listeners:
->     - name: http
->       port: 80
->       protocol: HTTP
->       hostname: booking.ica.local
->       allowedRoutes:
->         namespaces:
->           from: Same
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f gateway-booking-gateway.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> kubectl -n gwapi-demo rollout status deployment booking-gateway-istio --timeout=120s
-> kubectl -n gwapi-demo get deploy,svc -l gateway.networking.k8s.io/gateway-name=booking-gateway
-> kubectl -n istio-system get deploy | grep booking || echo "(nothing named booking in istio-system - correct)"
-> ```
->
-> Expect something like:
->
-> ```text
-> gateway.networking.k8s.io/booking-gateway created
-> deployment "booking-gateway-istio" successfully rolled out
-> NAME                                    READY   AGE
-> deployment.apps/booking-gateway-istio   1/1     25s
-> NAME                            TYPE           PORT(S)        AGE
-> service/booking-gateway-istio   LoadBalancer   80:31380/TCP   25s
-> (nothing named booking in istio-system - correct)
-> ```
->
-> You created one object and Istio created a Deployment and a Service, labelled `gateway.networking.k8s.io/gateway-name`, **in `gwapi-demo`**. On `kind` the Service's external IP stays `<pending>` as usual — so port-forward to `booking-gateway-istio`, not to `istio-ingressgateway`.
-
-The lifecycle coupling is worth confirming once, because it is unlike anything else in this course:
-
-> [!TIP]
-> **Try it — delete the Gateway, lose the proxy**
->
-> ```sh
-> kubectl -n gwapi-demo delete gateway booking-gateway
-> sleep 5
-> kubectl -n gwapi-demo get deploy,svc -l gateway.networking.k8s.io/gateway-name=booking-gateway
-> ```
->
-> Expect something like:
->
-> ```text
-> gateway.networking.k8s.io "booking-gateway" deleted
-> No resources found in gwapi-demo namespace.
-> ```
->
-> The Deployment and Service are gone with it. Re-create the `Gateway` from the previous checkpoint before continuing — and note that with module 1's object, deleting the `Gateway` would have left `istio-ingressgateway` running and simply unconfigured.
-
-## `allowedRoutes` — deny by default
-
-Because the `Gateway` and the `HTTPRoute` can belong to different teams, the Gateway's owner has to say who may dock. Think of it as a spaceport that only lets ships from approved planets land:
-
-| `allowedRoutes.namespaces.from` | Routes may attach from |
-| --- | --- |
-| `Same` | the Gateway's own namespace only — **the default** |
-| `All` | any namespace |
-| `Selector` | namespaces matching a label selector you supply |
-
-Compare with the older APIs, where a route in any namespace could attach to a shared gateway by convention and nothing prevented it. Here the default is closed, and a route that is not permitted simply does not attach — reporting why in its own status, which Part 3 covers.
-
-`allowedRoutes` also has a `kinds` field to restrict which route kinds may attach, so a listener can accept `HTTPRoute` and refuse `TCPRoute`.
-
-The selector form is the interesting one in practice:
-
-```yaml
-allowedRoutes:
-  namespaces:
-    from: Selector
-    selector:
-      matchLabels:
-        gateway-access: "true"
+```sh
+kubectl apply -f gateway-starfleet.yaml
 ```
 
-Label a namespace `gateway-access=true` and its teams can attach; unlabel it and they cannot. That is a platform-team control expressed in Kubernetes-native terms rather than in RBAC on a shared object.
+Then wait until the gate is built and its proxy runs, and look at it:
 
-> *A Gateway API `Gateway` creates its own proxy in its own namespace, and `allowedRoutes` decides who may attach — closed by default.*
+```sh
+kubectl wait -n starfleet --for=condition=Programmed gateway/starfleet-gateway --timeout=120s
+kubectl rollout status deploy/starfleet-gateway-istio -n starfleet --timeout=120s
+kubectl get gateway -n starfleet
+```
+
+You should see:
+
+```text
+gateway.gateway.networking.k8s.io/starfleet-gateway condition met
+Waiting for deployment "starfleet-gateway-istio" rollout to finish: 0 of 1 updated replicas are available...
+deployment "starfleet-gateway-istio" successfully rolled out
+NAME                CLASS   ADDRESS                                               PROGRAMMED   AGE
+starfleet-gateway   istio   starfleet-gateway-istio.starfleet.svc.cluster.local   True         2s
+```
+
+`PROGRAMMED` is `True`: Istio has built the gate, and it has an address. The `ADDRESS` is the name of a Service that you did not write. The second command waits for a Deployment you did not write either, `starfleet-gateway-istio`. `PROGRAMMED` turns `True` before that proxy pod is ready, which is why you wait for both.
+
+### Find the proxy Istio built
+
+Every object Istio created for the gate carries the label `gateway.networking.k8s.io/gateway-name`. List them:
+
+```sh
+kubectl get deploy,svc,pod -n starfleet -l gateway.networking.k8s.io/gateway-name=starfleet-gateway
+kubectl get deploy -n istio-system
+```
+
+You should see:
+
+```text
+NAME                                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/starfleet-gateway-istio   1/1     1            1           2s
+
+NAME                              TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)            AGE
+service/starfleet-gateway-istio   ClusterIP   10.96.162.74   <none>        15021/TCP,80/TCP   2s
+
+NAME                                          READY   STATUS    RESTARTS   AGE
+pod/starfleet-gateway-istio-cc6f7bf56-4jm7d   1/1     Running   0          2s
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+istiod   1/1     1            1           14m
+```
+
+You wrote one object, and Istio created a Deployment, a Service and a pod named `starfleet-gateway-istio`, on the `starfleet` planet. The pod shows `1/1`: it is a proxy on its own, with no app beside it. Port `80` is the listener you asked for; port `15021` is the proxy's health check. Nothing new appeared in `istio-system`.
+
+## The status lights on a Gateway
+
+Every `Gateway` reports its state as **conditions**, like status lights on a launch panel. Two of them matter most:
+
+| Condition | `True` means | `False` usually means |
+| --- | --- | --- |
+| `Accepted` | the object is valid, and Istio has taken it on | a wrong `gatewayClassName`, or a listener Istio cannot build |
+| `Programmed` | Istio built the gate, and its Service has an address | the Service has no address yet, or cannot get one |
+
+`Accepted=True` with `Programmed=False` is a clear message: your YAML is fine, but the gate is not ready yet. Right after you create a `Gateway`, you see exactly that for a few seconds, with the reason `AddressNotAssigned`, until the Service exists.
+
+### Send a first signal
+
+Your gate is open, but no flight plan uses it yet. Send a signal from the shuttle to the gate's Service, with the host name the listener expects, and read the gate's flight log:
+
+```sh
+kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" \
+  -H "Host: starfleet.example.com" http://starfleet-gateway-istio.starfleet/productpage
+kubectl logs -n starfleet deploy/starfleet-gateway-istio --tail=1
+```
+
+You should see (log line trimmed):
+
+```text
+404
+[2026-10-08T22:36:50.518Z] "GET /productpage HTTP/1.1" 404 NR route_not_found - "-" 0 0 0 - "10.244.0.12" "curl/8.11.1" ...
+```
+
+If you get `503` instead, and the log line is not a signal, the gate's proxy is still waiting for its first orders from mission control. Wait a few seconds and send the signal again.
+
+The gate's proxy answered `404` by itself. The flag `NR` means "no route": the door is open, but no `HTTPRoute` tells the proxy where to send the signal. The `Host` header matters, because the listener only takes signals for `starfleet.example.com`. The gate reads the host name from the signal, not from a name lookup.
+
+### Delete the Gateway, lose the proxy
+
+The proxy lives and dies with the `Gateway` object. Delete it and look again:
+
+```sh
+kubectl delete -f gateway-starfleet.yaml
+kubectl get deploy,svc -n starfleet -l gateway.networking.k8s.io/gateway-name=starfleet-gateway
+```
+
+You should see:
+
+```text
+gateway.gateway.networking.k8s.io "starfleet-gateway" deleted from starfleet namespace
+No resources found in starfleet namespace.
+```
+
+The Deployment and the Service are gone with the object. Istio's own `Gateway` works differently: deleting it leaves the proxy running, just without orders.
+
+Wait about half a minute, then build the gate again, so it is ready for the next steps:
+
+```sh
+kubectl apply -f gateway-starfleet.yaml
+kubectl wait -n starfleet --for=condition=Programmed gateway/starfleet-gateway --timeout=120s
+kubectl rollout status deploy/starfleet-gateway-istio -n starfleet --timeout=120s
+```
+
+If you apply it again within a few seconds, mission control may still remember the old gate. The `Gateway` then stays at `Programmed=False` with `AddressNotAssigned`, even though the new proxy runs. Delete it, wait half a minute, and apply it again.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Looking for the proxy in `istio-system`.** A Gateway API gateway creates its Deployment in the `Gateway`'s own namespace, named `<gateway-name>-istio`.
->
-> **Looking for a `selector` field.** There is none. `gatewayClassName` is what ties the object to an implementation.
->
-> **Forgetting the proxy's lifecycle is tied to the object.** Delete the `Gateway` and the Deployment and Service go with it.
->
-> **Assuming routes may attach from anywhere.** `allowedRoutes` decides, and the default is the Gateway's own namespace only.
+> - **Looking for the proxy in `istio-system`.** A Gateway API gate runs in the `Gateway`'s own namespace, named `<gateway name>-istio`.
+> - **Looking for a `selector` field.** There is none. `gatewayClassName` ties the object to Istio.
+> - **Leaving out the service type annotation on `kind`.** Without a load balancer, the Service gets no address, and the `Gateway` stays `Programmed=False`.
+> - **Sending signals without the right `Host` header.** The listener only takes the host name it names. Any other host gets `404`.
+> - **Forgetting that the proxy belongs to the object.** Delete the `Gateway`, and the Deployment and Service go with it.
+
+> *A Gateway API `Gateway` builds its own proxy in its own namespace, and its status lights tell you when that proxy is ready.*
+
+## Your mission: Open The Spaceport Gate Lab
+
+You can now create a Gateway API `Gateway` and check that Istio built its proxy. Now prove it in a graded mission: a flight plan for the bridge is waiting for a gate that does not exist yet, and you have to build that gate.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-060-03
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-03/labs/lab-02
+```
+
+Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-060/module-03/labs/lab-02
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-060-03-02
+astrona start ats-014-playground-060-03
+```

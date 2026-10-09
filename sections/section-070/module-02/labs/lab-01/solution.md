@@ -29,7 +29,7 @@ scheme=https
 [2026-09-27T12:31:05.442Z] "- - -" 0 - - - "-" 705 5923 212 - "-" "-" "-" "-" "10.244.0.16:8443" ...
 ```
 
-Three facts established. The endpoint refuses open (plaintext) signals. It answers `scheme=https` when reached properly. And when the *application* does the TLS, the proxy's log line is `"- - -"` — no method, no path, no status. That last line is the problem this module solves.
+Three facts established. The endpoint refuses open (plaintext) signals. It answers `scheme=https` when reached properly. And when the *application* does the TLS, the proxy's log line is `"- - -"` — no method, no path, no status. That last line is the problem this lab solves.
 
 ---
 

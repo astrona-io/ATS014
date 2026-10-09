@@ -1,0 +1,23 @@
+# Abort: 50% of requests to navcom get HTTP 500 straight from the caller's
+# sidecar. They never reach the navcom pod.
+# Needs the navcom DestinationRule (subset v1), which the playground installs.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: navcom
+  namespace: starfleet
+spec:
+  hosts:
+  - navcom
+  http:
+  - fault:
+      abort:
+        # Percent of requests to abort (0-100).
+        percentage:
+          value: 50
+        # Status code returned instead of the real response.
+        httpStatus: 500
+    route:
+    - destination:
+        host: navcom
+        subset: v1

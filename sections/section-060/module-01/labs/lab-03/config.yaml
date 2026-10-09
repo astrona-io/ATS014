@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-060-01-03"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base, istiod and the ingress gateway in istio-ingress) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-060-01-03-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-060-01-03-fault"
+      description: "Applies the starting state: a Gateway with a typo in its host, and a bridge VirtualService with no gateways field that routes to a ship that does not exist"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-repaired-gate"
+      description: "Confirms the Gateway serves exactly starfleet.example.com, the bridge VirtualService is linked to it and routes to the real bridge, the gateway proxy holds the routes with a healthy endpoint, and live signals through the gate reach the bridge while other hosts and paths are not served"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

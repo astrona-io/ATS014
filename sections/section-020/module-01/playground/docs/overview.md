@@ -35,7 +35,7 @@ Every pod shows `2/2`: the app plus its `istio-proxy` sidecar.
 
 ## The helper used in this module
 
-Paste this once in each new terminal. It sends N requests (20 if you give no
+Paste this once in each new terminal. It sends N signals (20 if you give no
 number) to `scout` and counts which version answered. The scout answers on the path `/reviews/0`: the path is built into the app, so it keeps its original name. The answer contains
 `"podname": "scout-vX-..."`, which is how it tells the versions apart. Extra
 `curl` options go after N:
@@ -48,28 +48,14 @@ done | sort | uniq -c; }
 # count_versions 10 -H "end-user: jason"   10 requests as jason
 ```
 
-## Ready-made YAML
-
-The folder [`../examples/`](../examples/) holds the files the module uses, in
-the order you apply them. If you cloned the repository, apply them from there.
-Otherwise the course parts show each one, ready to write to a file.
-
-| File | What it does |
-| --- | --- |
-| `01-virtualservice-scout-v1-80-v3-20.yaml` | Canary step 1: 80% v1, 20% v3 |
-| `02-virtualservice-scout-v1-50-v3-50.yaml` | Canary step 2: 50/50 |
-| `03-virtualservice-scout-v3-100.yaml` | Canary step 3: all traffic on v3 |
-| `04-virtualservice-scout-v1-rollback.yaml` | Rollback: all traffic back on v1 |
-| `cases/c1-…-weights-not-100.yaml` | Weights 50 + 30 that do not add up to 100 |
-| `cases/c2-…-three-way-split.yaml` | 50% v1, 25% v2, 25% v3 |
-| `cases/c3-…-weight-zero.yaml` | v3 in the route with weight 0 |
-| `cases/c4-…-header-plus-canary.yaml` | jason always on v3, everyone else 90/10 |
-
 ## Things to try
 
-- Count 20 requests before you write anything. All three versions answer,
+Each idea is a small change to the flight plans you wrote while reading the
+module. Edit your saved file, apply it with `kubectl apply -f`, and count.
+
+- Count 20 signals before you write anything. All three versions answer,
   because the Kubernetes Service picks pods, not versions.
-- Apply the 80/20 canary and count 20 requests, then 100. See how much the
+- Apply an 80/20 canary and count 20 signals, then 100. See how much the
   small sample wobbles.
 - Walk the rollout forward (80/20, 50/50, 100) and then roll it back with one
   apply. No pod restarts at any step.
@@ -78,10 +64,11 @@ Otherwise the course parts show each one, ready to write to a file.
   gets.
 - Put jason on v3 above a 90/10 split, and check that jason never enters the
   split.
+- Give a weight to a subset called `v9` and run `istioctl analyze`.
 
 ## Exam-style practice
 
-Try the drill in [`practice.md`](practice.md). It has a checked solution.
+Try the drill in [`practice.md`](practice.md). It has a solution checked on a real cluster.
 
 ## Start over without a new cluster
 

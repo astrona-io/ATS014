@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: navcom
+  namespace: starfleet
+spec:
+  hosts:
+  - navcom
+  http:
+  - fault:
+      delay:
+        percentage:
+          value: 100
+        fixedDelay: 2s
+    route:
+    - destination:
+        host: navcom
+        subset: v1
+    timeout: 0.5s

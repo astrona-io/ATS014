@@ -1,0 +1,34 @@
+# The shuttle: your test client inside the mesh.
+# Send every test signal from it with:
+#   kubectl exec -n starfleet deploy/shuttle -- curl -s http://<service>:<port>/...
+# It has a sidecar, so VirtualService and DestinationRule rules apply to its
+# outgoing requests, exactly like for a real app.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: shuttle
+  namespace: starfleet
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shuttle
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shuttle
+  template:
+    metadata:
+      labels:
+        app: shuttle
+    spec:
+      serviceAccountName: shuttle
+      # Stop instantly on delete; nothing to drain in a test client.
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: shuttle
+        image: curlimages/curl:8.11.1
+        # Keep the container running so we can exec into it.
+        command: ["sleep", "infinity"]

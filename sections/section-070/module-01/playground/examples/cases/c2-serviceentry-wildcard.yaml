@@ -5,7 +5,7 @@ apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
   name: wikipedia
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   hosts:
   - "*.wikipedia.org"

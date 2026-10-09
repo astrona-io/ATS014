@@ -1,10 +1,10 @@
 # Practice – Egress Gateway
 
-An exam-style mission for this playground, astronaut. Start the playground first and paste the helpers from [`overview.md`](overview.md) — the solution uses them.
+An exam-style mission for this playground, astronaut. Start the playground first and paste the helpers from [`overview.md`](overview.md): the solution uses them.
 
 Try it on your own first, then open the solution. The solution was run and checked on a cluster like this one.
 
-> Route HTTPS traffic to **www.google.com** through the egress gateway, the same way as `httpbin.org` in the module. Prove it in the egress gateway log.
+> Route HTTPS traffic to **www.google.com** through the egress gateway, the same way as `httpbin.org` in the module. Prove it in the gate's flight log.
 
 <details><summary>Solution</summary>
 
@@ -15,7 +15,7 @@ Save this as `google-via-egress.yaml`:
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
-metadata: {name: google, namespace: bookinfo}
+metadata: {name: google, namespace: starfleet}
 spec:
   hosts: [www.google.com]
   ports: [{number: 443, name: tls, protocol: TLS}]
@@ -24,7 +24,7 @@ spec:
 ---
 apiVersion: networking.istio.io/v1
 kind: Gateway
-metadata: {name: egress-google, namespace: bookinfo}
+metadata: {name: egress-google, namespace: starfleet}
 spec:
   selector: {istio: egress}
   servers:
@@ -34,14 +34,14 @@ spec:
 ---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
-metadata: {name: egress-gateway-for-google, namespace: bookinfo}
+metadata: {name: egress-gateway-for-google, namespace: starfleet}
 spec:
   host: istio-egress.istio-egress.svc.cluster.local
   subsets: [{name: google}]
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
-metadata: {name: google-via-egress, namespace: bookinfo}
+metadata: {name: google-via-egress, namespace: starfleet}
 spec:
   hosts: [www.google.com]
   gateways: [mesh, egress-google]
@@ -63,8 +63,18 @@ kubectl apply -f google-via-egress.yaml
 Then check the result:
 
 ```bash
-call_external https://www.google.com     # 200
-log_hop2_egress                         # ... outbound|443||www.google.com ...
+call_external https://www.google.com
+log_gate
 ```
+
+You should see (log line trimmed):
+
+```text
+200 0.127331s
+  exit=0
+"- - -" 0 - - - "-" 861 92842 133 - "-" "-" "-" "-" "142.251.155.119:443" outbound|443||www.google.com ... www.google.com -
+```
+
+The gate made the call to `www.google.com`: hop 2 happened.
 
 </details>

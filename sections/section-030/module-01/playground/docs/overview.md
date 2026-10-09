@@ -2,99 +2,57 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab: a training solar system where you can
-practise without a mission score. The environment starts clean, installs
-Istio and the test apps, and then waits. There is no task, no
-`astrona submit`, and no pass/fail. Explore, break things, `astrona destroy`,
-start over.
+Welcome, astronaut. This is your training solar system in the simulator: a **playground**, not a lab. It starts clean, installs Istio and the test ships, and then waits. There is no task, no `astrona submit`, and no pass or fail. Explore, break things, `astrona destroy`, and start over.
 
 ## What's in the box
 
-- A single-node `kind` cluster called `astro-ats-014-playground-030-01`.
-  `astrona run` points `kubectl` at it.
-- **Istio 1.30.5**, installed with Helm: `istio-base` (the CRDs) and `istiod`
-  (the control plane). There is no ingress or egress gateway, because this
-  module does not need one.
-- **Access logs switched on** for the whole mesh. Every sidecar writes one line
-  per request in its black box flight log, including the address of the pod it
-  picked.
-- Namespace **`bookinfo`**, labelled `istio-injection=enabled`, containing:
-  - `curl` — a client pod inside the mesh. You send every test request from it.
-  - `httpbin` — a test server behind one Service on port `8000`. It runs
-    **four pods**, a small squadron of spaceships: three of `httpbin-v1` and
-    one of `httpbin-v2`. The path
-    `/hostname` answers with the name of the pod that served the request.
-- **No `DestinationRule`.** Istio's default load balancer (`LEAST_REQUEST`) is
-  in force until you add one.
+- A single-node `kind` cluster called `astro-ats-014-playground-030-01`. `astrona run` points `kubectl` at it.
+- **Istio 1.30.5**, installed with Helm: `istio-base` and `istiod` (mission control). There is no gateway, because this module does not need one.
+- **Flight logs (access logs) switched on** for every proxy. Each line names the pod address the proxy picked.
+- The planet **`starfleet`**, with sidecar injection on:
+  - `probe`: a squadron of four echo probes behind one Service on port `8000`: three `probe-v1` pods and one `probe-v2` pod. The path `/hostname` answers with the name of the pod that served the signal.
+  - `shuttle`: your client. You send every test signal from here.
+- **No `DestinationRule`.** Istio's default load balancer, `LEAST_REQUEST`, is in force until you add one.
 
-Every pod shows `2/2`: the app plus its `istio-proxy` sidecar. Check with
-`kubectl get pods -n bookinfo`.
+Every pod shows `2/2`: the app plus its communications officer (the `istio-proxy` sidecar). Check with `kubectl get pods -n starfleet`.
 
 ## The helper you need
 
-Paste this into your terminal once per new terminal window. It sends 8
-requests from the `curl` pod and counts which **pod** answered each one. You
-can add extra `curl` options, such as a header. It also sets `$HOSTNAME_URL`,
-the address the module calls.
+Paste this into each new terminal. It sends 8 signals from the shuttle to the probe and counts which pod answered each one. Any `curl` options you add are passed on:
 
 ```sh
 count_pods() { for i in $(seq 1 8); do
-  kubectl exec -n bookinfo deploy/curl -- curl -s "$@" | grep -o '"httpbin-[^"]*"'
+  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o '"probe-[^"]*"'
 done | sort | uniq -c; }
-HOSTNAME_URL=http://httpbin:8000/hostname
+HOSTNAME_URL=http://probe:8000/hostname
 ```
-
-## Ready-made files
-
-The YAML the module uses is in [`../examples/`](../examples/). If you cloned
-the repository, you can apply these files directly instead of writing them yourself:
-
-| File | What it does |
-| --- | --- |
-| `01-destinationrule-httpbin-round-robin.yaml` | `simple: ROUND_ROBIN` for every httpbin pod |
-| `02-destinationrule-httpbin-sticky-header.yaml` | sticky by the `x-user` header |
-| `03-destinationrule-httpbin-sticky-cookie.yaml` | sticky by a cookie called `session`, created by the sidecar |
-| `cases/c1-destinationrule-source-ip.yaml` | sticky by the caller's IP address |
-| `cases/c2-destinationrule-query-param.yaml` | sticky by the `?user=` query parameter |
-| `cases/c3-destinationrule-lb-per-subset.yaml` + `cases/c3-virtualservice-httpbin-v1.yaml` | `RANDOM` for the host, sticky by header for subset `v1` only, and all traffic sent to `v1` |
-
-All three numbered files and the cases use the same name, `httpbin`. So each
-`kubectl apply` **replaces** the previous DestinationRule.
 
 ## Things to try
 
-- Run `count_pods $HOSTNAME_URL` with no DestinationRule, then with
-  `ROUND_ROBIN`. With round robin, expect each of the four pods about twice.
-- Make `x-user` sticky and compare `alice`, `bob` and `carol`. Two names landing
-  on the same pod is a hash collision, not a bug.
-- Send requests with **no** `x-user` header under the same policy, and watch the
-  stickiness disappear.
-- Apply the cookie rule and look for the `set-cookie` line:
-  `kubectl exec -n bookinfo deploy/curl -- curl -s -i $HOSTNAME_URL | grep -i -E 'set-cookie|hostname'`.
-- Apply case 1 (`useSourceIp`). Every request from the `curl` pod now lands on
-  one pod, with no header or cookie at all.
-- Apply case 2 and call `count_pods "$HOSTNAME_URL?user=alice"`. Keep the quotes:
-  `?` is a special character in zsh.
-- Apply both case 3 files. `alice` sticks to one v1 pod, and requests without
-  the header spread over the three v1 pods only.
-- Scale `httpbin-v1` from 3 to 4 pods during a sticky run and count how many of
-  your test names move to another pod.
-- Put `simple` and `consistentHash` in the same `trafficPolicy` and read the
-  error.
-- Compare `lbPolicy` across each change:
-  `istioctl proxy-config cluster deploy/curl -n bookinfo --fqdn httpbin.bookinfo.svc.cluster.local -o json | grep lbPolicy`.
-- Read the sidecar's own record of each choice:
-  `kubectl logs -n bookinfo deploy/curl -c istio-proxy --tail=8`.
+Each idea is a small change to a `DestinationRule` for the probe. The module's parts show the full YAML for every step: save it to a file, apply it with `kubectl apply -f`, and watch what changes.
+
+- Run `count_pods $HOSTNAME_URL` with no `DestinationRule`, then with `simple: ROUND_ROBIN`. With round robin, each of the four pods answers twice.
+- Make the `x-user` header sticky and compare `alice`, `bob` and `carol`. Two names landing on one pod is a collision, not a bug.
+- Under the same policy, send signals with **no** `x-user` header, and watch the stickiness disappear.
+- Hash a cookie with `ttl`, and look for the `set-cookie` line:
+  `kubectl exec -n starfleet deploy/shuttle -- curl -s -i $HOSTNAME_URL | grep -i -E 'set-cookie|hostname'`.
+- Hash the source IP (`useSourceIp: true`). Every signal from the shuttle lands on one pod.
+- Hash a query parameter and call `count_pods "$HOSTNAME_URL?user=alice"`. Keep the quotes: `?` is a wildcard in zsh.
+- Give subset `v1` its own policy, route everything to `v1`, and compare each cluster's `lbPolicy`.
+- Scale `probe-v1` from 3 to 4 pods during a sticky run, and count how many of your test names move.
+- Put `simple` and `consistentHash` in the same `trafficPolicy`, and read the error.
+- Read the policy the shuttle's proxy really uses:
+  `istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet.svc.cluster.local -o json | grep lbPolicy`.
 
 When you want an exam-style task, try [the practice task](practice.md).
 
 ## Start over without a new cluster
 
-Remove this module's rules and you are back to the starting state:
+Remove this module's objects, and the probe is back to the default:
 
 ```sh
-kubectl delete dr httpbin -n bookinfo
-kubectl delete vs httpbin -n bookinfo --ignore-not-found
+kubectl delete destinationrule probe -n starfleet
+kubectl delete virtualservice probe -n starfleet --ignore-not-found
 ```
 
 ## When you're done
@@ -103,4 +61,4 @@ kubectl delete vs httpbin -n bookinfo --ignore-not-found
 astrona destroy ats-014-playground-030-01
 ```
 
-(`astrona destroy` takes the environment name, not the configuration path.)
+`astrona destroy` takes the environment name, not the folder path.

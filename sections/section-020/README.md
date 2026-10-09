@@ -26,50 +26,36 @@ Istio gives two answers and this section covers both. Weighted routing moves a c
 
 ---
 
-## The Learning Path
+## Modules In This Section
 
-Work through the modules in this order, astronaut. For each one: read the parts with its playground open next to you, clean up the playground, then take its graded mission. Finish with the capstone, which brings the whole section together.
+Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
 
-### 1. Shift Traffic With Weighted Routing
-*   **Module Reader:** **[Shift Traffic With Weighted Routing](./module-01/course.md)**
-    1. [Weighted Destinations](./module-01/course-01-weighted-destinations.md)
-    2. [Running A Rollout](./module-01/course-02-running-a-rollout.md)
-    3. [Weight Versus Replicas, And Proof](./module-01/course-03-weight-versus-replicas-and-proof.md)
-*   **Hands-on Playground:** `sections/section-020/module-01/playground` — a kind cluster with Istio 1.30.5 (Helm) and the Starfleet on planet `starfleet`: the bridge, cargo, `scout` v1/v2/v3 with the `scout` DestinationRule already applied, navcom, the `shuttle` client and the `probe`. No VirtualService yet.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-020/module-01/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-020/module-01/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/module-01/labs/lab-01
-    ```
-*   **Hands-on Objective:** Run a 70/30 canary with an internal-tester header rule pinned above the weights, prove the split over 200 requests, and leave the replica counts alone — because share is a weight, not a pod count.
+### [Shift Traffic With Weighted Routing](module-01/course.md)
 
-### 2. Mirror Live Traffic To A Shadow Service
-*   **Module Reader:** **[Mirror Live Traffic To A Shadow Service](./module-02/course.md)**
-    1. [Mirror As A Sibling Of Route](./module-02/course-01-mirror-as-a-sibling-of-route.md)
-    2. [Identifying And Sampling Shadow Traffic](./module-02/course-02-identifying-and-sampling-shadow-traffic.md)
-    3. [Consequences, Verification And Limits](./module-02/course-03-consequences-verification-and-limits.md)
-*   **Hands-on Playground:** `sections/section-020/module-02/playground` — a kind cluster with Istio 1.30.5 (Helm) and access logs on: the `probe` v1/v2 (the echo probe) behind one Service and the `shuttle` client on planet `starfleet`. No DestinationRule or VirtualService yet.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-020/module-02/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-020/module-02/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/module-02/labs/lab-01
-    ```
-*   **Hands-on Objective:** Serve every caller from the stable version while a full copy of each request reaches the release candidate — then prove the shadow received them, using the one piece of evidence a perfectly happy caller can never show you.
+3 parts and 2 missions:
 
-### 3. Section Capstone Challenge
-*   **Comprehensive Challenge:** **`sections/section-020/capstone/labs/lab-01` (Canary And Shadow At The Same Time)**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/capstone/labs/lab-01
-    ```
-*   **Hands-on Objective:** Put both features on one rule — an internal-tester match above an 80/20 weighted default that also mirrors every request to a separate shadow Service — and keep them straight, because a mirror written as a route destination silently becomes a traffic split.
+1. [Weighted Destinations](module-01/course-01-weighted-destinations.md)
+   - Mission: [Split The Scout Three Ways Lab](module-01/labs/lab-02/question.md)
+2. [Running A Rollout](module-01/course-02-running-a-rollout.md)
+3. [Weight Versus Replicas, And Proof](module-01/course-03-weight-versus-replicas-and-proof.md)
+   - Mission: [Shift Traffic With Weighted Routing Lab](module-01/labs/lab-01/question.md)
+4. [Wrap-Up: Mission Debrief](module-01/course-04-wrap-up.md)
+
+### [Mirror Live Traffic To A Shadow Service](module-02/course.md)
+
+3 parts and 2 missions:
+
+1. [Mirror As A Sibling Of Route](module-02/course-01-mirror-as-a-sibling-of-route.md)
+2. [Identifying And Sampling Shadow Traffic](module-02/course-02-identifying-and-sampling-shadow-traffic.md)
+   - Mission: [Mirror Live Traffic To A Shadow Service Lab](module-02/labs/lab-01/question.md)
+3. [Consequences, Verification And Limits](module-02/course-03-consequences-verification-and-limits.md)
+   - Mission: [Find The Quiet Shadow Lab](module-02/labs/lab-02/question.md)
+4. [Wrap-Up: Mission Debrief](module-02/course-04-wrap-up.md)
+
+### Capstone
+
+Your final mission for this section: **[Canary And Shadow At The Same Time Capstone Lab](capstone/labs/lab-01/README.md)**.
 
 ---
 
-Each playground is ungraded: a training solar system in the simulator. It spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.
+<!-- astrona:playground:environment-explain -->

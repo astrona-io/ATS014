@@ -21,21 +21,22 @@ no pass or fail. Explore, break things, `astrona destroy`, start over.
   names, so the scout answers on `http://scout:9080/reviews/0`.
 - **No `DestinationRule` and no `VirtualService`.** You apply them in the
   order the module teaches.
-- The bridge's page at <http://127.0.0.1:9080/productpage>.
+- The bridge's page in your browser, at `http://127.0.0.1:9080/productpage`.
 
 ## Things to try
 
-- Apply the "all to v1" route in [`../examples/`](../examples/) **before** the
-  `DestinationRule`, then call `scout` straight away. Read the `503` and the
-  `NC` flag in the flight log. Then apply the `DestinationRule` and call again.
+Each idea below uses the `scout` flight plan and docking instructions from the module's parts. The parts show the full YAML: save it to a file, apply it with `kubectl apply -f`, and watch what happens.
+
+- Apply the "all to v1" `VirtualService` **before** any `DestinationRule`, then call `scout` straight away. Read the `503` and the `NC` flag in the flight log. Then apply the `DestinationRule` and call again.
 - After each change, check that the shuttle's proxy has the new subset with
   `istioctl proxy-config clusters deploy/shuttle -n starfleet` before you test.
-- Delete the `DestinationRule` while the `VirtualService` still uses it.
-  That is "break before make" in reverse. Then do it the right way round.
+- Delete the `DestinationRule` while the `VirtualService` still uses it, and
+  read the `503 NC` again. Then do it the right way round: the route first.
 - Apply the same `VirtualService` file twice with a different subset. See that
-  `kubectl apply` replaces the object rather than adding a second one.
-- Check a default with no rules at all: call
-  `http://probe:8000/delay/3` and see that nothing times out.
+  `kubectl apply` replaces the object (`configured`) rather than adding a second one.
+- Check two defaults with no rules at all: `http://probe:8000/delay/3` waits
+  the full 3 seconds, and `http://probe:8000/status/503` reaches the probe
+  only once.
 
 ## Start over without a new cluster
 

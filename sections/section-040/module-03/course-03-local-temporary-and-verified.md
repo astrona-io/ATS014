@@ -1,87 +1,104 @@
 # Local, Temporary, And Verified
 
-Astronaut, two properties are left, and both surprise people. They follow from *where* the feature lives, not from what it does. Then come the commands that prove an ejection, both halves of circuit breaking in one rule, and the reason the next module depends on all of this.
+Astronaut, two properties of outlier detection are left, and both surprise people: every proxy reaches its own verdict, and every ejection ends. This part shows both on your playground, then the counters that prove an ejection, and a full circuit breaker that limits the load and removes bad ships in one rule.
 
-This part assumes Part 1's rule (`destinationrule-httpbin-outlier-detection.yaml`, `maxEjectionPercent: 50`) and the 503 pod (`httpbin-broken-pod.yaml`) are applied.
+The commands below need the four helpers from the module's landing page, the broken ship (`probe-broken.yaml`) and the 50% rule (`destinationrule-probe-outlier-detection.yaml`).
 
 ## The verdict is per proxy
 
-Outlier detection runs inside each caller's sidecar, over the answers **that sidecar** received. There is no shared state, no gossip between proxies, and no central decision. Each ship's communications officer decides for itself which damaged ships to avoid. Mission control (`istiod`) is not involved.
+Outlier detection runs inside each sender's communications officer, over the answers **that officer** received. There is no shared state between proxies and no central decision. Mission control (`istiod`) is not involved at all.
 
 ```mermaid
-flowchart LR
-    A["caller A"] -->|"ejected: 3 fails"| X["endpoint B"]
-    C["caller C"] -->|"in pool: 1 fail"| X
-    D["caller D, no sidecar"] -->|"no verdict"| X
+flowchart TB
+    S["shuttle proxy"] -->|"3 fails: ejected"| B["probe-broken"]
+    F["fortio proxy"] -->|"no fails: in list"| B
+    N["sender without proxy"] -->|"no verdict"| B
 ```
 
-The diagram shows three callers with three different opinions about the same endpoint, all of them correct: an ejection describes one proxy's own experience, never the pod itself.
+The shuttle's officer saw three failures from `probe-broken` and ejected it. Fortio's officer has not sent it anything, so it still has the ship in its list. A sender without a proxy has no verdict at all. All three views are correct at the same time: an ejection describes one proxy's own experience, never the pod itself.
 
 Three things follow:
 
-- **The pod stays in the Service.** `kubectl get endpoints` still lists it. Nothing about the Kubernetes object changes.
-- **A workload without a sidecar is not affected**, because there is no proxy holding a verdict.
-- **A caller with little traffic may never eject anything**, simply because it has not collected the evidence.
-
-This is the sharpest contrast with a readiness probe, which takes the pod out of the Service once, centrally, for everybody.
+- **The pod stays in the Service.** Kubernetes still lists it as an endpoint. Nothing about the Kubernetes objects changes.
+- **A workload without a sidecar is not protected**, because there is no proxy to hold a verdict.
+- **A sender with little traffic may never eject anything**, because it has not collected enough evidence.
 
 <!-- astrona:playground:renew -->
 
-> [!TIP]
-> **Try it — Kubernetes and the proxy disagree**
->
-> ```sh
-> count_status
-> kubectl get endpoints httpbin -n bookinfo
-> show_endpoints
-> ```
->
-> `kubectl get endpoints` lists all three pod addresses. `show_endpoints` shows something like this (the IP addresses are examples):
->
-> ```text
-> ENDPOINT           STATUS    OUTLIER CHECK
-> 10.244.0.16:8080   HEALTHY   OK
-> 10.244.0.17:8080   HEALTHY   OK
-> 10.244.0.19:8080   HEALTHY   FAILED      <- broken pod
-> ```
->
-> Read the two columns separately. `STATUS: HEALTHY` is the Kubernetes view: the pod is a ready Service endpoint. `OUTLIER CHECK: FAILED` is **this proxy's own verdict**. The gap between those two columns *is* outlier detection, and `kubectl get endpoints` will never show it. If every row says `OK`, the ejection time ran out: run `count_status` again first.
+### Kubernetes and the proxy disagree
+
+Send a round of signals, so the shuttle has fresh evidence. Then compare what Kubernetes lists with what two different proxies think:
+
+```sh
+count_status
+kubectl get endpointslices -n starfleet -l kubernetes.io/service-name=probe
+kubectl get pods -n starfleet -l app=probe -o wide
+show_endpoints
+istioctl proxy-config endpoints deploy/fortio -n starfleet --cluster "outbound|8000||probe.starfleet.svc.cluster.local"
+```
+
+You should see (the pod list trimmed to the name and IP columns):
+
+```text
+  12 200
+   3 503
+NAME          ADDRESSTYPE   PORTS   ENDPOINTS                           AGE
+probe-tlf24   IPv4          8080    10.244.0.8,10.244.0.7,10.244.0.13   2m37s
+NAME                            IP
+probe-broken-5d7dc9b96f-l8j9s   10.244.0.13
+probe-v1-7888d6c6d5-tct6g       10.244.0.7
+probe-v2-58767cc46-rvjn5        10.244.0.8
+ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
+10.244.0.13:8080     HEALTHY     FAILED            outbound|8000||probe.starfleet.svc.cluster.local
+10.244.0.7:8080      HEALTHY     OK                outbound|8000||probe.starfleet.svc.cluster.local
+10.244.0.8:8080      HEALTHY     OK                outbound|8000||probe.starfleet.svc.cluster.local
+ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
+10.244.0.13:8080     HEALTHY     OK                outbound|8000||probe.starfleet.svc.cluster.local
+10.244.0.7:8080      HEALTHY     OK                outbound|8000||probe.starfleet.svc.cluster.local
+10.244.0.8:8080      HEALTHY     OK                outbound|8000||probe.starfleet.svc.cluster.local
+```
+
+The EndpointSlice still lists all three addresses, including `10.244.0.13`, the broken ship. In the shuttle's view, that ship has `OUTLIER CHECK: FAILED`. In fortio's view, the same ship is `OK`.
+
+Read the two columns separately. `STATUS: HEALTHY` is the Kubernetes view: the pod is a ready endpoint of the Service. `OUTLIER CHECK` is **this proxy's own verdict**. The gap between those two columns is outlier detection, and no Kubernetes command will ever show it.
+
+If every row in the shuttle's view says `OK`, the ejection time ran out. Run `count_status` again first.
 
 ## The counters
 
-Better behaviour is a hint. Counters are proof. The three to know:
+Better behaviour is a hint. The proxy's counters are proof. Three are worth knowing:
 
 | Counter | Meaning |
 | --- | --- |
-| `outlier_detection.ejections_active` | endpoints ejected right now (a live value) |
-| `outlier_detection.ejections_total` | ejections for this cluster since the proxy started |
-| `outlier_detection.ejections_enforced_consecutive_5xx` | how many ejections that rule caused |
+| `outlier_detection.ejections_active` | ships ejected right now |
+| `outlier_detection.ejections_total` | ejections since the proxy started |
+| `outlier_detection.ejections_enforced_consecutive_5xx` | ejections caused by the 5xx rule |
 
-The playground's `curl` Deployment carries the `sidecar.istio.io/statsInclusionPrefixes: "cluster.outbound"` annotation. Without it, Istio drops these per-cluster counters, as module 2 explains.
+Istio drops these per-destination counters unless the pod asks for them. The playground's shuttle carries the annotation `sidecar.istio.io/statsInclusionPrefixes: "cluster.outbound"`, which keeps them.
 
-> [!TIP]
-> **Try it — the ejection counters**
->
-> ```sh
-> count_status >/dev/null
-> ejection_stats
-> ```
->
-> Expect three lines in this shape (trimmed, numbers will differ):
->
-> ```text
-> cluster.outbound|8000||httpbin.bookinfo.svc.cluster.local.outlier_detection.ejections_active: 1
-> cluster.outbound|8000||httpbin.bookinfo.svc.cluster.local.outlier_detection.ejections_enforced_consecutive_5xx: <count>
-> cluster.outbound|8000||httpbin.bookinfo.svc.cluster.local.outlier_detection.ejections_total: <count>
-> ```
->
-> `ejections_active: 1` while the broken pod is out, and `enforced_consecutive_5xx` names *which* rule did it, which helps when several thresholds are set. If `total` has grown while `active` reads 0, you caught the pod between ejections. That is the next section.
+### Read the ejection counters
+
+```sh
+ejection_stats
+```
+
+You should see:
+
+```text
+cluster.outbound|8000||probe.starfleet.svc.cluster.local;.outlier_detection.ejections_active: 1
+cluster.outbound|8000||probe.starfleet.svc.cluster.local;.outlier_detection.ejections_enforced_consecutive_5xx: 1
+cluster.outbound|8000||probe.starfleet.svc.cluster.local;.outlier_detection.ejections_total: 1
+```
+
+`ejections_active: 1` while the broken ship is out, and `enforced_consecutive_5xx` names *which* rule did it. That helps when several limits are set. If `total` has grown while `active` reads `0`, you caught the ship between two ejections.
 
 ## Watching the cycle
 
-An ejection ends and the endpoint is tried again, so a pod that stays broken produces a cycle, not a steady state. Watching `ejections_total` climb while `ejections_active` flips between 1 and 0 makes that cycle visible. It is worth seeing once, so you do not mistake it for instability.
+An ejection ends and the ship is tried again, so a ship that stays broken produces a cycle, not a steady state. Watching `ejections_total` climb while `ejections_active` flips between `1` and `0` makes that cycle visible.
 
-With `baseEjectionTime: 1m`, the first ejection lasts about a minute, the second about two, and so on. This loop checks every 20 seconds for about four minutes:
+### Watch four minutes of ejections
+
+This loop prints the two counters every 20 seconds, and keeps sending signals so the shuttle keeps collecting evidence:
 
 ```sh
 for i in $(seq 1 12); do
@@ -91,90 +108,131 @@ for i in $(seq 1 12); do
 done
 ```
 
-`total` only ever goes up. `active` drops to 0 when the ejection time is over and goes back to 1 once the returned pod fails again. The quiet periods get longer each time, which is the back-off from Part 2.
+You should see:
+
+```text
+ejections_active: 1 ejections_total: 1 
+ejections_active: 1 ejections_total: 1 
+ejections_active: 1 ejections_total: 1 
+ejections_active: 0 ejections_total: 1 
+ejections_active: 1 ejections_total: 2 
+ejections_active: 1 ejections_total: 2 
+ejections_active: 1 ejections_total: 2 
+ejections_active: 1 ejections_total: 2 
+ejections_active: 1 ejections_total: 2 
+ejections_active: 0 ejections_total: 2 
+ejections_active: 1 ejections_total: 3 
+ejections_active: 1 ejections_total: 3 
+```
+
+`total` only ever goes up. `active` drops to `0` when an ejection ends, and goes back to `1` as soon as the returned ship fails again. With `baseEjectionTime: 1m`, the first ejection lasted about one minute (three lines) and the second about two (five lines): the back-off at work.
 
 ## Both halves in one rule
 
-Module 2's `connectionPool` and this module's `outlierDetection` sit side by side under `trafficPolicy`. In real life you usually want both: limit the load, **and** remove bad pods. Keep them in **one** `DestinationRule` per host. Two rules for the same host do not combine reliably.
+A connection pool and outlier detection sit side by side under `trafficPolicy`. In real systems you usually want both: limit how much work is open to a service, **and** remove ships that keep failing. Together they are called a circuit breaker. Keep both in **one** `DestinationRule` per host, because two rules for the same host do not combine reliably.
 
-> [!TIP]
-> **Try it — a full circuit breaker**
->
-> Save this as `destinationrule-httpbin-full-circuit-breaker.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: DestinationRule
-> metadata:
->   name: httpbin
->   namespace: bookinfo
-> spec:
->   host: httpbin
->   trafficPolicy:
->     connectionPool:
->       tcp:
->         maxConnections: 1
->       http:
->         http1MaxPendingRequests: 1
->         maxRequestsPerConnection: 1
->     outlierDetection:
->       consecutive5xxErrors: 3
->       interval: 5s
->       baseEjectionTime: 1m
->       maxEjectionPercent: 50
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f destinationrule-httpbin-full-circuit-breaker.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> load_test 3
-> ```
->
-> Expect something like:
->
-> ```text
-> Code 200 : 13 (43.3 %)
-> Code 503 : 17 (56.7 %)
-> ```
->
-> With three parallel connections, the pool of one connection overflows (`503 UO`, as in module 2). The outlier half keeps working at the same time, for whatever traffic gets through.
+### Raise both shields at once
 
-Ready to drill it exam-style? The [practice task](./playground/docs/practice.md) asks for both halves with different numbers.
+Save this as `destinationrule-probe-full-circuit-breaker.yaml`:
 
-## Where this fits
+```yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 1
+      http:
+        http1MaxPendingRequests: 1
+        maxRequestsPerConnection: 1
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 5s
+      baseEjectionTime: 1m
+      maxEjectionPercent: 50
+```
 
-Two links to the rest of the section, both worth being able to state.
-
-**Locality failover depends on this.** The next module's `localityLbSetting` decides where traffic goes when a locality has no healthy endpoints. In a sidecar mesh, "healthy" means "not ejected by outlier detection". There is no separate health checker. A locality failover setup without `outlierDetection` never fails over, because nothing ever marks anything as unhealthy. That is the most examined fact in the next module, and it starts here.
-
-**Retries pair well with it.** Ejection needs a few real failures to notice a bad endpoint, and those failures are somebody's requests. Add a retry policy from module 1, and the retried request lands on a different endpoint. The caller sees a success, while the proxy still records the failure it needs. The caller's experience improves and detection still works.
-
-## Clean up
+Apply it:
 
 ```sh
-kubectl delete destinationrule httpbin -n bookinfo
-kubectl delete deploy httpbin-broken httpbin-broken-500 -n bookinfo --ignore-not-found
+kubectl apply -f destinationrule-probe-full-circuit-breaker.yaml
+```
+
+Then fire 30 signals over 3 parallel connections from fortio, and read fortio's own counters for both halves:
+
+```sh
+load_test 3
+kubectl exec -n starfleet deploy/fortio -c istio-proxy -- pilot-agent request GET stats 2>/dev/null \
+  | grep -E 'probe.starfleet.*(upstream_rq_pending_overflow|outlier_detection.ejections_total):'
+```
+
+You should see:
+
+```text
+Code 200 : 11 (36.7 %)
+Code 503 : 19 (63.3 %)
+cluster.outbound|8000||probe.starfleet.svc.cluster.local;.outlier_detection.ejections_total: 1
+cluster.outbound|8000||probe.starfleet.svc.cluster.local;.upstream_rq_pending_overflow: 16
+```
+
+Both halves worked in the same run. `upstream_rq_pending_overflow: 16` counts the signals the connection pool refused at once, with `503 UO`, because too many were open. `ejections_total: 1` shows that fortio's own officer also pulled the broken ship out of formation.
+
+### Clean up
+
+Remove the rule and the broken ship, so the playground is back to two healthy probes:
+
+```sh
+kubectl delete destinationrule probe -n starfleet
+kubectl delete -f probe-broken.yaml
+```
+
+```text
+destinationrule.networking.istio.io "probe" deleted from starfleet namespace
+deployment.apps "probe-broken" deleted from starfleet namespace
 ```
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Expecting a Kubernetes-level change.** The pod stays in the Service and `kubectl get endpoints` never moves. Use the proxy's stats and `istioctl proxy-config endpoints`.
->
-> **Assuming one proxy's verdict is shared.** Every caller's proxy ejects on its own, based on what it has seen.
->
-> **Expecting an ejection to last forever.** It lasts `baseEjectionTime × ejection count` (up to Envoy's cap), then the endpoint is tried again.
->
-> **Mistaking the ejection cycle for instability.** A pod that stays broken produces repeating bursts with growing gaps. That is the design.
->
-> **Reading counters from a caller without the stats annotation.** The per-cluster `outlier_detection.*` counters are simply missing.
->
-> **Splitting `connectionPool` and `outlierDetection` into two DestinationRules for one host.** Keep both in one rule.
+> - **Expecting a change in Kubernetes.** The pod stays in the Service. Use `istioctl proxy-config endpoints` and the proxy's counters.
+> - **Assuming one proxy's verdict is shared.** Every sender's communications officer ejects on its own, from what it has seen.
+> - **Expecting an ejection to last forever.** It lasts `baseEjectionTime` × the ejection count (up to Envoy's cap), then the ship is tried again.
+> - **Mistaking the ejection cycle for instability.** A ship that stays broken produces repeating bursts with growing gaps. That is the design.
+> - **Reading counters from a pod without the stats annotation.** The per-destination `outlier_detection.*` counters are simply missing.
+> - **Splitting the connection pool and outlier detection over two `DestinationRule`s for one host.** Keep both in one rule.
 
 > *`STATUS` is what Kubernetes says and `OUTLIER CHECK` is what this proxy decided: the gap between those two columns is the entire feature.*
+
+## Your mission: Raise Both Shields
+
+You can now prove an ejection from the proxy's own view and counters, and combine a connection pool with outlier detection in one rule. Now prove it in a graded mission: protect the probe with both halves of a circuit breaker, and show each half working.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-040-03
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-03/labs/lab-02
+```
+
+Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-040/module-03/labs/lab-02
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-040-03-02
+astrona start ats-014-playground-040-03
+```

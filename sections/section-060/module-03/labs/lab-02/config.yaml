@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-060-03-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs the Gateway API CRDs, then Istio 1.30.5 (istio-base and istiod) with Helm, and waits for the istio GatewayClass"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-060-03-02-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-060-03-02-route"
+      description: "Applies the starting state: an HTTPRoute for the bridge that names a Gateway which does not exist yet"
+      type: "file"
+      source: "bootstrap/03-seed-route.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-gateway"
+      description: "Confirms the Gateway uses the istio class with the asked-for listener, Istio built its proxy in starfleet, the Gateway and the waiting HTTPRoute report healthy conditions, the route is unchanged, and live signals through the gate reach the bridge only for starfleet.example.com"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

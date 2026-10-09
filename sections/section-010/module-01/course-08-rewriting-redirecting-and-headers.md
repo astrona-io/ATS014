@@ -366,3 +366,32 @@ virtualservice.networking.istio.io "probe" deleted from starfleet namespace
 > - **Treating `corsPolicy` as access control.** It only shapes what a browser is willing to do.
 
 > *`redirect` ends the signal's journey, `rewrite` changes its address on the way, and `headers` changes its labels in either direction. All of them sit on the same rule that already chose the destination.*
+
+## Your mission: Reshape A Request
+
+You can now redirect, rewrite and relabel signals, and let the proxy answer browser checks. Now prove it in a graded mission: move a service to new paths without touching the app behind it.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-010-01
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-02
+```
+
+Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-010/module-01/labs/lab-02
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-010-02
+astrona start ats-014-playground-010-01
+```

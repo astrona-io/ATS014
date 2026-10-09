@@ -25,7 +25,7 @@ gwapi-team   Active   8m    istio-injection=enabled,kubernetes.io/metadata.name=
 No resources found in gwapi-demo namespace.
 ```
 
-CRDs present, `GatewayClass` accepted, neither namespace carries `gateway-access` yet. Note the controller string is `istio.io/gateway-**controller**` — different from module 2's `istio.io/ingress-controller`. Separate APIs, separate controllers.
+CRDs present, `GatewayClass` accepted, neither namespace carries `gateway-access` yet. Note the controller string is `istio.io/gateway-controller`. It is a different string from `istio.io/ingress-controller`, the controller for the older Kubernetes `Ingress` object. Separate APIs, separate controllers.
 
 ---
 
@@ -263,7 +263,7 @@ Two namespaces, two teams, one shared gateway that the platform team owns and ex
 - **Forgetting the namespace label.** The cross-namespace route reports `Accepted=False (NotAllowedByListeners)` — read the status rather than guessing.
 - **`from: All`.** Works, and fails the task. The grader checks for `Selector`.
 - **Omitting `namespace` in the cross-namespace `parentRefs`.** The route looks for the Gateway in its own namespace and finds nothing.
-- **Port-forwarding to `istio-ingressgateway`.** That is module 1's proxy; it knows nothing about these routes.
+- **Port-forwarding to `istio-ingressgateway`.** That is the proxy for Istio's own `Gateway` object; it knows nothing about these routes.
 - **Setting `hostname` on the listener.** The task asks for none, so the listener accepts any host and the routes discriminate.
 - **Looking for the proxy in `istio-system`.** It is `shared-gateway-istio` in `gwapi-demo`.
 - **Using `networking.istio.io/v1`.** Wrong API group entirely — that object has a `selector` and configures an existing pod.

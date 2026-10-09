@@ -1,0 +1,18 @@
+# Two planets for this playground:
+#   starfleet  the shuttle (your test client) and the cargo ship
+#   outpost    the probe, on a different planet
+# istio-injection=enabled puts a communications officer (sidecar proxy) into
+# every pod created in these namespaces.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: starfleet
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outpost
+  labels:
+    istio-injection: enabled

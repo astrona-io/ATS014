@@ -1,43 +1,59 @@
 # How A Request Moves Through The Mesh
 
-Astronaut, every other module in this course writes an object that tells a proxy what to do. This one is about the proxy itself, the communications officer on board every spaceship (pod): where it came from, how signals end up going through it, who gives it orders, and how to ask it what it currently believes.
+Astronaut, almost everything you will do with Istio is giving orders to a proxy. This module is about that proxy itself: the communications officer on board every spaceship (pod). Where does it come from? How do signals (requests) end up passing through it? Who gives it its orders? And how do you ask it what it currently believes?
 
-None of it is configuration you write. It is what already exists the moment a namespace is injected — and it is the difference between following the rest of the course and understanding it. Almost every confusing result in this domain traces back to one of four mix-ups this module settles:
+None of it is configuration you write. It is what exists the moment a planet (a namespace) is switched on for Istio. Most confusing results with Istio come from mixing up four parts that sit close together:
 
-> A **Service** groups pods. **kube-proxy** would pick one at random. **istiod** writes configuration. The **istio-proxy sidecar** is what actually decides, and it decides in the pod that *sent* the request.
+> A **Service** groups pods. **kube-proxy** would pick one of them at random. **istiod** writes the orders. The **istio-proxy sidecar** actually decides where a signal goes, and it decides in the pod that *sent* the signal.
 
 In space terms: the Service is a beacon that a group of ships answers to, `istiod` is mission control, and the sidecar is the communications officer on the ship that *sends* the signal. Mission control gives the orders, but the communications officer on the sending ship makes the call.
-
-If you already know what a sidecar is, what `istiod` pushes, and what `istioctl proxy-config` prints, you can skim this and start at section 010. If any of those is new, this module is the cheapest hour of training you will get before launch.
 
 ## Learning objectives
 
 After this module you can:
 
 - Explain what sidecar injection adds to a pod, and why a namespace label alone does not change running pods.
-- Describe how outbound and inbound traffic reach the proxy without the application being configured for it.
-- Name which side of a call enforces routing and which side enforces inbound policy, and say what an uninjected caller loses.
-- Expand LDS, RDS, CDS and EDS, and say which one carries a given piece of configuration.
-- Trace one request down the listener → route → cluster → endpoint chain and read the output of each layer.
-- Decode an Envoy cluster name into direction, port, subset and host.
-- Choose the right diagnostic command for a symptom, and state what each one cannot see.
-- Read a response flag such as `NR` or `UH` from an access log and say which half of the configuration to inspect.
+- Tell an injected pod from an uninjected one, and bring a workload into the mesh.
+- Describe how outgoing and incoming signals reach the proxy without the application knowing.
+- Say which side of a call decides routing, and what a sender without a proxy loses.
+- Expand LDS, RDS, CDS and EDS, and say which one carries a given kind of order.
+- Follow one signal down the listener, route, cluster and endpoint chain, and read the output of each layer.
+- Read an Envoy cluster name: direction, port, subset and host.
+- Pick the right diagnostic command for a symptom, and say what each one cannot see.
+- Read a response flag such as `NR`, `NC` or `UH`, and say which half of the setup to look at.
 
 ## Before you start
 
+Every mission starts with a pre-flight check, astronaut. Make sure you have the knowledge this module expects, and know what is waiting in your playground.
+
+### What you should already know
+
+- **Kubernetes basics.** Namespaces, Deployments, Services, pod labels, `kubectl logs` and `kubectl exec`, on a cluster where you have administrator rights.
+- **No Istio yet.** This module starts from zero, and you write no Istio objects in it.
+
+### What is in your playground
+
+Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** already installed, and `istioctl` ready to use. It has two planets, chosen to contrast with each other.
+
+**`starfleet`** has injection switched on, so every ship on it has a communications officer. The fleet on it is the Starfleet, the Istio docs' Bookinfo sample with space names:
+
+| Ship | Its role in the fleet |
+| --- | --- |
+| `bridge` | The flagship: the page astronauts see. It signals the other ships to build it |
+| `cargo` | The supply ship: answers with facts about an item |
+| `scout` v1, v2, v3 | Three ship classes of the same scout |
+| `navcom` | The navigation computer the scouts ask for a rating |
+| `shuttle` | Your shuttle: you send test signals from here |
+| `probe` v1, v2 | The echo probe, on port `8000`. It sends back what it receives |
+
+**`outpost`** has injection switched **off**, on purpose. Its one ship, the `drifter`, runs the same client image as the shuttle but has no communications officer on board.
+
+There is no `VirtualService`, no `DestinationRule` and no policy of any kind. That is the point: this module is about what the mesh does before you configure anything.
+
+Launch your playground now, and keep it running next to you while you read the parts:
+
 <!-- astrona:playground -->
 
-You should be comfortable with `kubectl` against a cluster you have administrator rights on: namespaces, Deployments, Services, pod labels, `kubectl logs` and `kubectl exec`. No prior Istio experience is assumed, and no Istio object is written in this module.
+## Why this matters
 
-The playground is your training solar system: a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile), `istioctl` on your PATH, and two namespaces (two planets) chosen to contrast with each other:
-
-- **`mesh-demo`** — labelled `istio-injection=enabled`. Holds `api` (an nginx Deployment on port `8080` behind a Service on port `80`, answering `{"service":"api","ok":true}`) and `web` (a client pod with `curl`). Both run `2/2`.
-- **`mesh-legacy`** — deliberately **not** injected. Holds `legacy`, the same client image, running `1/1` with no proxy.
-
-There is no `VirtualService`, no `DestinationRule` and no policy of any kind. That is the point: this module is about what the mesh does before you configure it.
-
-## Where this fits
-
-This module is a prerequisite rather than an exam topic. The Istio Certified Associate Traffic Management domain assumes you already know what a sidecar is and can read a proxy's configuration; the sections that follow are graded on writing objects, not on this material.
-
-It earns its place because the rest of the course leans on it constantly. Section 010 names Envoy clusters from the first page. Section 040 is unreadable without knowing which side of a call holds a retry policy. Every module ends by proving a change reached the proxy, using commands introduced here. Skipping it is possible — but then each of those modules has to stop and re-explain a piece of it, which is exactly the problem this module exists to remove.
+Everything else you do with Istio gives orders to the communications officer, and you prove those orders arrived with the commands from this module: `istioctl proxy-status`, `istioctl proxy-config` and the flight log. Learn how the proxy gets on board and how it receives its orders, and every result you see later has an explanation you can check.

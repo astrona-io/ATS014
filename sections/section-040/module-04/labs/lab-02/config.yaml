@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-040-04-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-04-02-workloads"
+      description: "Labels the node region local / zone zone-a and creates the starfleet namespace with the shuttle, probe-zone-a, probe-zone-b and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-040-04-02-fault"
+      description: "Applies the starting state: probe-zone-b loses its istio-locality label so it sits in zone-a, and a correct probe DestinationRule with outlierDetection and localityLbSetting"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-orbits"
+      description: "Confirms probe-zone-b declares local.zone-b on its pod template, the shuttle's proxy sees one probe endpoint in zone-a and one in zone-b, the DestinationRule and Service are unchanged, and 20 live signals all reach probe-zone-a"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

@@ -52,14 +52,20 @@ Apply it:
 kubectl apply -f virtualservice-probe.yaml
 ```
 
-Then check the result:
+Then send 40 signals and count both sides:
 
 ```bash
-
-mark_start; send_requests 20; count_received
-#  20 probe-v1
-# probe-v1 received: 20
-# probe-v2 received: about 10
+mark_start; send_requests 40; count_received
 ```
+
+You should see something like:
+
+```text
+  40 probe-v1
+probe-v1 received: 40
+probe-v2 received: 20
+```
+
+Every answer came from v1, and v2 received about half the signals as copies. With only 20 signals the share wanders more: one run gave 13 copies.
 
 </details>

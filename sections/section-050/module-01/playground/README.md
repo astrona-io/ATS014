@@ -5,9 +5,8 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-Your training solar system in the simulator. It starts, installs Istio and the
-Bookinfo app (a small fleet of ships), and then waits for you, astronaut. Use it
-to run every "Try it" step in this module. Nothing to submit.
+A training solar system for astronauts: a sandbox that starts up, installs Istio and the Starfleet, and then waits
+for you. Use it for every hands-on step in this module. Nothing to submit.
 
 ## Run it
 
@@ -24,11 +23,11 @@ grading.
 
 | Path | Purpose |
 | --- | --- |
-| `config.yaml` | Environment definition: kind runtime, the Bookinfo port forward, two bootstrap scripts |
-| `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm (`istio-base` + `istiod`) |
-| `bootstrap/deploy.sh` | Namespace `bookinfo`, access logs, Bookinfo, `curl`, `httpbin`, and the `reviews` and `ratings` subsets |
-| `bootstrap/manifests/` | The YAML `deploy.sh` applies |
-| `examples/` | The YAML the module's "Try it" steps apply, numbered in order, with comments |
-| `examples/cases/` | One YAML per case in [`docs/overview.md`](docs/overview.md) |
-| `docs/overview.md` | What the environment contains, helper functions, and cases to try |
+| `config.yaml` | Environment definition: runtime, port forward to the bridge, the two bootstrap scripts |
+| `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm: `istio-base` (the CRDs) and `istiod` |
+| `bootstrap/deploy.sh` | Creates the planet `starfleet` and applies everything in `bootstrap/manifests/` |
+| `bootstrap/manifests/` | Namespace, access logs, the Starfleet, the shuttle, the probe v1/v2, and the scout and navcom subsets |
+| `examples/` | Every flight plan the module's parts save, numbered in page order, for anyone who cloned the repository |
+| `examples/cases/` | The two extra drills from "Things to try" in [`docs/overview.md`](docs/overview.md) |
+| `docs/overview.md` | What the environment contains, helper functions and ideas to try |
 | `docs/practice.md` | An exam-style task with a checked solution |

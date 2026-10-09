@@ -1,50 +1,77 @@
 # The Gateway Pod And Its Listener
 
-This part answers two questions. What is the gateway, as a running program? And what does a `Gateway` object do to it? Neither is hard. But mixing the two up causes most of the confusion in this section.
+Astronaut, this part answers two questions. What is the gateway, as a running program? And what does a `Gateway` object do to it? Neither is hard, but mixing the two up causes most of the confusion around ingress.
 
-## A sidecar with no app beside it
+## A communications officer with no ship
 
-The ingress gateway is the same Envoy program that runs in every injected pod. In the fleet picture, every ship has a communications officer on board: the sidecar. The gateway is a communications officer standing alone at the spaceport arrival gate, with no ship of their own. The differences are all about where it runs:
+Before you open the gate, look at who stands at it. The gateway is a program you already know, placed somewhere new.
+
+### Same Envoy, different place
+
+Every ship in the fleet has a communications officer on board: the sidecar proxy. The ingress gateway is the same Envoy program, standing alone at the spaceport arrival gate, with no ship of its own. The differences are all about where it runs:
 
 | | Sidecar | Ingress gateway |
 | --- | --- | --- |
-| Runs | inside an app pod | in its own pod, in its own namespace (`istio-ingress` in the playground) |
+| Runs | inside an app pod | in its own pod, on its own planet (`istio-ingress` here) |
 | Containers in the pod | app + `istio-proxy` (`2/2`) | just the proxy (`1/1`) |
 | Reached by | traffic caught inside the pod | a Kubernetes Service, usually `LoadBalancer` or `NodePort` (`ClusterIP` plus a port forward in the playground) |
-| Set up by | `VirtualService` / `DestinationRule` for mesh traffic | `Gateway` + a `VirtualService` linked to it |
+| Set up by | `VirtualService` and `DestinationRule` for mesh traffic | a `Gateway` plus a `VirtualService` linked to it |
 | Traffic direction | east-west | north-south |
 
-Because it is the same Envoy, every tool you already know works on it: `istioctl proxy-config listeners/routes/clusters`, the access log, `pilot-agent request GET stats`. Keep that in mind. You debug a gateway with the same commands as a sidecar.
+Because it is the same Envoy, every tool you know works on it: `istioctl proxy-config listener`, `routes` and `endpoints`, and the flight log. You debug a gateway with the same commands as a sidecar.
 
 <!-- astrona:playground:renew -->
 
-> [!TIP]
-> **Try it — a gateway with no configuration**
->
-> ```sh
-> kubectl get pods -n istio-ingress --show-labels
-> kubectl get svc -n istio-ingress
-> kubectl get gateway,virtualservice -n bookinfo
-> gateway_status /productpage
-> ```
->
-> What to look for (output not shown in full):
->
-> - The `istio-ingress` pod is `1/1`: one container, no app. Among its labels is `istio=ingress`. Remember that label; the next section needs it.
-> - The `istio-ingress` Service is type `ClusterIP`. The playground reaches it through the astrona port forward on `127.0.0.1:8080`.
-> - `No resources found in bookinfo namespace.`
-> - `gateway_status` prints `000`. curl got an empty reply, because no `Gateway` has told the proxy to listen on port 80 yet.
->
-> All of this is the expected starting state. The proxy is healthy. It simply has no listener for your traffic.
+### Look at the gate before you open it
+
+First, the gateway pod and its `istio` label:
+
+```sh
+kubectl get pods -n istio-ingress -L istio
+```
+
+```text
+NAME                             READY   STATUS    RESTARTS   AGE   ISTIO
+istio-ingress-5f768fb4b6-j62c8   1/1     Running   0          92s   ingress
+```
+
+The pod is `1/1`: one container, no app. The `ISTIO` column shows its label, `istio=ingress`. Remember it; the `Gateway` needs it.
+
+Then the Service in front of it:
+
+```sh
+kubectl get svc -n istio-ingress
+```
+
+```text
+NAME            TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)                    AGE
+istio-ingress   ClusterIP   10.96.80.93   <none>        15021/TCP,80/TCP,443/TCP   82s
+```
+
+The Service is `ClusterIP`, so the playground reaches it through the port forward on `127.0.0.1:8080`.
+
+Now send a signal through the gate:
+
+```sh
+gateway_status /productpage
+```
+
+```text
+000
+```
+
+`000` means curl got no reply at all. The gateway is healthy, but nothing has told it to listen on port `80` yet. That is the expected starting state.
 
 ## The `Gateway` object
+
+The `Gateway` opens the gate and tunes it to a radio channel (a port). This piece shows the whole object (you apply it in a moment):
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
-  name: bookinfo-gateway
-  namespace: bookinfo
+  name: starfleet-gateway
+  namespace: starfleet
 spec:
   selector:
     istio: ingress
@@ -54,124 +81,186 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - bookinfo.example.com
+    - starfleet.example.com
 ```
 
-Read `Gateway` as **"open a listener on some gateway pods"**: it opens the gate and tunes it to a radio channel. It does not route anything. There is no `destination` anywhere in it.
+Read a `Gateway` as **"open a listener on some gateway pods"**. It does not route anything: there is no `destination` anywhere in it.
 
-**`selector`** is a **pod label selector**. It is how this object finds the gateway pods to set up. Which label to use depends on how Istio was installed:
+**`selector`** is a pod label selector. It is how the object finds the gateway pods to set up, and which label to use depends on how Istio was installed:
 
 | Install method | Gateway pod label |
 | --- | --- |
 | Helm `gateway` chart installed as `istio-ingress` (this playground) | `istio: ingress` |
 | `istioctl install` (`default` or `demo` profile) | `istio: ingressgateway` |
 
-Most examples on the internet use `istio: ingressgateway`. Copy one onto a Helm install and no pod gets your listener. So look before you write: `kubectl get pods -n istio-ingress --show-labels`.
+Many examples use `istio: ingressgateway`. Copy one onto a Helm install and no pod gets your listener. So look before you write: `kubectl get pods -n istio-ingress -L istio`.
 
-Two more things follow from the selector:
-
-- To run a second gateway with different labels, such as a separate internal gateway, you point a different `Gateway` at it through those labels. The object is not tied to any Deployment by name.
-- A `selector` that matches nothing is not an error. The object exists, sets up no proxy, and the port stays closed. `istioctl analyze` reports it as `IST0101`.
-
-**`servers[].port`** is the port (the radio channel) **on the gateway Service**, with a `name` and an explicit `protocol`. The protocol matters more than it looks:
+**`servers[].port`** is the port **on the gateway Service**, with a `name` and a `protocol`. The protocol decides what the gate can read:
 
 | `protocol` | The gateway will |
 | --- | --- |
-| `HTTP` | read requests: host and path routing, header matching, all of layer 7 |
-| `HTTPS` | decrypt TLS (with a `tls` block), then behave as HTTP |
-| `TLS` | look at SNI (the server name the client asks for) and either pass the stream through or decrypt it, without reading HTTP |
-| `TCP` | move bytes, with no layer-7 awareness at all |
+| `HTTP` | read each request: host and path routing, header matching |
+| `HTTPS` | decrypt TLS with a `tls` block, then behave as `HTTP` |
+| `TLS` | read only the server name the client asks for (SNI), then pass the stream on or decrypt it |
+| `TCP` | move bytes, with no idea what is inside |
 
-Declaring `TCP` for HTTP traffic gives you a working byte pipe and no routing. That is a confusing result to debug backwards.
+**`servers[].hosts`** is the set of `Host` headers this listener accepts. A signal whose `Host` is not in the list is not served. `*` accepts any host, and `*.example.com` any subdomain.
 
-**`servers[].hosts`** is the set of `Host` headers this listener accepts. A request whose `Host` is not in the list is not served by it. `*` matches anything; `*.example.com` matches any subdomain.
+### Try a selector that matches nothing
 
-## The namespace split that catches everyone
+See the most common gateway mistake on purpose: a selector from an `istioctl` install, on this Helm install. Save this as `gateway-starfleet-wrong-selector.yaml`:
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - starfleet.example.com
+```
+
+Apply it:
+
+```sh
+kubectl apply -f gateway-starfleet-wrong-selector.yaml
+```
+
+```text
+gateway.networking.istio.io/starfleet-gateway created
+```
+
+Then send a signal, and ask `istioctl analyze` and the gateway's own listeners:
+
+```sh
+gateway_status /productpage
+istioctl analyze -n starfleet
+istioctl proxy-config listener deploy/istio-ingress -n istio-ingress
+```
+
+```text
+000
+Error [IST0101] (Gateway starfleet/starfleet-gateway) Referenced selector not found: "istio=ingressgateway"
+ADDRESSES PORT  MATCH DESTINATION
+0.0.0.0   15021 ALL   Inline Route: /healthz/ready*
+0.0.0.0   15090 ALL   Inline Route: /stats/prometheus*
+```
+
+(The `analyze` output is trimmed to its finding.)
+
+Still `000`. Kubernetes accepted the object, but no pod carries `istio=ingressgateway`, so no gateway got the listener: there is no port `80` in the listener list, only the gateway's own health and metrics ports. `istioctl analyze` names the problem: `IST0101 Referenced selector not found`.
+
+## The object and the pod live on different planets
+
+Look at where things sit. The `Gateway` object lives next to your ships, but the pod it sets up does not.
 
 ```mermaid
 flowchart LR
-    subgraph A["namespace bookinfo"]
-      G["Gateway"]
-      V["VirtualService"]
-      S["productpage"]
-    end
-    subgraph B["namespace istio-ingress"]
-      P["istio-ingress pod"]
-    end
-    G -->|"selector"| P
+    G["Gateway in starfleet"] -->|"selector istio=ingress"| P["gateway pod in istio-ingress"]
+    V["VirtualService in starfleet"] -->|"gateways field"| G
+    P -->|"route"| S["bridge in starfleet"]
 ```
 
-The `Gateway` `bookinfo-gateway` and the `VirtualService` `bookinfo` live next to `productpage` in `bookinfo`. The object and the pod it sets up live in different namespaces. The selector, `istio: ingress`, is the only thing joining them.
+The `Gateway` and the `VirtualService` live on your app's planet, `starfleet`. The gateway pod they set up lives on another planet, `istio-ingress`, and the selector is the only thing joining them. That is normal: the object is configuration, and one shared gateway can serve `Gateway` objects from many planets.
 
-Think of each namespace as a planet. The `Gateway` **object** lives on your app's planet. The gateway **pod** it sets up, the gate itself, lives on another planet, `istio-ingress`. That is normal and correct. The object is configuration, and the selector connects it to a pod somewhere else.
+### Open the listener, and get 404 instead of 000
 
-It also means a `Gateway` in your namespace can set up a shared, cluster-wide gateway. Part 2 covers the reverse case, where the `Gateway` object itself lives elsewhere.
+Now use the right label. Save this as `gateway-starfleet.yaml`:
 
-## Applying it alone changes almost nothing
+```yaml
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - starfleet.example.com
+```
 
-A listener with no routes serves nothing: the gate is open, but no flight plan tells arriving signals where to go. It is worth seeing this on purpose, because "I created the Gateway and it still 404s" is a common first result. It is not a fault.
+Apply it:
+
+```sh
+kubectl apply -f gateway-starfleet.yaml
+```
+
+```text
+gateway.networking.istio.io/starfleet-gateway configured
+```
+
+Then send a signal, read the gate's flight log, and list its listeners again:
+
+```sh
+gateway_status /productpage
+kubectl logs -n istio-ingress deploy/istio-ingress --tail=1
+istioctl proxy-config listener deploy/istio-ingress -n istio-ingress
+```
+
+```text
+404
+[2026-10-08T21:52:47.349Z] "GET /productpage HTTP/1.1" 404 NR route_not_found - "-" 0 0 2 - "10.244.0.6" "curl/8.7.1" "41e2a899-24c1-41a4-9977-007d40e3e149" "starfleet.example.com" "-" - - 127.0.0.1:80 127.0.0.1:54094 - -
+ADDRESSES PORT  MATCH DESTINATION
+0.0.0.0   80    ALL   Route: http.80
+0.0.0.0   15021 ALL   Inline Route: /healthz/ready*
+0.0.0.0   15090 ALL   Inline Route: /stats/prometheus*
+```
+
+The answer changed from `000` to `404`. The connection now works, because a listener on port `80` exists, and it sends every signal to a route table called `http.80`. But that table has no flight plan yet, so the gateway answers `404` itself. The flight log marks it with **`NR`**, "no route". A `Gateway` alone gives you exactly this: somewhere for signals to arrive, and nowhere for them to go.
 
 > [!TIP]
-> **Try it — open the listener, and get 404 instead of 000**
->
-> Write the `Gateway` to a file, then apply it.
->
-> Save this as `gateway-bookinfo.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: Gateway
-> metadata:
->   name: bookinfo-gateway
->   namespace: bookinfo
-> spec:
->   selector:
->     istio: ingress
->   servers:
->   - port:
->       number: 80
->       name: http
->       protocol: HTTP
->     hosts:
->     - bookinfo.example.com
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f gateway-bookinfo.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> sleep 2
-> gateway_status /productpage
-> kubectl logs -n istio-ingress deploy/istio-ingress --tail=1
-> istioctl proxy-config listener deploy/istio-ingress -n istio-ingress
-> ```
->
-> Expect `404`, and a log line like this (trimmed):
->
-> ```text
-> "GET /productpage HTTP/1.1" 404 NR route_not_found ... "bookinfo.example.com" ...
-> ```
->
-> The status changed from `000` to `404`. The connection now works, because the listener exists. But the gateway has no route for the request, so it answers `404` itself. The flag **`NR`** in the log means "no route". The `proxy-config listener` output now shows a listener whose destination is a route table (`Route: http.<port>`). That table is still empty. This is the state a `Gateway` alone produces: somewhere for requests to arrive, and nothing to do with them.
+> Read the gate's answer before anything else: `000` means no listener (check the `selector`), `404 NR` means a listener with no matching route. That one difference tells you which object to look at.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Expecting a `Gateway` to route anything.** It opens a listener. There is no `destination` in the object, and on its own it gives `404 NR`.
->
-> **Copying `istio: ingressgateway` onto a Helm install.** No pod has that label, so no pod gets the listener. The port stays closed and curl gets an empty reply (`000`), not a 404. `istioctl analyze` reports `IST0101`. Check the labels with `kubectl get pods -n istio-ingress --show-labels`.
->
-> **Declaring the wrong `protocol`.** `TCP` for HTTP traffic gives you a working byte pipe with no host or path routing.
->
-> **Forgetting that `hosts` filters the `Host` header.** A request whose `Host` is not in the list is not served by that listener.
->
-> **Looking for the gateway pod in your own namespace.** The object is yours; the pod is the shared one in the gateway's namespace (`istio-ingress` here).
->
-> **Confusing the Service port with the listener port.** The Service publishes port 80, and the proxy may listen on a different port inside the pod. Both can show up in output.
+> - **Expecting a `Gateway` to route anything.** It opens a listener. It has no `destination`, and on its own it gives `404 NR`.
+> - **Copying `istio: ingressgateway` onto a Helm install.** No pod has that label, so no pod gets the listener and curl gets `000`. `istioctl analyze` reports `IST0101`.
+> - **Declaring the wrong `protocol`.** `TCP` for HTTP traffic gives a working byte pipe with no host or path routing.
+> - **Forgetting that `hosts` filters the `Host` header.** A signal whose `Host` is not in the list is not served by that listener.
+> - **Looking for the gateway pod in your own namespace.** The object is yours; the pod is the shared one on the gateway's planet (`istio-ingress` here).
 
-> *`Gateway` opens a listener on pods its `selector` matches; it contains no destination and routes nothing by itself.*
+> *A `Gateway` opens a listener on the pods its `selector` matches. It holds no destination and routes nothing by itself.*
+
+## Your mission: Open The Closed Gate
+
+You can now find the gateway pod, read its labels, and open a listener with the right `selector`. Now prove it in a graded mission: a gate that answers nothing is waiting for you, and you have to open it without changing the flight plan behind it.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-060-01
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-01/labs/lab-02
+```
+
+Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-060/module-01/labs/lab-02
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-060-01-02
+astrona start ats-014-playground-060-01
+```

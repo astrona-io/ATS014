@@ -26,9 +26,9 @@ astrona destroy ats-014-playground-030-01
 | --- | --- |
 | `config.yaml` | Environment definition: name and the two bootstrap scripts |
 | `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm: `istio-base` (CRDs) and `istiod` |
-| `bootstrap/deploy.sh` | Creates namespace `bookinfo`, turns on access logs, deploys `curl` and httpbin, scales httpbin v1 to 3 pods |
+| `bootstrap/deploy.sh` | Creates the planet `starfleet`, turns on flight logs, deploys the shuttle and the probe (3 v1 pods, 1 v2 pod) |
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
-| `examples/` | The module's DestinationRules, numbered in the order the module uses them |
-| `examples/cases/` | Extra cases to test (source IP, query parameter, a policy per subset) |
+| `examples/` | Ready-made DestinationRules for people who cloned the repository |
+| `examples/cases/` | Extra cases: source IP, query parameter, a policy per subset |
 | `docs/overview.md` | What is in the environment, the helper function, and things to try |
 | `docs/practice.md` | An exam-style task with a checked solution |

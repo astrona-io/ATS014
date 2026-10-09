@@ -1,0 +1,16 @@
+# Case 3: the 10% trap. With three probe ships, one ejection is 33% of the
+# list, so this rule finds the broken ship and never ejects it.
+# ejections_overflow in the sender's stats counts the blocked ejections.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 5s
+      baseEjectionTime: 1m
+      maxEjectionPercent: 10

@@ -198,7 +198,7 @@ http.8080   booking.ica.local   /book*   booking-service.k8s-ingress-demo
 No resources found in k8s-ingress-demo namespace.
 ```
 
-The route is in the gateway's table and there is no `Gateway` and no `VirtualService` anywhere — `istiod` translated the `Ingress` into the same internal configuration those objects would have produced. Compare that route line with module 1's: nearly identical, arrived at from a different API.
+The route is in the gateway's table and there is no `Gateway` and no `VirtualService` anywhere — `istiod` translated the `Ingress` into the same internal configuration those objects would have produced. A `Gateway` with a `VirtualService` would produce a nearly identical route line, arrived at from a different API.
 
 ---
 

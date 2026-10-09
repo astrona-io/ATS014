@@ -1,0 +1,13 @@
+# Docking instructions for the navcom beacon: one ship class, v1.
+# Already applied, so a flight plan for navcom can name the subset.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: navcom
+  namespace: starfleet
+spec:
+  host: navcom
+  subsets:
+  - name: v1
+    labels:
+      version: v1

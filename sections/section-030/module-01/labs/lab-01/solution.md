@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Two objects. The interesting part is the second `trafficPolicy` — the one on the subset — because it replaces the host policy rather than adding to it, and the grader checks that you put it in exactly one place.
+Mission debrief, astronaut. Two objects. The interesting part is the second `trafficPolicy` — the one on the subset — because its `loadBalancer` replaces the host's `loadBalancer` for that subset, and the grader checks that you put it in exactly one place.
 
 ---
 
@@ -84,7 +84,7 @@ Three placement details the grader checks:
 
 - **`consistentHash` is at `spec.trafficPolicy`** — the host level, so it applies to every subset that does not override it.
 - **`ROUND_ROBIN` is inside the `canary` subset entry**, indented under that subset's own `trafficPolicy`.
-- **The `stable` subset has no `trafficPolicy` at all.** Adding one would *replace* the host policy for `stable` — and if you only wrote `loadBalancer` in it you would still be fine here, but the habit is dangerous: a subset policy never inherits, so anything else the host policy carried would be silently dropped.
+- **The `stable` subset has no `trafficPolicy` at all.** It inherits the host's `consistentHash` as it is. Any field a subset policy sets replaces the host's whole field for that subset, so a `loadBalancer` on `stable` would take its stickiness away.
 
 ---
 
@@ -209,7 +209,7 @@ The policy is unchanged and still `RING_HASH`; these requests simply have nothin
 ## Common Mistakes
 
 - **Putting `consistentHash` inside the `stable` subset instead of at host level.** It works for `stable` and the grader still fails you, because the host-level policy is what the specification asked for.
-- **Adding a `trafficPolicy` to the `stable` subset.** A subset policy replaces the host one; anything else the host carried is dropped for that subset.
+- **Adding a `loadBalancer` to the `stable` subset.** A field the subset sets replaces the host's whole field, so `stable` would lose the host's `consistentHash`.
 - **Setting `simple` and `consistentHash` in the same `loadBalancer`.** Mutually exclusive — the object is rejected.
 - **Testing affinity against one replica.** Every request hits the same pod regardless of policy.
 - **Expecting affinity for requests without the header.** They fall back to spreading, silently.

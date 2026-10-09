@@ -1,0 +1,20 @@
+# scout v2 calls navcom (slow, 2s). Give up after 0.5s.
+# The timeout is set on the route the CALLER uses (shuttle -> scout), not on
+# navcom. A route with "fault" ignores its own timeout, so the delay and the
+# timeout must be on different VirtualServices.
+# Needs the scout DestinationRule (subset v2), which the playground installs.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: scout
+  namespace: starfleet
+spec:
+  hosts:
+  - scout
+  http:
+  - route:
+    - destination:
+        host: scout
+        # v2 calls navcom (v1 does not), so the delay is visible.
+        subset: v2
+    timeout: 0.5s

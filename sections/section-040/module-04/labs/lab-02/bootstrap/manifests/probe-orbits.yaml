@@ -1,0 +1,83 @@
+# The probe in two orbits: the echo test service (go-httpbin) behind one Service.
+# This cluster has one node, so each pod declares its own locality with the
+# `istio-locality` label (region.zone, with dots because a label value cannot
+# contain a slash). It overrides the locality the pod inherits from its node.
+#   probe-zone-a   locality local/zone-a (the shuttle's own zone)
+#   probe-zone-b   locality local/zone-b
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: probe
+  namespace: starfleet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  selector:
+    app: probe
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-zone-a
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      zone: a
+  template:
+    metadata:
+      labels:
+        app: probe
+        zone: a
+        istio-locality: local.zone-a
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        # Make /hostname return the real pod name.
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-zone-b
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      zone: b
+  template:
+    metadata:
+      labels:
+        app: probe
+        zone: b
+        istio-locality: local.zone-b
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080

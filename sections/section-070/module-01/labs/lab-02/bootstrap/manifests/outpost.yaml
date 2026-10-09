@@ -1,0 +1,39 @@
+# The planet `outpost`: NOT injected, and its two pods have NO Service.
+# Neither pod is in the mesh registry, so they stand in for hosts in another
+# solar system. The lab needs no internet access.
+#   relay  - the partner the starfleet must reach (registered by a ServiceEntry)
+#   rogue  - an unknown host that must stay blocked
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outpost
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: relay
+  namespace: outpost
+  labels:
+    app: relay
+spec:
+  terminationGracePeriodSeconds: 0
+  containers:
+  - name: relay
+    image: mccutchen/go-httpbin:v2.15.0
+    ports:
+    - containerPort: 8080
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rogue
+  namespace: outpost
+  labels:
+    app: rogue
+spec:
+  terminationGracePeriodSeconds: 0
+  containers:
+  - name: rogue
+    image: mccutchen/go-httpbin:v2.15.0
+    ports:
+    - containerPort: 8080

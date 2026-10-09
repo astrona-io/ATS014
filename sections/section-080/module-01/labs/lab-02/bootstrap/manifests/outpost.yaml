@@ -1,0 +1,22 @@
+# The planet `outpost`: NOT injected, and its pod has NO Service.
+# The relay is not in the mesh registry, so it stands in for a host in another
+# solar system. The lab needs no internet access.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outpost
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: relay
+  namespace: outpost
+  labels:
+    app: relay
+spec:
+  terminationGracePeriodSeconds: 0
+  containers:
+  - name: relay
+    image: mccutchen/go-httpbin:v2.15.0
+    ports:
+    - containerPort: 8080

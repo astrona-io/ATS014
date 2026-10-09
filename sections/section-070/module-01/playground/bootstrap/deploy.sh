@@ -1,27 +1,28 @@
 #!/usr/bin/env bash
-# Deploy what playground ats-014-playground-070-01 needs (source: example 11-egress-serviceentry) (runs after install-istio.sh):
-#   - namespace bookinfo (sidecar injection) + mesh-wide access logs
-#   - curl client + httpbin v1/v2
+# Deploy what the 070-01 playground needs (runs after install-istio.sh):
+#   - namespace starfleet (sidecar injection) + mesh-wide access logs
+#   - shuttle (test client) + probe v1/v2 (an echo service inside the cluster,
+#     so an inside call can be compared with a call to the internet)
+# No Sidecar and no ServiceEntry are created: writing them is the module.
+# The mesh stays at its ALLOW_ANY default.
 set -euo pipefail
 
-# Pin this lab's cluster: use a private kubeconfig, so nothing else that
+# Pin this playground's cluster: use a private kubeconfig, so nothing else that
 # switches the global kubectl context meanwhile can redirect these commands.
 KCFG="$(mktemp)"; trap 'rm -f "$KCFG"' EXIT
 kubectl config view --minify --flatten --context "kind-astro-ats-014-playground-070-01" > "$KCFG"
 export KUBECONFIG="$KCFG"
 cd "$(dirname "$0")"
 
-ISTIO_VERSION="${ISTIO_VERSION:-1.30.5}"
-
 echo "==> Namespace and access logs"
 kubectl apply -f manifests/namespace.yaml -f manifests/access-logs.yaml
 
-echo "==> Test clients"
-kubectl apply -f manifests/curl-client.yaml
-kubectl apply -f manifests/httpbin.yaml
+echo "==> Shuttle and probe"
+kubectl apply -f manifests/shuttle.yaml
+kubectl apply -f manifests/probe.yaml
 
 echo "==> Waiting for pods (first run pulls images, takes a few minutes)"
-kubectl wait -n bookinfo --for=condition=Available deploy --all --timeout=600s
+kubectl wait -n starfleet --for=condition=Available deploy --all --timeout=600s
 
-kubectl get pods -n bookinfo
+kubectl get pods -n starfleet
 echo "==> Playground ats-014-playground-070-01 ready"

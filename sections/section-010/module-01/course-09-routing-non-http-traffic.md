@@ -272,3 +272,32 @@ The probe is back in the route table, and `http` rules will be read again.
 > - **Looking for this in `istioctl analyze`.** A wrongly declared port is valid. The route table and the listener show it.
 
 > *Istio decides a port's protocol from its declaration, before any traffic flows. That one word decides whether you are routing requests or bytes.*
+
+## Your mission: Bring HTTP Routing Back
+
+You can now tell how Istio decides a port's protocol, and what that decision turns on or off. Now prove it in a graded mission: one word in a Service has silently switched off a flight plan, and you have to bring it back.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-010-01
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-05
+```
+
+Read the task in [`question.md`](./labs/lab-05/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-010/module-01/labs/lab-05
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-010-01-05
+astrona start ats-014-playground-010-01
+```

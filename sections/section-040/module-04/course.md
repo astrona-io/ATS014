@@ -1,50 +1,66 @@
 # Locality Load Balancing And Failover
 
-<!-- astrona:playground -->
-> [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
->
-> ```sh
-> astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-040/module-04/playground
-> astrona destroy ats-014-playground-040-04
-> ```
+Astronaut, picture your fleet spread over several orbits. A signal to a ship in your own orbit is quick. A signal to a ship in another orbit travels further, and costs more fuel. A real cluster spread over availability zones has the same cost: traffic between zones is slower than traffic inside one zone, and most clouds charge for it.
 
-Astronaut, picture your fleet spread over three orbits. A signal to a ship in your own orbit is quick. A signal to a ship in another orbit takes longer, and costs fuel. A cluster spanning three availability zones has the same cost, and it appears in no Istio object: cross-zone traffic is slower than same-zone traffic, and in most clouds you are billed for it. Round robin across all endpoints, indifferent to where they are, maximises both.
+**Locality load balancing** makes the sender's communications officer prefer ships in its own orbit. **Locality failover** is the other half: when the nearby ships stop answering, signals spill over to ships orbiting further away instead of failing, like switching to a ship orbiting another planet when the nearest one goes dark.
 
-Locality load balancing makes the proxy prefer nearby endpoints. Locality *failover* is the other half: when nearby endpoints stop working, spill over to a further-away locality rather than failing, like switching to a ship orbiting another planet when the nearest one goes dark.
+One fact carries the whole module, and you will prove it on your own playground:
 
-Two facts carry the module, and the second is the most examinable thing in section 040:
-
-> Locality preference is **on by default**. Locality **failover** only works if something marks endpoints unhealthy — and that something is `outlierDetection`.
-
-## How this module is organised
-
-1. **[Where Locality Comes From](./course-01-where-locality-comes-from.md)** — the node labels Istio reads, the `region/zone/subzone` hierarchy, the `istio-locality` pod override, and how to confirm an endpoint actually has a locality before configuring anything.
-2. **[Preference, `distribute` And `failover`](./course-02-preference-distribute-and-failover.md)** — what Istio already does without configuration, and the two mutually exclusive ways to change it.
-3. **[The Health Dependency And Scope](./course-03-the-health-dependency-and-scope.md)** — why failover is dead without outlier detection, mesh-wide versus per-host configuration, and what this playground can and cannot demonstrate.
+> Istio only acts on locality for a host whose `DestinationRule` has **`outlierDetection`**. Without it there is no preference for the nearby orbit, and no failover either.
 
 ## Learning objectives
 
 After this module you can:
 
-- Name the labels Istio derives an endpoint's locality from, and state the `region/zone/subzone` hierarchy.
-- Use the `istio-locality` pod label and say when it is needed.
-- Confirm from a live proxy that endpoints carry a locality, and recognise the empty-locality failure before it wastes your time.
-- Describe Istio's default locality behaviour with no `localityLbSetting` at all.
-- Configure `distribute` for explicit cross-locality weights and `failover` for region-level fallback, and say why they are mutually exclusive.
-- Explain why a `localityLbSetting` without `outlierDetection` never fails over.
-- Choose between mesh-wide `meshConfig.localityLbSetting` and a per-host `DestinationRule`.
+- Name the labels Istio reads an endpoint's locality from, and the `region/zone/subzone` order.
+- Use the `istio-locality` pod label, and say when you need it.
+- Check from a live proxy that every endpoint, and the sender, has a locality.
+- Explain why locality preference needs `outlierDetection`, and prove it with live signals.
+- Configure `distribute` for exact cross-zone weights, and `failover` for region-level fallback, and say why they cannot be combined.
+- Tell endpoint removal apart from endpoint failure, and show health-driven failover with a damaged ship.
+- Choose between a mesh-wide locality setting and a per-host `DestinationRule`.
 
 ## Before you start
 
-This module assumes [section 000](../../section-000/module-01/course.md): a proxy (the communications officer) beside every pod, `istiod` (mission control) programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+Every mission starts with a pre-flight check, astronaut. Make sure you have the knowledge this module expects, know what is waiting in your playground, and have two small helpers ready in your terminal.
 
-You need `outlierDetection` from module 3 — this module is built directly on top of it — and `DestinationRule.trafficPolicy` generally.
+### What you should already know
 
-The playground gives you a training solar system: a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`locality-demo`**, injected, containing `httpbin-zone-a` and `httpbin-zone-b` (one replica each) behind one `httpbin` Service on port 8000, plus a `tester` client.
+- **How the mesh works.** A proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You can read those orders with `istioctl proxy-config`.
+- **Outlier detection.** A `DestinationRule` can pull an endpoint out of formation after a number of consecutive `5xx` answers, with `consecutive5xxErrors`, `interval`, `baseEjectionTime` and `maxEjectionPercent`.
+- **Kubernetes basics.** Nodes and their labels, Deployments, Services, scaling and `kubectl exec`.
 
-**One adaptation matters.** Locality normally comes from the **node** a pod runs on, which needs a multi-node cluster with different zone labels. This playground has one node, so the two Deployments declare their locality directly with the **`istio-locality` pod label** (`local.zone-a` and `local.zone-b`) — a documented Istio override for exactly this situation. Everything about `localityLbSetting` behaves identically; what you cannot observe here is real cross-zone latency, because both pods are on the same machine. The matching lab under `domains/` uses node affinity and expects a real multi-node cluster.
+### What is in your playground
 
-## Where this fits
+Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** already installed. Its single node is labelled with region `local` and zone `zone-a`. Everything you need is on one planet, the namespace **`starfleet`**:
 
-This is the last of section 040's resilience features and the one that depends on the others. It consumes module 3's notion of an unhealthy endpoint, and it composes with module 1's retries through `retryRemoteLocalities`, which allows a retry to cross a locality boundary that the initial attempt would not have. On the exam, the locality question is usually really an outlier-detection question in disguise.
+| Ship | What it does |
+| --- | --- |
+| `shuttle` | **Your shuttle**. You send every test signal from here. It flies in the node's orbit, `local/zone-a` |
+| `probe-zone-a` | The **echo probe** in orbit `local/zone-a`, the shuttle's own zone |
+| `probe-zone-b` | The **echo probe** in orbit `local/zone-b` |
+| `probe-zone-a-damaged` | A **damaged ship** in `local/zone-a` that answers `503` to every signal but stays ready. It starts at 0 replicas; you launch it yourself when you test failover |
+
+All three probes answer to one beacon, the `probe` Service on port `8000`. Its `/hostname` path answers with the name of the pod that served the signal, so you can see which orbit answered.
+
+**One adaptation matters.** Locality normally comes from the **node** a pod runs on, which needs a cluster with several nodes in different zones. Your playground has one node, so each probe declares its own orbit with the **`istio-locality`** pod label. Istio supports this override for exactly this situation. Everything about locality settings behaves the same; only the real distance between zones is missing, because every pod sits on the same machine.
+
+There is **no** `DestinationRule` yet. Writing one is your mission in this module.
+
+Launch your playground now, and keep it running next to you while you read the parts:
+
+<!-- astrona:playground -->
+
+### Two helpers to paste first
+
+Paste these into each new terminal before you start. The first sends signals to the probe and counts which orbit answered; the second prints the status code of each signal:
+
+```sh
+count_orbits() { for i in $(seq 1 ${1:-20}); do
+  kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/hostname | grep -o 'probe-zone-[ab]' || echo failed
+done | sort | uniq -c; }
+status_codes() { kubectl exec -n starfleet deploy/shuttle -- sh -c \
+  'for i in $(seq 1 20); do curl -s -o /dev/null -w "%{http_code} " http://probe:8000/hostname; done; echo'; }
+```
+
+Use them like this: `count_orbits 20` sends 20 signals, `count_orbits 100` sends 100, and `status_codes` sends 20 and prints their codes.

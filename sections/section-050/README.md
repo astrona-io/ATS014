@@ -1,6 +1,6 @@
 # Using Fault Injection
 
-Astronaut, in section 040 you fitted your ships with resilience: abort windows, re-sent signals and shields. This section is your simulation drill. It is how you find out whether any of it works.
+Astronaut, your ships can carry resilience settings: abort windows (timeouts), re-sent signals (retries) and shields (circuit breakers). This section is your simulation drill. It is how you find out whether any of it works.
 
 A timeout you have never seen fire is a guess. A retry policy you have never watched retry is a guess. Fault injection lets the mesh fake the failure: a two-second delay, or a 500 that never reaches the ship it was meant for. No application changes. The service under test cannot tell a fake failure from a real one, and that is what makes the result worth anything.
 
@@ -16,45 +16,38 @@ The same feature answers a second question that is hard to test any other way: w
 - `fault.abort` with `httpStatus` — returned immediately, with the upstream never contacted.
 - Which `VirtualService` a fault belongs on: the host you want to pretend is broken, enforced in the **caller's** proxy.
 - Why an aborted request leaves no trace in the destination's logs or metrics — and the log asymmetry that proves it.
-- The **`FI`** response flag, and how it sits alongside `UT`, `UO` and `UH` from section 040.
+- The **`FI`** response flag, and how it sits alongside `UT` (timeout), `UO` (overflow) and `UH` (no healthy ship).
 - `percentage.value` for sampling, and the 100% default when it is omitted.
 - Composing `delay` and `abort` on one rule, and the order they apply in.
 - Scoping a fault behind a `match` so only your test client is affected — the difference between a test and an outage.
 - Why header-scoped faults depend on the intermediate service propagating headers.
-- Using injection to drive section 040: a delay above a timeout, an abort against retries, a failure rate against outlier detection.
+- Using injection to test resilience settings: a delay above a timeout, an abort against retries, a failure rate against outlier detection.
 - Why retries cannot rescue an injected fault, and what that teaches about what retries are for.
 - Finding a live or forgotten fault with `istioctl proxy-config routes` and the `FI` flag.
 
 ---
 
-## The Learning Path
+## Modules In This Section
 
-Work through the modules in this order, astronaut. For each one: read the parts with its playground open next to you, clean up the playground, then take its graded mission. Finish with the capstone, which brings the whole section together.
+Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
 
-### 1. Fault Injection With Delays And Aborts
-*   **Module Reader:** **[Fault Injection With Delays And Aborts](./module-01/course.md)**
-    1. [`fault.delay`](./module-01/course-01-fault-delay.md)
-    2. [`fault.abort`](./module-01/course-02-fault-abort.md)
-    3. [Scoping, Composition And Hazards](./module-01/course-03-scoping-composition-and-hazards.md)
-*   **Hands-on Playground:** `sections/section-050/module-01/playground` — a kind cluster with Istio 1.30.5 (Helm) and Bookinfo in namespace `bookinfo`, with the `reviews` and `ratings` subsets already defined and a `curl` client. No VirtualService yet.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-050/module-01/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-050/module-01/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-050/module-01/labs/lab-01
-    ```
-*   **Hands-on Objective:** Break a dependency on purpose for your own requests only, and use a fabricated delay to make a route timeout fire on demand — while everybody else's traffic stays at 200.
+### [Fault Injection With Delays And Aborts](module-01/course.md)
 
-### 2. Section Capstone Challenge
-*   **Comprehensive Challenge:** **`sections/section-050/capstone/labs/lab-01` (A Controlled Chaos Experiment)**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-050/capstone/labs/lab-01
-    ```
-*   **Hands-on Objective:** Run two independently scoped experiments on one host at once — an abort that a retry policy cannot rescue, and a delay that drives a timeout — and read the `FI` and `UT` flags to tell which mechanism produced each result.
+4 parts and 3 missions:
+
+1. [Slow A Ship Down](module-01/course-01-slow-a-ship-down.md)
+2. [Fail A Signal Before It Leaves](module-01/course-02-fail-a-signal-before-it-leaves.md)
+   - Mission: [Run Two Simulation Drills Lab](module-01/labs/lab-02/question.md)
+3. [Scope A Drill To Your Own Signals](module-01/course-03-scope-a-drill-to-your-own-signals.md)
+   - Mission: [Stop The Drill That Never Ended Lab](module-01/labs/lab-03/question.md)
+4. [Drive Your Resilience Settings With Faults](module-01/course-04-drive-your-resilience-settings-with-faults.md)
+   - Mission: [Fault Injection With Delays And Aborts Lab](module-01/labs/lab-01/question.md)
+5. [Wrap-Up: Mission Debrief](module-01/course-05-wrap-up.md)
+
+### Capstone
+
+Your final mission for this section: **[A Controlled Chaos Experiment Capstone Lab](capstone/labs/lab-01/README.md)**.
 
 ---
 
-The playground is your training solar system in the simulator. It is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear it down with `astrona destroy <name>` when you are finished — the name is printed in the module's playground callout.
+<!-- astrona:playground:environment-explain -->

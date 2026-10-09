@@ -1,0 +1,19 @@
+# Things to try: a little bit slow – 10% of requests get a 1s delay.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: navcom
+  namespace: starfleet
+spec:
+  hosts:
+  - navcom
+  http:
+  - fault:
+      delay:
+        percentage:
+          value: 10
+        fixedDelay: 1s
+    route:
+    - destination:
+        host: navcom
+        subset: v1

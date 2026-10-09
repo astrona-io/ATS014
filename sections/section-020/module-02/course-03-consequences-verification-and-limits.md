@@ -1,43 +1,129 @@
 # Consequences, Verification And Limits
 
-Three things are left. The first causes real damage: a mirrored request does real work, and Istio has no idea what that work is. The second is how much load a mirror adds when you combine it with a weighted split. The third is the sidecar-side check that tells you whether a mirror exists at all.
+Astronaut, three things are left. The first can cause real damage: a mirrored signal does real work, and Istio has no idea what that work is. The second is the check that tells you whether a mirror exists inside the sender's proxy at all. The third is how much load a mirror adds when you combine it with a weighted split.
+
+The commands below need the `probe` `DestinationRule` with the subsets `v1` and `v2`, and the `mark_start`, `count_received` and `send_requests` helpers pasted into your terminal.
 
 ## The answer is thrown away; the work is not
 
-This is the sentence to take away from the module.
+This is the sentence to take away from this module.
 
-Istio copies the request at the network layer and sends it. The shadow then runs its **full handler**: it writes rows, publishes messages, adds to counters, charges cards, sends email. The mesh throws away the *answer*. Nothing about that undoes the side effects.
+Istio copies the signal and sends it. The shadow then runs its **full handler**: it writes rows, publishes messages, adds to counters, charges cards, sends email. The mesh throws away the *answer*. Nothing about that undoes the work.
 
 Think of a simulation drill on a spaceship. If the drill crew really opens an airlock, the air really goes out, drill or not. The mesh only ignores the test ship's report.
 
 ```mermaid
 flowchart TB
-    M["mirrored POST /orders"] --> H["shadow handler runs"]
-    H -->|"really happens"| DB["database insert"]
-    H -->|"really happens"| Q["message bus publish"]
+    M["mirrored POST"] --> H["shadow handler runs"]
+    H -->|"really happens"| DB["database write"]
+    H -->|"really happens"| Q["message sent"]
     H -->|"really happens"| PAY["payment call"]
     H --> R["answer"]
-    R -->|"thrown away"| X["sidecar"]
+    R -->|"thrown away"| X["sender's proxy"]
 ```
 
-Only the last step, the sidecar throwing the answer away, is a mesh matter. Everything above it is your application doing exactly what it was written to do, because nothing told it otherwise.
+Only the last step, the proxy throwing the answer away, is the mesh's job. Everything above it is your application doing exactly what it was written to do, because nothing told it otherwise. On Istio 1.30, nothing in the copy tells the shadow that it is a copy.
 
-The `-shadow` authority that older Istio releases added was only ever a **hint the app could act on**. Istio never enforced it, and 1.30 does not add it at all. Nothing in the copy tells the shadow it is a copy.
+Check this list before you mirror anything that has side effects:
 
-Check this list before you mirror anything with side effects:
-
-- Point the shadow at a **separate datastore**, or make it read-only.
-- Check what the shadow calls *next*. Mirroring one service spreads: its dependencies get the extra load too, and they do not know they are serving a shadow.
-- Count the volume. At 100% the traffic inside the cluster doubles, and so does the load on everything the shadow touches.
-- Do not expect the shadow to recognise itself from the request. On 1.30 it cannot. Keep the side effects out of its path instead.
+- **Separate datastore.** Point the shadow at its own database, or make it read-only.
+- **What it calls next.** A mirror spreads: every service the shadow calls also gets the extra load, and does not know it is serving a shadow.
+- **Volume.** At 100%, the signals inside the solar system double, and so does the load on everything the shadow touches.
+- **No self-detection.** The shadow cannot recognise itself from the signal. Keep side effects out of its path instead.
 
 Mirroring is safe when you understand the shadow's side effects. That is a fact about your application, not about Istio.
 
-## Mirror plus a weighted split
+## Checking the sender's proxy
 
-A mirror and a weighted split work together. Here, real traffic is split 50/50 between v1 and v2, and every request is also copied to v2:
+Envoy calls this feature a **request mirror policy**. It lives in the *sender's* proxy, in its route table, because the sender's communications officer is the one that sends the copy. The receiving ship's flight log proves that copies *arrive*. This check proves that the order to send them *exists*. When the shadow is quiet, the two together tell you where to look.
+
+<!-- astrona:playground:renew -->
+
+### Read the mirror policy
+
+Mirror 20% of the signals to v2. Save this as `virtualservice-probe.yaml`:
 
 ```yaml
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - route:
+    - destination:
+        host: probe
+        subset: v1
+    mirror:
+      host: probe
+      subset: v2
+    mirrorPercentage:
+      value: 20.0
+```
+
+Apply it:
+
+```sh
+kubectl apply -f virtualservice-probe.yaml
+```
+
+Then print the mirror policy from the shuttle's route table:
+
+```sh
+istioctl proxy-config routes deploy/shuttle -n starfleet -o json | grep -i -A8 requestMirrorPolicies
+```
+
+You should see (trimmed):
+
+```text
+"requestMirrorPolicies": [
+    {
+        "cluster": "outbound|8000|v2|probe.starfleet.svc.cluster.local",
+        "runtimeFraction": {
+            "defaultValue": {
+                "numerator": 200000,
+                "denominator": "MILLION"
+            }
+        },
+```
+
+The `|v2|` in the cluster name is the mirror's destination. The share is stored as a fraction: 200,000 out of a million, which is your 20%.
+
+### Three ways a mirror stays quiet
+
+When the shadow receives nothing, combine three checks: the mirror policy above, the endpoints of the mirror's cluster (`istioctl proxy-config endpoints deploy/shuttle -n starfleet --cluster "<cluster name>"`), and `istioctl analyze`. On a real cluster they give these results:
+
+| Mirror policy in the shuttle | Endpoints of the mirror cluster | `istioctl analyze` | Means |
+| --- | --- | --- | --- |
+| missing | – | clean | the `VirtualService` has no `mirror`, or never reached the proxy |
+| present, names a subset like `\|v3\|` | none: the cluster does not exist | `IST0101 Referenced mirror+subset in destinationrule not found` | the mirror names a subset no `DestinationRule` defines |
+| present, names `\|v2\|` | empty list | `IST0173 The Subset v2 ... does not select any pods` | the subset's labels match no pod |
+| present, names `\|v2\|` | at least one pod | clean | working: the shadow's flight log shows the copies |
+
+In every quiet case the sender still gets its normal answers. Only these checks show the problem.
+
+## Mirror plus a weighted split
+
+A mirror and a weighted split work together. In this flight plan, real signals are split 50/50 between v1 and v2, and every signal is also copied to v2. There is no `mirrorPercentage`, so the default of 100% applies.
+
+`mirror` belongs to the whole rule, not to one destination. The weights pick a destination for each signal. Then every signal is **also** copied to the mirror, whichever destination answered it. So v2 gets its real share **plus** a copy of everything.
+
+### Count what v2 really receives
+
+Save this as `virtualservice-probe-split-mirror.yaml`:
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
   http:
   - route:
     - destination:
@@ -53,75 +139,32 @@ A mirror and a weighted split work together. Here, real traffic is split 50/50 b
       subset: v2
 ```
 
-`mirror` belongs to the whole rule, not to one destination. The weights pick a destination for each request. Then every request is **also** copied to the mirror, whichever destination the weights picked. So v2 gets its real share **plus** a copy of everything.
+Apply it:
 
-<!-- astrona:playground:renew -->
+```sh
+kubectl apply -f virtualservice-probe-split-mirror.yaml
+```
 
-> [!TIP]
-> **Try it – how much does v2 really receive?**
->
-> Write the rule above, with the usual `apiVersion`, `metadata` and `hosts: [probe]`, to `virtualservice-probe.yaml`, apply it, and count 20 requests:
->
-> ```sh
-> kubectl apply -f virtualservice-probe.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> mark_start; send_requests 20; count_received
-> ```
->
-> Expect something like:
->
-> ```text
->    8 probe-v1
->   12 probe-v2
-> probe-v1 received: 8
-> probe-v2 received: 32
-> ```
->
-> v2 answered 12 requests and received 32: its own 12 plus a copy of all 20. Keep that in mind when you decide how big the mirror target must be.
+Then send 20 signals and count both sides:
 
-## Checking the sidecar
+```sh
+mark_start; send_requests 20; count_received
+```
 
-Envoy calls this feature a **request mirror policy**. It shows up in the *client* sidecar's route configuration, because the caller's sidecar is the one that sends the copy.
+You should see something like:
 
-This check answers a different question from Part 2's logs. The logs prove copies are arriving. This proves the configuration exists. When the logs are empty, it tells you whether the problem is the object or the destination.
+```text
+   8 probe-v1
+  12 probe-v2
+probe-v1 received: 8
+probe-v2 received: 32
+```
 
-> [!TIP]
-> **Try it – the mirror policy as the client sidecar holds it**
->
-> Set the mirror back to v1 + 20% to v2 (Part 2's version of `virtualservice-probe.yaml`), apply it, then:
->
-> ```sh
-> istioctl proxy-config routes deploy/shuttle -n starfleet -o json | grep -i -A6 requestMirrorPolicies
-> ```
->
-> Expect something like this (trimmed):
->
-> ```text
-> "requestMirrorPolicies": [
->   {
->     "cluster": "outbound|8000|v2|probe.starfleet.svc.cluster.local",
->     "runtimeFraction": {
->       "defaultValue": {
->         "numerator": 20,
-> ```
->
-> The `|v2|` in the cluster name is the mirror destination, and `numerator: 20` is the percentage. If `requestMirrorPolicies` is missing completely, the sidecar has no mirror at all: look at the object. If it is there with the right cluster but the shadow's log is empty, check whether that cluster has endpoints.
-
-That gives three states, which is the useful form:
-
-| `requestMirrorPolicies` | Shadow log | Means |
-| --- | --- | --- |
-| missing | empty | the `VirtualService` has no `mirror`, or never reached the sidecar |
-| present | empty | the mirror cluster has no endpoints; the subset labels match no pod |
-| present | shows requests the route never sent it | working |
+v2 answered 12 signals and received 32: its own 12 plus a copy of all 20. Size a mirror target for its share **plus** everything it copies.
 
 ## Mirroring to more than one destination
 
-The field has a plural form, `mirrors`. It takes a list of destinations, each with its own percentage:
+The field has a plural form, `mirrors`. It takes a list of destinations, each with its own percentage. This piece shows the shape (you do not apply it):
 
 ```yaml
     mirrors:
@@ -136,17 +179,43 @@ The field has a plural form, `mirrors`. It takes a list of destinations, each wi
         value: 10.0
 ```
 
-Use it when you shadow two candidate versions at once. `mirror` plus `mirrorPercentage` is still the common single-destination form, and it is what most tasks and examples use. Recognise `mirrors`, but do not reach for it by default.
+Use it when you shadow two candidate versions at once. `mirror` plus `mirrorPercentage` is still the common single-destination form, and it is what most tasks use. Recognise `mirrors`, but do not reach for it by default.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Forgetting the shadow does real writes.** This is the mistake that causes real damage. Check side effects, and check what the shadow calls next, before you mirror anything.
->
-> **Assuming the shadow can tell it is a shadow.** Istio 1.30 sends the copy unchanged. Even the old `-shadow` authority was only a header the app might read. Istio enforces nothing.
->
-> **Sizing the mirror target for its route share only.** With a split plus a mirror, the target gets its own share **plus** a copy of everything.
->
-> **A mirror subset whose labels match no pod.** `requestMirrorPolicies` is present and correct, and still nothing arrives. Check `istioctl proxy-config endpoints` for that cluster.
+> - **Forgetting the shadow does real work.** This is the mistake that causes real damage. Check side effects, and what the shadow calls next, before you mirror anything.
+> - **Assuming the shadow can tell it is a shadow.** Istio 1.30 sends the copy unchanged.
+> - **Sizing the mirror target for its route share only.** With a split plus a mirror, the target gets its own share **plus** a copy of everything.
+> - **Reading the mirror policy alone.** A policy can be present and still send nothing, when its subset is undefined or empty. Check the endpoints and `istioctl analyze` too.
 
 > *The mesh throws away the mirrored answer. It does not undo the work the shadow did to produce it.*
+
+## Your mission: Find The Quiet Shadow
+
+You can now read a mirror policy, check the mirror cluster's endpoints, and tell the three quiet mirrors apart. Now prove it in a graded mission: a mirror that looks right sends nothing, and you have to find out why and fix it.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-020-02
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/module-02/labs/lab-02
+```
+
+Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-020/module-02/labs/lab-02
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-020-02-02
+astrona start ats-014-playground-020-02
+```

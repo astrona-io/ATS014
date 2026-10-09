@@ -1,228 +1,179 @@
 # The Three Objects
 
-Three objects, each doing exactly one thing, like three crew stations on one ship. Leaving any one out produces a distinct failure, so it is worth being able to name which does what before writing them.
-
-## The division of labour
+Astronaut, TLS origination needs three Istio objects, and each one does one job. You build them one at a time here, and after each one you send a signal to see what it changed. Every stage has its own symptom, and those symptoms are what you meet when one object is missing or wrong.
 
 ```mermaid
 flowchart TB
-    A["app: plain HTTP on 80"] --> S["1. ServiceEntry"]
-    S -->|"ports 80 and 443"| V["2. VirtualService"]
-    V -->|"port 80 to 443"| D["3. DestinationRule"]
-    D -->|"TLS SIMPLE"| E["httpbin.org over HTTPS"]
+    A["shuttle: http://httpbin.org"] -->|"port 80"| P["shuttle's sidecar"]
+    P -->|"VirtualService: 80 to 443"| D["DestinationRule: seal port 443"]
+    D -->|"TLS on port 443"| X["httpbin.org"]
 ```
 
-Each object does one job and none of them works alone. The most common failure is having two of the three.
+The diagram shows the path of one signal: the application calls port `80`, the flight plan moves the signal to port `443`, and the docking instructions seal it with TLS before it leaves. The `ServiceEntry` is what makes `httpbin.org` and both ports known in the first place.
 
-| Omit | Symptom |
-| --- | --- |
-| port 80 from the `ServiceEntry` | the redirect has nothing to match; the call fails |
-| the `VirtualService` | traffic stays on port 80 and the external service refuses plaintext |
-| the `DestinationRule` | plaintext is sent to port 443; the handshake never happens and the service rejects it |
+## Chart the planet with two ports
 
-## ① The `ServiceEntry`, with two ports
+A `ServiceEntry` adds a planet from another solar system to the star chart. For origination it needs **two** ports: port `80` with protocol `HTTP`, where the application's open signal arrives, and port `443` with protocol `HTTPS`, where the sealed signal leaves. Port `80` is the one people forget, and without it the proxy has no HTTP receiver for the open signal.
+
+<!-- astrona:playground:renew -->
+
+### Add httpbin.org to the star chart
+
+Save this as `serviceentry-httpbin.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
-  name: httpbin-ext
-  namespace: tlsorig-demo
+  name: httpbin
+  namespace: starfleet
 spec:
   hosts:
-    - httpbin.org
-  ports:
-    - number: 80
-      name: http
-      protocol: HTTP
-    - number: 443
-      name: https
-      protocol: HTTPS
+  - httpbin.org
   location: MESH_EXTERNAL
   resolution: DNS
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  - number: 443
+    name: https
+    protocol: HTTPS
 ```
 
-Port 80 declared `HTTP` is what makes the request readable — that is module 1's lesson applied here. Port 443 declared `HTTPS` is the destination the redirect will aim at.
+`location: MESH_EXTERNAL` says the planet is outside the mesh, so it has no sidecar. `resolution: DNS` tells the proxy to look up the address of `httpbin.org` itself.
 
-Declaring only 443 is the most common first attempt, and it fails because there is then no port-80 entry for the application's plaintext request to land on.
+Apply it:
 
-## ② The `VirtualService` — a port redirect
+```sh
+kubectl apply -f serviceentry-httpbin.yaml
+```
+
+Then send one open and one sealed signal, and read the last two lines of the flight log:
+
+```sh
+kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://httpbin.org/get
+kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" https://httpbin.org/get
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
+```
+
+You should see:
+
+```text
+200
+200
+[2026-10-08T22:53:28.272Z] "GET /get HTTP/1.1" 200 - via_upstream - "-" 0 929 235 234 "-" "curl/8.11.1" "91242682-4ae8-4424-8dd7-c359daea9a21" "httpbin.org" "54.159.186.149:80" outbound|80||httpbin.org 10.244.0.6:36968 32.194.118.12:80 10.244.0.6:40702 - default
+[2026-10-08T22:53:28.587Z] "- - -" 0 - - - "-" 901 4875 623 - "-" "-" "-" "-" "52.21.224.34:443" outbound|443||httpbin.org 10.244.0.6:38182 52.21.224.34:443 10.244.0.6:38166 httpbin.org -
+```
+
+The open signal now has a readable line: `"GET /get HTTP/1.1" 200`, sent through the cluster `outbound|80||httpbin.org`. The sealed signal is still `"- - -"`. It now goes through `outbound|443||httpbin.org`, and the proxy logs the SNI name `httpbin.org`, but it still cannot read the request. Charting the planet alone does not seal anything: the open signal still travels across the internet as plain HTTP.
+
+## Move the signal to port 443
+
+The application calls port `80`, but the sealed signal must leave on port `443`. A `VirtualService` (the flight plan) does that move. It matches signals that arrive on port `80` and routes them to the same host on port `443`. Only the port changes.
+
+### Write the port redirect
+
+Save this as `virtualservice-httpbin.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: httpbin-ext
-  namespace: tlsorig-demo
+  name: httpbin
+  namespace: starfleet
 spec:
   hosts:
-    - httpbin.org
+  - httpbin.org
   http:
-    - match:
-        - port: 80
-      route:
-        - destination:
-            host: httpbin.org
-            port:
-              number: 443
+  - match:
+    - port: 80
+    route:
+    - destination:
+        host: httpbin.org
+        port:
+          number: 443
 ```
 
-This is ordinary routing — the same flight plan object from section 010 — with the ports (the radio channels) doing the work. `match: [{port: 80}]` selects traffic arriving on the plaintext port; the `route` sends it to 443 on the same host.
+Apply it:
 
-Note the destination host is unchanged. Only the port moves.
+```sh
+kubectl apply -f virtualservice-httpbin.yaml
+```
 
-## ③ The `DestinationRule` — where the handshake happens
+Then send an open signal and read the flight log:
+
+```sh
+kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://httpbin.org/get
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
+```
+
+You should see:
+
+```text
+400
+[2026-10-08T22:53:47.310Z] "GET /get HTTP/1.1" 400 - via_upstream - "-" 0 220 236 235 "-" "curl/8.11.1" "7ccb1d45-fa38-4fe9-ac54-b141bb6f0fed" "httpbin.org" "52.21.224.34:443" outbound|443||httpbin.org 10.244.0.6:51070 100.51.105.232:80 10.244.0.6:53360 - -
+```
+
+The signal now goes to port `443`, but as plain HTTP. The outside server answers `400`, and the full body says `The plain HTTP request was sent to HTTPS port`. `via_upstream` in the log tells you the answer came from httpbin.org, not from your proxy. Nobody has told the proxy to seal the signal yet.
+
+## Seal the signal on port 443
+
+A `DestinationRule` (the docking instructions) tells the proxy how to connect to a destination. Its `tls` block with `mode: SIMPLE` makes the proxy open a TLS connection, like a normal HTTPS client: it checks the server's certificate and encrypts the signal.
+
+Put the `tls` block under `portLevelSettings` for port `443` only. Port `80` is the open side, where the application arrives, and it must stay plain. The `sni` field is the host name the proxy writes on the outside of the sealed crate. The proxy is the TLS client now, so it has to name the server.
+
+### Add the docking instructions
+
+Save this as `destinationrule-httpbin.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
-  name: httpbin-ext
-  namespace: tlsorig-demo
+  name: httpbin
+  namespace: starfleet
 spec:
   host: httpbin.org
   trafficPolicy:
     portLevelSettings:
-      - port:
-          number: 443
-        tls:
-          mode: SIMPLE
-          sni: httpbin.org
+    - port:
+        number: 443
+      tls:
+        mode: SIMPLE
+        sni: httpbin.org
 ```
 
-Two details here are the ones exams probe, and both are placement rather than syntax.
+Apply it:
 
-### `portLevelSettings`, not the top level
+```sh
+kubectl apply -f destinationrule-httpbin.yaml
+```
 
-`tls` set directly under `trafficPolicy` applies to **every port** of the host — including port 80. The proxy would then try to originate TLS on the plaintext side as well, and the arrangement collapses.
+Then send an open signal, read the flight log, and ask httpbin.org which address it was reached on:
 
-The setting belongs to port 443 specifically, which is what `portLevelSettings` is for. This is the same precedence machinery from section 030 module 1, used for a different key.
+```sh
+kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://httpbin.org/get
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
+kubectl exec -n starfleet deploy/shuttle -- curl -s http://httpbin.org/get | grep '"url"'
+```
 
-### `sni`
+You should see:
 
-**Server Name Indication** is the hostname the client announces during the TLS handshake, before any HTTP is exchanged. It is like calling out which planet you want when one space station serves many planets: one IP address commonly serves many certificates, and the server must know which to present.
+```text
+200
+[2026-10-08T22:53:56.784Z] "GET /get HTTP/1.1" 200 - via_upstream - "-" 0 931 508 507 "-" "curl/8.11.1" "55f7d2df-0723-439e-a6bf-1616977b9b6e" "httpbin.org" "32.194.118.12:443" outbound|443||httpbin.org 10.244.0.6:60018 52.21.224.34:80 10.244.0.6:44636 - -
+  "url": "https://httpbin.org/get"
+```
 
-Since the proxy is now the TLS client, **the proxy must send it**. If it does not, a shared-hosting endpoint hands back the wrong certificate or rejects the handshake outright. Set it to the external hostname.
-
-Some endpoints tolerate its absence — a host with a single certificate has nothing to disambiguate — which makes this a mistake that works in testing and fails in production.
-
-<!-- astrona:playground:renew -->
-
-> [!TIP]
-> **Try it — apply all three and call over plain HTTP**
->
-> Save this as `serviceentry-httpbin-ext.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: ServiceEntry
-> metadata:
->   name: httpbin-ext
->   namespace: tlsorig-demo
-> spec:
->   hosts:
->     - httpbin.org
->   ports:
->     - number: 80
->       name: http
->       protocol: HTTP
->     - number: 443
->       name: https
->       protocol: HTTPS
->   location: MESH_EXTERNAL
->   resolution: DNS
-> ---
-> apiVersion: networking.istio.io/v1
-> kind: VirtualService
-> metadata:
->   name: httpbin-ext
->   namespace: tlsorig-demo
-> spec:
->   hosts:
->     - httpbin.org
->   http:
->     - match:
->         - port: 80
->       route:
->         - destination:
->             host: httpbin.org
->             port:
->               number: 443
-> ---
-> apiVersion: networking.istio.io/v1
-> kind: DestinationRule
-> metadata:
->   name: httpbin-ext
->   namespace: tlsorig-demo
-> spec:
->   host: httpbin.org
->   trafficPolicy:
->     portLevelSettings:
->       - port:
->           number: 443
->         tls:
->           mode: SIMPLE
->           sni: httpbin.org
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f serviceentry-httpbin-ext.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> sleep 3
-> kubectl -n tlsorig-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w 'http:// call: %{http_code}\n' --max-time 15 http://httpbin.org/get
-> ```
->
-> Expect something like:
->
-> ```text
-> http:// call: 200
-> ```
->
-> A `200` from an `http://` URL against a service that only speaks HTTPS. The application did not change, and nothing was downgraded — the sidecar performed the handshake on its behalf.
-
-## Breaking it deliberately
-
-Worth doing once, because the failure is instructive and the fix is not obvious from the symptom.
-
-> [!TIP]
-> **Try it — move `tls` to the top level**
->
-> ```sh
-> kubectl -n tlsorig-demo patch destinationrule httpbin-ext --type merge -p '
-> spec:
->   trafficPolicy:
->     tls:
->       mode: SIMPLE
->       sni: httpbin.org'
-> sleep 3
-> kubectl -n tlsorig-demo exec deploy/tester -- \
->   curl -s -o /dev/null -w 'top-level tls: %{http_code}\n' --max-time 15 http://httpbin.org/get
-> ```
->
-> Expect something like:
->
-> ```text
-> top-level tls: 503
-> ```
->
-> The `DestinationRule` is valid, `istioctl analyze` is clean, and the call fails — because the proxy is now trying to originate TLS toward port 80 as well, where the redirect starts. Re-apply the `portLevelSettings` version from the previous checkpoint before moving on. A 503 with a plausible-looking `DestinationRule` is the signature of this mistake.
-
-> *`tls` belongs under `portLevelSettings` for port 443 — at the top level it applies to the plaintext port too and breaks the whole arrangement.*
+The shuttle sent `http://`, and httpbin.org says it was reached on `https://`. The proxy read the request (the log has the method, path and status), moved it to port `443`, and sealed it on the way out. All three objects are now in place.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Declaring only one port on the `ServiceEntry`.** Both are needed: 80 is where the application arrives, 443 is where the traffic goes.
->
-> **Putting the `tls` block at the top level of the `trafficPolicy`.** It has to be under `portLevelSettings` for 443, or it applies to port 80 as well and breaks the arrival hop.
->
-> **Forgetting the `VirtualService`.** Without the port redirect nothing ever reaches 443, and the `DestinationRule` is never consulted.
->
-> **Using `tls.mode: ISTIO_MUTUAL` for an external host.** That is mesh identity. An external service wants `SIMPLE`, or `MUTUAL` with your own client certificate.
+> - **Only port 443 in the `ServiceEntry`.** The open signal on port `80` has no HTTP receiver and passes through as raw bytes. Nothing is sealed by the mesh.
+> - **No `VirtualService`.** The signal stays on port `80` and travels as plain HTTP across the internet.
+> - **No `DestinationRule`.** The signal reaches port `443` as plain HTTP, and the server answers `400`.
+> - **The `VirtualService` changing the host.** Only the port changes. The destination host stays `httpbin.org`.
+
+> *The `ServiceEntry` charts both ports, the `VirtualService` moves the signal from 80 to 443, and the `DestinationRule` seals port 443 only.*

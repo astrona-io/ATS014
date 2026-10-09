@@ -1,0 +1,137 @@
+# The probe in two orbits: the echo test service (go-httpbin) in two zones,
+# behind one Service. This playground has one node, so the pods cannot run on
+# real zoned nodes. Each pod declares its own locality with the
+# `istio-locality` label instead (region.zone, with dots because a label value
+# cannot contain a slash). It overrides the locality the pod would otherwise
+# inherit from its node.
+#   probe-zone-a          healthy, locality local/zone-a (the shuttle's own zone)
+#   probe-zone-b          healthy, locality local/zone-b
+#   probe-zone-a-damaged  always answers 503 while staying ready. Scaled to 0:
+#                         you scale it up yourself to test health-driven failover.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: probe
+  namespace: starfleet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  selector:
+    app: probe
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-zone-a
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      zone: a
+  template:
+    metadata:
+      labels:
+        app: probe
+        zone: a
+        istio-locality: local.zone-a
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        # Make /hostname return the real pod name.
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-zone-b
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      zone: b
+  template:
+    metadata:
+      labels:
+        app: probe
+        zone: b
+        istio-locality: local.zone-b
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080
+---
+# A damaged ship: nginx that answers 503 to every signal but stays ready, so
+# Kubernetes keeps it as an endpoint. Only outlier detection can notice it.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: damaged-probe
+  namespace: starfleet
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      location / {
+        return 503 "damaged probe in zone-a\n";
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-zone-a-damaged
+  namespace: starfleet
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: probe
+      zone: a
+      condition: damaged
+  template:
+    metadata:
+      labels:
+        app: probe
+        zone: a
+        condition: damaged
+        istio-locality: local.zone-a
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: nginx:1.27-alpine
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: conf
+        configMap:
+          name: damaged-probe

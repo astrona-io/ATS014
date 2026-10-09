@@ -1,54 +1,76 @@
-# Practice – Fault Injection
+# Practice: Fault Injection With Delays And Aborts
 
-An exam-style mission for you, astronaut. Start the playground first, and paste
-the helper functions from [the overview](overview.md#helper-functions). The
-solution uses them.
+An exam-style training mission for this playground, astronaut. Start the playground first, and paste the helper functions from the [overview](overview.md#helper-functions). The solution uses them.
 
-Try it on your own first, then open the solution. The solution was run and
-checked on this environment.
+Try the task on your own first, then open the solution. The solution was run and checked on a cluster like this one.
 
-> Requests from **productpage** to **details** must be delayed by **3 seconds**.
-> Direct calls to details from other workloads must stay fast.
+## Task: a drill for one sending ship
+
+> Signals from `bridge` to `cargo` must be delayed by **3 seconds**. Signals from any other ship to `cargo` must stay fast.
 
 <details><summary>Solution</summary>
 
-Write the VirtualService to a file.
-
-Save this as `virtualservice-details.yaml`:
+The drill goes on the flight plan of `cargo`, the ship you pretend is slow. A `sourceLabels` match picks the bridge as the sender, and a plain rule below it keeps every other signal fast. Save this as `virtualservice-cargo-delay-from-bridge.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
-metadata: {name: details, namespace: bookinfo}
+metadata:
+  name: cargo
+  namespace: starfleet
 spec:
-  hosts: [details]
+  hosts:
+  - cargo
   http:
   - match:
-    - sourceLabels: {app: productpage}
+    - sourceLabels:
+        app: bridge
     fault:
-      delay: {percentage: {value: 100}, fixedDelay: 3s}
+      delay:
+        percentage:
+          value: 100
+        fixedDelay: 3s
     route:
-    - destination: {host: details}
+    - destination:
+        host: cargo
   - route:
-    - destination: {host: details}
+    - destination:
+        host: cargo
 ```
 
-Apply it and check both paths:
+Apply it:
 
-```bash
-kubectl apply -f virtualservice-details.yaml
+```sh
+kubectl apply -f virtualservice-cargo-delay-from-bridge.yaml
 ```
 
-Then check the result:
+Then check the result. Send one signal from the shuttle straight to the cargo ship, and two to the bridge, which calls the cargo ship:
 
-```bash
-status_and_time http://details:9080/details/0           # 200 0.01s  (curl → details: fast)
-status_and_time http://productpage:9080/productpage     # 200 3.0s   (productpage → details: slow)
+```sh
+status_and_time http://cargo:9080/details/0
+status_and_time http://bridge:9080/productpage
+status_and_time http://bridge:9080/productpage
 ```
 
-No DestinationRule is needed: the route uses the service without a subset.
+You should see something like:
 
-`sourceLabels` matches the labels of the pod that *sends* the request. The
-delay runs in `productpage`'s sidecar, so only its calls to `details` slow down.
+```text
+200 0.008977s
+200 3.108051s
+200 3.030261s
+```
+
+The shuttle's own signal to the cargo ship is fast. Every bridge page takes three seconds longer, because the bridge's signal to the cargo ship is held back.
+
+Remove the drill when you are done:
+
+```sh
+kubectl delete virtualservice cargo -n starfleet
+status_and_time http://bridge:9080/productpage
+```
+
+```text
+200 0.050802s
+```
 
 </details>

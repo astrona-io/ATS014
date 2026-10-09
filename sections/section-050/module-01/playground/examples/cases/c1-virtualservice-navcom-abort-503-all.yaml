@@ -1,0 +1,19 @@
+# Things to try: abort 100% with HTTP 503 – simulate a service that is completely down.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: navcom
+  namespace: starfleet
+spec:
+  hosts:
+  - navcom
+  http:
+  - fault:
+      abort:
+        percentage:
+          value: 100
+        httpStatus: 503
+    route:
+    - destination:
+        host: navcom
+        subset: v1

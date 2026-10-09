@@ -1,0 +1,31 @@
+# The patrol: a ship that sends one signal to the scout beacon every half
+# second, for the whole mission. Its sidecar writes every signal to its flight
+# log. A signal that fails while you change the rules (503 NC, 503 UH) stays in
+# that log, and the grader reads it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: patrol
+  namespace: starfleet
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patrol
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: patrol
+  template:
+    metadata:
+      labels:
+        app: patrol
+    spec:
+      serviceAccountName: patrol
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: patrol
+        image: curlimages/curl:8.11.1
+        command: ["sh", "-c", "sleep 15; while true; do curl -s -o /dev/null http://scout:9080/reviews/0; sleep 0.5; done"]

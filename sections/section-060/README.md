@@ -6,7 +6,7 @@ All three modules bring those signals in through a gateway proxy: the spaceport 
 
 Reading all three together is the point of this mission: the ICA expects you to recognise which API a task is written in and to know what each one cannot do.
 
-**Curriculum item covered:** Configuring Ingress and Egress Traffic (ingress half; the egress half is section 080)
+**Curriculum item covered:** Configuring Ingress and Egress Traffic (the ingress half)
 
 ---
 
@@ -31,66 +31,51 @@ Reading all three together is the point of this mission: the ICA expects you to 
 
 ---
 
-## The Learning Path
+## Modules In This Section
 
-Work through the modules in this order, astronaut. For each one: read the parts with its playground open next to you, clean up the playground, then take its graded mission. Finish with the capstone, which brings the whole section together.
+Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
 
-### 1. Expose A Service With An Istio Ingress Gateway
-*   **Module Reader:** **[Expose A Service With An Istio Ingress Gateway](./module-01/course.md)**
-    1. [The Gateway Pod And Its Listener](./module-01/course-01-the-gateway-pod-and-its-listener.md)
-    2. [Binding Routes With `gateways:`](./module-01/course-02-binding-routes-with-gateways.md)
-    3. [Diagnosing The Gateway](./module-01/course-03-diagnosing-the-gateway.md)
-*   **Hands-on Playground:** `sections/section-060/module-01/playground` — a kind cluster with Istio 1.30.5 (Helm), an ingress gateway in namespace `istio-ingress` (label `istio=ingress`) forwarded to `127.0.0.1:8080`, and Bookinfo plus `httpbin` in `bookinfo`. No Gateway or VirtualService yet.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-060/module-01/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-060/module-01/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-01/labs/lab-01
-    ```
-*   **Hands-on Objective:** Open one listener for two hostnames, attach an application to each, and prove from the gateway's own route table that both landed — while an unknown host and a crossed host are both rejected.
+### [Expose A Service With An Istio Ingress Gateway](module-01/course.md)
 
-### 2. Expose A Service With A Kubernetes Ingress
-*   **Module Reader:** **[Expose A Service With A Kubernetes Ingress](./module-02/course.md)**
-    1. [Claiming An Ingress](./module-02/course-01-claiming-an-ingress.md)
-    2. [Rules, Path Types And Translation](./module-02/course-02-rules-path-types-and-translation.md)
-    3. [TLS And The Feature Ceiling](./module-02/course-03-tls-and-the-feature-ceiling.md)
-*   **Hands-on Playground:** `sections/section-060/module-02/playground` — namespace `k8s-ingress-demo`, with no `Ingress` and no `IngressClass` yet.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-060/module-02/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-060/module-02/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-02/labs/lab-01
-    ```
-*   **Hands-on Objective:** Have Istio's gateway serve a plain Kubernetes `Ingress` with both path types and TLS — including putting the secret in the namespace that actually works, which is not the one the `Ingress` is in.
+4 parts and 3 missions:
 
-### 3. Ingress With The Kubernetes Gateway API
-*   **Module Reader:** **[Ingress With The Kubernetes Gateway API](./module-03/course.md)**
-    1. [Three Objects, Three Owners](./module-03/course-01-three-objects-three-owners.md)
-    2. [A Gateway That Creates Its Own Data Plane](./module-03/course-02-a-gateway-that-creates-its-own-data-plane.md)
-    3. [`HTTPRoute`, Status And What Stays In Istio](./module-03/course-03-httproute-status-and-what-stays-in-istio.md)
-*   **Hands-on Playground:** `sections/section-060/module-03/playground` — namespace `gwapi-demo`, with the Gateway API CRDs installed and Istio's `istio` `GatewayClass` registered.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-060/module-03/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-060/module-03/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-03/labs/lab-01
-    ```
-*   **Hands-on Objective:** Create a Gateway that brings its own proxy, then let a route from a *different* namespace attach to it via a `Selector` grant — the attachment this API denies by default.
+1. [The Gateway Pod And Its Listener](module-01/course-01-the-gateway-pod-and-its-listener.md)
+   - Mission: [Open The Closed Gate Lab](module-01/labs/lab-02/question.md)
+2. [Binding Routes With `gateways:`](module-01/course-02-binding-routes-with-gateways.md)
+3. [Hosts And References At The Gate](module-01/course-03-hosts-and-references-at-the-gate.md)
+   - Mission: [Expose A Service With An Istio Ingress Gateway Lab](module-01/labs/lab-01/question.md)
+4. [Diagnosing The Gateway](module-01/course-04-diagnosing-the-gateway.md)
+   - Mission: [Repair The Arrival Gate Lab](module-01/labs/lab-03/question.md)
+5. [Wrap-Up: Mission Debrief](module-01/course-05-wrap-up.md)
 
-### 4. Section Capstone Challenge
-*   **Comprehensive Challenge:** **`sections/section-060/capstone/labs/lab-01` (Three APIs, One Edge)**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/capstone/labs/lab-01
-    ```
-*   **Hands-on Objective:** Expose three applications at once, one through each API, and prove the two data planes are separate. The Gateway API host must 404 on the shared gateway.
+### [Expose A Service With A Kubernetes Ingress](module-02/course.md)
+
+3 parts and 2 missions:
+
+1. [Claiming An Ingress](module-02/course-01-claiming-an-ingress.md)
+   - Mission: [Claim The Unclaimed Ingress Lab](module-02/labs/lab-02/question.md)
+2. [Rules, Path Types And Translation](module-02/course-02-rules-path-types-and-translation.md)
+3. [TLS And The Feature Ceiling](module-02/course-03-tls-and-the-feature-ceiling.md)
+   - Mission: [Expose A Service With A Kubernetes Ingress Lab](module-02/labs/lab-01/question.md)
+4. [Wrap-Up: Mission Debrief](module-02/course-04-wrap-up.md)
+
+### [Ingress With The Kubernetes Gateway API](module-03/course.md)
+
+4 parts and 3 missions:
+
+1. [Three Objects, Three Owners](module-03/course-01-three-objects-three-owners.md)
+2. [A Gateway That Creates Its Own Data Plane](module-03/course-02-a-gateway-that-creates-its-own-data-plane.md)
+   - Mission: [Open The Spaceport Gate Lab](module-03/labs/lab-02/question.md)
+3. [Attach An HTTPRoute And Read Its Status](module-03/course-03-attach-an-httproute-and-read-its-status.md)
+   - Mission: [Fix The Broken Flight Plans Lab](module-03/labs/lab-03/question.md)
+4. [Decide Who May Dock](module-03/course-04-decide-who-may-dock.md)
+   - Mission: [Share One Gateway Between Two Planets Lab](module-03/labs/lab-01/question.md)
+5. [Wrap-Up: Mission Debrief](module-03/course-05-wrap-up.md)
+
+### Capstone
+
+Your final mission for this section: **[Three APIs, One Edge Capstone Lab](capstone/labs/lab-01/README.md)**.
 
 ---
 
-Each playground is ungraded: a training solar system that spins up, prepares itself, and waits for you. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.
+<!-- astrona:playground:environment-explain -->

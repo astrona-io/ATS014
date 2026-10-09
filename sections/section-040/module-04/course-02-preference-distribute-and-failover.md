@@ -1,165 +1,294 @@
 # Preference, `distribute` And `failover`
 
-Astronaut, before writing anything, know what you already have. A surprising share of "locality configurations" in the wild restate the default. This part covers that default, then the two mutually exclusive ways to override it.
+Astronaut, before you change how signals choose an orbit, find out how they choose one today. This part shows what really switches on the preference for the nearby orbit, then the two ways to take control of it: exact weights with `distribute`, and an ordered fallback with `failover`.
 
-## The default: prefer local, spill over when you must
+## What switches the preference on
 
-Istio **prefers the caller's own locality by default**, with no `localityLbSetting` anywhere. A client in `zone-a` sends to `zone-a` endpoints while they are available, and spills over when they are not.
-
-The matching is hierarchical and most-specific-first: same region *and* zone *and* subzone beats same region and zone, which beats same region, which beats anything.
+Istio's locality preference works like this: a sender in `zone-a` sends to `zone-a` endpoints while they are healthy, and only spills over when they are not. The matching goes from most specific to least specific: same region, zone and subzone first, then same region and zone, then same region, then anything.
 
 ```mermaid
 flowchart TB
-    C["caller in zone-a"] --> Z{"healthy in zone-a?"}
+    C["shuttle in zone-a"] --> Z{"healthy in zone-a?"}
     Z -->|"yes"| U1["stay in zone-a"]
     Z -->|"no"| R{"healthy in region?"}
-    R -->|"yes"| U2["other zones in region"]
+    R -->|"yes"| U2["other zones"]
     R -->|"no"| U3["another region"]
 ```
 
-The caller sits in region `local`, zone `a`. Each level is used only when the one above it has nothing healthy left. "Keep traffic in the zone, fall back if the zone dies" is therefore the default, with no configuration at all.
+The shuttle flies in region `local`, zone `zone-a`. Each level below is only used when the level above has no healthy endpoint left.
 
-So the common requirement — "keep traffic in the zone, fall back if the zone dies" — needs **no configuration at all**. What `localityLbSetting` adds is *control* over that preference: explicit proportions, or an explicit fallback order.
+There is a catch that surprises almost everyone: **Istio only applies this preference to a host whose `DestinationRule` has `outlierDetection`.** The preference needs to know which endpoints are healthy, and outlier detection is what tells it. You will now prove that in three steps.
 
 <!-- astrona:playground:renew -->
 
-> [!TIP]
-> **Try it — the default preference, with nothing configured**
->
-> ```sh
-> kubectl -n locality-demo get destinationrule
-> kubectl -n locality-demo exec deploy/tester -- sh -c \
->   'for i in $(seq 1 20); do curl -s -o /dev/null http://httpbin:8000/get; done'
-> kubectl -n locality-demo logs deploy/tester -c istio-proxy --tail=20 \
->   | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:8080' | sort | uniq -c
-> ```
->
-> Expect something like:
->
-> ```text
-> No resources found in locality-demo namespace.
->      20 10.244.0.21:8080
-> ```
->
-> Twenty requests, all to one endpoint — the one sharing the caller's locality — with no `DestinationRule` in the namespace at all. Compare that with an ordinary two-endpoint service, which would split roughly evenly. The preference is already on.
+### No `DestinationRule`: no preference
 
-## `distribute` — explicit proportions
+Check that there is no `DestinationRule`, then send 20 signals:
 
-`distribute` says, for traffic *originating* in a given locality, exactly how it should be spread:
+```sh
+kubectl -n starfleet get destinationrule
+count_orbits 20
+```
+
+You should see something like:
+
+```text
+No resources found in starfleet namespace.
+   9 probe-zone-a
+  11 probe-zone-b
+```
+
+The signals are spread over both orbits. Nothing keeps them in the shuttle's own zone.
+
+### `localityLbSetting` alone: still no preference
+
+Turn locality on explicitly, without outlier detection. Save this as `destinationrule-probe-locality.yaml`:
 
 ```yaml
-trafficPolicy:
-  loadBalancer:
-    localityLbSetting:
-      enabled: true
-      distribute:
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+```
+
+Apply it:
+
+```sh
+kubectl apply -f destinationrule-probe-locality.yaml
+```
+
+Then send 20 signals again:
+
+```sh
+count_orbits 20
+```
+
+You should see a mix again, for example:
+
+```text
+  13 probe-zone-a
+   7 probe-zone-b
+```
+
+`enabled: true` on its own changes nothing you can see. Without outlier detection, Istio does not apply the preference.
+
+### Add outlier detection: the preference appears
+
+Now give the `DestinationRule` outlier detection. Save this as `destinationrule-probe-failover.yaml`:
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    outlierDetection:
+      consecutive5xxErrors: 2
+      interval: 5s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 100
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+```
+
+Apply it:
+
+```sh
+kubectl apply -f destinationrule-probe-failover.yaml
+```
+
+Then send 20 signals:
+
+```sh
+count_orbits 20
+```
+
+You should see:
+
+```text
+  20 probe-zone-a
+```
+
+Every signal stays in the shuttle's own orbit. Look at how the communications officer stores this:
+
+```sh
+istioctl proxy-config endpoints deploy/shuttle -n starfleet \
+  --cluster "outbound|8000||probe.starfleet.svc.cluster.local" -o json \
+  | grep -E '"zone"|"priority"'
+```
+
+You should see (trimmed to the matching lines):
+
+```text
+                    "zone": "zone-a"
+                "priority": 1,
+                    "zone": "zone-b"
+```
+
+The `zone-b` endpoints got `"priority": 1`: a fallback level that is only used when priority 0, the shuttle's own zone, has no healthy endpoint left. (A second line, `"priority": "HIGH"`, also appears in the full output; that one belongs to the connection limits, not to locality.)
+
+You will meet this `DestinationRule` again: the same two blocks are what make failover work.
+
+## `distribute`: exact proportions
+
+`distribute` replaces the preference with exact weights, for signals that start in a given orbit:
+
+- **`from`** is a locality pattern that the **sender** must match.
+- **`to`** maps destination locality patterns to weights. The weights must add up to exactly 100.
+- `*` stands for "any value" at the remaining levels, so `local/zone-a/*` means region `local`, zone `zone-a`, any subzone.
+
+A sender whose locality matches no `from` keeps the normal behaviour. Use `distribute` when strict preference is wrong, for example to keep a share of signals flowing to the second zone so you know that path works before you need it.
+
+### Send 30% to the far orbit on purpose
+
+Save this as `destinationrule-probe-distribute.yaml`:
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    loadBalancer:
+      localityLbSetting:
+        enabled: true
+        distribute:
         - from: local/zone-a/*
           to:
             "local/zone-a/*": 70
             "local/zone-b/*": 30
 ```
 
-Reading the shape carefully:
+Apply it:
 
-- **`from`** is a locality pattern matched against the **caller**.
-- **`to`** is a map of destination locality patterns to weights, summing to 100 — the same rule as section 020's route weights.
-- `*` is a wildcard over the remaining levels, so `local/zone-a/*` means region `local`, zone `zone-a`, any subzone.
+```sh
+kubectl apply -f destinationrule-probe-distribute.yaml
+```
 
-`distribute` **replaces** the default preference for matching callers. Traffic from a locality that matches no `from` entry keeps the default behaviour, so you can target one zone's callers and leave the rest alone.
+Then send 100 signals:
 
-Use it when strict preference is wrong — for example to keep a warm connection pool open to a second zone, or to deliberately send a slice of traffic across zones so the failover path is exercised before you need it.
+```sh
+count_orbits 100
+```
 
-> [!TIP]
-> **Try it — a deliberate 70/30 cross-zone split**
->
-> Save this as `destinationrule-httpbin.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: DestinationRule
-> metadata:
->   name: httpbin
->   namespace: locality-demo
-> spec:
->   host: httpbin
->   trafficPolicy:
->     loadBalancer:
->       localityLbSetting:
->         enabled: true
->         distribute:
->           - from: local/zone-a/*
->             to:
->               "local/zone-a/*": 70
->               "local/zone-b/*": 30
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f destinationrule-httpbin.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> sleep 3
-> kubectl -n locality-demo exec deploy/tester -- sh -c \
->   'for i in $(seq 1 100); do curl -s -o /dev/null http://httpbin:8000/get; done'
-> kubectl -n locality-demo logs deploy/tester -c istio-proxy --tail=100 \
->   | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:8080' | sort | uniq -c
-> ```
->
-> Expect something like:
->
-> ```text
->      72 10.244.0.21:8080
->      28 10.244.0.22:8080
-> ```
->
-> The strict preference from the previous checkpoint is gone, replaced by the proportions you asked for. As with every percentage in this course the draw is per request, so measure over a hundred and expect a few points of wobble.
+You should see something like:
 
-## `failover` — ordered fallback between regions
+```text
+  70 probe-zone-a
+  30 probe-zone-b
+```
 
-`failover` sets no weights. It keeps the default preference and specifies, when a **region** has no healthy endpoints left, which region to use next:
+The weights are a draw per signal, so expect a few signals of difference from run to run. Notice that `distribute` works **without** outlier detection: it sets fixed weights, it does not need to know which endpoints are healthy.
+
+Weights that do not add up to 100 are refused. Change `30` to `20` in the file and apply it again:
+
+```sh
+kubectl apply -f destinationrule-probe-distribute.yaml
+```
+
+You should see (trimmed to the first and last line):
+
+```text
+Error from server: error when applying patch:
+...
+for: "destinationrule-probe-distribute.yaml": error when patching "destinationrule-probe-distribute.yaml": admission webhook "validation.istio.io" denied the request: configuration is invalid: total locality weight 90 != 100
+```
+
+Put the `30` back before you go on.
+
+## `failover`: ordered fallback between regions
+
+`failover` sets no weights. It keeps the preference and says which **region** to use next when a whole region has no healthy endpoint left:
 
 ```yaml
 trafficPolicy:
+  outlierDetection:
+    consecutive5xxErrors: 2
+    interval: 5s
+    baseEjectionTime: 30s
+    maxEjectionPercent: 100
   loadBalancer:
     localityLbSetting:
       enabled: true
       failover:
-        - from: us-east1
-          to: us-west1
+      - from: us-east1
+        to: us-west1
 ```
 
-Two constraints that are commonly tested:
+This is a piece of a `DestinationRule` (you do not apply it). Three facts to remember:
 
-- **`failover` operates at the region level.** It cannot express zone-to-zone fallback inside one region — and it does not need to, because zone spillover within a region is already the default preference behaviour.
-- **`distribute` and `failover` are mutually exclusive.** Use one or the other for a given host.
+- **`failover` works between regions only.** Falling back from one zone to another inside a region is already what the preference does.
+- **It needs `outlierDetection`,** like the preference itself.
+- **`distribute` and `failover` cannot be combined** for the same host. Istio rejects it with `can not simultaneously specify 'distribute' and 'failover'`.
 
-There is also `failoverPriority`, a list of label keys (such as `topology.kubernetes.io/region`) used to rank endpoints by how many labels they share with the caller. It is the more flexible modern alternative and worth recognising, though `failover` is what most task descriptions name.
+There is also `failoverPriority`: a list of label keys, such as `topology.kubernetes.io/region`, that ranks endpoints by how many of those labels they share with the sender. It is the more flexible alternative, and worth recognising.
+
+Your playground has only one region, `local`, so there is no second region to fail over to here.
 
 ## Choosing between them
 
-| The requirement says | Use |
+| The task says | Use |
 | --- | --- |
-| "keep traffic in the zone, fall back if it fails" | **nothing** — that is the default |
-| "send 30% to the other zone deliberately" | `distribute` |
-| "if this region is down, use that one" | `failover` |
-| "rank fallbacks by how similar the locality is" | `failoverPriority` |
-| "fail over between zones in the same region" | the default already does this |
+| "keep signals in the zone, fall back if it fails" | `outlierDetection` plus `localityLbSetting: {enabled: true}` |
+| "send 30% to the other zone on purpose" | `distribute` |
+| "if this region is down, use that one" | `failover`, with `outlierDetection` |
+| "rank fallbacks by how similar the locality is" | `failoverPriority`, with `outlierDetection` |
+
+Clean up before the next part, so the probe has no `DestinationRule`:
+
+```sh
+kubectl delete destinationrule probe -n starfleet
+```
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Configuring `distribute` to get zone preference.** Preference is already the default. `distribute` is for overriding it with explicit proportions.
->
-> **Writing `distribute` weights that do not sum to 100.** Here the total must be exactly 100, and Istio's validation rejects the object if it is not. This is stricter than section 020's route weights, which Istio 1.30.5 accepts and uses as a ratio.
->
-> **Mixing `distribute` and `failover` for the same locality.** They are alternative ways of answering the same question; pick one.
->
-> **Expecting failover without health information.** Nothing spills over until endpoints are marked unhealthy, which is Part 3's subject and needs `outlierDetection`.
->
-> **Testing locality on a single-node cluster.** Every pod shares the node's locality, so there is no second locality to prefer or fail over to.
+> - **Expecting a preference without `outlierDetection`.** Istio only applies the locality preference to a host that has outlier detection. `enabled: true` alone changes nothing.
+> - **`distribute` weights that do not add up to 100.** Istio rejects the object: `total locality weight 90 != 100`.
+> - **`distribute` and `failover` together.** They are alternatives, and Istio rejects the combination.
+> - **Expecting `failover` to work between zones.** It is region-level. Zone fallback inside a region is the preference itself.
 
-> *The default already prefers the caller's locality and spills over — `localityLbSetting` exists to change that default, not to create it.*
+> *The preference for the nearby orbit only acts when outlier detection is there. `distribute` sets fixed weights instead, and `failover` names the next region.*
+
+## Your mission: Split Signals Between Two Orbits
+
+You can now switch on the locality preference, and replace it with exact weights between orbits. Now prove it in a graded mission: keep most signals in the shuttle's orbit, but send a fixed share to the far orbit on purpose.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-040-04
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-04/labs/lab-03
+```
+
+Read the task in [`question.md`](./labs/lab-03/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-040/module-04/labs/lab-03
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-040-04-03
+astrona start ats-014-playground-040-04
+```

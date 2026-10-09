@@ -1,306 +1,256 @@
 # A Registered Host Is An Ordinary Host
 
-This is what makes `ServiceEntry` more than an allow-list, and it is the part that pays back everything you learned in sections 010 to 050. Then two scoping behaviours that decide whether the object works where you expect it to.
+Astronaut, a `ServiceEntry` is more than an allow-list. Once a planet is on the star chart, it behaves like any other host in the mesh. The flight plan (`VirtualService`) and the docking instructions (`DestinationRule`) work on it exactly as they work on a Service inside the cluster.
 
-## Everything from earlier sections now applies
+The commands below need the `REGISTRY_ONLY` `Sidecar` and the `httpbin-org` `ServiceEntry` (HTTPS only) applied in your playground, and the `call_external` helper pasted into your terminal.
 
-Once `httpbin.org` is on the star chart, it behaves like any other host in the mesh:
+## What you can now do to somebody else's API
 
-| Section | What you can now do to somebody else's API |
+| Object | What it can do to an external host |
 | --- | --- |
-| 010 | route different paths to different destinations |
-| 040 | set a `timeout` and a retry policy |
-| 040 | apply a connection pool, so a slow partner cannot exhaust your workers |
-| 040 | apply outlier detection across its resolved addresses |
-| 030 | set a load balancer policy |
-| 050 | inject a fault, to test how your code handles that API failing |
+| `VirtualService` | a timeout, retries, routing by path, fault injection to test your own error handling |
+| `DestinationRule` | a connection pool, outlier detection, a load balancing policy |
 
-None of this requires cooperation from the other solar system. It is all client-side, enforced by your own ship's communications officer.
+None of this needs help from the other solar system. Your own ship's communications officer enforces all of it, on the way out.
 
-The timeout is the clearest demonstration, and the most immediately useful: an abort window on a third-party API you do not control and cannot change.
+The timeout is the clearest example, and the most useful: a deadline on a third-party API you do not control and cannot change.
 
-There is a catch first. In Part 2 you registered `httpbin.org` on `443` with `protocol: HTTPS`. On HTTPS the sidecar only sees sealed, encrypted bytes, so it cannot see where one HTTP request ends — and a timeout has nothing to bound. HTTP rules need a **plain HTTP port**. So the next `ServiceEntry` adds port `80`. It has the same name as Part 2's, so applying it replaces that one:
+## HTTP rules need an HTTP port
 
-```yaml
-apiVersion: networking.istio.io/v1
-kind: ServiceEntry
-metadata:
-  name: httpbin-org
-  namespace: bookinfo
-spec:
-  hosts:
-    - httpbin.org
-  ports:
-    - number: 80
-      name: http
-      protocol: HTTP
-    - number: 443
-      name: https
-      protocol: HTTPS
-  location: MESH_EXTERNAL
-  resolution: DNS
-```
+There is a catch. The `ServiceEntry` you have charts `httpbin.org` only on port `443` with `protocol: HTTPS`. On HTTPS the proxy only sees sealed, encrypted bytes. It cannot see where one request ends, so a timeout has nothing to measure. HTTP rules need a **plain HTTP port**.
 
-Then the `VirtualService` — the flight plan — puts a two-second deadline on it:
+<!-- astrona:playground:renew -->
+
+### Put a timeout on an HTTPS-only planet
+
+Save this as `virtualservice-httpbin-org-timeout.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
   name: httpbin-org
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   hosts:
-    - httpbin.org
+  - httpbin.org
   http:
-    - route:
-        - destination:
-            host: httpbin.org
-      timeout: 2s
+  - timeout: 2s
+    route:
+    - destination:
+        host: httpbin.org
+        port:
+          number: 80
 ```
 
-This works **only because** the `ServiceEntry` declared `protocol: HTTP` on port 80. With only an HTTPS or `TCP` port, the `VirtualService` would apply to nothing.
+The route names port `80`, because the plain HTTP port is the one an HTTP rule can work on.
 
-<!-- astrona:playground:renew -->
+Apply it:
 
-> [!TIP]
-> **Try it — a deadline on somebody else's API**
->
-> Save this as `serviceentry-httpbin-org-http-and-https.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: ServiceEntry
-> metadata:
->   name: httpbin-org
->   namespace: bookinfo
-> spec:
->   hosts:
->     - httpbin.org
->   ports:
->     - number: 80
->       name: http
->       protocol: HTTP
->     - number: 443
->       name: https
->       protocol: HTTPS
->   location: MESH_EXTERNAL
->   resolution: DNS
-> ```
->
-> Save this as `virtualservice-httpbin-org-timeout.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: VirtualService
-> metadata:
->   name: httpbin-org
->   namespace: bookinfo
-> spec:
->   hosts:
->     - httpbin.org
->   http:
->     - route:
->         - destination:
->             host: httpbin.org
->       timeout: 2s
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f serviceentry-httpbin-org-http-and-https.yaml
-> kubectl apply -f virtualservice-httpbin-org-timeout.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> call_external http://httpbin.org/delay/4
-> call_external http://httpbin.org/get
-> ```
->
-> Expect `504` after about `2.0s` for the first call, and `200` for the second. Two seconds, not four — the same timeout feature from section 040, applied to a host on the public internet. That is the payoff for putting it on the star chart.
-
-If you want HTTP features **and** an encrypted connection, the sidecar must add the encryption itself. That is TLS origination, and it is module 2's subject.
-
-A `DestinationRule` — the docking instructions for one beacon — works the same way, and is arguably more valuable in production: a connection pool on an external dependency stops a slow partner API from filling your workers.
-
-> [!TIP]
-> **Try it — a connection pool on an external host**
->
-> Save this as `destinationrule-httpbin-org.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: DestinationRule
-> metadata:
->   name: httpbin-org
->   namespace: bookinfo
-> spec:
->   host: httpbin.org
->   trafficPolicy:
->     connectionPool:
->       tcp:
->         maxConnections: 2
->       http:
->         http1MaxPendingRequests: 2
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f destinationrule-httpbin-org.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> sleep 3
-> istioctl proxy-config cluster deploy/curl -n bookinfo --fqdn httpbin.org -o json \
->   | grep -A5 circuitBreakers
-> ```
->
-> Expect a block like this one for each registered port (`80` and `443`):
->
-> ```text
-> "circuitBreakers": {
->   "thresholds": [
->     {
->       "maxConnections": 2,
->       "maxPendingRequests": 2,
-> ```
->
-> A `DestinationRule` pointing at a public hostname, compiled into exactly the same Envoy circuit breaker as section 040 module 2 produced for an in-cluster Service. The object does not know or care that the destination is external.
-
-## `exportTo` — a namespaced object with mesh-wide reach
-
-A `ServiceEntry` is namespaced, but by **default it is exported to the entire mesh**. Every namespace can use it.
-
-That surprises people, and it matters: a `ServiceEntry` created on one team's planet opens that host for every planet in the solar system. `exportTo` narrows it:
-
-```yaml
-spec:
-  exportTo:
-    - "."          # this namespace only
+```sh
+kubectl apply -f virtualservice-httpbin-org-timeout.yaml
 ```
 
-The values are the same shorthand as elsewhere: `.` for the object's own namespace, `*` for everywhere (the default), or a list of namespace names.
+Then call a path that waits 4 seconds before it answers, and ask `istioctl analyze`:
 
-For a `REGISTRY_ONLY` mesh where the point is control, `exportTo: ["."]` on every `ServiceEntry` is a reasonable default — otherwise one namespace's allow-list is silently everyone's.
-
-## The `Sidecar` interaction
-
-This is the diagnostic worth carrying out of the module, because the symptom is identical to a missing `ServiceEntry`.
-
-Section 010's `Sidecar` resource limits which registry entries a proxy is programmed with — and Part 1 noted the registry includes `ServiceEntry` hosts. So a perfectly correct, mesh-exported `ServiceEntry` can be **invisible** to one namespace because that namespace's `Sidecar` never listed the external host in its `egress.hosts`.
-
-The result is a refusal — `BlackHoleCluster` in the log, `000` or `502` at the client — exactly as if the host had never been registered.
-
-```mermaid
-flowchart TB
-    F["BlackHoleCluster in log"] --> A{"ServiceEntry exists?"}
-    A -->|"no"| A1["create it"]
-    A -->|"yes"| B{"exportTo allows it?"}
-    B -->|"no"| B1["widen exportTo"]
-    B -->|"yes"| C{"Sidecar in namespace?"}
-    C -->|"no"| C1["look elsewhere"]
-    C -->|"yes"| D{"host in egress.hosts?"}
-    D -->|"no"| D1["that is the cause"]
-    D -->|"yes"| C1
+```sh
+call_external http://httpbin.org/delay/4
+istioctl analyze -n starfleet
 ```
 
-"Look elsewhere" means resolution, ports and protocol. Two of those gates belong to other people's objects, which is why a `ServiceEntry` that works in one namespace can fail in another with nothing wrong in the `ServiceEntry` itself.
+You should see:
 
-The rule of thumb: **when a `ServiceEntry` works from one namespace and not another, look for a `Sidecar` before re-reading the `ServiceEntry`.**
+```text
+000 0.010438s
+command terminated with exit code 56
+  exit=56
+Error [IST0101] (VirtualService starfleet/httpbin-org) Referenced host:port not found: "httpbin.org:80"
+```
 
-The playground already has that trap set. Part 1's `Sidecar` in `bookinfo` lists only `./*` and `istio-system/*` — this namespace and `istio-system`. A `ServiceEntry` anywhere else is off that planet's star chart, even though `exportTo` says everyone may use it.
+The flight plan exists, but port `80` is not on the chart, so the signal still falls into the black hole. `istioctl analyze` names the gap: `IST0101`, the host and port the route points at do not exist.
 
-> [!TIP]
-> **Try it — a correct `ServiceEntry` in the wrong namespace**
->
-> ```sh
-> kubectl delete se --all -n bookinfo
-> ```
->
-> Save this as `serviceentry-in-other-namespace.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: ServiceEntry
-> metadata:
->   name: httpbin-org
->   namespace: default
-> spec:
->   hosts:
->     - httpbin.org
->   ports:
->     - number: 443
->       name: https
->       protocol: HTTPS
->   location: MESH_EXTERNAL
->   resolution: DNS
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f serviceentry-in-other-namespace.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> call_external https://httpbin.org/get
-> ```
->
-> Expect `000 exit=35` — still blocked. The entry exists and is exported mesh-wide, but the `bookinfo` `Sidecar` only takes in configuration from `bookinfo` and `istio-system`. Fix it either way: put the `ServiceEntry` in the app's namespace, or add `default/*` to the `Sidecar`'s `egress.hosts`. Clean up with `kubectl delete -f serviceentry-in-other-namespace.yaml` and re-apply Part 2's `serviceentry-httpbin-org.yaml`.
+### Add the plain HTTP port
 
-## Common pitfalls
-
-> [!WARNING]
-> **Expecting `REGISTRY_ONLY` without setting it.** The default is `ALLOW_ANY`. If external calls succeed before you create any `ServiceEntry`, the mode is why.
->
-> **Reading a refusal as a network problem.** Under `REGISTRY_ONLY`, `BlackHoleCluster` in the log (with `502` or `000` at the client) means "not in the registry". DNS and connectivity are fine.
->
-> **Declaring `protocol: TCP` and expecting HTTP features.** No timeouts, no retries, no path routing. The declared protocol is what enables layer-7 handling.
->
-> **Registering only the port the application uses today.** A `ServiceEntry` for port 80 does nothing for an HTTPS call on 443 — which is module 2's whole subject.
->
-> **Assuming a `ServiceEntry` is namespace-private.** It is exported mesh-wide unless `exportTo` says otherwise.
->
-> **Overlooking a `Sidecar` scope.** It hides a perfectly good `ServiceEntry` from one namespace, with the same refusal you would get from never having created it.
->
-> **Using `resolution: DNS` with a wildcard host.** There is no single name to resolve; use `NONE`.
->
-> **Forgetting the proxy resolves the name, not you.** With `resolution: DNS` the hostname must resolve from inside the pod.
-
-> *A registered external host is an ordinary mesh host — every `VirtualService` and `DestinationRule` feature in this course applies to it unchanged.*
-
-## Exam cheat sheet
+Chart port `80` as `HTTP` next to port `443`. The object has the same name as before, so applying it replaces the HTTPS-only version. Save this as `serviceentry-httpbin-org-http-and-https.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
-metadata: {name: httpbin-org, namespace: bookinfo}
+metadata:
+  name: httpbin-org
+  namespace: starfleet
 spec:
-  hosts: [httpbin.org]
+  hosts:
+  - httpbin.org
   ports:
-  - {number: 443, name: https, protocol: HTTPS}
-  - {number: 80,  name: http,  protocol: HTTP}
-  location: MESH_EXTERNAL       # outside the mesh, no mTLS
-  resolution: DNS               # NONE for wildcards, STATIC with endpoints
----
-apiVersion: networking.istio.io/v1
-kind: Sidecar
-metadata: {name: default, namespace: bookinfo}
-spec:
-  outboundTrafficPolicy: {mode: REGISTRY_ONLY}
-  egress:
-  - hosts: ["./*", "istio-system/*"]
+  - number: 80
+    name: http
+    protocol: HTTP
+  - number: 443
+    name: https
+    protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: DNS
 ```
 
-- Mesh-wide alternative: install option `meshConfig.outboundTrafficPolicy.mode=REGISTRY_ONLY`.
-- `REGISTRY_ONLY` is not a firewall: pods without a sidecar are not limited.
-- HTTP features (timeout, retries, faults) need a plain `HTTP` port on the `ServiceEntry`.
-- Docs: istio.io → Tasks → Traffic Management → Egress → **Accessing External Services**.
+Apply it:
+
+```sh
+kubectl apply -f serviceentry-httpbin-org-http-and-https.yaml
+```
+
+Then call the slow path and a fast one, and read the flight log:
+
+```sh
+call_external http://httpbin.org/delay/4
+call_external http://httpbin.org/get
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
+```
+
+You should see (log lines trimmed):
+
+```text
+504 2.015458s
+  exit=0
+200 0.278113s
+  exit=0
+[...] "GET /delay/4 HTTP/1.1" 504 UT response_timeout ... "httpbin.org" "52.21.224.34:80" outbound|80||httpbin.org ...
+[...] "GET /get HTTP/1.1" 200 - via_upstream ... "httpbin.org" "32.194.118.12:80" outbound|80||httpbin.org ...
+```
+
+`504` after 2 seconds, not 4. The flag `UT` (upstream timeout) shows that the proxy cut the signal off. The fast call still answers `200`. Now the flight log shows full HTTP lines, with the method, the path and the host, because the proxy can read the signal. A deadline on a planet in another solar system, set from your own ship.
+
+If you want HTTP features **and** an encrypted connection, the proxy must add the encryption itself on the way out. That is called **TLS origination** (TLS, Transport Layer Security, is the encryption under HTTPS).
+
+## The `502` signature
+
+Port `80` now has an HTTP listener in the shuttle's proxy. That changes how a refusal looks on port `80`, for every other planet too.
+
+### Read the route table on port 80
+
+```sh
+istioctl proxy-config routes deploy/shuttle -n starfleet --name 80
+call_external http://www.google.com/
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
+```
+
+You should see (log line trimmed):
+
+```text
+NAME     VHOST NAME         DOMAINS                       MATCH     VIRTUAL SERVICE
+80       httpbin.org:80     httpbin.org, httpbin.org.     /*        httpbin-org.starfleet
+80       block_all          *                             /*
+502 0.021723s
+  exit=0
+[...] "GET / HTTP/1.1" 502 - direct_response ... "www.google.com" "-" - - 142.251.155.119:80 ... block_all
+```
+
+The route table on port `80` has two entries: `httpbin.org` with your flight plan, and **`block_all`** for every other name. `www.google.com` is not on the chart, so its signal hits `block_all`, and the proxy answers `502` itself (`direct_response`). This is the plain HTTP refusal, astronaut: `502`, not `000`, as soon as a charted host shares the port.
+
+## Docking instructions for an external host
+
+A `DestinationRule` works the same way, and in production it is often worth even more. A connection pool on an outside dependency stops one slow partner API from tying up every worker in your application.
+
+### Put a connection pool on `httpbin.org`
+
+Allow only one connection and one waiting request. Save this as `destinationrule-httpbin-org.yaml`:
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin-org
+  namespace: starfleet
+spec:
+  host: httpbin.org
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 1
+      http:
+        http1MaxPendingRequests: 1
+```
+
+Apply it:
+
+```sh
+kubectl apply -f destinationrule-httpbin-org.yaml
+```
+
+Then look at the limits in the shuttle's proxy, and send 6 slow signals at the same time:
+
+```sh
+istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn httpbin.org --port 80 -o json | grep -A6 circuitBreakers
+kubectl exec -n starfleet deploy/shuttle -- sh -c \
+  'for i in 1 2 3 4 5 6; do curl -s -o /dev/null -w "%{http_code}\n" http://httpbin.org/delay/1 & done; wait' | sort | uniq -c
+kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=6 | grep ' 503 ' | tail -1
+```
+
+You should see (log line trimmed):
+
+```text
+        "circuitBreakers": {
+            "thresholds": [
+                {
+                    "maxConnections": 1,
+                    "maxPendingRequests": 1,
+                    "maxRequests": 4294967295,
+   2 200
+   4 503
+[...] "GET /delay/1 HTTP/1.1" 503 UO upstream_reset_before_response_started{overflow} ... outbound|80||httpbin.org ...
+```
+
+The limits from your `DestinationRule` sit in the proxy as Envoy circuit breaker thresholds. One signal used the connection, one waited, and the other four were turned away at once with `503` and the flag `UO` (upstream overflow). The proxy does not know or care that the destination is outside the cluster.
+
+## `exportTo`: who else may use your chart entry
+
+A `ServiceEntry` lives in a namespace, but by **default it is exported to the whole mesh**. Every namespace may use it.
+
+That surprises people, and it matters. Under `REGISTRY_ONLY`, a `ServiceEntry` that one team creates on its planet opens that host for every planet in the mesh. `exportTo` narrows it:
+
+```yaml
+spec:
+  exportTo:
+  - "."
+```
+
+The values are `.` for the object's own namespace, `*` for every namespace (the default), or a list of namespace names. In a mesh where the point is control, put `exportTo: ["."]` on every `ServiceEntry`. Otherwise one planet's allow-list silently becomes everyone's.
+
+## Common pitfalls
+
+> [!WARNING]
+> - **Expecting HTTP features on an HTTPS or TCP port.** No timeouts, no retries, no path routing. The declared `protocol` is what turns HTTP handling on.
+> - **Leaving the port out of a route when the host has several ports.** `istioctl analyze` reports `IST0112`. Name the port in `destination.port.number`.
+> - **Reading `502` as a broken partner API.** With `block_all` in the flight log, the mesh refused the host. It is not on the chart.
+> - **Assuming a `ServiceEntry` is private to its namespace.** It is exported to every namespace unless `exportTo` says otherwise.
+
+> *A charted external host is an ordinary mesh host: timeouts, retries and connection pools apply to it unchanged, as long as its port speaks HTTP.*
+
+## Your mission: Open Exactly One Route Out
+
+You can now chart a planet, give its port the right protocol, and put a timeout on it. Now prove it in a graded mission: in a mesh that refuses everything, open exactly one route to an outside endpoint, keep a second one blocked, and give the open route a deadline.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-014-playground-070-01
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-01/labs/lab-01
+```
+
+Read the task in [`question.md`](./labs/lab-01/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-070/module-01/labs/lab-01
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-014-lab-070-01
+astrona start ats-014-playground-070-01
+```

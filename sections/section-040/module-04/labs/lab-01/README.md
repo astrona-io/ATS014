@@ -1,9 +1,29 @@
-# Locality Load Balancing And Failover Sandbox
+---
+estimated_duration: 5m
+---
 
-Welcome to the Module 4 training mission, astronaut. In this lab you'll make signals leave a planet whose ships are failing (a failing locality) — which means configuring the thing that decides what "failing" means, because locality settings on their own never fail over.
+# Locality Load Balancing And Failover
+
+Welcome to a failover mission, astronaut. The ship in your own orbit answers `503` to every signal, yet it stays ready, so Kubernetes keeps it in the list. Locality settings on their own never notice that.
+
+Your job is to make signals leave the failing orbit for the healthy one, by configuring the thing that decides what "failing" means.
 
 ## Launching the Lab
-Run the following command in your terminal to boot the kind Kubernetes cluster:
+
+Run this command to start the cluster with the failing ship already in place:
+
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-04/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-040/module-04/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
+astrona destroy ats-014-lab-040-04
 ```

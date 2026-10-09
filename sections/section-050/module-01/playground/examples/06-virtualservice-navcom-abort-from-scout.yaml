@@ -1,0 +1,27 @@
+# Fault only for one CALLER. sourceLabels matches the labels of the
+# pod sending the request. Calls from scout fail; calls from shuttle work.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: navcom
+  namespace: starfleet
+spec:
+  hosts:
+  - navcom
+  http:
+  - match:
+    - sourceLabels:
+        app: scout
+    fault:
+      abort:
+        percentage:
+          value: 100
+        httpStatus: 500
+    route:
+    - destination:
+        host: navcom
+        subset: v1
+  - route:
+    - destination:
+        host: navcom
+        subset: v1

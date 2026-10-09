@@ -1,0 +1,34 @@
+# Route traffic arriving at starfleet-gateway to the bridge.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bridge
+  namespace: starfleet
+spec:
+  # Must match a host on the Gateway server.
+  hosts:
+  - starfleet.example.com
+  # Bind to the Gateway. Without this, the rule only applies to sidecars
+  # ("mesh") and the gateway still returns 404.
+  # Gateway in another namespace: "<namespace>/starfleet-gateway".
+  gateways:
+  - starfleet-gateway
+  http:
+  # Only the paths the bridge serves; anything else gets 404 from the gateway.
+  - match:
+    - uri:
+        exact: /productpage
+    - uri:
+        prefix: /static
+    - uri:
+        exact: /login
+    - uri:
+        exact: /logout
+    - uri:
+        prefix: /api/v1/products
+    route:
+    - destination:
+        # Short name = service in this VirtualService's namespace (starfleet).
+        host: bridge
+        port:
+          number: 9080

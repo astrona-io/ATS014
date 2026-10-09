@@ -16,7 +16,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace bookinfo, access logs, curl client, httpbin v1 (3 pods) and v2 (1 pod)"
+      description: "Namespace starfleet, access logs, the shuttle, and the probe: v1 (3 pods) and v2 (1 pod)"
       type: "file"
       source: "bootstrap/deploy.sh"
 

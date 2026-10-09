@@ -160,7 +160,7 @@ kubectl -n egress-demo logs deploy/tester -c istio-proxy --tail=3 | grep UT | he
 [2026-09-27T14:02:11.771Z] "GET /delay/5 HTTP/1.1" 504 UT upstream_response_timeout ...
 ```
 
-Two seconds against a five-second endpoint, with the `UT` flag from section 040. The `VirtualService` names `partner.example.com` — the host from the `ServiceEntry`, not the IP — because that is the registry name the request now resolves to internally.
+Two seconds against a five-second endpoint, with the `UT` flag (upstream timeout) in the flight log. The `VirtualService` names `partner.example.com` — the host from the `ServiceEntry`, not the IP — because that is the registry name the request now resolves to internally.
 
 This is the step that fails if `protocol` was `TCP`: the proxy would have no idea where one request ends, so a `timeout` would bound nothing and you would wait the full five seconds.
 

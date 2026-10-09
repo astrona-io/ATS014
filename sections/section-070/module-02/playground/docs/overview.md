@@ -2,45 +2,54 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-Welcome aboard, astronaut. This is a **playground**, not a lab. The environment starts clean, runs
-`bootstrap/prepare.sh`, applies the starting workloads, and then waits. There is
-no task, no `astrona submit`, and no pass/fail. Explore, break things,
-`astrona destroy`, start over.
+This is a **playground**, not a lab: your training solar system, astronaut. It
+starts a fresh cluster, installs Istio, the shuttle and the probe, and then
+waits. There is no task, no `astrona submit` and no pass or fail. Explore,
+break things, `astrona destroy`, start over.
 
 ## What's in the box
 
-- A single-node `kind` Kubernetes cluster with `kubectl` already pointed at it.
-- **Istio 1.30.5** (`demo` profile) and `istioctl` on your PATH. The mesh is at
-  its `ALLOW_ANY` default, so external calls are not blocked — this module is
-  about visibility (can the communications officer read the signal?), not permission.
-- Namespace **`tlsorig-demo`**, injected, with a `tester` client pod.
-- **No Istio configuration at all.**
+- A single-node `kind` Kubernetes cluster. `kubectl` is already pointed at it.
+- **Istio 1.30.5**, installed with Helm (`istio-base` and `istiod` only, no
+  gateways). `istiod` is mission control: it sends every proxy its orders.
+- The mesh at its **`ALLOW_ANY`** default, so ships may signal any outside
+  planet. This module is about whether the communications officer can **read**
+  the signal, not about whether it may leave.
+- Mesh-wide **access logs**, so every proxy writes one line per signal. This
+  is the ship's flight log, and you read it with
+  `kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1`.
+- Namespace **`starfleet`** (the planet you work on), labelled
+  `istio-injection=enabled`, with:
+  - **`shuttle`**, your client pod inside the mesh. You send every test signal
+    from it with the `curl` command.
+  - **`probe`** v1 and v2 behind one Service on port `8000`, an echo service
+    inside the cluster.
+- **No `ServiceEntry`, `VirtualService` or `DestinationRule`.** Writing them is
+  the module.
 
 ### Outbound internet
 
-The commands reach `httpbin.org`. Without outbound internet access you will see
-network errors rather than mesh behaviour.
+This playground calls `httpbin.org` on ports `80` and `443`. **Without outbound
+internet access you see network failures, not mesh behaviour.** Run a plain
+`curl https://httpbin.org/get` on your own machine first.
 
 ## Things to try
 
-- Call `https://httpbin.org/get` directly and read
-  `kubectl logs deploy/tester -c istio-proxy`. The `"- - -"` where the method and
-  path should be is the problem this module solves.
-- Build the three objects one at a time and note the distinct failure each
-  omission produces: no port 80 in the `ServiceEntry`, no `VirtualService`
-  redirect, no `DestinationRule`.
-- Put `tls.mode: SIMPLE` at the top of `trafficPolicy` instead of under
-  `portLevelSettings` and watch the plaintext side break.
-- Remove `sni` and see whether the handshake still succeeds for this particular
-  host. Some endpoints tolerate it; shared-hosting ones do not.
-- Confirm origination from the destination's own view:
-  `curl -s http://httpbin.org/headers | grep -i X-Forwarded-Proto`.
-- Keep calling `https://` from the application with everything configured, and
-  confirm origination never happens — the app must speak `http://`.
-- Add a `timeout` or a retry policy on the now-visible HTTP route and watch
-  layer-7 features work against an external service.
-- Look for `transportSocket` in
-  `istioctl proxy-config cluster deploy/tester -n tlsorig-demo --fqdn httpbin.org -o json`.
+Each idea below uses the files you made while reading the module. The
+module's parts show the full YAML for every step.
+
+- Call `https://httpbin.org/get` and `http://httpbin.org/get` before anything
+  else. Both log lines show `"- - -"` and `PassthroughCluster`.
+- Build the three objects one at a time and note the symptom of each stage:
+  a readable but open signal on port `80`, then `400` from the server, then
+  `200` with `"url": "https://httpbin.org/get"`.
+- Move `tls` to the top of `trafficPolicy`, delete the `VirtualService`, and
+  watch the call fail with `503 UF` and `WRONG_VERSION_NUMBER`.
+- Leave `sni` out and look for `autoSni` in
+  `istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn httpbin.org --port 443 -o json`.
+- Keep calling `https://` with origination switched on: `curl` exit code `35`.
+- Add a `timeout` or a retry policy to the flight plan and call
+  `http://httpbin.org/delay/5` or `http://httpbin.org/status/503`.
 
 ## When you're done
 

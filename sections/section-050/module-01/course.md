@@ -1,56 +1,67 @@
 # Fault Injection With Delays And Aborts
 
-<!-- astrona:playground -->
-> [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
->
-> ```sh
-> astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-050/module-01/playground
-> astrona destroy ats-014-playground-050-01
-> ```
+Astronaut, a timeout you have never seen fire is a guess. A retry policy you have never watched retry is a guess too. You could wait for a real outage to find out, which is a poor plan. Or you could build failure switches into every ship, which means flying test code on real missions.
 
-Astronaut, section 040 fitted your ships with resilience. This module is the simulation drill that tells you whether any of it works.
-
-A timeout you have never seen fire is a guess. A retry policy you have never watched retry is a guess. The usual ways to check are to wait for a real outage, which is a poor plan, or to add failure switches to the application, which means shipping test code to production.
-
-Fault injection removes both. The proxy fabricates the failure: it holds a request for two seconds, or returns a 500 without contacting the upstream at all. The application under test is completely unmodified and cannot tell the difference — which is exactly what makes the result meaningful.
-
-Think of it as a simulation drill. Mission control fakes an engine failure on purpose, so the crew can practise the response while nothing is really at stake. Here the "fake failure" is a few lines of YAML, the crew is your application, and the failure is a signal that arrives late or never arrives at all.
-
-## How this module is organised
-
-1. **[`fault.delay`](./course-01-fault-delay.md)** — making a dependency slow, where the fault is enforced, and which `VirtualService` it belongs on.
-2. **[`fault.abort`](./course-02-fault-abort.md)** — making a dependency fail, why the upstream has no record of it, and sampling with `percentage`.
-3. **[Scoping, Composition And Hazards](./course-03-scoping-composition-and-hazards.md)** — limiting a fault to your own requests or to one calling service, using injection to drive the section 040 features, finding a fault somebody left behind, and the module's pitfalls.
+Fault injection gives you a third way: the **simulation drill**. Mission control fakes an engine failure on purpose, so the crew can practise the response while nothing is really at stake. In the mesh, the drill is a few lines in a flight plan. The communications officer beside a ship holds a signal back for two seconds, or answers it with an error without ever sending it on. The ships themselves are not changed at all, and they cannot tell a drill from the real thing. That is exactly what makes the result worth trusting.
 
 ## Learning objectives
 
 After this module you can:
 
-- Inject `fault.delay` and `fault.abort` and say precisely what the caller experiences for each.
-- Name which proxy enforces a fault and which `VirtualService` it belongs on.
-- Explain why an aborted request leaves no trace in the destination's logs or metrics, and spot injected faults by their `FI` and `DI` response flags.
-- Scope a fault to a fraction of traffic with `percentage`, to specific requests with a `match`, and to one calling service with `sourceLabels`.
-- Design injection experiments that exercise a timeout, a retry policy and outlier detection.
-- Find a live or forgotten fault from the proxy configuration.
-- Judge the risk of leaving a fault in a shared environment.
+- Add a `fault.delay` and a `fault.abort` to a flight plan, and say exactly what the sender sees for each.
+- Name the flight plan a drill belongs on, and the communications officer that carries it out.
+- Explain why an aborted signal leaves no trace at the receiving ship, and recognise drills by the `DI` and `FI` flags in the sender's flight log.
+- Run a drill on a share of the signals with `percentage`, on your own signals with a `match`, and on one sending ship with `sourceLabels`.
+- Use a delay to make a timeout fire on demand, and explain why a drill rule ignores its own `timeout` and `retries`.
+- Find a forgotten drill in the proxy's orders.
 
 ## Before you start
 
-This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+Every mission starts with a pre-flight check, astronaut. Make sure you have the knowledge this module expects, know what is waiting in your playground, and have two small helpers ready in your terminal.
 
-You need `VirtualService` routing and matching from section 010, and the `timeout` and `retries` fields from section 040 — a fault is most useful when there is something to point it at.
+### What you should already know
 
-The playground is a training solar system in the simulator: a single-node `kind` cluster with **Istio 1.30.5** installed by Helm (`istio-base` and `istiod`, no gateways) and access logs turned on. Namespace **`bookinfo`** holds the Bookinfo sample app, the same one the Istio fault injection task uses, plus a `curl` client pod. Every pod is injected. The call chain the faults go into is:
+- **How the mesh works.** A proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You can read those orders with `istioctl proxy-config`.
+- **Flight plans.** How to write a `VirtualService` with routing rules and a `match`. A drill is one extra field on a rule you already know how to write.
+- **Timeouts and retries.** What a route `timeout` and a `retries` block do. A drill is most useful when it has a safety setting to test.
 
-```text
-curl pod  →  reviews (v2 or v3)  →  ratings
+### What is in your playground
+
+Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** installed with Helm, and flight logs (access logs) switched on for every ship. Everything you need is on one planet, the namespace **`starfleet`**:
+
+| Ship | Its role in the fleet |
+| --- | --- |
+| `bridge`, `cargo` | The flagship and the supply ship of the Starfleet. The bridge calls the cargo ship and the scout |
+| `scout` v1, v2, v3 | Three ship classes of one scout. Only v2 and v3 ask `navcom` for a star rating, so a drill on navcom shows up through them |
+| `navcom` | The navigation computer that the v2 and v3 scouts ask |
+| `probe` v1, v2 | An echo probe you can send signals to directly |
+| `shuttle` | Your test client. You send every test signal from here |
+
+The docking instructions for the scout (subsets v1, v2, v3) and for navcom (subset v1) are already applied. There is **no** flight plan (`VirtualService`) yet, so there is no drill either. Writing them is your mission in this module.
+
+The scout passes the `end-user` label of a signal on to navcom. That is what lets a drill on navcom hit one user's signals only, even through the scout.
+
+Launch your playground now, and keep it running next to you while you read the parts:
+
+<!-- astrona:playground -->
+
+### Two helpers to paste first
+
+Paste these into each new terminal before you start:
+
+```sh
+status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
+count_navcom_status() { for i in $(seq 1 10); do
+  kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://navcom:9080/ratings/0
+done | sort | uniq -c; }
 ```
 
-`reviews` v2 and v3 call `ratings` on every request; `reviews` v1 does not. That second hop is where most faults go, so you can watch a *ship* react when a ship it depends on fails, rather than just watching curl react. `reviews` also passes the `end-user` header on to `ratings`, which is what lets a fault target one user.
+`status_and_time` sends one signal from the shuttle and prints the status code and the time it took. Add `-H "end-user: jason"` before the address to send it as jason. `count_navcom_status` sends 10 signals from the shuttle straight to navcom and counts the status codes, so you can see a drill that hits only a share of the signals.
 
-The playground already defines the subsets `reviews` v1/v2/v3 and `ratings` v1 in DestinationRules. No `VirtualService` exists yet. The playground's [overview](./playground/docs/overview.md) has two helper functions, `status_and_time` and `count_ratings_status`, that the "Try it" steps in every part use. Paste them into your terminal once.
+### Extra practice
 
-## Where this fits
+The playground also comes with an exam-style practice task with a checked solution. You find it in the playground folder, under `docs/practice.md`.
 
-This is the test harness for section 040, and the two sections are best read as a pair. It also has a use beyond verifying configuration: injecting a dependency's failure is the cheapest way to find out what your application does when that dependency is down, which is usually less graceful than anyone expects. The same feature underpins chaos-engineering practice, with one important difference: here the blast radius is a field you control, so one drill never takes out the whole fleet the way one weak spot took out the Death Star.
+## Why this matters
+
+Every safety setting in the mesh is a promise about what happens when a ship fails. A drill is how you check that promise while nothing is at stake. It is also the cheapest way to learn what your own ships do when a ship they depend on is down, which is usually less graceful than anyone expects. And because the drill lives in a flight plan, you decide exactly whose signals it touches, so one drill never takes out the whole fleet.

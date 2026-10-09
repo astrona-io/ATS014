@@ -1,190 +1,190 @@
 # `consistentHash` And The Ring
 
-Every algorithm in Part 1 spreads traffic. This part is the other option. Instead of choosing by load, the proxy works out the pod from something **in the signal** (the request). The same input then always lands on the same pod. This is called a **sticky session**, or **session affinity**.
+Astronaut, every algorithm so far spreads signals over the squadron. This part is the opposite. Instead of choosing by load, the proxy works out the ship from something **in the signal**, so the same input always lands on the same ship. That is a **sticky session**.
 
 Think of an astronaut who calls the same squadron again and again. With sticky sessions, the same spaceship always answers that astronaut, so the crew on board still remembers where the conversation left off.
 
-This part covers what you can hash, how a hash becomes a pod, and the two behaviours that surprise people: sessions moving when pods change, and stickiness vanishing when the request carries nothing to hash.
+The commands below need the `count_pods` helper pasted into your terminal.
 
-## The four things you can hash
+## What you can hash
 
-A **hash** is a number the proxy calculates from a value, such as the text `alice`. The same value always gives the same number. `consistentHash` is the second form of `loadBalancer`, and you can only use it **instead of** `simple`. You set exactly one of these fields:
+A **hash** is a number the proxy calculates from a value, such as the text `alice`. The same value always gives the same number. `consistentHash` is the second form of `loadBalancer`, and you use it **instead of** `simple`, never together with it. You set exactly one of these fields:
 
 | Field | Hashes | Good for |
 | --- | --- | --- |
-| `httpHeaderName` | a named request header | a gateway or client that already sends a stable user or tenant id |
+| `httpHeaderName` | a named request header | a gateway or client that already sends a stable user id |
 | `httpCookie` | a cookie, with a `name` and an optional `ttl` | browser traffic, where Istio can **create** the cookie |
-| `useSourceIp: true` | the caller's IP address | the bluntest option; misleading when many users share one address |
+| `useSourceIp: true` | the sender's IP address | the bluntest option; misleading when many users share one address |
 | `httpQueryParameterName` | a named query parameter, such as `?user=alice` | APIs that carry the user id in the URL |
 
-If you set `simple` and `consistentHash` together, the object is rejected when you apply it. That is a good kind of failure: you find out straight away.
+This part uses the header. The next part covers the cookie and the other two.
 
-## How a hash becomes a pod
+## How a hash becomes a ship
 
-"Consistent hashing" is the name of a specific method. Knowing roughly how it works lets you predict what it does.
+"Consistent hashing" is a specific method. Knowing roughly how it works lets you predict what it does.
 
-Envoy builds a **ring**: a circle of hash values. Picture the rings of Saturn, with every spaceship (pod) parked at many small spots around it (hundreds of them, set by `minimumRingSize`). To route a request, the proxy hashes the chosen value, finds that point on the ring, and walks clockwise to the first pod marker it meets.
+Envoy builds a **ring**: a circle of hash values. Picture the rings of Saturn, with every ship parked at many small spots around it. To route a signal, the proxy hashes the chosen value, finds that point on the ring, and walks clockwise to the first ship it meets.
 
 ```mermaid
 flowchart TB
     V["value: alice"] -->|"hash"| H["point on the ring"]
-    H -->|"walk clockwise"| W["first pod marker"]
-    W -->|"serves"| E["that pod"]
-    E -->|"next request: repeat"| V
+    H -->|"walk clockwise"| W["first ship marker"]
+    W -->|"serves"| E["that ship"]
 ```
 
-Nothing is stored: every request repeats the walk. Each pod owns hundreds of small slices of the ring, not one big slice. That is why losing one pod disturbs only a small share of users.
+Two facts follow from that picture:
 
-Two facts follow from that picture, and both come up in exams:
-
-- **Nothing is stored.** The proxy does not remember that `alice` went to pod A. It works out the same hash and walks to the same marker every time. So stickiness survives a proxy restart and needs no shared session store.
-- **Removing a pod only affects its own slices.** Take pod A away and its markers vanish. Requests that used to land on them walk on to the next marker. Requests that were already landing on B or C do not move.
-
-That second fact is the "consistent" in consistent hashing. A simple `hash(value) % number_of_pods` would move **almost every** user when the number of pods changes. The ring moves only about `1/N` of them, where `N` is the number of pods.
+- **Nothing is stored.** The proxy does not remember that `alice` went to ship A. It works out the same hash and walks to the same spot every time. So stickiness survives a proxy restart and needs no shared session store.
+- **Each ship owns many small slices of the ring**, not one big slice. When a ship joins or leaves, only some users have to move. A simple "hash divided by the number of ships" would move almost everyone.
 
 <!-- astrona:playground:renew -->
 
-> [!TIP]
-> **Try it — the same user always lands on the same pod**
->
-> Write a DestinationRule that hashes the `x-user` header, then apply it. It has the same name as the one from Part 1, so it replaces it.
->
-> Save this as `destinationrule-httpbin.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: DestinationRule
-> metadata:
->   name: httpbin
->   namespace: bookinfo
-> spec:
->   host: httpbin
->   trafficPolicy:
->     loadBalancer:
->       consistentHash:
->         httpHeaderName: x-user
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f destinationrule-httpbin.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> count_pods -H "x-user: alice" $HOSTNAME_URL
-> count_pods -H "x-user: bob" $HOSTNAME_URL
-> ```
->
-> Expect 8 × one pod for `alice`, and 8 × one (maybe other) pod for `bob`. Nothing was stored. The proxy worked out the same hash of `alice` on every request and walked to the same marker. Which pod it is depends on the hash, so yours may differ.
+### Pin each user to one ship
 
-A pin only means something if different values can land on different pods. `bob` usually gets a different pod from `alice`. But with four pods, two names can land on the same one. **A collision is not a mistake in your configuration.** If `alice` and `bob` share a pod, try `carol`.
+Hash the `x-user` header. Save this as `destinationrule-probe.yaml`:
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    loadBalancer:
+      consistentHash:
+        httpHeaderName: x-user
+```
+
+Apply it:
+
+```sh
+kubectl apply -f destinationrule-probe.yaml
+```
+
+Then send 8 signals each as `alice`, `bob` and `carol`:
+
+```sh
+count_pods -H "x-user: alice" $HOSTNAME_URL
+count_pods -H "x-user: bob" $HOSTNAME_URL
+count_pods -H "x-user: carol" $HOSTNAME_URL
+```
+
+One run gave:
+
+```text
+   8 "probe-v2-58767cc46-9srsh"
+   8 "probe-v2-58767cc46-9srsh"
+   8 "probe-v1-7888d6c6d5-v2s9n"
+```
+
+Every user is pinned: 8 out of 8 signals reached the same ship each time. In this run, `alice` and `bob` landed on the **same** ship, and `carol` on another. With four ships, two names often share one. That is a **collision**, not a mistake in your configuration. Which ship each name gets depends on the hash, so yours may differ.
+
+### See the ring in the proxy
+
+Envoy calls consistent hashing `RING_HASH`. Ask the shuttle's proxy:
+
+```sh
+istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet.svc.cluster.local -o json \
+  | grep -E '"lbPolicy"|"minimumRingSize"'
+```
+
+```text
+        "lbPolicy": "RING_HASH",
+            "minimumRingSize": "1024"
+```
+
+`minimumRingSize` is how many spots the ring has. With 1024 spots shared by four ships, each ship owns hundreds of small slices.
 
 ## Stickiness is best effort
 
-Be ready to say this in an exam answer. "Sticky sessions" sounds absolute, but it is not.
+"Sticky sessions" sounds absolute, but it is not, and exam answers should say so. The ring is built from the ships that exist **right now**. When a ship joins or leaves, the ring is rebuilt, and some users move.
 
-The ring is built from the pods that exist **right now**. Add a pod and it places new markers, taking over some slices from its neighbours. Lose a pod and the next pods clockwise take over its slices. Either way, some existing sessions move.
+### Watch some users move
 
-What consistent hashing promises is that the share is **small**: about one over the number of pods, not a full reshuffle. Going from three pods to four moves about a quarter of sessions. The other three quarters never notice.
+Keep the header policy. Write down which ship eight users land on, then add a fourth v1 ship and look again:
 
-So **treat stickiness as a speed-up, not a guarantee.** If an app breaks when a session moves to another pod, that app needs shared session storage, whatever the load balancer does. Stickiness makes caches work better. It does not make in-memory session data safe.
-
-## A request with nothing to hash
-
-This is behind most "it works in testing but not in production" reports about stickiness.
-
-If a signal does not carry the hashed value (no `x-user` header, no cookie, no such query parameter), there is nothing to hash. It is like a signal with no call sign on the label. The proxy does not fail the request, and it does not pick a fixed backup pod. It **falls back to normal load balancing** for that request.
-
-So a policy that hashes a header the client only sometimes sends gives stickiness that only sometimes works. There is no error and no clear pattern.
-
-> [!TIP]
-> **Try it — no header means no stickiness**
->
-> ```sh
-> count_pods $HOSTNAME_URL
-> ```
->
-> Expect the 8 answers spread over several pods. The `consistentHash` policy is still in place and unchanged. These requests simply have nothing to hash, so they spread. Compare this with the 8-on-one-pod result above: same policy, different requests, completely different behaviour.
-
-## Sticky by cookie, and what `ttl` does
-
-A browser cannot easily send a custom header, but it does keep cookies. So for browser traffic, a cookie is usually the better choice:
-
-```yaml
-trafficPolicy:
-  loadBalancer:
-    consistentHash:
-      httpCookie:
-        name: session
-        ttl: 3600s
+```sh
+who() { for u in alice bob carol dave erin frank grace heidi; do
+  printf "%-6s %s\n" $u "$(kubectl exec -n starfleet deploy/shuttle -- curl -s -H "x-user: $u" $HOSTNAME_URL | grep -o 'probe-[^"]*')"
+done; }
+who
 ```
 
-The important detail is what `ttl` does. **Setting `ttl` makes the sidecar create the cookie** when the request does not have one. The sidecar adds a `Set-Cookie` header to the response, and the browser sends the cookie back on every later request. That closes the "nothing to hash" gap for a first-time visitor. `ttl` is also how long that cookie lasts.
+One run gave:
 
-If you leave `ttl` out, Istio only hashes a cookie the client already sends. That is the right choice when another part of your system owns the session cookie and a second one would cause confusion.
+```text
+alice  probe-v2-58767cc46-9srsh
+bob    probe-v2-58767cc46-9srsh
+carol  probe-v1-7888d6c6d5-v2s9n
+dave   probe-v2-58767cc46-9srsh
+erin   probe-v1-7888d6c6d5-6lfpq
+frank  probe-v2-58767cc46-9srsh
+grace  probe-v1-7888d6c6d5-57cqj
+heidi  probe-v1-7888d6c6d5-v2s9n
+```
 
-> [!TIP]
-> **Try it — the sidecar hands out a cookie**
->
-> Save this as `destinationrule-httpbin.yaml`:
->
-> ```yaml
-> apiVersion: networking.istio.io/v1
-> kind: DestinationRule
-> metadata:
->   name: httpbin
->   namespace: bookinfo
-> spec:
->   host: httpbin
->   trafficPolicy:
->     loadBalancer:
->       consistentHash:
->         httpCookie:
->           name: session
->           ttl: 3600s
-> ```
->
-> Apply it:
->
-> ```sh
-> kubectl apply -f destinationrule-httpbin.yaml
-> ```
->
-> Then check the result:
->
-> ```sh
-> kubectl exec -n bookinfo deploy/curl -- curl -s -i $HOSTNAME_URL | grep -i -E 'set-cookie|hostname'
-> count_pods -b "session=abc123" $HOSTNAME_URL
-> ```
->
-> Expect a `set-cookie: session="..."; Max-Age=3600; HttpOnly` line. Then expect 8 × the same pod for the requests that carry the cookie.
+Now add one ship to the v1 squadron:
 
-## The other two: source IP and query parameter
+```sh
+kubectl scale deploy/probe-v1 -n starfleet --replicas=4
+kubectl rollout status deploy/probe-v1 -n starfleet
+```
 
-The playground has a ready-made file for each of the last two hash sources, in `examples/cases/`.
+Wait a few seconds, then run `who` again. In the same run:
 
-**`useSourceIp: true`** hashes the caller's IP address: where in the solar system the signal came from. All requests from the `curl` pod have the same IP, so they all land on one httpbin pod, with no header or cookie needed. The downside is the same fact turned around: many users behind one address all land on one pod. Traffic that comes in through the ingress gateway is the classic case, because every user then arrives from the gateway's address.
+```text
+alice  probe-v1-7888d6c6d5-xl2p6
+bob    probe-v2-58767cc46-9srsh
+carol  probe-v1-7888d6c6d5-xl2p6
+dave   probe-v2-58767cc46-9srsh
+erin   probe-v1-7888d6c6d5-v2s9n
+frank  probe-v2-58767cc46-9srsh
+grace  probe-v1-7888d6c6d5-57cqj
+heidi  probe-v1-7888d6c6d5-v2s9n
+```
 
-**`httpQueryParameterName: user`** hashes the value of `?user=`. `count_pods "$HOSTNAME_URL?user=alice"` lands 8 times on one pod. Without the parameter, requests spread as normal. Keep the quotes around the URL, because `?` is a special character in zsh.
+Five of the eight users stayed where they were. Three moved: `alice` and `carol` to the new ship (`xl2p6`), and `erin` from one old ship to another, because the whole ring was rebuilt. Nobody had to move all users, but some did move.
+
+Scale the squadron back:
+
+```sh
+kubectl scale deploy/probe-v1 -n starfleet --replicas=3
+```
+
+So treat stickiness as a **speed-up, not a guarantee**. It makes caches work better. If an app breaks when a session moves to another ship, that app needs shared session storage, whatever the load balancer does.
+
+## A signal with nothing to hash
+
+This is behind most "it works in testing but not in production" reports about stickiness. If a signal does not carry the hashed value, there is nothing to hash: a signal with no call sign on the label. The proxy does not fail the signal, and it does not pick a fixed backup ship. It **falls back to normal load balancing** for that signal.
+
+### Send signals without the header
+
+The header policy is still in place. Send 8 signals without `x-user`:
+
+```sh
+count_pods $HOSTNAME_URL
+```
+
+One run gave:
+
+```text
+   1 "probe-v1-7888d6c6d5-57cqj"
+   2 "probe-v1-7888d6c6d5-6lfpq"
+   2 "probe-v1-7888d6c6d5-v2s9n"
+   3 "probe-v2-58767cc46-9srsh"
+```
+
+The same policy, different signals, completely different behaviour. A policy that hashes a header the sender only sometimes sends gives stickiness that only sometimes works, with no error anywhere.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Treating stickiness as a guarantee.** Changing the set of pods moves about `1/N` of sessions. An app that breaks when a session moves needs shared session storage.
->
-> **Hashing a value the client does not always send.** Requests without it fall back to normal load balancing, silently, one request at a time.
->
-> **Reading a collision as a bug.** With a few pods, two different values landing on the same pod is normal. Try a third value before changing anything.
->
-> **Expecting `httpCookie` to create a cookie without `ttl`.** Without `ttl`, Istio only hashes a cookie the client already sends.
->
-> **Using `useSourceIp` behind a gateway or NAT.** Every caller arrives with the same address, so every request hashes the same and one pod takes all of it.
->
-> **Expecting stickiness to keep a user on one version in a weighted split.** The version (subset) is picked first, for every request. Stickiness only chooses among that version's pods. If each user must stay on one version, route by header in the `VirtualService`.
->
-> **Leaving a query-parameter URL unquoted in zsh.** zsh treats `?` as a wildcard and stops with `no matches found` before `curl` even runs.
+> - **Setting `simple` and `consistentHash` together.** You can only use one. The object is rejected.
+> - **Treating stickiness as a guarantee.** When ships join or leave, some users move. An app that breaks when a session moves needs shared session storage.
+> - **Hashing a value the sender does not always send.** Signals without it fall back to normal load balancing, silently, one signal at a time.
+> - **Reading a collision as a bug.** With a few ships, two values landing on the same ship is normal. Try a third value before you change anything.
+> - **Testing stickiness against one ship.** Every signal lands on the same ship whether your policy works or not. Use several.
 
-> *The ring maps a hash to a pod without storing anything, and changing the set of pods moves a small share of sessions, not all of them.*
+> *The ring turns a hash into a ship without storing anything. When the squadron changes, the ring is rebuilt and some users move, but most stay.*

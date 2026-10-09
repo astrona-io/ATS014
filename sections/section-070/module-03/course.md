@@ -1,53 +1,71 @@
 # Add External Workloads With WorkloadEntry
 
-<!-- astrona:playground -->
-> [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: `playground/`
->
-> ```sh
-> astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-070/module-03/playground
-> astrona destroy ats-014-playground-070-03
-> ```
+Astronaut, some ships in your fleet will never live in Kubernetes. Think of an old freighter that flies outside the fleet's signal network: a database on a virtual machine, an old service nobody has moved into a container, a device with a fixed address. You run it, you own it, but the mesh has never heard of it.
 
-Astronaut, the previous two modules dealt with services somebody else runs: planets in other solar systems that you signal but cannot change. This module is about something different: a workload **you** run that simply is not in Kubernetes. Think of an old ship that flies outside the fleet's signal network: a database on a VM, a legacy service nobody has containerised, an appliance with a fixed address.
+Right now your ships can only reach such a machine by its address, like shouting coordinates into space. Nobody gives it a name, a place on the star chart (the mesh's list of services), or crew papers that mission control recognises. This module fixes that with three Istio objects:
 
-The distinction matters because you want more from your own workload than from a third party's. Calling it by a stable hostname instead of an IP is the obvious part. Giving it a mesh **identity** (crew papers mission control recognises), so the same `AuthorizationPolicy` and `PeerAuthentication` rules that govern your spaceships govern it too, is the part that makes this feature worth learning.
+- A **`WorkloadEntry`** describes one machine outside Kubernetes: its address, its labels and the identity it runs as. It is to that machine what a pod is to a container.
+- A **`ServiceEntry`** with `location: MESH_INTERNAL` and a `workloadSelector` gives a group of those machines one name, like a beacon that several ships answer to.
+- A **`WorkloadGroup`** is a template for many machines, so a real virtual machine can add itself to the star chart when it starts.
 
-> `MESH_EXTERNAL` gets you routing. `MESH_INTERNAL` additionally gets you identity and policy.
+> `MESH_EXTERNAL` says "a stranger's ship": you get a name and routing. `MESH_INTERNAL` says "one of ours": the mesh also expects the ship's identity and the secret handshake (mutual TLS).
 
 ## How this module is organised
 
-1. **[`WorkloadEntry`: One Instance](./course-01-workloadentry-one-instance.md)** — the three fields that describe a non-Kubernetes instance, and the identity the third one produces.
-2. **[`MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md)** — turning entries into a named service, and what `MESH_INTERNAL` changes compared with module 1.
-3. **[`WorkloadGroup` And Real Onboarding](./course-03-workloadgroup-and-real-onboarding.md)** — auto-registration, what a real VM needs, an honest account of what this playground cannot show, and the module's pitfalls.
+1. **[`WorkloadEntry`: One Old Ship](./course-01-workloadentry-one-instance.md)**: reach a machine by address, and describe it with its first `WorkloadEntry`.
+2. **[`MESH_INTERNAL` And The Selector](./course-02-mesh-internal-and-the-selector.md)**: give the machine a name with a `ServiceEntry`, and see what `MESH_INTERNAL` changes.
+3. **[Two Ships, One Beacon](./course-03-two-ships-one-beacon.md)**: add a second machine, and find a selector that matches nothing.
+4. **[`WorkloadGroup` And Real Onboarding](./course-04-workloadgroup-and-real-onboarding.md)**: the template a real virtual machine registers against, and what that machine needs.
 
 ## Learning objectives
 
 After this module you can:
 
-- Describe a non-Kubernetes instance with a `WorkloadEntry`, including its address, labels and service account.
-- Explain the SPIFFE identity a `serviceAccount` produces and why it matters.
-- Group entries into a service with a `MESH_INTERNAL` `ServiceEntry` and a `workloadSelector`.
-- State precisely what `MESH_INTERNAL` provides that `MESH_EXTERNAL` does not.
-- Say what a `WorkloadGroup` is for and when to use it instead of writing entries by hand.
-- Name what a real VM needs before it can auto-register.
+- Describe a machine outside Kubernetes with a `WorkloadEntry`: its address, labels and service account.
+- Explain the identity a `serviceAccount` gives that machine, and why it matters.
+- Group entries into one service with a `MESH_INTERNAL` `ServiceEntry` and a `workloadSelector`.
+- State what `MESH_INTERNAL` changes compared with `MESH_EXTERNAL`, and spot the failed secret handshake it causes when the machine has no sidecar.
+- Find a `workloadSelector` that matches no entry from a `503 UH` and the proxy's endpoint list.
+- Say what a `WorkloadGroup` is for, and what a real virtual machine needs before it can register itself.
 
 ## Before you start
 
-This module assumes [section 000](../../section-000/module-01/course.md): a proxy beside every pod, `istiod` programming it over xDS, and `istioctl proxy-config` as the way to see what a proxy actually holds rather than what you hoped it holds.
+Every mission starts with a pre-flight check, astronaut. Make sure you know the basics below, know what is in your playground, and know where the playground stops being like a real virtual machine.
 
-You need `ServiceEntry` from module 1. This module reuses it with a different `location` and a selector.
+### What you should already know
 
-The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile) and the namespace **`vm-demo`**, injected, containing:
+- **How the mesh works.** A sidecar proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You read those orders with `istioctl proxy-config`.
+- **What a `ServiceEntry` is.** It adds a service that Kubernetes does not know to the mesh's star chart, with `hosts`, `ports`, `location` and `resolution`.
+- **Kubernetes basics.** Namespaces, Deployments, ServiceAccounts, pod labels and `kubectl exec`.
 
-- `tester` — a client pod with `curl` and a sidecar.
-- `legacy-backend` — a pod **deliberately excluded from injection** with the label `sidecar.istio.io/inject: "false"`. It stands in for a virtual machine: it has an IP address, answers HTTP on 8080, and has no sidecar, no Service and no mesh membership.
-- `legacy-sa` — a ServiceAccount the stand-in runs as, so identity has something to point at.
+### What is in your playground
 
-A pod with injection disabled is **not** the same thing as a real VM — it is on the pod network and it does not run `istio-agent`. What it reproduces faithfully is the part this module is about: a reachable address the mesh knows nothing about. Part 3 says exactly where the analogy stops.
+Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** installed. Its sidecars answer name lookups from the star chart (Istio's DNS capture), so a host that only exists in a `ServiceEntry` can still be called by name. Everything you need is on one planet, the namespace **`starfleet`**:
 
-No `WorkloadEntry`, `ServiceEntry` or `WorkloadGroup` exists yet.
+| Ship | Its role |
+| --- | --- |
+| `shuttle` | **Your shuttle**, with a sidecar (`2/2`). You send every test signal from here, with `curl` |
+| `freighter-vm-1`, `freighter-vm-2` | Two **old freighters** standing in for virtual machines. Sidecar injection is switched off (`1/1`), there is no Service in front of them, and they answer HTTP on port `8080`. Their `/hostname` path answers with the pod's name, so you can see which freighter took a signal |
+| `freighter` ServiceAccount | The identity both freighters run as |
 
-## Where this fits
+The freighters' own pod labels are `ship: freighter-vm-1` and `ship: freighter-vm-2`. The label you will give them in the mesh, `app: freighter`, is deliberately different, so you always know which object did the selecting.
 
-This is the last of the three external-traffic modules and the one that closes the loop: modules 1 and 2 brought other people's services into the mesh's view, and this one brings your own non-Kubernetes workloads into its *membership*. The payoff is a single policy and identity model covering spaceships and old machines alike, which is what "mesh expansion" means in Istio's own documentation.
+No `WorkloadEntry`, `ServiceEntry`, `WorkloadGroup` or `DestinationRule` exists yet. Writing them is your mission.
+
+### Where the stand-in stops being a real virtual machine
+
+A pod without a sidecar is **not** a real virtual machine. It lives on the pod network, and its address changes when the pod restarts. It does not run `istio-agent`, the small program that gives a real machine its sidecar and its identity. What it copies well is the part this module is about: an address that answers, which the mesh knows nothing about.
+
+So three things only work on a real machine, and the parts say so when you meet them:
+
+- The machine cannot **prove** its identity, because no sidecar holds a certificate for it.
+- It cannot take part in the **secret handshake** (mutual TLS). You will switch the handshake off for its host with a `DestinationRule`, only because it is a stand-in.
+- It cannot **register itself** against a `WorkloadGroup`.
+
+Launch your playground now, and keep it running next to you while you read the parts:
+
+<!-- astrona:playground -->
+
+## Why this matters
+
+The exam topic "connecting to external workloads and services" covers both kinds of outside traffic: other people's services, and your own machines that are not in Kubernetes. For your own machines, a working name is only half the job. The other half is that the mesh treats them as members: they get an identity, the same policies, and the same load balancing and health checks as any pod. This module shows you which field gives you which half, and how to prove it with `istioctl proxy-config`.

@@ -2,7 +2,7 @@
 
 Welcome aboard, astronaut. Before you give Istio any rules, you need to know what Istio already does on its own. That is your first mission.
 
-Think about your cluster as a solar system. Each namespace is a planet, and each pod is a spaceship. Istio puts a small helper program, deploys a **proxy** as a sidecar alongside your application container, on board every spaceship. The proxy is the ship's communications officer: every signal in or out of the ship goes through them. Istio's control plane, **`istiod`**, is mission control: it radios every communications officer their orders.
+Think about your cluster as a solar system. Each namespace is a planet, and each pod is a spaceship. Istio puts a small helper program, a **proxy**, on board every spaceship. It runs as a sidecar: a second container next to your application. The proxy is the ship's communications officer: every signal in or out of the ship goes through them. Istio's control plane, **`istiod`**, is mission control: it radios every communications officer their orders.
 
 When you label a namespace for Istio, three things happen to each new pod that launches there. It gets a proxy. Its traffic is sent through that proxy. And `istiod` sends the proxy a full set of settings. All of this happens before you write a single Istio object.
 
@@ -16,8 +16,27 @@ This section shows you what Istio adds to a pod, how `istiod` sets up the proxie
 - How `iptables` rules (the Linux firewall) send a pod's own traffic through the proxy on ports `15001` and `15006`, without the app knowing.
 - Why every request (a signal between ships) inside the mesh is logged twice, and what a caller without a proxy misses out on.
 - What the **service registry** is (Istio's star chart: every planet and beacon it knows about), what it is built from, and how `istiod` turns it into settings for Envoy, the proxy Istio uses.
-- LDS, RDS, CDS and EDS: the four kinds of settings `istiod` sends to each proxy, what each one holds, and why the proxy can take new settings without a restart.
+- LDS (Listener Discovery Service), RDS (Route Discovery Service), CDS (Cluster Discovery Service) and EDS (Endpoint Discovery Service): the four kinds of settings `istiod` sends to each proxy, what each one holds, and why the proxy can take new settings without a restart.
 - The chain a request follows inside a proxy: listener → route → cluster → endpoint. You will learn to read each step with `istioctl proxy-config`.
 - How to read an Envoy cluster name, which tells you the direction, port, subset and host.
 - The order to check things in when something goes wrong: `kubectl get`, `istioctl analyze`, `istioctl proxy-status`, `istioctl proxy-config`, then the access log. You will also learn what each one cannot show you.
 - The short codes in the access log (the ship's black box flight log), called response flags, and why `NR` and `UH` point at opposite halves of your setup.
+
+---
+
+## Modules In This Section
+
+Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up.
+
+### [How A Request Moves Through The Mesh](module-01/course.md)
+
+5 parts and 2 missions:
+
+1. [Meet The Communications Officer](module-01/course-01-meet-the-communications-officer.md)
+2. [Follow A Signal Through Two Proxies](module-01/course-02-follow-a-signal-through-two-proxies.md)
+   - Mission: [Which Workloads Are Actually In The Mesh Lab](module-01/labs/lab-01/question.md)
+3. [How Mission Control Sends Orders](module-01/course-03-how-mission-control-sends-orders.md)
+4. [Read The Proxy's Orders Layer By Layer](module-01/course-04-read-the-proxys-orders-layer-by-layer.md)
+5. [The Diagnostic Toolkit](module-01/course-05-the-diagnostic-toolkit.md)
+   - Mission: [Find The Missing Supply Ship Lab](module-01/labs/lab-02/question.md)
+6. [Wrap-Up: Mission Debrief](module-01/course-06-wrap-up.md)

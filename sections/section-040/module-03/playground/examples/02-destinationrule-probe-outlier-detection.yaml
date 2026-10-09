@@ -1,0 +1,23 @@
+# Outlier detection for the probe.
+# Each sender's proxy watches every probe ship. A ship that answers 5xx three
+# times in a row is ejected (taken out of that proxy's list) for a while.
+# Named probe, like every DestinationRule in this playground: applying it
+# replaces whichever probe DestinationRule is already there.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    outlierDetection:
+      # Eject a ship after 3 5xx answers in a row (500, 502, 503, 504, ...).
+      consecutive5xxErrors: 3
+      # How often the proxy lets ships whose ejection time is over back in.
+      interval: 5s
+      # Starting ejection length, multiplied by the number of ejections.
+      baseEjectionTime: 1m
+      # Max share of ships ejected at the same time. The default 10 blocks
+      # every ejection on three ships; 50 lets one of three out.
+      maxEjectionPercent: 50

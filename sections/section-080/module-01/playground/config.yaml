@@ -1,5 +1,5 @@
 # Route External Traffic Through An Egress Gateway (PLAYGROUND) — Playground environment
-# A clean sandbox: it spins up, installs Istio and the test apps, then stays
+# A clean sandbox: it spins up, installs Istio, the egress gateway and the shuttle, then stays
 # running for free exploration. No task, no grading, no `astrona submit`.
 #   astrona run -c .                          new kind cluster "astro-ats-014-playground-080-01"
 #   astrona destroy ats-014-playground-080-01   delete the cluster again
@@ -17,7 +17,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace bookinfo (injected), mesh-wide access logs, curl client and httpbin v1/v2"
+      description: "Namespace starfleet (injected), mesh-wide access logs and the shuttle client"
       type: "file"
       source: "bootstrap/deploy.sh"
 

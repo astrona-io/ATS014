@@ -1,0 +1,23 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - match:
+    - method:
+        exact: GET
+    route:
+    - destination:
+        host: probe
+    retries:
+      attempts: 3
+      retryOn: 5xx
+  - route:
+    - destination:
+        host: probe
+    retries:
+      attempts: 0

@@ -13,7 +13,7 @@ Namespace `locality-demo` has one Service with two endpoints in two declared loc
 
 Istio is installed, every pod is injected, and there is no `DestinationRule`.
 
-Because Istio prefers the caller's locality by default, nearly all traffic currently goes to `zone-a` — the broken one — and fails. Make traffic leave that locality.
+With no `DestinationRule`, signals land on both endpoints, so about half of them reach the broken `zone-a` ship and fail. Make traffic leave that locality.
 
 1.  Create a `DestinationRule` named `httpbin` for host `httpbin`.
 2.  Configure **`outlierDetection`** so the failing endpoint can be marked unhealthy:

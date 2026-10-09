@@ -1,0 +1,23 @@
+# Can retries hide an injected fault on the same route? No – a route
+# with "fault" ignores its own retries (and timeout). Still ~50% 500.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: navcom
+  namespace: starfleet
+spec:
+  hosts:
+  - navcom
+  http:
+  - fault:
+      abort:
+        percentage:
+          value: 50
+        httpStatus: 500
+    route:
+    - destination:
+        host: navcom
+        subset: v1
+    retries:
+      attempts: 3
+      retryOn: 5xx

@@ -2,9 +2,9 @@
 
 Astronaut, your solar system does not fly alone. The edge of the mesh is not the edge of your application. Real systems send signals to payment APIs, object stores and partner endpoints: planets in other solar systems. They also talk to databases and legacy services that were never going to be containerised: old ships that fly outside the fleet's signal network.
 
-This section is about both kinds of "outside". Modules 1 and 2 deal with services somebody else runs. You add them to the star chart (the service registry) so the mesh can govern the signals, and you move the TLS boundary so the communications officer can actually read them. Module 3 deals with a workload **you** run that is not in Kubernetes. It needs more than routing. It needs an identity, so one set of rules covers spaceships (pods) and old machines alike.
+This section is about both kinds of "outside". The first two modules deal with services somebody else runs. You add them to the star chart (the service registry) so the mesh can govern the signals, and you move the TLS boundary so the communications officer can actually read them. The last module deals with a workload **you** run that is not in Kubernetes. It needs more than routing. It needs an identity, so one set of rules covers spaceships (pods) and old machines alike.
 
-The order matters. `ServiceEntry` is the object all three modules use, so it comes first; TLS origination is a use of it; `WorkloadEntry` is the same object with `MESH_INTERNAL` and a selector. Section 080 then moves the egress work off the sidecars and onto a dedicated gateway.
+The order matters. `ServiceEntry` is the object all three modules use, so it comes first; TLS origination is a use of it; `WorkloadEntry` is the same object with `MESH_INTERNAL` and a selector.
 
 **Curriculum item covered:** Connecting In-Mesh Workloads to External Workloads and Services
 
@@ -21,75 +21,57 @@ The order matters. `ServiceEntry` is the object all three modules use, so it com
 - Exactly what a sidecar can and cannot see in an application-originated TLS stream — and that TCP connection pools still work on one.
 - TLS origination as three cooperating objects, with `tls.mode: SIMPLE` and `sni` under `portLevelSettings` for the HTTPS port.
 - Proving origination from the destination's own view rather than from a status code.
-- What `MUTUAL` changes, where `credentialName` is read from, and why that argues for the egress gateway in section 080.
+- What `MUTUAL` changes, where `credentialName` is read from, and why that argues for one shared egress gateway that holds the certificate.
 - `WorkloadEntry` for one non-Kubernetes instance: `address`, `labels`, `serviceAccount` and the SPIFFE identity it yields.
-- `MESH_INTERNAL` versus `MESH_EXTERNAL` — routing versus routing plus identity, mTLS and policy coverage.
-- `WorkloadGroup` as the auto-registration template, and the five things a real VM needs before it can register.
+- `MESH_INTERNAL` versus `MESH_EXTERNAL` — routing versus routing plus identity, mTLS (mutual TLS, where both sides prove who they are) and policy coverage.
+- `WorkloadGroup` as the auto-registration template, and the five things a real virtual machine needs before it can register.
 
 ---
 
-## The Learning Path
+## Modules In This Section
 
-Work through the modules in this order, astronaut. For each one: read the parts with its playground open next to you, clean up the playground, then take its graded mission. Finish with the capstone, which brings the whole section together.
+Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
 
-### 1. Control External Access With ServiceEntry
-*   **Module Reader:** **[Control External Access With ServiceEntry](./module-01/course.md)**
-    1. [The Outbound Traffic Policy](./module-01/course-01-the-outbound-traffic-policy.md)
-    2. [The `ServiceEntry` Object](./module-01/course-02-the-serviceentry-object.md)
-    3. [A Registered Host Is An Ordinary Host](./module-01/course-03-a-registered-host-is-an-ordinary-host.md)
-*   **Hands-on Playground:** `sections/section-070/module-01/playground` — a kind cluster with Istio 1.30.5 (Helm), namespace `bookinfo` with `curl` and `httpbin`, the mesh at its `ALLOW_ANY` default and no ServiceEntry. Needs outbound internet.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-070/module-01/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-070/module-01/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-01/labs/lab-01
-    ```
-*   **Hands-on Objective:** On a deny-by-default mesh, register exactly one endpoint — with the right `location`, `resolution` and `exportTo` — prove a second is still refused, and put a timeout on the one you allowed.
+### [Control External Access With ServiceEntry](module-01/course.md)
 
-### 2. TLS Origination For External Services
-*   **Module Reader:** **[TLS Origination For External Services](./module-02/course.md)**
-    1. [Why HTTPS Is Opaque](./module-02/course-01-why-https-is-opaque.md)
-    2. [The Three Objects](./module-02/course-02-the-three-objects.md)
-    3. [Proving It, And Mutual TLS](./module-02/course-03-proving-it-and-mutual-tls.md)
-*   **Hands-on Playground:** `sections/section-070/module-02/playground` — namespace `tlsorig-demo` with a client pod and no Istio configuration.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-070/module-02/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-070/module-02/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-02/labs/lab-01
-    ```
-*   **Hands-on Objective:** Reach a TLS-only endpoint over plain `http://`, with the endpoint itself reporting the scheme it was reached over — so there is no guessing whether the sidecar did the handshake.
+4 parts and 2 missions:
 
-### 3. Add External Workloads With WorkloadEntry
-*   **Module Reader:** **[Add External Workloads With WorkloadEntry](./module-03/course.md)**
-    1. [`WorkloadEntry`: One Instance](./module-03/course-01-workloadentry-one-instance.md)
-    2. [`MESH_INTERNAL` And The Selector](./module-03/course-02-mesh-internal-and-the-selector.md)
-    3. [`WorkloadGroup` And Real Onboarding](./module-03/course-03-workloadgroup-and-real-onboarding.md)
-*   **Hands-on Playground:** `sections/section-070/module-03/playground` — namespace `vm-demo` with a client pod and a deliberately uninjected `legacy-backend` standing in for a VM. See its `docs/overview.md` for what the stand-in cannot show.
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-070/module-03/playground
-    ```
-*   **Practice Lab Sandbox:** **`sections/section-070/module-03/labs/lab-01`**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-03/labs/lab-01
-    ```
-*   **Hands-on Objective:** Give two machines outside Kubernetes a hostname, a mesh identity and two endpoints under one service — then write the `WorkloadGroup` a real fleet of machines would register against.
+1. [The Outbound Traffic Policy](module-01/course-01-the-outbound-traffic-policy.md)
+2. [The `ServiceEntry` Object](module-01/course-02-the-serviceentry-object.md)
+3. [A Registered Host Is An Ordinary Host](module-01/course-03-a-registered-host-is-an-ordinary-host.md)
+   - Mission: [Open Exactly One Route Out Lab](module-01/labs/lab-01/question.md)
+4. [When A Correct ServiceEntry Is Refused](module-01/course-04-when-a-correct-serviceentry-is-refused.md)
+   - Mission: [Reach The Hidden Relay Lab](module-01/labs/lab-02/question.md)
+5. [Wrap-Up: Mission Debrief](module-01/course-05-wrap-up.md)
 
-### 4. Section Capstone Challenge
-*   **Comprehensive Challenge:** **`sections/section-070/capstone/labs/lab-01` (A Deny-By-Default Integration Layer)**
-*   **Lab Run Command:**
-    ```bash
-    astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/capstone/labs/lab-01
-    ```
-*   **Hands-on Objective:** Three outcomes on a closed mesh (one where ships may signal only charted planets) at once — a partner's TLS-only API reached over plain HTTP, one of your own machines brought in with identity, and a third endpoint left firmly refused. Two `ServiceEntry` objects, opposite `location` values.
+### [TLS Origination For External Services](module-02/course.md)
+
+4 parts and 2 missions:
+
+1. [Why HTTPS Is Opaque](module-02/course-01-why-https-is-opaque.md)
+2. [The Three Objects](module-02/course-02-the-three-objects.md)
+3. [Two Ways To Break It](module-02/course-03-two-ways-to-break-it.md)
+   - Mission: [Repair The Sealed Channel Lab](module-02/labs/lab-02/question.md)
+4. [Proving It, And Mutual TLS](module-02/course-04-proving-it-and-mutual-tls.md)
+   - Mission: [Seal Signals To A Secure Planet Lab](module-02/labs/lab-01/question.md)
+5. [Wrap-Up: Mission Debrief](module-02/course-05-wrap-up.md)
+
+### [Add External Workloads With WorkloadEntry](module-03/course.md)
+
+4 parts and 2 missions:
+
+1. [`WorkloadEntry`: One Old Ship](module-03/course-01-workloadentry-one-instance.md)
+2. [`MESH_INTERNAL` And The Selector](module-03/course-02-mesh-internal-and-the-selector.md)
+3. [Two Ships, One Beacon](module-03/course-03-two-ships-one-beacon.md)
+   - Mission: [Bring The Lost Freighters Back Lab](module-03/labs/lab-02/question.md)
+4. [`WorkloadGroup` And Real Onboarding](module-03/course-04-workloadgroup-and-real-onboarding.md)
+   - Mission: [Bring Two Old Ships Into The Mesh Lab](module-03/labs/lab-01/question.md)
+5. [Wrap-Up: Mission Debrief](module-03/course-05-wrap-up.md)
+
+### Capstone
+
+Your final mission for this section: **[A Deny-By-Default Integration Layer Capstone Lab](capstone/labs/lab-01/README.md)**.
 
 ---
 
-The module playgrounds for modules 1 and 2 reach real hosts on the internet; without outbound access you will see network errors rather than mesh behaviour. **Every graded lab and the capstone in this section run entirely offline** — their "external" endpoints are pods deliberately kept out of the mesh registry.
-
-Each playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.
+<!-- astrona:playground:environment-explain -->

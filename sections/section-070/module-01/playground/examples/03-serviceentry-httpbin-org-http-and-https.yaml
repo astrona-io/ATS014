@@ -6,7 +6,7 @@ apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
   name: httpbin-org
-  namespace: bookinfo
+  namespace: starfleet
 spec:
   hosts:
   - httpbin.org
