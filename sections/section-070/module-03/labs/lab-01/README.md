@@ -2,14 +2,23 @@
 estimated_duration: 3m
 ---
 
-# Bring Two Old Ships Into The Mesh
+# Add Two Virtual Machines To The Mesh With WorkloadEntry Lab
 
-Welcome to a build mission, astronaut. Two machines sit outside Kubernetes with nothing but IP addresses, like old ships outside the fleet's signal network. You'll give them a hostname, a mesh identity and a place on the star chart (the registry), so that every mesh rule can apply to them.
+This is a build lab. Two pods in the `vm-demo` namespace stand in for virtual machines outside Kubernetes: they have IP addresses, but no sidecar proxy and no Service. You give them one host name, a mesh identity and a place in Istio's service registry, so that every mesh rule can apply to them.
 
-This lab needs **no outbound internet access**: the "virtual machines" are uninjected pods.
+This lab needs **no outbound internet access**: the "virtual machines" are pods without a sidecar proxy.
 
-## Launching the Lab
-Run the following command in your terminal to boot the kind Kubernetes cluster:
+## What you will practise
+
+- Writing `WorkloadEntry` objects with an address, a label and a ServiceAccount.
+- Selecting those entries with a `MESH_INTERNAL` `ServiceEntry` and a `workloadSelector`.
+- Writing the `WorkloadGroup` template that real virtual machines register against.
+- Proving the result with a request by host name and the proxy's endpoint list.
+
+## Running the lab
+
+Start the cluster with the starting state in place:
+
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-03/labs/lab-01
 ```

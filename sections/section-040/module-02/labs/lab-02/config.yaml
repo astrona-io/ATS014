@@ -15,7 +15,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-040-02-02-storm"
-      description: "Applies the starting state: correct connection pool shields on the probe, and a flight plan whose retry policy sends every failing signal six times"
+      description: "Applies the starting state: correct connection pool limits on the probe, and a VirtualService whose retry policy sends every failing request six times"
       type: "file"
       source: "bootstrap/03-seed-fault.sh"
 
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-retry-storm-calmed"
-      description: "Confirms the probe DestinationRule is unchanged, the probe VirtualService still retries connection failures with at most 2 attempts and no longer retries the probe's own 5xx answers, and that 5 failing signals reach the probe exactly 5 times"
+      description: "Confirms the probe DestinationRule is unchanged, the probe VirtualService still retries connection failures with at most 2 attempts and no longer retries the probe's own 5xx answers, and that 5 failing requests reach the probe exactly 5 times"
       type: "file"
       source: "validation/validate-completed.sh"
 

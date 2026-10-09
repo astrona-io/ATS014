@@ -2,15 +2,15 @@
 estimated_duration: 15m
 ---
 
-# Open The Spaceport Gate
+# Create A Gateway API Gateway For A Waiting HTTPRoute Lab
 
-Welcome to a building mission, astronaut. On the planet `starfleet`, a flight plan for the bridge is ready and waiting. It names a gate, `starfleet-gateway`, but nobody has built that gate yet, so no signal from outside can reach the bridge.
+A build lab. In the `starfleet` namespace, an `HTTPRoute` for the `bridge` Service already exists. It names a `Gateway` called `starfleet-gateway`, but that `Gateway` does not exist yet, so no request can reach the `bridge` Service through a gateway.
 
-Your job is to build the gate with a Gateway API `Gateway`, check that Istio built its proxy on the right planet, and prove that signals for `starfleet.example.com` reach the bridge through it.
+The learner creates the Gateway API `Gateway`, checks that Istio deployed its proxy in the `starfleet` namespace, and proves that requests for `starfleet.example.com` reach the `bridge` Service through it.
 
 ## Launching the Lab
 
-Run this command to start the cluster with the waiting flight plan in place:
+Run this command to start the cluster with the waiting `HTTPRoute` in place:
 
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-03/labs/lab-02

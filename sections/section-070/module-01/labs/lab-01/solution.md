@@ -1,10 +1,12 @@
 # Solution Walkthrough
 
-Two objects, astronaut. The mesh is already deny-by-default, so this mission is about charting one planet precisely, and then proving the new chart entry brought Istio's features with it.
+You need two objects. The mesh already refuses unknown hosts, so the task is to add one endpoint to the service registry precisely, and then prove that the new entry brings Istio's features with it.
 
 ---
 
-## Step 1: Confirm the Starting State
+## Step 1: Confirm the starting state
+
+First check the mesh-wide policy, read the two addresses, and send one request to each endpoint from `tester`:
 
 ```sh
 kubectl -n istio-system get cm istio -o jsonpath='{.data.mesh}' | grep -A2 outboundTrafficPolicy
@@ -27,7 +29,7 @@ forbidden: 10.244.0.15
 10.244.0.15      -> 502
 ```
 
-Both refused. That `502` is the mesh saying "not on the star chart" — DNS and the network are fine, and the pods are running. Confirm that last part so you know the 502 is a decision rather than a failure:
+Both are refused. That `502` comes from the `tester` pod's sidecar proxy: the host is not in the service registry. DNS and the network are fine, and the pods are running. Check that last part, so you know the `502` is a decision of the proxy and not a failure:
 
 ```sh
 kubectl -n outside-mesh get pods -o wide
@@ -41,13 +43,15 @@ partner-api     1/1     Running   10.244.0.14
 
 ---
 
-## Step 2: Register the Partner Endpoint
+## Step 2: Add the partner endpoint to the registry
+
+Read the partner address into a variable:
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
 ```
 
-Replace `<PARTNER>` in the YAML below with the real address from the step above. To see it, run `echo $PARTNER`.
+Replace `<PARTNER>` in the YAML below with the real address. To see it, run `echo $PARTNER`.
 
 Save this as `serviceentry-partner-api.yaml`:
 
@@ -84,17 +88,19 @@ kubectl apply -f serviceentry-partner-api.yaml
 serviceentry.networking.istio.io/partner-api created
 ```
 
-Each field is doing a specific job:
+Each field does one job:
 
-- **`addresses`** is what lets the sidecar recognise traffic aimed at that IP and match it to this entry. Without it, a request to the raw address has nothing to match and stays a 502.
-- **`protocol: HTTP`** is the one that matters for step 4. With `TCP` you would get a working connection and no timeout, no retries, no routing.
-- **`location: MESH_EXTERNAL`** because this is somebody else's service — no mesh identity, no mTLS.
-- **`resolution: STATIC` plus `endpoints`** because the address is known and fixed. `DNS` would ask the proxy to resolve `partner.example.com`, which resolves nowhere.
-- **`exportTo: ["."]`** because the default is mesh-wide. Without it, every namespace in the cluster gains access to this host.
+- **`addresses`** lets the sidecar proxy match traffic sent to that IP address to this entry. Without it, a request to the raw address matches nothing and still gets `502`.
+- **`protocol: HTTP`** matters for step 4. With `TCP` you would get a working connection with no timeout, no retries and no routing.
+- **`location: MESH_EXTERNAL`**, because this is somebody else's service: no mesh identity and no mTLS (mutual TLS).
+- **`resolution: STATIC` plus `endpoints`**, because the address is known and fixed. `DNS` would make the proxy look up `partner.example.com`, which resolves nowhere.
+- **`exportTo: ["."]`**, because the default is every namespace. Without it, every namespace in the cluster could reach this host.
 
 ---
 
-## Step 3: Verify the Grant Is Precise
+## Step 3: Check that only one endpoint is open
+
+Look for the host in the `tester` pod's sidecar proxy, then call both endpoints again:
 
 ```sh
 istioctl proxy-config cluster deploy/tester -n egress-demo | grep partner
@@ -111,17 +117,13 @@ partner.example.com   8080   -   outbound   STATIC
 10.244.0.15      -> 502
 ```
 
-One host in the cluster list, one endpoint open, the other still refused. That asymmetry is the whole point of `REGISTRY_ONLY` plus `ServiceEntry`: egress is a list of charted planets you maintain, rather than an assumption you inherit.
+The proxy now has one cluster for the host, the partner endpoint answers, and the forbidden endpoint is still refused. That difference is the point of `REGISTRY_ONLY` plus `ServiceEntry`: outbound traffic is a list of hosts you keep, not something you inherit.
 
 ---
 
-## Step 4: Put a Timeout on It
+## Step 4: Put a timeout on the host
 
-A registered host is an ordinary host, so every `VirtualService` feature applies:
-
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
-
-Save this as `virtualservice-partner-api.yaml`:
+A host in the registry is an ordinary host, so every `VirtualService` feature applies to it. Save this as `virtualservice-partner-api.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -145,7 +147,7 @@ Apply it:
 kubectl apply -f virtualservice-partner-api.yaml
 ```
 
-Then check the result:
+Then check the result. The `sleep` gives the proxy a moment to receive the new configuration:
 
 ```sh
 sleep 3
@@ -160,19 +162,19 @@ kubectl -n egress-demo logs deploy/tester -c istio-proxy --tail=3 | grep UT | he
 [2026-09-27T14:02:11.771Z] "GET /delay/5 HTTP/1.1" 504 UT upstream_response_timeout ...
 ```
 
-Two seconds against a five-second endpoint, with the `UT` flag (upstream timeout) in the flight log. The `VirtualService` names `partner.example.com` — the host from the `ServiceEntry`, not the IP — because that is the registry name the request now resolves to internally.
+The request to a five-second endpoint ended after two seconds, with the `UT` flag (upstream timeout) in the access log of the `tester` pod's sidecar proxy. The `VirtualService` names `partner.example.com`, the host from the `ServiceEntry`, and not the IP address. That is the registry name the proxy matches the request to.
 
-This is the step that fails if `protocol` was `TCP`: the proxy would have no idea where one request ends, so a `timeout` would bound nothing and you would wait the full five seconds.
+This step fails if the port `protocol` is `TCP`. The proxy would then not know where one request ends, so a `timeout` would limit nothing and you would wait the full five seconds.
 
 ---
 
 ## Common Mistakes
 
-- **Omitting `spec.addresses`.** The host is registered but the sidecar cannot match traffic aimed at the raw IP. Still 502.
-- **`protocol: TCP`.** A working connection with no layer-7 features — the timeout silently does nothing.
-- **`resolution: DNS`.** `partner.example.com` resolves nowhere; `STATIC` with `endpoints` is what fits a known address.
-- **Omitting `exportTo`.** The entry is exported mesh-wide by default.
-- **Listing both addresses.** Registering the forbidden endpoint too fails check 10.
-- **Relaxing the mesh to `ALLOW_ANY`.** It makes both endpoints work and fails check 8 — the task is a precise grant, not a blanket one.
-- **Creating a Service in `outside-mesh`.** That would put the endpoint in the registry through the back door; the grader rejects it.
-- **Pointing the `VirtualService` at the IP.** It must name the `ServiceEntry` host.
+- **Leaving out `spec.addresses`.** The host is in the registry, but the sidecar proxy cannot match traffic sent to the raw IP address. Still `502`.
+- **`protocol: TCP`.** A working connection with no HTTP features: the timeout silently does nothing.
+- **`resolution: DNS`.** `partner.example.com` resolves nowhere; `STATIC` with `endpoints` fits a known address.
+- **Leaving out `exportTo`.** The entry is exported to every namespace by default.
+- **Listing both addresses.** Adding the forbidden endpoint too fails check 10.
+- **Changing the mesh to `ALLOW_ANY`.** Both endpoints then work, and check 8 fails. The task is one precise permission, not an open mesh.
+- **Creating a Service in `outside-mesh`.** That would put the endpoint in the registry another way; the grader rejects it.
+- **Pointing the `VirtualService` at the IP address.** It must name the `ServiceEntry` host.

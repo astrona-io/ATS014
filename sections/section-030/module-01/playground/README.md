@@ -5,8 +5,8 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-Your training solar system in the simulator, astronaut. It starts a small
-cluster, installs Istio and the test apps, and then waits for you. You explore
+An ungraded environment for this module. It starts a small `kind` cluster,
+installs Istio and the test workloads, and then waits. The learner explores
 the module's topic on it. There is nothing to submit.
 
 ## Run it
@@ -26,9 +26,8 @@ astrona destroy ats-014-playground-030-01
 | --- | --- |
 | `config.yaml` | Environment definition: name and the two bootstrap scripts |
 | `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm: `istio-base` (CRDs) and `istiod` |
-| `bootstrap/deploy.sh` | Creates the planet `starfleet`, turns on flight logs, deploys the shuttle and the probe (3 v1 pods, 1 v2 pod) |
+| `bootstrap/deploy.sh` | Creates the `starfleet` namespace, turns on access logs, deploys the shuttle and the probe (3 v1 pods, 1 v2 pod) |
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
-| `examples/` | Ready-made DestinationRules for people who cloned the repository |
+| `examples/` | Reference DestinationRules for authors (not on the learner's machine) |
 | `examples/cases/` | Extra cases: source IP, query parameter, a policy per subset |
-| `docs/overview.md` | What is in the environment, the helper function, and things to try |
-| `docs/practice.md` | An exam-style task with a checked solution |
+| `docs/overview.md` | The only learner page: what is in the environment, the helper function, things to try, and a final `## Practice tasks` section |

@@ -1,12 +1,12 @@
 # Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries)
 
-Astronaut, this is the section where things break in space. Every spaceship (pod) in the fleet depends on ships it does not control. A signal can get lost, a ship can be overloaded, a ship can be damaged, and a whole planet's squadron can go dark.
+This section is about failure. Every pod in the mesh depends on services it does not control. A request can get lost, a service can be overloaded, a pod can start returning errors, and every pod in one zone can go down at once.
 
-Resilience features are what the **calling** ship can do about that, without any help from the ship it is calling. It can set an abort window (a timeout), re-send a lost signal (a retry), raise its shields instead of queueing work it cannot finish (a circuit breaker), pull a damaged ship out of formation (outlier detection), and prefer ships orbiting a planet that still works (locality failover).
+Resilience features are what the **calling** side can do about that, without any change to the service it calls. It can stop waiting after a set time (a timeout), send a failed request again (a retry), reject requests at once instead of queueing work that cannot finish (circuit breaking), remove a failing endpoint for a while (outlier detection), and prefer endpoints in a locality that still works (locality failover).
 
-All four modules configure the **calling** side. Nothing here requires the backend to change, and nothing here protects the server: a connection pool is per client, and an ejection is one communications officer's (one proxy's) private decision. The exam keeps coming back to that point.
+All four modules configure the **calling** side. Nothing here requires the backend to change, and nothing here protects the server. A connection pool limit applies per client, and an ejection is the decision of one proxy only. The exam keeps coming back to that point.
 
-The modules build on each other, and so do their failure modes. Timeouts and retries share one clock. Circuit breaking is the pool that retries can overwhelm. Outlier detection is what marks an endpoint bad, and locality failover cannot work without it. Put together, they stop one failing ship from becoming a Death Star: one weak spot that takes the whole fleet down.
+The modules build on each other, and so do their failure modes. Timeouts and retries share one time budget. Circuit breaking limits the connection pool that retries can fill up. Outlier detection is what marks an endpoint as failing, and locality failover cannot work without it. Together they stop one failing service from becoming a single point of failure for the whole application.
 
 **Curriculum item covered:** Using Resilience Features (circuit breaking, failover, outlier detection, timeouts, retries)
 
@@ -18,7 +18,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 - `retries` with `attempts`, `perTryTimeout` and `retryOn`, including which conditions exist and why 4xx is never retried.
 - The off-by-one: `attempts` counts retries *after* the first try; Envoy calls it `numRetries`.
 - Istio's implicit default retry policy, and that only `attempts: 0` disables it.
-- The budget rule — `timeout ≥ (attempts + 1) × perTryTimeout` — and the 504 that signals you broke it.
+- The budget rule — `timeout ≥ (attempts + 1) × perTryTimeout` — and the 504 that shows you broke it.
 - Splitting a route by `method` so writes are never retried.
 - `connectionPool` TCP and HTTP limits as a two-stage queue, enforced per client, capping concurrency rather than volume.
 - Identifying a breaker rejection by the `UO` flag and `upstream_rq_pending_overflow`, and confirming it by the backend's silence.
@@ -28,7 +28,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 - Ejection expiring and lengthening with each repeat, producing a cycle rather than a steady state.
 - Why an ejection is one proxy's private verdict while `kubectl get endpoints` never moves.
 - Locality from `topology.kubernetes.io/region` and `/zone`, with the `istio-locality` pod-label override.
-- That locality preference is already the default, and `localityLbSetting` exists to change it.
+- That locality preference is on by default but only takes effect when `outlierDetection` is set, and that `localityLbSetting` exists to change it.
 - `distribute` versus `failover`, their mutual exclusion, and why `failover` is region-level.
 - **The section's headline fact:** locality failover has no health checker of its own, so without `outlierDetection` it never fires.
 - Reading it all back with `istioctl proxy-config` and `pilot-agent request GET stats`.
@@ -37,58 +37,61 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 
 ## Modules In This Section
 
-Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
+Work through the modules in this order. Each part teaches one idea. A graded lab comes right after the part it practises, and the last page of each module is a summary. The capstone lab at the end uses everything in the section at once.
 
-### [Timeouts And Retries](module-01/course.md)
+### Timeouts And Retries
 
-4 parts and 3 missions:
+6 parts and 3 labs:
 
-1. [Set An Abort Window](module-01/course-01-set-an-abort-window.md)
-2. [Test A Timeout Across Two Ships](module-01/course-02-test-a-timeout-across-two-ships.md)
-   - Mission: [Free The Shuttle From A Slow Navcom Lab](module-01/labs/lab-02/question.md)
-3. [Re-Send Lost Signals](module-01/course-03-re-send-lost-signals.md)
-   - Mission: [Retry Only The Signals Worth Re-Sending Lab](module-01/labs/lab-03/question.md)
-4. [Share One Clock, Retry What Is Safe](module-01/course-04-share-one-clock-and-retry-what-is-safe.md)
-   - Mission: [Timeouts And Retries Lab](module-01/labs/lab-01/question.md)
-5. [Wrap-Up: Mission Debrief](module-01/course-05-wrap-up.md)
+1. Set A Route Timeout
+2. Test A Timeout With A Delay Fault
+   - Lab: Move A Timeout Off A Fault Rule Lab
+3. Configure Retries
+4. Choose Which Failures To Retry
+   - Lab: Retry Only One Status Code Lab
+5. Fit Retries Inside The Timeout
+6. Retry Only Idempotent Requests
+   - Lab: Set Timeouts And Retries Per HTTP Method Lab
+7. Summary
 
-### [Circuit Breaking With Connection Pool Limits](module-02/course.md)
+### Circuit Breaking With Connection Pool Limits
 
-3 parts and 2 missions:
+3 parts and 2 labs:
 
-1. [The Connection Pool](module-02/course-01-the-connection-pool.md)
-2. [Overflow And Its Signatures](module-02/course-02-overflow-and-its-signatures.md)
-   - Mission: [Circuit Breaking With Connection Pool Limits Lab](module-02/labs/lab-01/question.md)
-3. [Scope, Verification And Retry Amplification](module-02/course-03-scope-verification-and-retry-amplification.md)
-   - Mission: [Calm The Retry Storm Lab](module-02/labs/lab-02/question.md)
-4. [Wrap-Up: Mission Debrief](module-02/course-04-wrap-up.md)
+1. Limit Concurrent Requests With A Connection Pool
+2. Identify Overflow With The UO Flag And Counters
+   - Lab: Configure And Prove A Connection Pool Circuit Breaker Lab
+3. Verify Limits On Both Proxies And Control Retries
+   - Lab: Limit Retries To Connection Failures Lab
+4. Summary
 
-### [Outlier Detection And Endpoint Ejection](module-03/course.md)
+### Outlier Detection And Endpoint Ejection
 
-3 parts and 2 missions:
+4 parts and 2 labs:
 
-1. [Passive Health Checking](module-03/course-01-passive-health-checking.md)
-2. [Ejection Mechanics And Limits](module-03/course-02-ejection-mechanics-and-limits.md)
-   - Mission: [Outlier Detection And Endpoint Ejection Lab](module-03/labs/lab-01/question.md)
-3. [Local, Temporary, And Verified](module-03/course-03-local-temporary-and-verified.md)
-   - Mission: [Raise Both Shields Lab](module-03/labs/lab-02/question.md)
-4. [Wrap-Up: Mission Debrief](module-03/course-04-wrap-up.md)
+1. Eject A Failing Endpoint With Outlier Detection
+2. Control Ejection Time And Which Errors Count
+3. Limit Ejections With maxEjectionPercent And minHealthPercent
+   - Lab: Eject A Failing Endpoint On A Two-Endpoint Service Lab
+4. Verify Ejections And Combine Them With A Connection Pool
+   - Lab: Combine A Connection Pool And Outlier Detection Lab
+5. Summary
 
-### [Locality Load Balancing And Failover](module-04/course.md)
+### Locality Load Balancing And Failover
 
-3 parts and 3 missions:
+3 parts and 3 labs:
 
-1. [Where Locality Comes From](module-04/course-01-where-locality-comes-from.md)
-   - Mission: [Give Every Ship Its Orbit Lab](module-04/labs/lab-02/question.md)
-2. [Preference, Distribute And Failover](module-04/course-02-preference-distribute-and-failover.md)
-   - Mission: [Split Signals Between Two Orbits Lab](module-04/labs/lab-03/question.md)
-3. [The Health Dependency And Scope](module-04/course-03-the-health-dependency-and-scope.md)
-   - Mission: [Locality Load Balancing And Failover Lab](module-04/labs/lab-01/question.md)
-4. [Wrap-Up: Mission Debrief](module-04/course-04-wrap-up.md)
+1. Read Endpoint Locality From Node And Pod Labels
+   - Lab: Fix An Endpoint In The Wrong Locality Lab
+2. Configure Locality Preference, Distribute And Failover
+   - Lab: Split Traffic Between Two Zones With Distribute Lab
+3. Fail Over A Zone With Outlier Detection
+   - Lab: Fail Over From A Failing Zone With Outlier Detection Lab
+4. Summary
 
 ### Capstone
 
-Your final mission for this section: **[A Resilient Payment Path Capstone Lab](capstone/labs/lab-01/README.md)**.
+The section ends with a capstone lab that uses everything in it: **Combine Timeouts, Retries, Circuit Breaking And Outlier Detection Capstone Lab**.
 
 ---
 

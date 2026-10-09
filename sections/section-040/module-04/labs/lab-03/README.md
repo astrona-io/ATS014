@@ -2,11 +2,11 @@
 estimated_duration: 5m
 ---
 
-# Split Signals Between Two Orbits
+# Split Traffic Between Two Zones With Distribute
 
-Welcome to a flight-planning mission, astronaut. On the planet `starfleet`, the shuttle keeps every signal to the probe in its own orbit. That is fast, but the probe in the far orbit receives nothing, so nobody knows whether the path to it still works.
+In this lab, the `shuttle` pod in namespace `starfleet` sends every request to the `probe` Service to the probe in its own zone. That is fast, but the probe in the other zone receives no requests, so nobody knows whether the path to it still works.
 
-Your job is to replace the preference with a fixed split: most signals stay close, and a set share flies to the far orbit on purpose.
+Your job is to replace the locality preference with a fixed split in the `probe` `DestinationRule`: most requests stay in the client's zone, and a set share goes to the other zone on purpose.
 
 ## Launching the Lab
 

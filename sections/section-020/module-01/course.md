@@ -1,61 +1,59 @@
 # Shift Traffic With Weighted Routing
 
-Astronaut, your mission in this module is a safe launch: put a new ship class into service without risking the whole fleet. Routing by a header sends one particular signal to one particular version. Releasing a new version is a different problem. You do not want one astronaut on the new version. You want **a share of all signals** there, with the share under your control, so that if the new version misbehaves you can turn it back down before most astronauts notice.
+A header match sends one particular request to one particular version. Releasing a new version is a different problem. You do not want one user on the new version. You want a set **share of all requests** to go there, and you want to control that share. If the new version misbehaves, you can turn the share down again before most users notice.
 
-That is **weighted routing**, and it is how every canary release works in Istio. A canary sends a small share of signals to the new ship class before the whole fleet switches over. The object is the `VirtualService` you already know, the flight plan. The change is one field, `weight`:
+This is **weighted routing**, and every canary release in Istio uses it. A **canary release** sends a small share of requests to a new version before all traffic moves to it. The Istio object is the `VirtualService`, the object that tells the sidecar proxies where to send requests for a host. The new part is one field, `weight`, which gives each destination its share of the requests.
 
-> Weights split signals across the subsets of one beacon. Write them so they add up to 100.
-
-The field is small. What makes it worth three parts is everything around it. The split is random for every signal, so it is easy to measure wrong. A patch that changes it replaces a whole list instead of editing it. And the question that comes up most is about weights and replica counts, which have nothing to do with each other.
+The field is small, but a lot happens around it. The proxy makes the split at random for each request, so it is easy to measure wrong. A merge patch that changes the weights replaces a whole list instead of editing it. And many people mix up weights and replica counts, which do not affect each other.
 
 ## Learning objectives
 
 After this module you can:
 
-- Write a `VirtualService` route with several weighted destinations, and place `weight` on the correct field.
+- Write a `VirtualService` route with several weighted destinations, and put `weight` on the correct field.
 - Write weights that add up to 100, predict the split when they do not, and say when `weight` may be left out.
-- Explain how the proxy applies a weight (once per signal, on its own) and what that means for how many signals you count.
+- Explain how the proxy applies a weight (one random pick for each request) and what that means for how many requests you count.
 - Run a canary rollout as a series of weight changes, and roll it back in one apply.
-- Combine a header match with a weighted split, and predict which signals the weights apply to.
+- Combine a header match with a weighted split, and predict which requests the weights apply to.
 - Explain why a merge patch on `spec.http` must restate the whole route list.
 - Explain why traffic share and replica count are independent, and predict the split when they disagree.
 - Read `weightedClusters` from `istioctl proxy-config routes` and match each entry to your YAML.
 
 ## Before you start
 
-Every mission starts with a pre-flight check, astronaut. Make sure you have the knowledge this module expects, know what is waiting in your playground, and have one small helper ready in your terminal.
+This module builds on the two Istio routing objects. It expects the following knowledge, and a playground that is running before the first hands-on step.
 
 ### What you should already know
 
-- **How the mesh works.** A proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You can read those orders with `istioctl proxy-config`.
-- **The two routing objects.** A `DestinationRule` (the docking instructions) defines subsets: the ship classes of one beacon. A `VirtualService` (the flight plan) sends signals to them. Weighted routing adds nothing new to that pair. It only puts numbers on the destinations.
+- **How the mesh works.** Istio adds a **sidecar proxy** (Envoy) to every pod; all traffic in and out of the pod passes through it. **`istiod`**, Istio's control plane, sends configuration to every proxy. You can read that configuration with `istioctl proxy-config`.
+- **The two routing objects.** A `DestinationRule` defines **subsets**: named groups of a Service's pods, selected by a label such as `version: v1`. A `VirtualService` sends requests to those subsets. Weighted routing adds nothing new to this pair. It only puts numbers on the destinations.
 
 ### What is in your playground
 
-Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** installed with Helm. Everything is on one planet, the namespace **`starfleet`**, where the Starfleet lives: the Istio docs' Bookinfo sample with space names.
+Your playground is one `kind` cluster with **Istio 1.30.5**, installed with Helm. Everything runs in one namespace, **`starfleet`**, which has sidecar injection switched on. It runs the Istio Bookinfo sample app with other names:
 
-| Ship | Its role in the fleet |
+| Workload | What it does |
 | --- | --- |
-| `bridge` | The **flagship**: the page astronauts see. It asks the other ships for the parts of the page |
-| `cargo` | The **supply ship**: it answers with facts about an item |
-| `scout` v1, v2, v3 | Three **ship classes** of the same scout. v1 reports no stars, v2 black stars, v3 red stars. This is the beacon you split in this module |
-| `navcom` | The **navigation computer**: the v2 and v3 scouts ask it for the star rating |
-| `shuttle` | **Your shuttle**: you send every test signal from here |
-| `probe` v1, v2 | An **echo probe** on port `8000`, free for your own tests |
+| `bridge` | Web frontend (`/productpage`) on port `9080`; it calls `cargo` and `scout` |
+| `cargo` | Backend that returns item details |
+| `scout` v1, v2, v3 | Backend in three versions: v1 shows no stars, v2 black stars, v3 red stars. This is the Service you split in this module |
+| `navcom` | Backend that `scout` v2 and v3 call for the star rating |
+| `shuttle` | Test client pod; you send every test request from here |
+| `probe` v1, v2 | HTTP echo server on port `8000`, free for your own tests |
 
-The **`scout` `DestinationRule`** is already applied, with the subsets `v1`, `v2` and `v3`. There is **no** `VirtualService` yet, so for now the Kubernetes Service spreads signals over all three versions.
+The **`scout` `DestinationRule`** is already applied, with the subsets `v1`, `v2` and `v3`. There is **no** `VirtualService` yet, so for now the Kubernetes Service spreads requests over all three versions.
 
-One thing keeps its old name: the web paths built into the ships. A signal to the scout goes to `http://scout:9080/reviews/0`. Each answer names the ship that sent it (`"podname": "scout-v3-..."`), and that is how you count a split.
+The web paths built into the app keep their original names. A request to `scout` goes to `http://scout:9080/reviews/0`. Each response names the pod that sent it (`"podname": "scout-v3-..."`), and that is how you count a split.
 
-You can also watch the flagship from your browser at `http://127.0.0.1:9080/productpage`. Refresh it during a split and watch the stars change from one signal to the next.
+You can also open the `bridge` page in your browser at `http://127.0.0.1:9080/productpage`. Refresh it during a split, and the stars change from one request to the next.
 
-Launch your playground now, and keep it running next to you while you read the parts:
+Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
 ### One helper to paste first
 
-Paste this into each new terminal. It sends a number of signals to the scout (20 if you give no number) and counts which version answered. Extra `curl` options go after the number:
+Paste this into each new terminal. It sends a number of requests from `shuttle` to `scout` (20 if you give no number) and counts which version answered. Extra `curl` options go after the number:
 
 ```sh
 count_versions() { n=${1:-20}; [ $# -gt 0 ] && shift; for i in $(seq 1 $n); do
@@ -63,8 +61,12 @@ count_versions() { n=${1:-20}; [ $# -gt 0 ] && shift; for i in $(seq 1 $n); do
 done | sort | uniq -c; }
 ```
 
-Use it like this: `count_versions` for 20 signals, `count_versions 100` for 100, or `count_versions 10 -H "end-user: jason"` for 10 signals as jason.
+Use it like this: `count_versions` for 20 requests, `count_versions 100` for 100, or `count_versions 10 -H "end-user: jason"` for 10 requests with the header `end-user: jason`.
 
-## Why this matters
+## The order of the parts
 
-Weighted routing is the safest way to change a running fleet. You choose the share of signals a new version gets, and you can take every signal away from it again in seconds, without restarting a single ship. The same `http` rule later carries more fields, such as a copy of each signal, time limits and retries, so the shape you learn here comes back again and again.
+The module has five parts, a lab after the second part, a lab after the fifth part, and a summary at the end.
+
+The first part writes a route with two weighted destinations. It shows where `weight` goes and how the proxy uses it: one random pick for each request, before load balancing picks a pod. The second part covers the less tidy cases: weights that do not add up to 100, three destinations, a weight of 0, and a weight on a subset that does not exist. Its lab asks you to split the `scout` requests three ways.
+
+The third part runs a canary rollout: it measures a split, moves the weights forward step by step, and rolls them back in one apply. The fourth part changes the weights with a merge patch and keeps one user out of the split with a header rule. The fifth part shows that traffic share does not follow the replica count, and reads the weights out of a live proxy. Its lab asks you to run a canary with a header rule above the split, without changing any replica count.

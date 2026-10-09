@@ -2,15 +2,25 @@
 estimated_duration: 3m
 ---
 
-# Raise Both Shields
+# Combine A Connection Pool And Outlier Detection Lab
 
-Welcome to a shield mission, astronaut. On the planet `starfleet`, the probe has three ships, and one of them answers every signal with `503` while Kubernetes calls it healthy. Nothing protects the probe from too many signals at once either.
+This graded lab checks that you can build a circuit breaker for one Service and prove that both of its halves work on live requests.
 
-Your job is to protect the probe with both halves of a circuit breaker in one `DestinationRule`: a connection pool that refuses overflow signals, and outlier detection that pulls the broken ship out of formation. Then prove each half works.
+## What you will practise
 
-## Launching the Lab
+A **circuit breaker** in Istio is two settings in one `DestinationRule`. A **connection pool** limits how many connections and waiting requests a client's sidecar proxy may have open to a host, and refuses the extra requests with `503 UO`. **Outlier detection** makes the client's proxy stop sending requests to an endpoint that keeps failing.
 
-Run this command to start the cluster with the broken ship already in place:
+In the namespace `starfleet`, the `probe` Service has three pods, and one of them answers every request with `503` while Kubernetes reports it as ready. Nothing limits how many requests a client may send to the `probe` at the same time.
+
+## What is in the lab
+
+- A `kind` Kubernetes cluster with **Istio 1.30.5** installed with Helm.
+- The namespace `starfleet` with `probe-v1`, `probe-v2`, the broken `probe-broken`, the `shuttle` client pod and the `fortio` load generator.
+- No `DestinationRule` for the `probe`.
+
+## Running the lab
+
+Start the cluster with the broken pod already in place:
 
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-03/labs/lab-02

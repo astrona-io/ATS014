@@ -1,39 +1,39 @@
 # TLS Origination At The Egress Gateway
 
-Astronaut, some planets in other solar systems only take sealed signals. They speak HTTPS, which is HTTP inside a lock called **TLS** (Transport Layer Security). Some of them go further and ask every caller to show a **client certificate**: an ID card that proves who is calling.
+Many servers outside the cluster only accept HTTPS: HTTP sent inside a **TLS** (Transport Layer Security) connection, which encrypts the traffic and proves the server's identity with a certificate. Some of these servers go further. They ask every caller for a **client certificate**, a certificate that proves who is calling.
 
-Your ships do not have to deal with any of that. A ship can send a plain `http://` signal, and a proxy on the way can put the lock on for it. Starting the TLS connection on behalf of the app is called **TLS origination**. In this module the proxy that does it is the **egress gateway**, the solar system's **departure gate**: one checked exit that outgoing signals fly through.
+Your applications do not have to handle any of this. An application can send plain `http://`, and a proxy on the way can open the TLS connection for it. Starting the TLS connection on behalf of the application is called **TLS origination**. In this module the proxy that does it is the **egress gateway**: an Envoy proxy at the edge of the mesh that outgoing traffic passes through before it leaves the cluster.
 
-Why the gate, and not each ship's own communications officer (the sidecar)? Because of the ID card. If the sidecars do the handshake, every ship that calls the partner needs a copy of the client certificate. That is one secret on dozens of ships, renewed in dozens of places, and readable by anyone who breaks into any of them. Move the handshake to the gate, and the certificate lives in exactly one place.
+Why the egress gateway, and not the sidecar proxy in each pod? The reason is the client certificate. If the sidecar proxies do the TLS handshake, every workload that calls the server needs a copy of the client certificate and its private key. That is one secret in many namespaces, renewed in many places, and readable by anyone who breaks into any of those pods. When the egress gateway does the handshake, the certificate lives in exactly one place.
 
-> The departure gate receives plain HTTP from your ships and sends TLS to the outside planet. The `DestinationRule` that adds the lock names the **outside host**, and it is followed by the gate, because the gate is the proxy that calls that host.
+The whole module rests on one fact. The egress gateway receives plain HTTP from the sidecar proxies and sends TLS to the external host. The `DestinationRule` that turns on TLS names the **external host**, and the egress gateway applies it, because the egress gateway is the proxy that calls that host.
 
 ## Learning objectives
 
 After this module you can:
 
-- Name the five objects of the chain and the job of each one.
-- Explain why the gate listens on port `80` but sends to port `443`, and what happens when the onward route uses the wrong port.
-- Originate TLS at the gate with a `DestinationRule` on the outside host, using `portLevelSettings` and `sni`.
-- Prove which proxy holds the TLS settings by comparing the gate's and the sidecar's clusters with `istioctl proxy-config`.
-- Keep the TLS settings off the sidecars with `exportTo`.
+- Name the five objects that route a request through the egress gateway with TLS origination, and the job of each one.
+- Explain why the egress gateway listens on port `80` but sends to port `443`, and what happens when the second routing rule uses the wrong port.
+- Originate TLS at the egress gateway with a `DestinationRule` on the external host, using `portLevelSettings` and `sni`.
+- Prove which proxy holds the TLS settings by comparing the clusters of the egress gateway and of the sidecar proxy with `istioctl proxy-config`.
+- Keep the TLS settings off the sidecar proxies with `exportTo`.
 - Present a client certificate with `tls.mode: MUTUAL` and `credentialName`.
 - Name the namespace the certificate's `Secret` must live in, and find a missing one with `istioctl proxy-config secret` and the logs.
-- Weigh origination at the gate against origination in every sidecar.
+- Compare TLS origination at the egress gateway with TLS origination in every sidecar proxy.
 
 ## Before you start
 
-Every mission starts with a pre-flight check, astronaut. Check what you should already know, see what waits in your playground, and paste a few helpers into your terminal.
+This module builds on routing through an egress gateway. It expects some knowledge, and a playground that is ready before the first hands-on step.
 
 ### What you should already know
 
-- **How the mesh works.** A proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You can read those orders with `istioctl proxy-config`.
-- **The `ServiceEntry`.** It adds a planet from another solar system to the star chart, so the mesh can route to it.
-- **The two-stage route through the gate.** One `VirtualService` holds two rules. The rule for `mesh` runs in every sidecar and sends the signal to the gate. The rule for the gate's `Gateway` runs in the gate and sends it on to the outside host. A `DestinationRule` on the gate's own Service gives stage 1 an empty subset to name.
+- **How the mesh works.** A sidecar proxy (Envoy) runs next to the application in every pod of the mesh, and all traffic of the pod passes through it. `istiod`, Istio's control plane, sends configuration to every proxy. You can read that configuration with `istioctl proxy-config`.
+- **The `ServiceEntry`.** It adds a host outside the mesh to Istio's service registry, so the proxies can route to it.
+- **The two-stage route through the egress gateway.** One `VirtualService` holds two rules. The rule for the gateway name `mesh` runs in every sidecar proxy and sends the request to the egress gateway. The rule for the egress gateway's `Gateway` runs in the egress gateway and sends the request on to the external host. A `DestinationRule` on the egress gateway's own Service gives the first rule an empty subset to name.
 
 ### What is in your playground
 
-Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** installed with Helm. Next to `istio-base` and `istiod`, it runs an **egress gateway**:
+Your playground is one `kind` cluster with **Istio 1.30.5** installed with Helm. Next to `istio-base` and `istiod`, it runs an **egress gateway**:
 
 | What | Where |
 | --- | --- |
@@ -41,26 +41,26 @@ Your playground is a small training solar system: one `kind` cluster with **Isti
 | Deployment and Service | `istio-egress`, Service type `ClusterIP`, ports `80` and `443` |
 | Pod label a `Gateway` selects | `istio: egress` |
 
-The gate is running and carries **no** traffic. Mission control also has **DNS capture** switched on: a ship can look up a host from a `ServiceEntry` by its name, and its sidecar answers the lookup. Your ships live on two planets:
+The egress gateway is running and carries **no** traffic. `istiod` also has **DNS capture** switched on: the sidecar proxy answers DNS lookups for hosts that a `ServiceEntry` defines, so a pod can look up such a host by its name. The workloads live in two namespaces:
 
-| Planet and ship | Its role |
+| Namespace and object | Its role |
 | --- | --- |
-| `starfleet` / `shuttle` | **Your shuttle**. You send every test signal from here, with the `curl` command. It shows `2/2`: the app plus its communications officer |
-| `starfleet` / Secret `partner-client-cert` | The **client certificate** a partner handed over. You need it in the last parts |
-| `outpost` / `partner` | A **partner server** outside the mesh (no sidecar). It only answers HTTPS, and only to callers that show a client certificate it trusts |
+| `starfleet` / `shuttle` | The test client. You send every test request from here, with the `curl` command. It shows `2/2`: the application container plus its sidecar proxy |
+| `starfleet` / Secret `partner-client-cert` | The **client certificate** that the partner server issued for you. The last parts use it |
+| `outpost` / `partner` | A **partner server** outside the mesh (no sidecar proxy). It only answers HTTPS, and only to callers that present a client certificate it trusts |
 
-Mesh-wide access logs are on, so the shuttle's sidecar **and** the gate each write one line per signal into their flight log. There is no `ServiceEntry`, `Gateway`, `DestinationRule` or `VirtualService` yet.
+Mesh-wide access logs are on, so the shuttle's sidecar proxy **and** the egress gateway each write one line per request into their access log. There is no `ServiceEntry`, `Gateway`, `DestinationRule` or `VirtualService` yet.
 
 > [!WARNING]
-> **The first parts need outbound internet access.** They call `httpbin.org` from inside the cluster. Without internet access you see network failures, not mesh decisions. Run a plain `curl https://httpbin.org/get` on your own machine first. The partner server and the graded missions do **not** need internet access.
+> **The first parts need outbound internet access.** They call `httpbin.org` from inside the cluster. Without internet access you see network failures, not mesh decisions. Run a plain `curl https://httpbin.org/get` on your own machine first. The partner server and the graded labs do **not** need internet access.
 
-Launch your playground now, and keep it running next to you while you read the parts:
+Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
 ### Helpers to paste first
 
-Paste these into each new terminal. `call_httpbin` sends one plain `http://` signal from the shuttle to `httpbin.org/get` and prints the address `httpbin.org` says it was called on, plus the status code. `call_partner` does the same for the partner server. The other two print the newest line of each flight log: the shuttle's sidecar, and the gate.
+Paste these into each new terminal. `call_httpbin` sends one plain `http://` request from the shuttle to `httpbin.org/get` and prints the address that `httpbin.org` says it was called on, plus the status code. `call_partner` does the same for the partner server. The other two print the newest line of each access log: the shuttle's sidecar proxy, and the egress gateway.
 
 ```sh
 call_httpbin() { kubectl exec -n starfleet deploy/shuttle -- curl -s --max-time 15 -w "\n%{http_code}\n" http://httpbin.org/get | grep -E '"url"|^[0-9]{3}$'; }
@@ -69,8 +69,14 @@ log_shuttle() { sleep 2; kubectl logs -n starfleet deploy/shuttle -c istio-proxy
 log_gate() { sleep 2; kubectl logs -n istio-egress deploy/istio-egress --tail=1; }
 ```
 
-`httpbin.org` answers with the full address it was called on, so the start of its `url` field tells you how the signal arrived: `http://` for plain, `https://` for sealed.
+`httpbin.org` answers with the full address it was called on. The start of its `url` field tells you how the request arrived: `http://` for plain text, `https://` for TLS.
 
-## Why this matters
+## The order of the parts
 
-Partner APIs that ask for a client certificate are common, and the exam expects you to wire them up by hand. The configuration is small: one object moves to a new host, and one port number changes. But each piece sits on a different proxy, and a mistake often still returns an answer. This module trains you to prove where the lock is put on, not just to see a `200`.
+The module has five parts, a lab after the third part, a lab after the fifth part, and a summary at the end.
+
+The first part builds four routing objects for `httpbin.org` and sends a request through the egress gateway. The request fails in a way that shows what the fifth object is for. The second part adds that object, a `DestinationRule` on the external host that turns on TLS, and shows what happens when the onward port is wrong. The third part proves which proxy holds the TLS settings, keeps them on the egress gateway with `exportTo`, and shows the most common mistake. Its lab asks you to build the five objects yourself and prove that the egress gateway, not the sidecar proxy, starts the TLS connection.
+
+The fourth part routes requests to a stricter partner server that checks the certificates on both sides of the TLS handshake, and shows both checks fail. The fifth part gives the egress gateway a client certificate with `tls.mode: MUTUAL` and `credentialName`, and shows which namespace the `Secret` must live in. Its lab asks you to find and fix every fault in a broken mutual TLS route.
+
+Partner APIs that ask for a client certificate are common, and the exam expects you to configure them by hand. The configuration is small, but each piece is used by a different proxy, and a mistake often still returns an answer. This module trains you to prove where TLS starts, not just to see a `200`.

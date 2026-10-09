@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-flight-plan-repaired"
-      description: "Confirms exactly one VirtualService describes scout.starfleet.svc.cluster.local and none uses the short host on another planet, jason's rule comes first with subset v2 and the catch-all sends to v1, istioctl analyze -A is clean for it, and live signals reach scout-v2 for jason and scout-v1 for everyone else"
+      description: "Confirms exactly one VirtualService describes scout.starfleet.svc.cluster.local and none uses the short host in another namespace, jason's rule comes first with subset v2 and the catch-all sends to v1, istioctl analyze -A is clean for it, and live requests reach scout-v2 for jason and scout-v1 for everyone else"
       type: "file"
       source: "validation/validate-completed.sh"
 

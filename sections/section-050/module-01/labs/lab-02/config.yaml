@@ -15,7 +15,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-050-01-02-routes"
-      description: "Applies the starting state: scout and navcom subsets, and jason flies to scout v2, which calls navcom. No drill runs yet"
+      description: "Applies the starting state: scout and navcom subsets, and a scout VirtualService that sends end-user: jason to scout v2, which calls navcom. No fault is injected yet"
       type: "file"
       source: "bootstrap/03-seed-fault.sh"
 
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-two-drills"
-      description: "Confirms navcom carries a 2s delay drill for every signal and the probe a 503 abort drill for every signal, that jason's signals through scout v2 still succeed about 2s late with DI in scout v2's flight log, and that signals to the probe fail at once with FI in the shuttle's flight log and never reach the probe"
+      description: "Confirms navcom has a 2s delay fault for every request and the probe a 503 abort fault for every request, that jason's requests through scout v2 still succeed about 2s late with DI in scout v2's access log, and that requests to the probe fail at once with FI in the shuttle's access log and never reach the probe"
       type: "file"
       source: "validation/validate-completed.sh"
 

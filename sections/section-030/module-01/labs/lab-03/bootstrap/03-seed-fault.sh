@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# The lab's starting state: docking instructions that hash the sender's IP
-# address. Every signal from the shuttle comes from the same address, so it
-# always lands on the same probe pod, and the other three get nothing.
+# The lab's starting state: a DestinationRule that hashes the client's IP
+# address. Every request from the shuttle comes from the same address, so it
+# always goes to the same probe pod, and the other three get nothing.
 # Replacing this policy with an even spread is the task.
 set -euo pipefail
 

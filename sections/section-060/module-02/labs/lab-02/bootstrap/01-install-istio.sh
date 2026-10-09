@@ -2,7 +2,7 @@
 # Installs Istio 1.30.5 (sidecar mode) into the lab cluster with Helm:
 #   istio-system   istio-base (CRDs), istiod (control plane) and the ingress
 #                  gateway, released as "istio-ingressgateway" so its pods carry
-#                  the label istio=ingressgateway - the gate istiod uses by
+#                  the label istio=ingressgateway - the gateway istiod uses by
 #                  default for every Kubernetes Ingress.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.
 set -euo pipefail
@@ -21,7 +21,7 @@ helm upgrade --install istiod istiod --repo "$REPO" --version "$ISTIO_VERSION" \
   -n istio-system "${WAIT[@]}"
 
 echo "==> Istio $ISTIO_VERSION: ingress gateway"
-# ClusterIP: kind has no load balancer. Signals reach the gate from the shuttle.
+# ClusterIP: kind has no load balancer. Requests reach the gateway from the shuttle pod.
 helm upgrade --install istio-ingressgateway gateway --repo "$REPO" --version "$ISTIO_VERSION" \
   -n istio-system --set service.type=ClusterIP "${WAIT[@]}"
 

@@ -11,7 +11,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/01-install-istio.sh"
     - name: "lab-070-03-02-workloads"
-      description: "Creates the starfleet namespace with mesh-wide access logs, the shuttle client and two uninjected freighters standing in for virtual machines"
+      description: "Creates the starfleet namespace with mesh-wide access logs, the shuttle client and two uninjected freighter pods standing in for virtual machines"
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-070-03-02-fault"
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-freighters"
-      description: "Confirms the shuttle's proxy holds exactly the two freighter addresses behind freighter.starfleet.mesh, live signals by name reach both freighters, the ServiceEntry is MESH_INTERNAL and STATIC and selects app=freighter, and the entries, pods and DestinationRule were left as handed over"
+      description: "Confirms the shuttle's proxy holds exactly the two freighter addresses behind freighter.starfleet.mesh, live requests by name reach both freighter pods, the ServiceEntry is MESH_INTERNAL and STATIC and selects app=freighter, and the entries, pods and DestinationRule were left as handed over"
       type: "file"
       source: "validation/validate-completed.sh"
 

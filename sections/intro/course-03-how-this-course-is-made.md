@@ -11,7 +11,7 @@ You will trust a course more when you know how it is built. This page tells you 
 - **Plain English.** The pages are written for people who are not native English speakers and have no university degree. Words are written out in full, and each new term gets a short explanation the first time it appears.
 - **Written with AI help.** Large parts of this course are drafted and edited with the help of AI tools. A maintainer reviews every change before it is published, and the technical checks above apply to all content, however it was written.
 
-## Mission crew
+## Maintainers
 
 **Core maintainer**
 
@@ -24,7 +24,7 @@ Every person who has changed the course is listed on the GitHub contributors pag
 
 ## Found a mistake? Report it
 
-If a command fails, a page says something wrong, or a lab grades a correct answer as wrong, please tell us. Every report makes the course better for the next astronaut.
+If a command fails, a page says something wrong, or a lab grades a correct answer as wrong, please tell us. Every report makes the course better for the next learner.
 
 1. Open a new issue on GitHub: [github.com/astrona-io/ATS014/issues](https://github.com/astrona-io/ATS014/issues).
 2. Say which page or lab it is (the file path is the easiest, for example `sections/section-010/module-01/labs/lab-01`).

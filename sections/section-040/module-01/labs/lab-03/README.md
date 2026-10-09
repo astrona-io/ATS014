@@ -2,9 +2,11 @@
 estimated_duration: 15m
 ---
 
-# Retry Only The Signals Worth Re-Sending
+# Retry Only One Status Code Lab
 
-Welcome to a tuning mission, astronaut. On the planet `starfleet`, the probe's communications officer re-sends every failed signal three times, even the ones that will fail the same way forever. Your job is to narrow the retry policy to the one failure worth another try, and to prove it by counting the signals at the probe.
+A build lab. In the `starfleet` namespace, the `probe` `VirtualService` retries every 5xx three times, including the probe's own `500` errors, which fail the same way on every try.
+
+The task is to narrow the retry policy to the status code `503`, with two retries of at most one second each and a route timeout that fits every try, and to prove it by counting the requests in the probe's access log.
 
 ## Launching the Lab
 

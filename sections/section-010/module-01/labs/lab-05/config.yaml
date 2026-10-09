@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-http-routing-back"
-      description: "Confirms the probe Service port 8000 is declared as HTTP with its numbers and selector unchanged, the probe is back in the shuttle's route table, the flight plan keeps its http rule, and live signals with x-mission: test reach probe-v2 while all others reach probe-v1"
+      description: "Confirms the probe Service port 8000 is declared as HTTP with its numbers and selector unchanged, the probe is back in the shuttle's route table, the VirtualService keeps its http rule, and live requests with x-mission: test reach probe-v2 while all others reach probe-v1"
       type: "file"
       source: "validation/validate-completed.sh"
 

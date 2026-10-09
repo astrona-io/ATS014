@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Creates the planet `starfleet` (sidecar injection on), mesh-wide access logs
-# and the shuttle client; the planet `outpost` (no sidecars) with the partner
+# Creates the namespace `starfleet` (sidecar injection on), mesh-wide access logs
+# and the shuttle client; the namespace `outpost` (no sidecars) with the partner
 # server, which only answers HTTPS callers that show a client certificate from
 # its own certificate authority; and that client certificate, delivered as the
 # Secret partner-client-cert in starfleet.
@@ -12,7 +12,7 @@ echo "==> Namespace, access logs and the shuttle"
 kubectl apply -f manifests/namespace.yaml -f manifests/access-logs.yaml
 kubectl apply -f manifests/shuttle.yaml
 
-echo "==> Certificates for the partner outpost"
+echo "==> Certificates for the partner server in outpost"
 CERTS="$(mktemp -d)"; trap 'rm -rf "$CERTS"' EXIT
 openssl req -x509 -newkey rsa:2048 -nodes -days 365 -subj "/CN=Outpost Root CA" \
   -keyout "$CERTS/ca.key" -out "$CERTS/ca.crt" 2>/dev/null
@@ -26,13 +26,13 @@ openssl req -newkey rsa:2048 -nodes -subj "/CN=starfleet-departure-gate" \
 openssl x509 -req -in "$CERTS/client.csr" -CA "$CERTS/ca.crt" -CAkey "$CERTS/ca.key" \
   -CAcreateserial -days 365 -out "$CERTS/client.crt" 2>/dev/null
 
-echo "==> Partner outpost"
+echo "==> Partner server in namespace outpost"
 kubectl apply -f manifests/outpost.yaml
 kubectl -n outpost create secret generic partner-server-cert \
   --from-file=tls.crt="$CERTS/server.crt" --from-file=tls.key="$CERTS/server.key" \
   --from-file=ca.crt="$CERTS/ca.crt" --dry-run=client -o yaml | kubectl apply -f -
 
-echo "==> The partner's client certificate, delivered to the planet starfleet"
+echo "==> The partner's client certificate, stored as a Secret in namespace starfleet"
 kubectl -n starfleet create secret generic partner-client-cert \
   --from-file=tls.crt="$CERTS/client.crt" --from-file=tls.key="$CERTS/client.key" \
   --from-file=ca.crt="$CERTS/ca.crt" --dry-run=client -o yaml | kubectl apply -f -

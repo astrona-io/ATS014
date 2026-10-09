@@ -1,67 +1,77 @@
 # Mirror Live Traffic To A Shadow Service
 
-Astronaut, this module is about testing a new ship without letting it talk to anyone. Sending a share of real signals to a new version has one uncomfortable side: to see how it behaves under real traffic, you have to give it real users. Even at 1%, those are somebody's signals. If the new version is broken, they get the broken answer.
+Weighted routing sends a share of real requests to a new version of a service. That has one cost: to see how the new version behaves under real traffic, real users must get its responses. Even at 1%, those are real requests. If the new version is broken, those users get a broken response.
 
-**Mirroring**, also called shadowing, removes that trade-off. The communications officer on the sending ship sends each signal to the proven ship as usual, and *also* sends a copy to a test ship. The proven ship answers. The test ship's answer is thrown away, and so is any delay it causes. The new version sees real traffic, with real shapes and real volume, while no user ever sees what it says.
+**Mirroring**, also called shadowing, removes that cost. Mirroring means that the sidecar proxy of the client pod sends each request to the normal destination and *also* sends a copy of it to a second destination, the shadow. The normal destination sends the response. The proxy throws away the shadow's response and does not wait for it. The new version gets real requests at real volume, and no user ever sees its response.
 
-The cost is that a copy of a signal is still a real signal. If the test ship writes to a database, it writes.
+The price is that a copy of a request is still a real request. If the shadow writes to a database, the write really happens.
 
 ## Learning objectives
 
 After this module you can:
 
-- Add a `mirror` destination to an HTTP rule, and say which answer the sender receives.
-- Explain why a mirror is not part of the weighted split, and predict how many signals each version receives when a split and a mirror are combined.
-- Control the copied share with `mirrorPercentage`, and state the default when it is left out.
-- Prove that a mirror works from the receiving ship's flight log, and explain why the old `-shadow` host name suffix is not something to check for on Istio 1.30.
-- Diagnose a mirror that silently sends nothing, from `istioctl analyze`, the proxy's mirror policy and the subset's endpoints.
+- Add a `mirror` destination to an HTTP rule of a `VirtualService`, and say which version sends the response to the client.
+- Explain why a mirror is not part of the weighted split, and predict how many requests each version receives when a split and a mirror are combined.
+- Control the copied share with `mirrorPercentage`, and state the default when the field is left out.
+- Prove that a mirror works from the access log of the receiving pod, and explain why you do not look for a `-shadow` host name suffix on Istio 1.30.
+- Find out why a mirror sends nothing, with `istioctl analyze`, the mirror policy in the client's proxy and the endpoints of the subset.
 - Judge when mirroring is safe, and name the side effects that make it unsafe.
 
 ## Before you start
 
-Every mission starts with a pre-flight check, astronaut. Make sure you have the knowledge this module expects, know what is waiting in your playground, and have the helpers ready in your terminal.
+This module expects some knowledge of Istio routing, a running playground, and three shell helpers in your terminal.
 
 ### What you should already know
 
-- **How the mesh works.** A proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You can read those orders with `istioctl proxy-config`.
-- **Docking instructions and flight plans.** A `DestinationRule` defines subsets (ship classes) over pod labels, and a `VirtualService` sends signals to them.
+- **How the mesh works.** Istio adds a sidecar proxy (Envoy) to every pod in the mesh, and all traffic of the pod passes through it. `istiod`, the control plane, sends each proxy its configuration. You can read that configuration with `istioctl proxy-config`.
+- **Subsets and routes.** A `DestinationRule` defines subsets: named groups of a Service's pods, selected by labels such as `version: v2`. A `VirtualService` sets how requests to a host are routed, and can send them to a subset.
 - **Kubernetes basics.** Namespaces, Deployments, Services, pod labels, `kubectl logs` and `kubectl exec`.
 
 ### What is in your playground
 
-Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** already installed, and flight logs (access logs) turned on for every proxy. Everything you need is on one planet, the namespace **`starfleet`**:
+Your playground is one `kind` cluster with **Istio 1.30.5** already installed. Access logs are switched on for every proxy, so each proxy writes one line per request it handles. Everything runs in the namespace **`starfleet`**:
 
-| Ship | What it does |
+| Workload | What it does |
 | --- | --- |
-| `probe` v1, v2 | The **echo probe**, in two versions behind one Service on port `8000`. Its `/hostname` path answers with the name of the pod that served the signal |
-| `shuttle` | **Your shuttle**. You send every test signal from here |
+| `probe` v1, v2 | HTTP echo server in two versions behind one Service on port `8000`. Its `/hostname` path returns the name of the pod that handled the request |
+| `shuttle` | Test client pod in the mesh. You send every test request from here |
 
-Every pod shows `2/2`: the app plus its communications officer (the `istio-proxy` sidecar). There is **no** `DestinationRule` and **no** `VirtualService` yet. Writing them is your mission in this module.
+Every pod shows `2/2`: the application container plus the `istio-proxy` sidecar container. There is **no** `DestinationRule` and **no** `VirtualService` yet. You write them in this module.
 
-Launch your playground now, and keep it running next to you while you read the parts:
+Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
 ### Three helpers to paste first
 
-A mirror makes two numbers differ: which version **answered** the sender, and which versions **received** the signal. These helpers measure both. Paste them into each new terminal before you start:
+A mirror makes two numbers differ: which version **sent the response** to the client, and which versions **received** the request. These helpers measure both. Paste them into each new terminal before you start:
 
 ```sh
-mark_start() { M=$(date -u +%Y-%m-%dT%H:%M:%SZ); }
+mark_start() { START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ); }
 count_received()  { sleep 3; for v in v1 v2; do
-  echo "probe-$v received: $(kubectl logs -n starfleet deploy/probe-$v -c probe --since-time=$M | grep -c 'GET /hostname')"
+  echo "probe-$v received: $(kubectl logs -n starfleet deploy/probe-$v -c probe --since-time=$START_TIME | grep -c 'GET /hostname')"
 done; }
 send_requests() { for i in $(seq 1 ${1:-5}); do
   kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/hostname | grep -o 'probe-v[0-9]'
 done | sort | uniq -c; }
 ```
 
-- `send_requests` sends signals (5 if you give no number) and counts which version **answered**.
-- `mark_start` notes the time before a test.
-- `count_received` counts what each version **received** since that time, from each version's own app log.
+The helpers do three jobs:
+
+- `send_requests` sends requests from `shuttle` (5 if you give no number) and counts which version **sent the response**.
+- `mark_start` saves the current time in `START_TIME`, before a test.
+- `count_received` counts the requests each version **received** since that time, from the application log of each version.
 
 Use them together like this: `mark_start; send_requests 5; count_received`.
 
-## Why this matters
+## The order of the parts
 
-Mirroring and weighted routing answer the same question, "is the new version safe?", from opposite ends. Weights expose real users to the new version and show you its *answers*. Mirroring exposes nobody and shows you its *behaviour under real load*, but never what it would have answered. In practice you use them in that order: mirror first, to find crashes and slow spots, then shift weight once the shadow has been quiet for a while.
+The module has four parts, a lab after the third part, a lab after the fourth part, and a summary at the end.
+
+The first part adds a `mirror` to a `VirtualService` and shows where the field sits: next to `route`, not inside it. The second part mirrors requests to a version that fails every request, and shows that the client never notices. It also covers mirroring to a separate Service, and what mirroring cannot tell you.
+
+The third part finds the proof that copies arrive, in the access log of the receiving pod, and lowers the copied share with `mirrorPercentage`. Its lab asks you to route every request to a stable version and mirror every request to a release candidate.
+
+The fourth part covers the side effects of mirroring, reads the mirror policy from the client's proxy, and counts the load when a weighted split and a mirror work together. Its lab asks you to find and fix a mirror that sends no copies.
+
+Mirroring and weighted routing answer the same question from opposite sides: is the new version safe? Weights show you the new version's *responses*, but real users get them. Mirroring shows you its *behaviour under real load*, but never what it would have answered. In practice you often mirror first, to find crashes and slow requests, and shift weight after that.

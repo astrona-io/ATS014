@@ -2,11 +2,11 @@
 estimated_duration: 15m
 ---
 
-# Free The Shuttle From A Slow Navcom
+# Move A Timeout Off A Fault Rule Lab
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, a delay drill makes the navigation computer answer 3 seconds late. Someone tried to stop jason waiting that long, but put the abort window in the wrong place, and it never fires.
+A troubleshooting lab. In the `starfleet` namespace, a delay fault makes `navcom` answer 3 seconds late. Someone put a 1-second timeout on the same `VirtualService` rule as the delay fault, so the timeout never fires: a rule with a `fault` ignores its own `timeout`.
 
-Your job is to move the abort window to the route that really carries jason's signals, and to prove that the shuttle's own communications officer now gives up after one second.
+The task is to move the timeout to the `jason` rule of the `scout` `VirtualService`, and to prove that the `shuttle` sidecar proxy now returns `504` with the response flag `UT` after one second.
 
 ## Launching the Lab
 

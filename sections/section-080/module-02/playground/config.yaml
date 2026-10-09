@@ -1,6 +1,6 @@
 # TLS Origination At The Egress Gateway (PLAYGROUND) — Playground environment
 # A clean sandbox: it spins up, installs Istio, the egress gateway, the shuttle
-# and a partner outpost that only accepts mutual TLS, then stays running for
+# and a partner server in namespace outpost that only accepts mutual TLS, then stays running for
 # free exploration. No task, no grading, no `astrona submit`.
 #   astrona run -c .                          new kind cluster "astro-ats-014-playground-080-02"
 #   astrona destroy ats-014-playground-080-02   delete the cluster again
@@ -18,7 +18,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace starfleet (injected), access logs, the shuttle, and the partner outpost that only accepts mutual TLS"
+      description: "Namespace starfleet (injected), access logs, the shuttle, and the partner server in namespace outpost that only accepts mutual TLS"
       type: "file"
       source: "bootstrap/deploy.sh"
 

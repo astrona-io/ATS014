@@ -3,7 +3,7 @@
 # not just curl.
 #   booking-service      calls notification-service on every /book
 #   notification-service the dependency the faults are aimed at
-# There is no permanent client pod - use `kubectl run --rm`.
+# The tester Deployment is the client pod that sends test requests.
 # No VirtualService - that is the task.
 set -euo pipefail
 

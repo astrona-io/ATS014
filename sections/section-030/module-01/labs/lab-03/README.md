@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Spread The Signals Evenly
+# Spread Requests Evenly With ROUND_ROBIN Lab
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the probe squadron has four ships, but every signal from the shuttle lands on the same one. The other three sit idle.
+A troubleshooting lab. In the `starfleet` namespace, the `probe` Service has four pods, but every request from the `shuttle` pod lands on the same one. The other three pods get no traffic.
 
-Your job is to find out why, with the docking instructions and the shuttle's proxy, and change the policy so the signals are spread across the whole squadron, in turn.
+The learner finds the cause in the `probe` `DestinationRule` and in the `shuttle` pod's proxy configuration, then changes the load balancer policy so the requests are spread over all four pods, in turn.
 
 ## Launching the Lab
 

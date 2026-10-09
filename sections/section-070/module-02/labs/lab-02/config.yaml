@@ -15,7 +15,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-070-02-02-fault"
-      description: "Applies the starting state: a correct vault ServiceEntry, a VirtualService that matches the wrong port, and a DestinationRule that seals the wrong port"
+      description: "Applies the starting state: a correct vault ServiceEntry, a VirtualService that matches the wrong port, and a DestinationRule that sets TLS on the wrong port"
       type: "file"
       source: "bootstrap/03-seed-fault.sh"
 
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-sealed-channel"
-      description: "Confirms the ServiceEntry is unchanged, the VirtualService moves port 8080 to 8443, the DestinationRule seals only port 8443 with sni, the shuttle's proxy holds TLS for 8443 only, and a plain http:// signal reaches the TLS-only vault, which reports scheme=https"
+      description: "Confirms the ServiceEntry is unchanged, the VirtualService moves port 8080 to 8443, the DestinationRule sets TLS on port 8443 only with sni, the shuttle's proxy holds TLS for 8443 only, and a plain http:// request reaches the TLS-only vault, which reports scheme=https"
       type: "file"
       source: "validation/validate-completed.sh"
 

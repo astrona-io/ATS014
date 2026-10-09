@@ -1,10 +1,10 @@
 # Solution Walkthrough
 
-Four objects, astronaut: two instances, one service, one template. The field that decides whether your mission passed is `location`.
+The task needs four objects: two `WorkloadEntry` objects (one per machine), one `ServiceEntry` (the host name in front of them) and one `WorkloadGroup` (the template for real machines). The field that decides whether the task passes is `location` in the `ServiceEntry`.
 
----
+## Step 1: See what the mesh knows today
 
-## Step 1: See What "Anonymous" Means
+Read the two addresses, list the pods, and send one request by IP address and one by host name. Then count the clusters for the machines in the `tester` sidecar proxy. In Envoy, a cluster is a named destination with a list of endpoints:
 
 ```sh
 VM1=$(cat /tmp/vm1-ip); VM2=$(cat /tmp/vm2-ip)
@@ -29,21 +29,13 @@ by name:    000
 0
 ```
 
-Three facts. Both machines answer by IP. The hostname resolves nowhere. And the proxy has zero clusters for them: they are not on the star chart. No policy, no telemetry, no name.
+The output shows three facts. Both machines answer by IP address. The host name does not resolve, so `curl` returns `000`. And the `tester` proxy has zero clusters for the machines: they are not in the service registry, so no policy, telemetry or host name applies to them.
 
-Note `1/1` for the machines and `2/2` for `tester`: the stand-ins have no sidecar, which is the point.
+The `READY` column shows `1/1` for the machines and `2/2` for `tester`. The stand-in pods have no sidecar proxy, which is what makes them behave like machines outside the mesh.
 
----
+## Step 2: Describe both machines
 
-## Step 2: Declare Both Instances
-
-```sh
-VM1=$(cat /tmp/vm1-ip); VM2=$(cat /tmp/vm2-ip)
-```
-
-Replace `<VM1>`, `<VM2>` in the YAML below with the real addresses from the step above. To see them, run `echo $VM1` `echo $VM2`.
-
-Save this as `legacy-vm-1-manifests.yaml`:
+Each machine needs its own `WorkloadEntry`. In the YAML below, replace `<VM1>` with the address that `echo $VM1` prints. Save this as `workloadentry-legacy-vm-1.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -56,7 +48,17 @@ spec:
   labels:
     app: legacy-backend
   serviceAccount: legacy-sa
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f workloadentry-legacy-vm-1.yaml
+```
+
+Do the same for the second machine. Replace `<VM2>` with the address that `echo $VM2` prints. Save this as `workloadentry-legacy-vm-2.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: WorkloadEntry
 metadata:
@@ -72,22 +74,18 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f legacy-vm-1-manifests.yaml
+kubectl apply -f workloadentry-legacy-vm-2.yaml
 ```
 
-You write the addresses into the entries yourself. That is the practical difference between describing a machine and labelling a pod: a pod's address is found for you, a machine's is not.
+You write the addresses into the entries yourself. That is the practical difference from a pod: Kubernetes records the address of a pod for you, but nobody does that for a machine outside Kubernetes.
 
-**The same `app: legacy-backend` label on both** is what makes them one service in the next step. **`serviceAccount: legacy-sa`** is what gives each a SPIFFE identity of `spiffe://cluster.local/ns/vm-demo/sa/legacy-sa` — the same shape a pod running under that account would have, and the reason an `AuthorizationPolicy` can name them.
+The same label `app: legacy-backend` on both entries is what makes them one service in the next step. The field `serviceAccount: legacy-sa` gives each machine the SPIFFE (Secure Production Identity Framework For Everyone) identity `spiffe://cluster.local/ns/vm-demo/sa/legacy-sa`. That is the same identity a pod running as that ServiceAccount would have, and it is why an `AuthorizationPolicy` can name these machines.
 
-Applying these alone changes nothing observable: there is still no hostname.
+The entries alone change nothing you can see yet: there is still no host name, because a `WorkloadEntry` has no host and no service port.
 
----
+## Step 3: Give the machines one host name
 
-## Step 3: Make Them A Service
-
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
-
-Save this as `serviceentry-legacy.yaml`:
+A `ServiceEntry` adds a host to the service registry. Its `workloadSelector` selects the entries by label, the same way a Kubernetes Service selects pods. Save this as `serviceentry-legacy.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -115,15 +113,17 @@ Apply it:
 kubectl apply -f serviceentry-legacy.yaml
 ```
 
-Three fields differ from a `ServiceEntry` for somebody else's service, and each matters:
+Three fields are different from a `ServiceEntry` for somebody else's service, and each one matters:
 
-- **`location: MESH_INTERNAL`.** These are your workloads. This is what brings identity, mTLS expectations and `AuthorizationPolicy` coverage. `MESH_EXTERNAL` would give you a working hostname and none of that — which is why the grader checks it explicitly: the configuration *looks* fine either way.
-- **`resolution: STATIC`.** The addresses are declared in the entries, so there is nothing to resolve. `STATIC` says exactly that, and the grader checks it.
-- **`workloadSelector`.** The join to the entries, by label, exactly as a Service selects pods.
+- **`location: MESH_INTERNAL`.** These are your own workloads. This setting makes the identity count, makes callers use mTLS (mutual TLS) toward them, and lets an `AuthorizationPolicy` name them. `MESH_EXTERNAL` would also give you a working host name, but none of the rest. That is why the grader checks the field: the requests look fine either way.
+- **`resolution: STATIC`.** The entries already hold the addresses, so there is nothing to look up. The grader checks this too.
+- **`workloadSelector`.** It links the host to the entries by label.
 
----
+Because the location is `MESH_INTERNAL`, the `tester` proxy would use mTLS toward the machines, and the stand-in pods cannot accept it. The `legacy-plaintext` `DestinationRule` that the lab created sets `tls` mode `DISABLE` for this host, so the requests use plain HTTP. A real virtual machine running `istio-agent` would not need it.
 
-## Step 4: Verify the Registry
+## Step 4: Check the service registry
+
+Send a request by host name, then list the cluster and its endpoints in the `tester` proxy:
 
 ```sh
 kubectl -n vm-demo exec deploy/tester -- \
@@ -135,21 +135,19 @@ istioctl proxy-config endpoints deploy/tester -n vm-demo \
 
 ```text
 by name: 200
-legacy.vm-demo.svc   8080   -   outbound   STATIC
-ENDPOINT             STATUS    OUTLIER CHECK   CLUSTER
-10.244.0.31:8080     HEALTHY   OK              outbound|8080||legacy.vm-demo.svc
-10.244.0.33:8080     HEALTHY   OK              outbound|8080||legacy.vm-demo.svc
+legacy.vm-demo.svc                                             8080      -          outbound      EDS              legacy-plaintext.vm-demo
+ENDPOINT            STATUS      OUTLIER CHECK     CLUSTER
+10.244.0.8:8080     HEALTHY     OK                outbound|8080||legacy.vm-demo.svc
+10.244.0.9:8080     HEALTHY     OK                outbound|8080||legacy.vm-demo.svc
 ```
 
-The hostname works, and the cluster has **two** endpoints — one per machine, joined by the shared label. Load balancing, outlier detection and locality settings now apply across them exactly as they would across two pods.
+The host name works, and the cluster has two endpoints, one per machine, joined by the shared label. The cluster `TYPE` is `EDS` (Endpoint Discovery Service), not `STATIC`: because the `ServiceEntry` selects its endpoints with `workloadSelector`, `istiod` sends the endpoint list to the proxy separately, the same way as for a Kubernetes Service. The last column shows that the `legacy-plaintext` `DestinationRule` applies to this cluster. Load balancing, outlier detection and locality settings now apply to them the same way as to two pods.
 
 If you see only one endpoint, one of the entries has a different label than the selector.
 
----
+## Step 5: Write the template for real machines
 
-## Step 5: The Template For A Real Fleet
-
-Save this as `workloadgroup-legacy.yaml`:
+A `WorkloadGroup` describes what every machine of one service looks like: labels, ServiceAccount and ports, but no address. Save this as `workloadgroup-legacy.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -173,6 +171,10 @@ Apply it:
 kubectl apply -f workloadgroup-legacy.yaml
 ```
 
+```text
+workloadgroup.networking.istio.io/legacy created
+```
+
 Then check the result:
 
 ```sh
@@ -180,26 +182,25 @@ kubectl -n vm-demo get workloadgroup,workloadentry
 ```
 
 ```text
-workloadgroup.networking.istio.io/legacy created
 NAME                                             AGE
 workloadgroup.networking.istio.io/legacy         3s
 workloadentry.networking.istio.io/legacy-vm-1    4m
 workloadentry.networking.istio.io/legacy-vm-2    4m
 ```
 
-Two entries, still the ones you wrote — **no third appeared and none will**. The stand-ins do not run `istio-agent`, have no token and cannot talk to `istiod`, so nothing can register against the group.
+There are still only the two entries you wrote. No third entry appears, and none will. A real virtual machine runs `istio-agent`, the Istio program that starts its sidecar proxy, connects to `istiod` with a ServiceAccount token and registers against the group. The stand-in pods do none of this.
 
-Compare the group's `template` with an entry's fields: same service account, same labels, same port. That correspondence is exactly what auto-registration would fill in on a real VM, with the address supplied by the machine itself. `WorkloadGroup` is to `WorkloadEntry` what a Deployment is to a Pod.
+Compare the `template` of the group with the fields of an entry: the same ServiceAccount, the same labels, the same port. On a real machine, `istiod` creates the `WorkloadEntry` from exactly these values, with the address taken from the machine itself. A `WorkloadGroup` relates to `WorkloadEntry` objects the way a Deployment relates to Pods.
 
----
+Send the setup for grading with `astrona submit -c sections/section-070/module-03/labs/lab-01`.
 
-## Common Mistakes
+## Common mistakes
 
-- **`location: MESH_EXTERNAL`.** Routes correctly, gives no identity. The single most likely way to fail this task while appearing to succeed.
+- **`location: MESH_EXTERNAL`.** Requests are routed, but the machines get no identity. This is the most likely way to fail the task while it looks like it works.
 - **`resolution: DNS`.** The entries already hold the addresses, so the task asks for `STATIC`, and the grader checks it.
-- **Mismatched labels.** The `workloadSelector` and the entries' `labels` must agree — otherwise zero or one endpoint, with no validation error.
-- **Omitting `serviceAccount`.** No identity; policies that name principals cannot match.
-- **Creating a Service for the pods.** That registers them through the back door and the grader rejects it.
-- **Injecting the stand-in pods.** The exercise is to bring an *uninjected* workload into the mesh by declaration.
-- **Expecting the `WorkloadGroup` to produce endpoints.** Nothing appears until a real machine registers.
-- **Expecting a `WorkloadEntry` to create connectivity.** It declares a workload; the address must already be routable.
+- **Labels that do not match.** The `workloadSelector` and the `labels` of the entries must agree. Otherwise the cluster has zero or one endpoint, and no validation error appears.
+- **Leaving out `serviceAccount`.** The machines get no identity, and policies that name identities cannot match them.
+- **Creating a Service for the pods.** That adds them to the registry in a different way, and the grader rejects it.
+- **Injecting a sidecar proxy into the stand-in pods.** The task is to add workloads without a sidecar proxy by describing them.
+- **Expecting the `WorkloadGroup` to create endpoints.** Nothing appears until a real machine registers.
+- **Expecting a `WorkloadEntry` to create a network path.** It describes a workload; the address must already be reachable from the pods.

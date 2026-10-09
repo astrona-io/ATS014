@@ -1,12 +1,10 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The gate was fine all along. Each flight plan had one typo: one pointed at a Service that does not exist, the other at a gate that does not exist. The status lights named both.
-
----
+The `Gateway` was correct from the start. Each `HTTPRoute` had one typo: one named a Service that does not exist, and the other named a `Gateway` that does not exist. The status conditions of the routes point at both.
 
 ## Step 1: Confirm the failures
 
-Send one signal to each path through the gate, then read the gate's flight log:
+Send one request to each path through the gateway, then read the last two lines of the gateway proxy's access log:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" \
@@ -16,7 +14,7 @@ kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code
 kubectl logs -n starfleet deploy/starfleet-gateway-istio --tail=2
 ```
 
-The output, with the log lines trimmed:
+The output, with the log lines shortened:
 
 ```text
 500
@@ -25,9 +23,11 @@ The output, with the log lines trimmed:
 [2026-10-08T22:51:54.444Z] "GET /reviews/0 HTTP/1.1" 404 NR route_not_found - "-" 0 0 0 - "10.244.0.12" "curl/8.11.1" ... - -
 ```
 
-Two different failures. `/productpage` gets `500 NC`, "no cluster": a rule matched (the log names the route `starfleet.bridge.0`), but it points at a destination the gate does not know. `/reviews/0` gets `404 NR`, "no route": no rule on this gate fits the signal at all.
+There are two different failures. `/productpage` gets `500` with the response flag `NC`, "no cluster": a rule matched (the log names the route `starfleet.bridge.0`), but it points at a destination the gateway proxy does not know. `/reviews/0` gets `404` with the flag `NR`, "no route": no rule on this gateway matches the request at all.
 
-## Step 2: Ask the gate how many routes it holds
+## Step 2: Ask the Gateway how many routes it holds
+
+The `Gateway` status counts the routes attached to each listener. Compare that count with the routes that exist:
 
 ```sh
 kubectl get gateway -n starfleet
@@ -44,9 +44,9 @@ bridge   ["starfleet.example.com"]   74s
 scout    ["starfleet.example.com"]   74s
 ```
 
-The gate is `PROGRAMMED`, and two routes exist, but the gate holds only `1`. One route never docked.
+The `Gateway` is `PROGRAMMED`, and two routes exist, but its listener holds only `1`. One route never attached.
 
-## Step 3: Read both routes' status lights
+## Step 3: Read the status conditions of both routes
 
 ```sh
 kubectl get httproute bridge -n starfleet \
@@ -60,16 +60,18 @@ ResolvedRefs=False BackendNotFound: backend(brigde.starfleet.svc.cluster.local) 
 []
 ```
 
-- `bridge` docked (`Accepted=True`), but its backend is missing (`ResolvedRefs=False BackendNotFound`). The message names it: `brigde`, a typo.
-- `scout` has no status at all. No gate answered for it, so the fault is in its `parentRefs`.
+- `bridge` is attached (`Accepted=True`), but its backend is missing (`ResolvedRefs=False BackendNotFound`). The message names it: `brigde`, a typo.
+- `scout` has no status at all. No controller wrote a status for it, so the fault is in its `parentRefs`.
 
-`istioctl analyze -n starfleet` agrees on the first one. It reports `IST0171` for the `bridge` route, and says nothing about `scout`, because a route with no status has no `False` condition to report (other warnings trimmed):
+`istioctl analyze -n starfleet` finds the first fault too. It reports `IST0171` for the `bridge` route and says nothing about `scout`, because a route with no status has no `False` condition to report (other warnings are left out):
 
 ```text
 Warning [IST0171] (HTTPRoute starfleet/bridge) A condition with a negative status is present: type=ResolvedRefs, reason=BackendNotFound, message=backend(brigde.starfleet.svc.cluster.local) not found.
 ```
 
 ## Step 4: Compare the names with what exists
+
+List the Services, and print the two names that the conditions point at:
 
 ```sh
 kubectl get svc -n starfleet
@@ -88,11 +90,11 @@ brigde
 starfleet-gate
 ```
 
-The Service is `bridge`, not `brigde`. The gate is `starfleet-gateway`, not `starfleet-gate`.
+The Service is `bridge`, not `brigde`. The `Gateway` is `starfleet-gateway`, not `starfleet-gate`.
 
 ## Step 5: Fix the bridge route
 
-Save this as `httproute-bridge.yaml`:
+The fix changes only the backend name. Save this as `httproute-bridge.yaml`:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -138,7 +140,7 @@ ResolvedRefs=True ResolvedRefs
 
 ## Step 6: Fix the scout route
 
-Save this as `httproute-scout.yaml`:
+The fix changes only the `parentRefs` name. Save this as `httproute-scout.yaml`:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -184,13 +186,13 @@ ResolvedRefs=True ResolvedRefs
 200
 ```
 
-The scout route now has status lights of its own, the gate holds both routes, and the scout answers through the gate. Its answer names the pod that sent it, for example `"podname": "scout-v2-866c98b568-tw4rf"`. Any of the three scout versions may answer, because the route sends to the whole `scout` Service.
+The `scout` route now has status conditions of its own, the `Gateway` holds both routes, and `scout` answers through the gateway. Its response body names the pod that answered, for example `"podname": "scout-v2-866c98b568-tw4rf"`. Any of the three `scout` versions may answer, because the route sends to the whole `scout` Service.
 
 ## Mistakes that fail the grader
 
-- **Adding a Service named `brigde`.** It hides the typo instead of fixing it. The grader expects exactly the four fleet Services.
-- **Building a second `Gateway` named `starfleet-gate`.** That gives the scout route a gate of its own. The task asks for both routes on `starfleet-gateway`, and for one gate only.
+- **Adding a Service named `brigde`.** It hides the typo instead of fixing it. The grader expects exactly the four Services of the app.
+- **Creating a second `Gateway` named `starfleet-gate`.** That gives the `scout` route a gateway of its own. The task asks for both routes on `starfleet-gateway`, and for one `Gateway` only.
 - **Changing the `Gateway`.** It was correct. A different host name, listener or `allowedRoutes` fails the grader.
 - **Changing a route's host name, path or port while fixing it.** Only the typo was wrong.
-- **Deleting a route instead of repairing it.** Both routes must exist and dock.
+- **Deleting a route instead of repairing it.** Both routes must exist and attach to the `Gateway`.
 - **Stopping at "Accepted".** The `bridge` route was `Accepted=True` from the start. Read every condition, not just the first.

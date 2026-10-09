@@ -4,9 +4,9 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio, an ingress gateway
-and the Starfleet (the Istio docs' Bookinfo sample, renamed), then waits for you, astronaut. Use it
-alongside the module's parts. Nothing to submit.
+An ungraded environment: it starts a `kind` cluster with Istio, an ingress gateway and the Starfleet
+(the Istio Bookinfo sample with other names), then waits. Use it alongside the module's parts.
+There is nothing to submit.
 
 ## Run it
 
@@ -28,5 +28,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/` | The module's numbered YAML (`01-…`, `02-…`, `03-…`) |
 | `examples/cases/` | The YAML for each mistake case in the overview |
-| `docs/overview.md` | What is in the box, the helper, things to try |
-| `docs/practice.md` | An exam-style task with a checked solution |
+| `docs/overview.md` | The only learner page: what is in the playground, the helper, things to try, and a final `## Practice tasks` section |

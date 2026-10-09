@@ -1,45 +1,41 @@
 # Solution Walkthrough
 
-Six objects, three outcomes, astronaut. Two of them are the same `ServiceEntry` kind with opposite values for `location` — which is the distinction the whole section turns on.
+The task needs six objects for three results. Two of them are `ServiceEntry` objects of the same shape with opposite values for `location`: `MESH_EXTERNAL` for somebody else's API and `MESH_INTERNAL` for your own machine. That difference is the main point of the task.
 
----
+## Step 1: Confirm that everything is blocked
 
-## Step 1: Confirm Everything Is Refused
+Read the three addresses, check the outbound traffic policy of the mesh, and send one request to each endpoint from `tester`:
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip); VM=$(cat /tmp/vm-ip); BLOCKED=$(cat /tmp/blocked-ip)
 echo "partner=$PARTNER  vm=$VM  blocked=$BLOCKED"
 kubectl -n istio-system get cm istio -o jsonpath='{.data.mesh}' | grep -A2 outboundTrafficPolicy
 
-for u in "http://$PARTNER:8443/" "http://$VM:8080/get" "http://$BLOCKED:8080/get"; do
-  printf '%-32s -> ' "$u"
+for url in "http://$PARTNER:8443/" "http://$VM:8080/get" "http://$BLOCKED:8080/get"; do
+  printf '%-32s -> ' "$url"
   kubectl -n integrations exec deploy/tester -- \
-    curl -s -o /dev/null -w '%{http_code}\n' --max-time 10 "$u"
+    curl -s -o /dev/null -w '%{http_code}\n' --max-time 10 "$url"
 done
 ```
 
 ```text
-partner=10.244.0.20  vm=10.244.0.22  blocked=10.244.0.21
+partner=10.244.0.8  vm=10.244.0.10  blocked=10.244.0.9
 outboundTrafficPolicy:
   mode: REGISTRY_ONLY
-http://10.244.0.20:8443/         -> 502
-http://10.244.0.22:8080/get      -> 502
-http://10.244.0.21:8080/get      -> 502
+rootNamespace: istio-system
+http://10.244.0.8:8443/          -> 000
+command terminated with exit code 56
+http://10.244.0.10:8080/get      -> 000
+command terminated with exit code 56
+http://10.244.0.9:8080/get       -> 000
+command terminated with exit code 56
 ```
 
-Everything refused. Note `legacy-vm` is refused too, even though it is on an injected planet (namespace): it has no Service, so it is not on the star chart either.
+All three requests are blocked. The `tester` sidecar proxy sends a connection to an address outside the service registry to `BlackHoleCluster`, which closes it. No HTTP response comes back, so curl prints `000` and exits with code `56` (connection reset; you may also see `52`, empty reply). `kubectl exec` reports that exit code on the next line. Once a `ServiceEntry` adds an HTTP port `8080` to the proxy, a blocked request on that port gets a `502` response instead. The `legacy-vm` pod is blocked too, even though it runs in the `integrations` namespace: it has no Service, so it is not in the registry either.
 
----
+## Step 2: A: Add the partner to the registry, with both ports
 
-## Step 2: A — Register the Partner, With Both Ports
-
-```sh
-PARTNER=$(cat /tmp/partner-ip)
-```
-
-Replace `<PARTNER>` in the YAML below with the real address from the step above. To see it, run `echo $PARTNER`.
-
-Save this as `serviceentry-partner.yaml`:
+In the YAML below, replace `<PARTNER>` with the address that `echo $PARTNER` prints. Save this as `serviceentry-partner.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -73,15 +69,11 @@ Apply it:
 kubectl apply -f serviceentry-partner.yaml
 ```
 
-`MESH_EXTERNAL` because this is somebody else's API — you do not issue it an identity. `exportTo: ["."]` because a `ServiceEntry` is exported mesh-wide by default, and on a deny-by-default mesh one team's grant should not silently become everyone's.
+The location is `MESH_EXTERNAL` because this is somebody else's API: the mesh gives it no identity. `exportTo: ["."]` makes the host visible only in the `integrations` namespace. By default a `ServiceEntry` is visible in every namespace, and on a mesh that blocks everything else, one team's exception should not become everyone's.
 
----
+## Step 3: A: Route port 8080 to port 8443 and originate TLS
 
-## Step 3: A — Redirect And Originate
-
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
-
-Save this as `partner-manifests.yaml`:
+The caller sends plain HTTP to port 8080. A `VirtualService` routes those requests to port 8443 of the same host. Save this as `virtualservice-partner.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -100,7 +92,17 @@ spec:
             host: partner.example.com
             port:
               number: 8443
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f virtualservice-partner.yaml
+```
+
+A `DestinationRule` then tells the `tester` proxy to open a TLS connection to port 8443. This is TLS origination: the application sends plain HTTP, and the sidecar proxy does the TLS handshake. Save this as `destinationrule-partner.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -121,7 +123,7 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f partner-manifests.yaml
+kubectl apply -f destinationrule-partner.yaml
 ```
 
 Then check the result:
@@ -136,21 +138,13 @@ kubectl -n integrations exec deploy/tester -- curl -s --max-time 15 "http://$PAR
 scheme=https
 ```
 
-A plain `http://` call, and the endpoint — which speaks only TLS — reports it was reached over `https`. That is origination, proven by the destination rather than inferred from a status code.
+The application sent a plain `http://` request, and the endpoint, which only accepts TLS, reports that it was reached over `https`. The destination itself proves that the sidecar proxy originated TLS; a status code alone would not.
 
-`portLevelSettings` for 8443 only. At the top of `trafficPolicy` the same `tls` block would apply to port 8080 as well, and the whole arrangement would 503.
+The `tls` block sits under `portLevelSettings` for port 8443 only. At the top level of `trafficPolicy`, the same block would apply to port 8080 as well, and every request would fail with `503`.
 
----
+## Step 4: B: Add your machine as a member of the mesh
 
-## Step 4: B — Bring Your Machine In
-
-```sh
-VM=$(cat /tmp/vm-ip)
-```
-
-Replace `<VM>` in the YAML below with the real address from the step above. To see it, run `echo $VM`.
-
-Save this as `legacy-vm-manifests.yaml`:
+In the YAML below, replace `<VM>` with the address that `echo $VM` prints. Save this as `workloadentry-legacy-vm.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -163,7 +157,17 @@ spec:
   labels:
     app: legacy
   serviceAccount: legacy-sa
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f workloadentry-legacy-vm.yaml
+```
+
+A `WorkloadEntry` describes one machine outside Kubernetes, but it has no host name. A `ServiceEntry` with a `workloadSelector` selects the entry by its label and gives it one. Save this as `serviceentry-legacy.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -186,7 +190,7 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f legacy-vm-manifests.yaml
+kubectl apply -f serviceentry-legacy.yaml
 ```
 
 Then check the result:
@@ -201,20 +205,20 @@ kubectl -n integrations exec deploy/tester -- \
 by name: 200
 ```
 
-Here is the section's central contrast, on one screen: two `ServiceEntry` objects, identical in shape, differing in `location`.
+With `MESH_INTERNAL`, the `tester` proxy would use mTLS (mutual TLS) toward the machine. The `legacy-plaintext` `DestinationRule` that the lab created turns that off for this host, because the stand-in pod has no sidecar proxy. A real virtual machine running `istio-agent` would not need it.
+
+The two `ServiceEntry` objects have the same shape and differ in `location`:
 
 | | `partner` | `legacy` |
 | --- | --- | --- |
 | `location` | `MESH_EXTERNAL` | `MESH_INTERNAL` |
-| Whose service | theirs | yours |
+| Whose service | somebody else's | yours |
 | Identity | none | `spiffe://cluster.local/ns/integrations/sa/legacy-sa` |
 | `AuthorizationPolicy` can name it | no | yes |
 
-`MESH_EXTERNAL` on the legacy entry would route perfectly well and fail the requirement — which is exactly why the grader checks the field rather than only the traffic.
+`MESH_EXTERNAL` on the legacy entry would route requests just as well and still fail the requirement. That is why the grader checks the field and not only the traffic.
 
----
-
-## Step 5: C — Confirm the Third Is Still Refused
+## Step 5: C: Confirm that the third endpoint is still blocked
 
 ```sh
 BLOCKED=$(cat /tmp/blocked-ip)
@@ -227,35 +231,36 @@ kubectl -n istio-system get cm istio -o jsonpath='{.data.mesh}' | grep -A2 outbo
 blocked: 502
 outboundTrafficPolicy:
   mode: REGISTRY_ONLY
+rootNamespace: istio-system
 ```
 
-Two planets charted, one refusal preserved, and the mesh still deny-by-default. That combination — precise allowances against a closed default — is the whole point of the section.
+Two hosts are in the registry, the third endpoint is still blocked, and the mesh still blocks unknown destinations by default.
 
----
+## Step 6: Review the clusters in the proxy
 
-## Step 6: Review the Registry
+List the clusters for both hosts in the `tester` proxy. In Envoy, a cluster is a named destination with a list of endpoints:
 
 ```sh
 istioctl proxy-config cluster deploy/tester -n integrations | grep -E 'partner|legacy'
 ```
 
 ```text
-legacy.integrations.svc   8080   -   outbound   STATIC
-partner.example.com       8080   -   outbound   STATIC
-partner.example.com       8443   -   outbound   STATIC
+legacy.integrations.svc                                        8080      -          outbound      EDS              legacy-plaintext.integrations
+partner.example.com                                            8080      -          outbound      EDS              partner.integrations
+partner.example.com                                            8443      -          outbound      EDS              partner.integrations
 ```
 
-Three clusters from two hosts — the partner has one per declared port, which is what made the 8080-to-8443 redirect possible.
+The columns are `SERVICE FQDN`, `PORT`, `SUBSET`, `DIRECTION`, `TYPE` and `DESTINATION RULE`. Two hosts give three clusters. Their `TYPE` is `EDS` (Endpoint Discovery Service), not `STATIC`, even though both `ServiceEntry` objects have `resolution: STATIC`: `istiod` sends the endpoint addresses to the proxy separately, the same way as for a Kubernetes Service. The last column names the `DestinationRule` that applies to each cluster. The partner has one cluster per declared port, which is what lets the `VirtualService` route from port 8080 to port 8443.
 
----
+Send the setup for grading with `astrona submit -c sections/section-070/capstone/labs/lab-01`.
 
-## Common Mistakes
+## Common mistakes
 
-- **`MESH_EXTERNAL` on the legacy entry.** Traffic works, identity does not. The most likely way to fail while appearing to succeed.
-- **`MESH_INTERNAL` on the partner entry.** Istio would expect mTLS to somebody else's API.
-- **`tls` at the top of the partner `trafficPolicy`.** Applies to port 8080 too; the whole chain 503s.
-- **Declaring only port 8443 on the partner.** The plaintext request has nowhere to arrive.
-- **Omitting `exportTo` on the partner entry.** The grant becomes mesh-wide.
-- **Omitting `serviceAccount` on the `WorkloadEntry`.** No identity.
-- **Registering `blocked-api`, or relaxing the mesh to `ALLOW_ANY`.** Either fails the third requirement.
-- **Creating a Service in `outside-mesh`, or injecting `legacy-vm`.** Both are back doors the grader checks for.
+- **`MESH_EXTERNAL` on the legacy entry.** Requests work, but the machine has no identity. This is the most likely way to fail while it looks like it works.
+- **`MESH_INTERNAL` on the partner entry.** The `tester` proxy would then use Istio mTLS toward somebody else's API.
+- **`tls` at the top level of the partner `trafficPolicy`.** It applies to port 8080 too, and every request fails with `503`.
+- **Declaring only port 8443 on the partner.** The plain HTTP request on port 8080 has no cluster to go to.
+- **Leaving out `exportTo` on the partner entry.** The exception becomes visible in every namespace.
+- **Leaving out `serviceAccount` on the `WorkloadEntry`.** The machine has no identity.
+- **Adding `blocked-api` to the registry, or changing the mesh to `ALLOW_ANY`.** Either one fails the third requirement.
+- **Creating a Service in `outside-mesh`, or injecting a sidecar proxy into `legacy-vm`.** The grader checks for both.

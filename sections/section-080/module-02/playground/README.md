@@ -5,7 +5,7 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system for astronauts: a single sandbox environment that spins up, installs Istio with Helm (including an egress gateway in `istio-egress`), the `shuttle` test client in namespace `starfleet`, and a partner server in namespace `outpost` that only accepts mutual TLS. It stays running so you can explore the module's topic. Nothing to submit. Needs outbound internet access, and `openssl` on your machine to make the partner's certificates.
+A single sandbox environment that spins up, installs Istio with Helm (including an egress gateway in `istio-egress`), the `shuttle` test client in namespace `starfleet`, and a partner server in namespace `outpost` that only accepts mutual TLS. It stays running so you can explore the module's topic. Nothing to submit. Needs outbound internet access, and `openssl` on your machine to make the partner's certificates.
 
 ## Run it
 

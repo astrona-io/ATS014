@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# The lab's starting state: a closed gate.
+# The lab's starting state: an ingress gateway with no listener.
 # The Gateway selects istio=ingressgateway (the label of an istioctl install),
 # but this Helm install labels its gateway pods istio=ingress. No pod gets the
-# listener, so every signal to the gate gets no reply (curl prints 000).
+# listener, so every request to the ingress gateway gets no reply (curl prints 000).
 # Fixing the Gateway is the task - the VirtualService is correct.
 set -euo pipefail
 

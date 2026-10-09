@@ -2,7 +2,7 @@
 # orders: a two-hop chain so a SERVICE experiences the injected failures.
 #   booking-service      calls notification-service on every /book, forwarding headers
 #   notification-service the dependency the faults are aimed at
-# There is no permanent client pod - use `kubectl run --rm`.
+# The tester Deployment is the client pod that sends test requests.
 # No VirtualService - that is the task.
 set -euo pipefail
 

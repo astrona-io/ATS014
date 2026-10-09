@@ -1,13 +1,27 @@
-# Capstone: Route And Scope A Storefront
+# Route With Subsets And Scope Proxies With A Sidecar Capstone Lab
 
-Astronaut, this is your Section 010 capstone mission: the integration challenge. It combines both modules — subsets and request matching from Module 1, configuration scoping from Module 2 — into one specification you have to deliver on a mesh with no traffic configuration at all.
+This graded capstone lab combines two skills into one specification, on a mesh with no traffic configuration at all. The first skill is routing: subsets in a `DestinationRule`, and header, path and query matches in a `VirtualService`. The second skill is scoping: a `Sidecar` resource that limits which hosts the proxies of a namespace hold configuration for.
 
-The two halves interact, which is the point: a `Sidecar` that is too narrow will break routing you got right, and a routing rule pointing at a subset the proxy was never told about fails the same way as a subset that does not exist.
+The two halves interact, and that is the point. A `Sidecar` that is too narrow removes the clusters that your routing needs, and the requests then fail the same way as requests to a subset that does not exist.
 
-There is no step-by-step guide until you have tried it. Work from the specification.
+The lab uses its own small app (`catalog`, `shopper`, `pricing` and `coldstore` in the `storefront`, `partners` and `archive` namespaces), not the Starfleet. There is no step-by-step guide until you have tried it. Work from the specification.
 
-## Launching the Lab
-Run the following command in your terminal to boot the kind Kubernetes cluster:
+## Running the lab
+
+Start the cluster with the starting state in place:
+
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/capstone/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-010/capstone/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
+astrona destroy ats-014-capstone-010
 ```

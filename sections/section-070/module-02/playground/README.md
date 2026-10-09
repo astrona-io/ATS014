@@ -4,7 +4,7 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio, the `shuttle` client and the `probe` echo service in namespace `starfleet`, then waits for you, astronaut. Use it alongside the module's parts. Nothing to submit.
+It starts a `kind` cluster with Istio, the `shuttle` client and the `probe` echo service in namespace `starfleet`, then waits. Use it alongside the module's parts. Nothing to submit.
 
 **Needs outbound internet access.** The module calls `httpbin.org` on ports `80` and `443` from inside the cluster.
 

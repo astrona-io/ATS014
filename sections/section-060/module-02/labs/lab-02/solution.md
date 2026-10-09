@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The `Ingress` was right all along. The ingress class it claimed named a controller that does not exist, so no spaceport answered the docking request, and the gate never got any orders.
+The `Ingress` was correct all along. The `IngressClass` it names had a controller string that no controller answers. So `istiod`, Istio's control plane, never took the `Ingress`, and the ingress gateway never got any configuration for it.
 
 ---
 
 ## Step 1: Confirm the failure
 
-Send one signal through the gate from the shuttle, then look at the `Ingress`:
+Send one request through the gateway from the `shuttle` pod, then look at the `Ingress`:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w '%{http_code}\n' -H "Host: starfleet.example.com" http://istio-ingressgateway.istio-system/anything/dock/1
@@ -19,23 +19,23 @@ NAME        CLASS   HOSTS                   ADDRESS   PORTS   AGE
 starfleet   istio   starfleet.example.com             80      6s
 ```
 
-The `CLASS` column says `istio`, so the `Ingress` *looks* claimed. The shuttle's flight log tells a different story:
+The `CLASS` column says `istio`, so the `Ingress` looks correct. The access log of the `shuttle` pod's sidecar proxy shows what really happened:
 
 ```sh
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 ```
 
-You should see (trimmed):
+You should see this (shortened):
 
 ```text
 [2026-10-08T22:21:36.295Z] "GET /anything/dock/1 HTTP/1.1" 503 UF upstream_reset_before_response_started{remote_connection_failure|delayed_connect_error:_Connection_refused} ... "starfleet.example.com" "10.96.113.1:80" PassthroughCluster ...
 ```
 
-`UF` with `Connection_refused`: the gate is not even listening on port `80`. (From outside the cluster, through a port forward, the same failure shows as `000`.)
+The response flag `UF` (upstream connection failure) with `Connection_refused` means the gateway does not even listen on port `80`. From outside the cluster, through a port forward, the same failure shows as `000`.
 
 ## Step 2: Find the cause
 
-Ask the gate which listeners and routes it has:
+List the gateway's listeners and routes:
 
 ```sh
 istioctl proxy-config listeners deploy/istio-ingressgateway -n istio-system
@@ -51,7 +51,7 @@ NAME     VHOST NAME     DOMAINS     MATCH                  VIRTUAL SERVICE
          backend        *           /healthz/ready*
 ```
 
-Only the health and metrics ports. Mission control (`istiod`) has not built anything from the `Ingress`, so it does not consider it its own. Look at the ingress class:
+The gateway has only its health and metrics ports. `istiod` has built nothing from the `Ingress`, which means it does not treat the `Ingress` as its own. Look at the ingress class:
 
 ```sh
 kubectl get ingressclass
@@ -62,7 +62,7 @@ NAME    CONTROLLER                     PARAMETERS   AGE
 istio   istio.io/ingress-controllers   <none>       25s
 ```
 
-`istio.io/ingress-controllers`, with an `s` at the end. Istio only answers classes whose controller is exactly `istio.io/ingress-controller`. The class exists, the `Ingress` points at it, and nothing serves it.
+The controller is `istio.io/ingress-controllers`, with an `s` at the end. `istiod` only serves classes whose controller is exactly `istio.io/ingress-controller`. The class exists and the `Ingress` points at it, but no controller serves it.
 
 ## Step 3: Fix the ingress class
 
@@ -76,7 +76,7 @@ kubectl patch ingressclass istio --type merge -p '{"spec":{"controller":"istio.i
 The IngressClass "istio" is invalid: spec.controller: Invalid value: "istio.io/ingress-controller": field is immutable
 ```
 
-`spec.controller` cannot be changed. Delete the class:
+Kubernetes does not allow changes to `spec.controller`. Delete the class:
 
 ```sh
 kubectl delete ingressclass istio
@@ -111,7 +111,7 @@ The `Ingress` needs no change: it still names the class `istio`, and that name n
 
 ## Step 4: Prove it works
 
-Send three signals under `/anything`, and one to a path the `Ingress` does not route:
+Send three requests under `/anything`, and one to a path the `Ingress` does not route:
 
 ```sh
 for i in 1 2 3; do
@@ -127,7 +127,7 @@ kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w '%{http_code
 404
 ```
 
-The gate now has a route table built from your `Ingress`:
+The gateway now has a route table that `istiod` built from your `Ingress`:
 
 ```sh
 istioctl proxy-config routes deploy/istio-ingressgateway -n istio-system
@@ -140,13 +140,13 @@ http.80     starfleet.example.com:80     starfleet.example.com     PathPrefix:/a
             backend                      *                         /healthz/ready*
 ```
 
-And the gate's flight log shows the signal reaching the probe:
+The gateway's access log shows the request reaching the `probe` Service:
 
 ```sh
 kubectl logs -n istio-system deploy/istio-ingressgateway --tail=1
 ```
 
-You should see (trimmed):
+You should see this (shortened):
 
 ```text
 [2026-10-08T22:22:00.354Z] "GET /anything/dock/1 HTTP/1.1" 200 - via_upstream - "-" 0 856 21 16 "10.244.0.9" "curl/8.11.1" ... "starfleet.example.com" "10.244.0.7:8080" outbound|8000||probe.starfleet.svc.cluster.local ...
@@ -166,8 +166,8 @@ No resources found
 
 ## Common Mistakes
 
-* **Trusting the `CLASS` column.** It only repeats the name in `ingressClassName`. It does not tell you whether any controller answers that class. Check the class's `CONTROLLER` with `kubectl get ingressclass`.
-* **Trying to patch `spec.controller`.** The field is immutable. Delete the `IngressClass` and create it again.
+* **Trusting the `CLASS` column.** It only repeats the name in `ingressClassName`. It does not tell you whether any controller serves that class. Check the `CONTROLLER` column of `kubectl get ingressclass`.
+* **Trying to patch `spec.controller`.** The field cannot be changed. Delete the `IngressClass` and create it again.
 * **Deleting the class and stopping there.** The grader requires the class `istio` to exist with Istio's controller.
 * **Changing the `Ingress` instead.** Pointing it at a new class, or editing its rule, fails the grader: the `Ingress` was correct and must stay unchanged.
-* **Working around it with a `Gateway` and a `VirtualService`.** Signals would get through, but the mission is to make the gate serve the `Ingress` itself. Any `Gateway` or `VirtualService` fails the grader.
+* **Working around it with a `Gateway` and a `VirtualService`.** Requests would get through, but the task is to make the gateway serve the `Ingress` itself. Any `Gateway` or `VirtualService` fails the grader.

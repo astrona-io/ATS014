@@ -1,36 +1,35 @@
 # Solution Walkthrough
 
-Seven objects across three APIs. Build them in order and check each one before moving on, like a launch checklist — a mistake in one is invisible from the others.
-
----
+The solution is seven objects across three APIs, plus one secret. Build them in order and check each one before you move on: a mistake in one API does not show up in the others.
 
 ## Step 1: Confirm All Three APIs Are Available
+
+Check that the shared ingress gateway runs, that Istio's `GatewayClass` exists, and that nothing is configured yet:
 
 ```sh
 kubectl -n istio-system get deploy istio-ingressgateway
 kubectl get gatewayclass
 kubectl get ingressclass
-kubectl -n edge get gateway.networking.istio.io,virtualservice,ingress,httproute 2>/dev/null
+kubectl -n edge get gateway.networking.istio.io,virtualservice,ingress,httproute
 ```
 
 ```text
-NAME                   READY   AGE
-istio-ingressgateway   1/1     7m
-NAME    CONTROLLER                    ACCEPTED   AGE
-istio   istio.io/gateway-controller   True       7m
+NAME                   READY   UP-TO-DATE   AVAILABLE   AGE
+istio-ingressgateway   1/1     1            1           25s
+NAME           CONTROLLER                    ACCEPTED   AGE
+istio          istio.io/gateway-controller   True       29s
+istio-remote   istio.io/unmanaged-gateway    True       29s
 No resources found
 No resources found in edge namespace.
 ```
 
-The shared gateway is running, Istio's `GatewayClass` is registered, no `IngressClass` yet, and nothing is configured.
+The shared ingress gateway is running, Istio's `istio` `GatewayClass` is registered (`istio-remote` is a second class that this task does not use), there is no `IngressClass` yet, and nothing is configured.
 
----
+## Step 2: A, Istio's Own Objects
 
-## Step 2: A — Native Istio Objects
+Write each manifest to a file and apply the file. This is a good exam habit: you can read the file again, edit it and apply it again, while a heredoc is gone as soon as it runs.
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
-
-Save this as `native-gw-manifests.yaml`:
+Istio's own `Gateway` opens port 80 on the existing `istio-ingressgateway` proxy. Save this as `gateway-native-gw.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -48,7 +47,17 @@ spec:
         protocol: HTTP
       hosts:
         - native.ica.local
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f gateway-native-gw.yaml
+```
+
+The `VirtualService` binds the route to that `Gateway`. Save this as `virtualservice-native.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -73,16 +82,14 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f native-gw-manifests.yaml
+kubectl apply -f virtualservice-native.yaml
 ```
 
-`selector` finds the **existing** `istio-ingressgateway` pod, and `gateways: [native-gw]` is what attaches the routes to it. Omitting that field is the classic failure.
+The `selector` finds the **existing** `istio-ingressgateway` pod, and `gateways: [native-gw]` attaches the routes to it. Leaving out the `gateways` field is the most common failure.
 
----
+## Step 3: B, The Kubernetes Ingress API
 
-## Step 3: B — Kubernetes Ingress
-
-Save this as `ingressclass-and-ingress.yaml`:
+An `IngressClass` tells Kubernetes which controller serves an `Ingress`. Save this as `ingressclass-istio.yaml`:
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -91,7 +98,17 @@ metadata:
   name: istio
 spec:
   controller: istio.io/ingress-controller
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f ingressclass-istio.yaml
+```
+
+The `Ingress` uses that class and names the TLS secret. Save this as `ingress-legacy.yaml`:
+
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -119,31 +136,28 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f ingressclass-and-ingress.yaml
+kubectl apply -f ingress-legacy.yaml
 ```
 
-Then check the result:
+Then create the TLS secret in `istio-system`, from the certificate and key the lab provides:
 
 ```sh
-
 kubectl -n istio-system create secret tls legacy-credential \
   --key=/tmp/legacy.key --cert=/tmp/legacy.crt
 ```
 
-Two controller strings are in play now and they are different:
+Two controller names are in use now, and they are different:
 
 | API | Controller |
 | --- | --- |
 | Kubernetes `Ingress` | `istio.io/ingress-controller` |
 | Gateway API | `istio.io/gateway-controller` |
 
-And the secret goes in **`istio-system`**, because that is where the pod that reads it lives. This `Ingress` and the native `Gateway` above are both served by the *same* `istio-ingressgateway` pod — two APIs, one data plane.
+The secret goes in **`istio-system`**, because the gateway pod that reads it runs there, and it can read secrets only from its own namespace. This `Ingress` and Istio's `Gateway` above are both served by the *same* `istio-ingressgateway` pod: two APIs, one data plane.
 
----
+## Step 4: C, The Kubernetes Gateway API
 
-## Step 4: C — Gateway API
-
-Save this as `modern-gw-manifests.yaml`:
+The Gateway API `Gateway` makes Istio deploy a new proxy in `edge`. Save this as `gateway-modern-gw.yaml`:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -161,7 +175,17 @@ spec:
     - name: http
       port: 80
       protocol: HTTP
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f gateway-modern-gw.yaml
+```
+
+The `HTTPRoute` attaches to that `Gateway`. Save this as `httproute-modern.yaml`:
+
+```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -185,7 +209,7 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f modern-gw-manifests.yaml
+kubectl apply -f httproute-modern.yaml
 ```
 
 Then check the result:
@@ -197,19 +221,19 @@ kubectl -n edge get deploy,svc | grep modern-gw
 
 ```text
 deployment "modern-gw-istio" successfully rolled out
-deployment.apps/modern-gw-istio   1/1     30s
-service/modern-gw-istio           LoadBalancer   80:31421/TCP   30s
+deployment.apps/modern-gw-istio   1/1     1            1           18s
+service/modern-gw-istio   ClusterIP   10.96.132.189   <none>        15021/TCP,80/TCP   18s
 ```
 
-This is the difference worth seeing side by side: `native-gw` configured an existing pod in `istio-system`, and `modern-gw` **created a new pod in `edge`**. Two `Gateway` kinds, one name, entirely different behaviour.
+The Service has type `ClusterIP` because of the `networking.istio.io/service-type` annotation. Without it, Istio creates a `LoadBalancer` Service that stays at `<pending>` on `kind`.
 
-No `allowedRoutes` is needed — the route is in the same namespace, and `Same` is the default.
+This is the difference worth seeing side by side: `native-gw` configured an existing pod in `istio-system`, and `modern-gw` **created a new pod in `edge`**. The two `Gateway` kinds share a name and behave in completely different ways.
 
----
+No `allowedRoutes` is needed: the route is in the same namespace as the `Gateway`, and `Same` is the default.
 
 ## Step 5: Check the Status Conditions
 
-Only the Gateway API objects report conditions; the other two APIs have nothing comparable, which is itself a point about them.
+Only the Gateway API objects report status conditions. The other two APIs have nothing like them, which is itself a difference between the APIs.
 
 ```sh
 kubectl -n edge get gateway.gateway.networking.k8s.io modern-gw \
@@ -223,9 +247,9 @@ Accepted=True Programmed=True
 Accepted=True ResolvedRefs=True
 ```
 
----
-
 ## Step 6: Verify All Three, Through Two Different Proxies
+
+Start three port forwards, two to the shared ingress gateway and one to the new gateway, and send one request for each host. The last request sends the `modern.ica.local` host to the shared gateway on purpose:
 
 ```sh
 kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80  >/dev/null 2>&1 &
@@ -250,9 +274,9 @@ modern  (own proxy)     -> 200
 modern via shared       -> 404
 ```
 
-The last line is the one that proves the point. `modern.ica.local` works on port 8081 and 404s on port 8080, because those are two different proxy pods with two different route tables. The Gateway API object did not extend the shared gateway; it brought its own.
+The last line proves the point. `modern.ica.local` works on port 8081 and gets `404` on port 8080, because those are two different proxy pods with two different route tables. The Gateway API object did not extend the shared gateway; Istio deployed a new one for it.
 
-Confirm from the route tables directly:
+Confirm it from the route tables of both proxies:
 
 ```sh
 echo "--- shared gateway ---"
@@ -263,22 +287,21 @@ istioctl proxy-config routes deploy/modern-gw-istio -n edge | grep -E 'native|le
 
 ```text
 --- shared gateway ---
-http.8080   native.ica.local   /api*   native.edge
-https.443   legacy.ica.local   /api*   legacy-app.edge
+http.8080                                                                                              legacy.ica.local:80      legacy.ica.local     PathPrefix:/api        legacy-ica-local-legacy-istio-autogenerated-k8s-ingress.edge
+http.8080                                                                                              native.ica.local:80      native.ica.local     /api*                  native.edge
+https.443.https-443-ingress-legacy-edge-0.legacy-istio-autogenerated-k8s-ingress-edge.istio-system     legacy.ica.local:443     legacy.ica.local     PathPrefix:/api        legacy-ica-local-legacy-istio-autogenerated-k8s-ingress.edge
 --- modern gateway ---
-http.80     modern.ica.local   /api*   modern.edge
+http.80     modern.ica.local:80     modern.ica.local     PathPrefix:/api        edge~modern-gw~istio-autogenerated-k8s-gateway~http~modern.ica.local.edge
 ```
 
-Two hosts on one proxy, one host on the other — and note the shared gateway's two entries came from two *different* APIs.
-
----
+The columns are `NAME`, `VHOST NAME`, `DOMAINS`, `MATCH` and `VIRTUAL SERVICE`; `grep` removed the header lines. One proxy holds two hosts, and the other holds one. The entries on the shared gateway came from two *different* APIs: `native.edge` is your `VirtualService`, and the names that end in `istio-autogenerated-k8s-ingress` are the configuration `istiod` generated from the `Ingress`. The `Ingress` serves `legacy.ica.local` on both port 80 and port 443. The `MATCH` column also shows the two kinds of prefix: `/api*` for the `VirtualService`, which compares characters, and `PathPrefix:/api` for the `Ingress` and the `HTTPRoute`, which compare whole path elements.
 
 ## Common Mistakes
 
-- **Mixing the two controller strings.** `istio.io/ingress-controller` for `IngressClass`, `istio.io/gateway-controller` for `GatewayClass`.
-- **Mixing the two `Gateway` kinds.** Check `apiVersion` — `networking.istio.io` has a `selector`, `gateway.networking.k8s.io` has a `gatewayClassName`.
-- **The TLS secret in `edge`.** HTTPS silently never comes up while HTTP keeps working.
-- **Omitting `gateways:` on the native `VirtualService`.** Routes attach to `mesh`; the gateway 404s.
+- **Mixing up the two controller names.** `istio.io/ingress-controller` for `IngressClass`, `istio.io/gateway-controller` for `GatewayClass`.
+- **Mixing up the two `Gateway` kinds.** Check the `apiVersion`: `networking.istio.io` has a `selector`, and `gateway.networking.k8s.io` has a `gatewayClassName`.
+- **The TLS secret in `edge`.** The HTTPS listener never comes up and reports no error, while HTTP keeps working.
+- **Leaving out `gateways:` on the `VirtualService`.** The routes apply only to `mesh`, the sidecars inside the mesh, and the gateway answers `404`.
 - **Port-forwarding to the wrong proxy.** `modern.ica.local` is only on `modern-gw-istio`.
-- **Adding a native `Gateway` for `modern.ica.local` "to be safe".** It would make the shared gateway serve it too, and the grader checks that it does not.
-- **Using `pathType: Exact` on the Ingress.** `/api` alone would match and the grader's prefix behaviour would differ.
+- **Adding an Istio `Gateway` for `modern.ica.local` "to be safe".** The shared gateway would then serve that host too, and the grader checks that it does not.
+- **Using `pathType: Exact` on the Ingress.** Only `/api` itself would match, not the paths below it, so the route no longer behaves as a prefix.

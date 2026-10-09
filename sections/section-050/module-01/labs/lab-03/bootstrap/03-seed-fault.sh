@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# The lab's starting state: somebody ran an abort drill on navcom and never
-# scoped or removed it. Every signal to navcom fails with 500, and because the
-# scout flight plan sends everyone to scout v2 (which calls navcom), every
-# scout answer reports "Ratings service is currently unavailable".
-# Scoping the drill to end-user: tester is the task.
+# The lab's starting state: somebody injected an abort fault on navcom and
+# never scoped or removed it. Every request to navcom fails with 500, and
+# because the scout VirtualService sends every request to scout v2 (which
+# calls navcom), every scout response reports "Ratings service is currently
+# unavailable". Scoping the fault to end-user: tester is the task.
 set -euo pipefail
 
 kubectl apply -f - <<'YAML'

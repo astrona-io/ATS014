@@ -1,13 +1,31 @@
-# Capstone: A Controlled Chaos Experiment
+---
+estimated_duration: 45m
+---
 
-Astronaut, this is the Section 050 capstone mission. It uses fault injection for what it is really for: a simulation drill for the resilience you built in section 040. You will run two drills at once on one host, each one aimed only at signals carrying its own header, so no other crew is affected.
+# Test Retries And Timeouts With Scoped Faults Capstone Lab
 
-The result of the first experiment is the interesting part, and it is not what most people predict.
+This is the capstone lab of the section on fault injection. It uses faults for their real purpose: to test resilience settings. You inject two faults at the same time on one host, an abort next to a retry policy and a delay below a timeout. Each fault matches only requests with its own header, so no other client in the namespace is affected.
 
-There is no step-by-step guide until you have tried it. Work from the specification.
+The result of the first test is the interesting part, and it is not what most people expect. Work from the task first, and open the walkthrough only after you have tried it.
 
-## Launching the Lab
-Run the following command in your terminal to boot the kind Kubernetes cluster:
+The lab uses its own small app (`booking-service`, `notification-service` and a `tester` client in the `orders` namespace), not the Starfleet.
+
+## Running the lab
+
+Run this command to start the cluster:
+
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-050/capstone/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-050/capstone/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
+astrona destroy ats-014-capstone-050
 ```

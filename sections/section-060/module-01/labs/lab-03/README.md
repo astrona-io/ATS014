@@ -2,13 +2,13 @@
 estimated_duration: 25m
 ---
 
-# Repair The Arrival Gate
+# Repair A Broken Ingress Gateway Configuration Lab
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, signals from outside the solar system no longer reach the bridge. The gate is open, but the `Gateway` and the flight plan behind it hold more than one mistake.
+In the `starfleet` namespace, requests from outside the cluster no longer reach `bridge`. The ingress gateway has a listener, but the `Gateway` and the `VirtualService` behind it hold more than one mistake.
 
-Your job is to find every fault with the gate's answers, its flight log, `istioctl analyze` and the gateway's own proxy. Fix them one at a time, and prove that signals from outside reach the bridge again.
+Your job is to find every fault with the gateway's status codes, its access log, `istioctl analyze` and the gateway's own Envoy configuration. Fix the faults one at a time, and prove that requests from outside reach `bridge` again.
 
-## Launching the Lab
+## Running the lab
 
 Run this command to start the cluster with the faults already in place:
 

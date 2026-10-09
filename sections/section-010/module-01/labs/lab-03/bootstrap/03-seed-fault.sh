@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# The lab's starting state: docking instructions with one wrong label.
-# The v2 subset selects version=v20, which no scout ship carries, so jason's
-# signals (sent to v2 by the flight plan) end in 503 UH.
+# The lab's starting state: a DestinationRule with one wrong label.
+# The v2 subset selects version=v20, which no scout pod carries, so jason's
+# requests (sent to v2 by the VirtualService) end in 503 UH.
 # Fixing the DestinationRule is the task - the VirtualService is correct.
 set -euo pipefail
 

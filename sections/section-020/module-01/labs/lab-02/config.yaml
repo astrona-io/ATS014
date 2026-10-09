@@ -15,7 +15,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-020-01-02-state"
-      description: "Applies the starting state: the scout DestinationRule with subsets v1, v2 and v3, and a VirtualService that sends every scout signal to v1"
+      description: "Applies the starting state: the scout DestinationRule with subsets v1, v2 and v3, and a VirtualService that sends every scout request to v1"
       type: "file"
       source: "bootstrap/03-seed-state.sh"
 
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-three-way-split"
-      description: "Confirms the scout VirtualService is one route with v1 60, v2 30 and v3 10, the shuttle's proxy holds those weights, the DestinationRule and the ships are unchanged, and 200 live signals split in the expected bands"
+      description: "Confirms the scout VirtualService is one route with v1 60, v2 30 and v3 10, the shuttle's proxy holds those weights, the DestinationRule and the deployments are unchanged, and 200 live requests split in the expected bands"
       type: "file"
       source: "validation/validate-completed.sh"
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Confirms the shuttle's signals to relay.outpost.example really fly through the
-# departure gate (the egress gateway): the call returns 200, the gateway's own
-# flight log gains a line for it, and the shuttle's route for the relay points
+# Confirms the shuttle's requests to relay.outpost.example really go through the
+# egress gateway: the call returns 200, the gateway's own
+# access log gains a line for it, and the shuttle's route for the relay points
 # at the gateway Service. The ServiceEntry, the DestinationRule and the relay
 # must be left as the lab handed them over.
 
@@ -23,9 +23,9 @@ call_relay() {
 r=$(kubectl -n "$NS" get deployment shuttle -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
 [[ -n "$r" && "$r" -ge 1 ]] || fail "the shuttle deployment is missing or has no ready replicas in $NS"
 ph=$(kubectl -n outpost get pod relay -o jsonpath='{.status.phase}' 2>/dev/null)
-[[ "$ph" == "Running" ]] || fail "outpost/relay is '$ph', expected Running. Leave the outpost alone"
+[[ "$ph" == "Running" ]] || fail "outpost/relay is '$ph', expected Running. Leave the outpost namespace alone"
 if kubectl -n outpost get svc -o name 2>/dev/null | grep -q .; then
-  fail "a Service exists in outpost. That puts the relay on the star chart through the back door - fix the route through the gate instead"
+  fail "a Service exists in outpost. That adds the relay to the service registry by another path - fix the route through the egress gateway instead"
 fi
 g=$(kubectl -n istio-egress get deployment istio-egress -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
 [[ -n "$g" && "$g" -ge 1 ]] || fail "the egress gateway istio-egress/istio-egress has no ready replicas"
@@ -57,7 +57,7 @@ done
 [[ -n "$ok" ]] \
   || fail "the shuttle's route for $HOST does not point at the egress gateway (istioctl proxy-config routes deploy/shuttle -n $NS --name 8080 -o json). Stage 1 never reached the sidecars - which proxies does the VirtualService's top-level gateways list name?"
 
-# --- 2. live signals fly through the gate -----------------------------------
+# --- 2. live requests go through the egress gateway -------------------------
 before=$(gate_lines)
 code=""
 for i in $(seq 1 15); do
@@ -66,16 +66,16 @@ for i in $(seq 1 15); do
   sleep 2
 done
 if [[ "$code" == "404" ]]; then
-  fail "GET http://${HOST}:8080/get from the shuttle returned 404. Read the gateway's flight log (kubectl logs -n istio-egress deploy/istio-egress --tail=1): NR means the gateway has no route for $HOST. Read the Gateway's servers[].hosts from the gateway's point of view - which host will it serve?"
+  fail "GET http://${HOST}:8080/get from the shuttle returned 404. Read the gateway's access log (kubectl logs -n istio-egress deploy/istio-egress --tail=1): NR means the gateway has no route for $HOST. Read the Gateway's servers[].hosts from the gateway's point of view - which host will it serve?"
 fi
-[[ "$code" == "200" ]] || fail "GET http://${HOST}:8080/get from the shuttle returned '$code', expected 200. Read the shuttle's and the gateway's flight logs"
+[[ "$code" == "200" ]] || fail "GET http://${HOST}:8080/get from the shuttle returned '$code', expected 200. Read the shuttle's and the gateway's access logs"
 sleep 3
 after=$(gate_lines)
 [[ $((after - before)) -ge 1 ]] \
-  || fail "the call returned 200, but the gateway's flight log has no new line for $HOST. The signal flew direct, past the gate"
+  || fail "the call returned 200, but the gateway's access log has no new line for $HOST. The request went direct, not through the egress gateway"
 
 hosts=$(kubectl -n "$NS" get gateway.networking.istio.io departure-gate -o jsonpath='{.spec.servers[*].hosts[*]}' 2>/dev/null)
 grep -qw "$HOST" <<<"$hosts" || fail "the Gateway's servers[].hosts are [$hosts], expected $HOST"
 
-echo "PASS: the shuttle's route for $HOST points at the egress gateway, a live call returned 200, and the gateway's own flight log recorded it - the signal left through the departure gate"
+echo "PASS: the shuttle's route for $HOST points at the egress gateway, a live call returned 200, and the gateway's own access log recorded it - the request left the mesh through the egress gateway"
 exit 0

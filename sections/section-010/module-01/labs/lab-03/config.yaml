@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-docking-instructions"
-      description: "Confirms the scout DestinationRule defines exactly v1, v2 and v3 over the version label, every subset has a healthy endpoint in the shuttle's proxy, the VirtualService is unchanged, and live signals reach scout-v2 for jason and scout-v1 for everyone else"
+      description: "Confirms the scout DestinationRule defines exactly v1, v2 and v3 over the version label, every subset has a healthy endpoint in the shuttle's proxy, the VirtualService is unchanged, and live requests reach scout-v2 for jason and scout-v1 for everyone else"
       type: "file"
       source: "validation/validate-completed.sh"
 

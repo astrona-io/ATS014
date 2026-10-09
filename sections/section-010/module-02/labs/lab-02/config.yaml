@@ -11,11 +11,11 @@ bootstrap:
       type: "file"
       source: "bootstrap/01-install-istio.sh"
     - name: "lab-010-02-02-workloads"
-      description: "Creates the planets starfleet (shuttle, cargo) and outpost (probe v1/v2) and mesh-wide access logs"
+      description: "Creates the namespaces starfleet (shuttle, cargo) and outpost (probe v1/v2) and mesh-wide access logs"
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-010-02-02-fault"
-      description: "Applies the starting state: a correct planet default Sidecar on starfleet, and a selector Sidecar for the shuttle that lists only its own planet"
+      description: "Applies the starting state: a correct namespace-wide default Sidecar in starfleet, and a selector Sidecar for the shuttle that lists only its own namespace"
       type: "file"
       source: "bootstrap/03-seed-fault.sh"
 
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-shuttle-star-chart"
-      description: "Confirms shuttle-only still selects the shuttle with REGISTRY_ONLY and now lists its own planet, istio-system and outpost, the planet default is unchanged, the shuttle's proxy holds the probe and istiod destinations, and live signals reach the probe through its own cluster"
+      description: "Confirms shuttle-only still selects the shuttle with REGISTRY_ONLY and now lists its own namespace, istio-system and outpost, the namespace default is unchanged, the shuttle's proxy holds the probe and istiod destinations, and live requests reach the probe through its own cluster"
       type: "file"
       source: "validation/validate-completed.sh"
 

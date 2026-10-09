@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-One object, four lines of `hosts` — but the grader checks the proxy's own configuration and sends live traffic, so the measurement matters as much as the YAML.
+The answer is one object with three entries in `hosts`. But the grader checks the proxy's own configuration and sends live requests, so the measurement matters as much as the YAML.
 
 ---
 
-## Step 1: Measure the Unscoped Baseline
+## Step 1: Measure The Starting Point
 
-You cannot show a reduction without a number to compare against. Take it first.
+You cannot show that the configuration got smaller without a number to compare against, so take it first. A cluster is a destination in the proxy's configuration, and `istioctl proxy-config cluster` lists them:
 
 ```sh
 istioctl proxy-config cluster deploy/tester -n sidecar-demo | wc -l
@@ -19,9 +19,9 @@ httpbin.sidecar-other.svc.cluster.local   8000   -   outbound   EDS
 httpbin.sidecar-third.svc.cluster.local   8000   -   outbound   EDS
 ```
 
-The `tester` proxy carries clusters for both other namespaces, although it calls neither by default. That is the mesh default from Part 1: every proxy gets the whole registry.
+The `tester` proxy holds clusters for both other namespaces. This is the mesh default: `istiod` gives every proxy every host in the service registry.
 
-Confirm all three destinations are currently reachable:
+Confirm that all three destinations answer now:
 
 ```sh
 for url in http://local-backend:8000/get \
@@ -39,15 +39,13 @@ http://httpbin.sidecar-other:8000/get -> 200
 http://httpbin.sidecar-third:8000/get -> 200
 ```
 
-Nothing authorised any of these. They work because the configuration is there.
+No policy allowed any of these requests. They work because the configuration is there.
 
 ---
 
-## Step 2: Write the Sidecar
+## Step 2: Write The Sidecar
 
-Three entries, and each one is there for a reason:
-
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+Write the manifest to a file and apply the file. This habit pays off in the exam: you can read the file again, edit it and apply it again.
 
 Save this as `sidecar-default.yaml`:
 
@@ -75,20 +73,21 @@ kubectl apply -f sidecar-default.yaml
 sidecar.networking.istio.io/default created
 ```
 
-- **No `workloadSelector`.** The task says every workload in the namespace, and omitting the selector is how you say that. Adding one that matches `app: tester` would leave `local-backend`'s proxy unscoped and the grader rejects it.
-- **`./*`** — the proxy's own namespace, which keeps `local-backend` reachable.
-- **`istio-system/*`** — the control plane and telemetry destinations. Leaving it out produces a partial, diffuse failure that never points back at this object.
-- **`sidecar-other/*`** — the one other namespace you were told to keep.
+Each part of the object is there for a reason:
 
-`sidecar-third` is absent, and absence is the whole mechanism: that planet is simply not on this star chart. There is no "deny" field.
+- **No `workloadSelector`.** The task says every workload in the namespace, and leaving out the selector is how you say that. A selector for `app: tester` would leave the `local-backend` proxy unchanged, and the grader rejects it.
+- **`./*`**: the proxy's own namespace, which keeps `local-backend` reachable.
+- **`istio-system/*`**: the control plane and telemetry destinations. Leaving it out causes a partial failure that never points back at this object.
+- **`sidecar-other/*`**: the one other namespace you must keep.
+- **The name `default`**: the task asks for it, and it is the usual name for the one namespace-wide `Sidecar`.
 
-Name it `default`: the task requires that name, and it is the convention for the one namespace-wide resource.
+`sidecar-third` is not in the list, and that is the whole mechanism. The `Sidecar` resource has no "deny" field: a host that is not listed is simply not sent to the proxy.
 
 ---
 
-## Step 3: Confirm the Configuration Shrank
+## Step 3: Confirm The Configuration Shrank
 
-Give the push a couple of seconds, then re-measure:
+Give `istiod` a few seconds to push the change, then measure again:
 
 ```sh
 sleep 3
@@ -102,21 +101,21 @@ httpbin.sidecar-other.svc.cluster.local   8000   -   outbound   EDS
 local-backend.sidecar-demo.svc.cluster.local   8000   -   outbound   EDS
 ```
 
-From 34 rows to 16, with `sidecar-third` gone and the two you kept still present. No pod restarted — the change arrived over xDS on the running proxy.
+The list went from 34 lines to 16. `sidecar-third` is gone, and the two hosts you kept are still there. No pod restarted: `istiod` sent the change over xDS to the running proxy.
 
-The listener dump tells the same story from the other side:
+The listener list shows the same change from another angle:
 
 ```sh
 istioctl proxy-config listener deploy/tester -n sidecar-demo | grep 8000
 ```
 
-Port 8000 is still there, because two permitted hosts use it. Scope `sidecar-other` away as well and re-run this, and the row disappears entirely — clusters and listeners are built from the same model.
+Port `8000` is still there, because two hosts in the list use it. If you also removed `sidecar-other` and ran this again, the line would disappear: `istiod` builds clusters and listeners from the same list of hosts.
 
 ---
 
 ## Step 4: Verify Reachability Both Ways
 
-Scoping is a reachability change, so prove both halves:
+The `Sidecar` changes what `tester` can reach, so prove both sides:
 
 ```sh
 for url in http://local-backend:8000/get \
@@ -134,9 +133,9 @@ http://httpbin.sidecar-other:8000/get -> 200
 http://httpbin.sidecar-third:8000/get -> 000
 ```
 
-`000` is curl reporting that it never got an HTTP response; you may see `502` instead depending on the mesh's `outboundTrafficPolicy`. Either way the call fails, and the cause is the missing cluster you just confirmed — not DNS, not a NetworkPolicy.
+`000` is how `curl` reports that it never got an HTTP response. You may see `502` instead. Either way the request fails, and the cause is the missing cluster you just confirmed, not DNS and not a `NetworkPolicy`.
 
-Check that the target is still healthy, which is what distinguishes scoping from deleting:
+Check that the target is still healthy. This is what tells a `Sidecar` apart from deleting the target:
 
 ```sh
 kubectl -n sidecar-third get deploy,svc
@@ -147,16 +146,16 @@ deployment.apps/httpbin   1/1   Running
 service/httpbin           ClusterIP   8000/TCP
 ```
 
-The workload is fine. The caller simply has no route to it.
+The workload runs normally. The `tester` proxy simply has no destination for it.
 
 ---
 
 ## Common Mistakes
 
-- **Omitting `istio-system/*`.** Application traffic inside the namespace keeps working, so the mistake survives a casual test. Telemetry and control-plane paths do not.
-- **Adding a `workloadSelector`.** The task asks for namespace-wide. With a selector, `local-backend`'s proxy keeps the full registry and the reduction is not what was asked for.
-- **Using `*/*`.** That is the default written down. Nothing is narrowed.
-- **Creating a second `Sidecar`.** Two namespace-wide resources is undefined behaviour, not a merge. Keep exactly one.
-- **Deleting `sidecar-third` or scaling it to zero.** The grader checks it is still running. The traffic must be stopped by scoping.
-- **Patching `hosts` expecting an append.** A merge patch replaces the list — restate every host you want to keep.
-- **Testing immediately after applying.** The push takes a moment. If the cluster list has not moved, wait a few seconds before assuming the object is wrong.
+- **Leaving out `istio-system/*`.** Requests inside the namespace keep working, so the mistake survives a quick test. Telemetry and control plane connections do not.
+- **Adding a `workloadSelector`.** The task asks for the whole namespace. With a selector, the `local-backend` proxy keeps the full registry.
+- **Using `*/*`.** That is the default written down. Nothing gets smaller.
+- **Creating a second `Sidecar`.** Two namespace-wide `Sidecar` objects do not merge; the result is not defined. Keep exactly one.
+- **Deleting `sidecar-third` or scaling it to zero.** The grader checks that it still runs. The `Sidecar` must stop the traffic.
+- **Patching `hosts` and expecting it to add entries.** A merge patch replaces the whole list. Write every host you want to keep.
+- **Testing straight after applying.** The push takes a moment. If the cluster list has not changed, wait a few seconds before you decide the object is wrong.

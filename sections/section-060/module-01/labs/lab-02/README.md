@@ -2,13 +2,13 @@
 estimated_duration: 15m
 ---
 
-# Open The Closed Gate
+# Fix A Gateway Selector That Matches No Pod Lab
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the spaceport arrival gate gives no reply to any signal from outside. The flight plan for the bridge is correct, and a `Gateway` exists. But the gate itself never opened.
+In the `starfleet` namespace, the ingress gateway gives no response to any request from outside the cluster. The `VirtualService` for `bridge` is correct, and a `Gateway` exists. But the gateway pods never got a listener on port `80`.
 
-Your job is to find out why the gate has no listener, using the gateway pod's labels, `istioctl analyze` and the gateway's own proxy. Then fix the `Gateway` and prove that signals from outside reach the bridge again.
+Your job is to find out why, using the gateway pod's labels, `istioctl analyze` and the gateway's own Envoy configuration. Then fix the `Gateway` and prove that requests from outside reach `bridge` again.
 
-## Launching the Lab
+## Running the lab
 
 Run this command to start the cluster with the fault already in place:
 

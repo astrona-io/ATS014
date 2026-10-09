@@ -25,7 +25,7 @@ testing:
 validation:
   scripts:
     - name: "verify-section-050-capstone"
-      description: "Confirms a chaos-scoped abort coexists with a retry policy on the same rule, that the retries really run and are all re-faulted, that a second scoped rule drives a timeout with a delay, and that unmarked traffic is completely untouched"
+      description: "Confirms an abort scoped to x-chaos: abort sits next to a retry policy on the same rule and produces exactly one FI-flagged attempt, because the fault filter answers before the router can retry, that a second scoped rule uses a delay to make a timeout fire, and that unmarked traffic is completely untouched"
       type: "file"
       source: "validation/validate-completed.sh"
 

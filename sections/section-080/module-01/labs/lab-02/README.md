@@ -2,15 +2,15 @@
 estimated_duration: 25m
 ---
 
-# Repair The Departure Gate
+# Fix An Egress Route That Skips The Gateway Lab
 
-Welcome to a repair mission, astronaut. Signals from the planet `starfleet` to the relay should leave through the departure gate (the egress gateway), so one flight log records every one of them. The route is written, and the relay answers. But the gate's flight log stays empty.
+This graded lab is a troubleshooting task. Requests from the `starfleet` namespace to an outside endpoint, the relay, should leave the cluster through the egress gateway, so that one access log records every one of them. The route is written and the relay answers, but the egress gateway's access log stays empty.
 
-Your job is to find out why with the flight logs and the proxies' configuration, fix every fault, and prove that the signal really flies through the gate. This lab needs no outbound internet access.
+Your task is to find out why with the access logs and the proxy configuration, fix every fault, and prove that the requests really pass through the egress gateway. This lab needs no outbound internet access.
 
-## Launching the Lab
+## Running the lab
 
-Run this command to start the cluster with the faults already in place:
+Start the cluster with the faults already in place:
 
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-080/module-01/labs/lab-02

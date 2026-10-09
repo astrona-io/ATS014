@@ -1,6 +1,6 @@
 # Locality Load Balancing And Failover — Playground environment
 # A clean sandbox: it spins up, installs Istio, the shuttle and the probe in two
-# orbits, then stays running for free exploration. No task, no grading, no
+# zones, then stays running for free exploration. No task, no grading, no
 # `astrona submit`.
 #   astrona run -c .                           new kind cluster "astro-ats-014-playground-040-04"
 #   astrona destroy ats-014-playground-040-04   delete the cluster again

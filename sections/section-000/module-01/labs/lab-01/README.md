@@ -2,20 +2,40 @@
 estimated_duration: 3m
 ---
 
-# Which Workloads Are Actually In The Mesh Sandbox
+# Bring Workloads Into The Mesh With Sidecar Injection Lab
 
-Astronaut, this is your first graded mission. It checks one skill that every later mission depends on: telling whether a workload is really part of the Istio mesh.
+This graded lab checks one skill that every later lab depends on: telling whether a workload is really part of the Istio mesh.
 
 ## What you will practise
 
-Istio works by putting a small helper program, a **sidecar proxy**, next to each of your app's containers. Think of each pod as a spaceship, and the sidecar as the ship's communications officer. Every signal in or out goes through the communications officer, and Istio's mission control tells them the rules to follow. Istio calls the fleet of workloads that have one a **mesh**.
+Istio adds a **sidecar proxy** (Envoy) to each pod in the mesh, as an extra container next to the application. All traffic in and out of the pod passes through it, and Istio's control plane, `istiod`, sends it its configuration. The workloads that have a sidecar proxy form the **mesh**.
 
-A ship without a communications officer still flies. Its calls still work. But Istio cannot see them or apply any rule to them, and nothing warns you about it.
+A pod without a sidecar proxy still runs, and its requests still work. But Istio cannot see that traffic or apply any rule to it, and nothing warns you about it.
 
-In this lab, every pod is `Running` and every request succeeds. Even so, **two workloads are flying outside the mesh.** Your mission is to find them and bring them in, without replacing them with new ships.
+In this lab every pod is `Running` and every request succeeds. Even so, **two workloads run outside the mesh.** Your task is to find them and bring them in, without replacing them with new Deployments.
 
 ## What is in the lab
 
 - A `kind` Kubernetes cluster with **Istio 1.30.5** installed and `istioctl` ready to use.
-- Two namespaces (two planets) with workloads on them: `mesh-demo` and `legacy-app`.
+- Two namespaces with workloads: `mesh-demo` and `legacy-app`.
 - No hints about what is wrong. Kubernetes reports everything as healthy.
+
+## Running the lab
+
+Start the cluster with the starting state in place:
+
+```bash
+astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-000/module-01/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-000/module-01/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
+astrona destroy ats-014-lab-000-01
+```

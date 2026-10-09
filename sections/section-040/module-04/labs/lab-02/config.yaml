@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-orbits"
-      description: "Confirms probe-zone-b declares local.zone-b on its pod template, the shuttle's proxy sees one probe endpoint in zone-a and one in zone-b, the DestinationRule and Service are unchanged, and 20 live signals all reach probe-zone-a"
+      description: "Confirms probe-zone-b declares local.zone-b on its pod template, the shuttle's proxy sees one probe endpoint in zone-a and one in zone-b, the DestinationRule and Service are unchanged, and 20 live requests all reach probe-zone-a"
       type: "file"
       source: "validation/validate-completed.sh"
 

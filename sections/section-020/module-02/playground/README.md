@@ -5,10 +5,9 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A sandbox (a training solar system) with the echo `probe` in two versions that spins
-up, installs Istio, and stays running so you can try traffic mirroring on a
-clean cluster. Nothing to
-submit.
+A sandbox cluster with the `probe` HTTP echo server in two versions. It starts,
+installs Istio, and stays running so you can try traffic mirroring on a clean
+cluster. There is nothing to submit.
 
 ## Run it
 
@@ -30,5 +29,4 @@ astrona destroy ats-014-playground-020-02
 | `bootstrap/deploy.sh` | Namespace `starfleet`, access logs, `shuttle`, `probe` v1/v2 |
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/` | The module's DestinationRule and VirtualServices, numbered in the order you apply them, plus `cases/` |
-| `docs/overview.md` | What the environment contains, the helpers, ideas to try |
-| `docs/practice.md` | An exam-style drill with a checked solution |
+| `docs/overview.md` | The only learner page: what the environment contains, the helpers, ideas to try, and a final `## Practice tasks` section with a checked solution |

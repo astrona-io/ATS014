@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The flight plan was right all along. The docking instructions pointed one ship class at a label no ship carries, so jason's signals had nowhere to land.
+The `VirtualService` was correct all along. The `DestinationRule` pointed one subset at a label value that no pod carries, so the proxy of `shuttle` had no endpoint to send requests from `jason` to.
 
 ---
 
 ## Step 1: Confirm the failure
 
-Send one signal as jason, then read the shuttle's flight log:
+Send one request with the `end-user: jason` header, then read the last line of the access log of the `shuttle` proxy. The access log is one line per request in the log of the `istio-proxy` container:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" -H "end-user: jason" http://scout:9080/reviews/0
@@ -18,11 +18,11 @@ kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 [2026-10-08T19:36:37.034Z] "GET /reviews/0 HTTP/1.1" 503 UH no_healthy_upstream - "-" 0 19 0 - "-" "curl/8.11.1" "440e31c0-dd62-417c-baca-aacef60461a2" "scout:9080" "-" outbound|9080|v2|scout.starfleet.svc.cluster.local - 10.96.208.114:9080 10.244.0.11:42748 - -
 ```
 
-Two parts of the log line tell the story. The flag is **`UH`**, "no healthy upstream": the destination exists but holds no ship. And the chosen ship is `"-"`: there was no ship to choose. The cluster is `outbound|9080|v2|scout...`, so the empty destination is the `v2` subset.
+Three fields in the log line explain the failure. The response flag is **`UH`**, "no healthy upstream": the cluster exists but has no endpoint. The chosen endpoint is `"-"`, because there was no pod to choose. And the cluster is `outbound|9080|v2|scout...`, so the empty cluster belongs to the `v2` subset.
 
 ## Step 2: Find the cause
 
-Ask `istioctl analyze`:
+Run `istioctl analyze`, which checks the Istio objects in a namespace against each other and against the pods:
 
 ```sh
 istioctl analyze -n starfleet
@@ -32,7 +32,7 @@ istioctl analyze -n starfleet
 Error [IST0173] (DestinationRule starfleet/scout) The Subset v2 defined in the DestinationRule does not select any pods. Which may lead to 503 UH (NoHealthyUpstream).
 ```
 
-Confirm it from the shuttle's proxy. The `v2` cluster has no endpoints at all:
+Confirm it in the proxy of `shuttle`. The `v2` cluster has no endpoints at all:
 
 ```sh
 istioctl proxy-config endpoints deploy/shuttle -n starfleet \
@@ -61,9 +61,9 @@ scout-v2-866c98b568-5mzz8   2/2     Running   0          56s   v2
 scout-v3-668c6dfc68-j2tm7   2/2     Running   0          56s   v3
 ```
 
-The `v2` subset asks for `version: v20`. The ship carries `version: v2`. That one wrong value is the whole fault.
+The `v2` subset asks for `version: v20`, but the pod carries `version: v2`. That one wrong value is the whole fault.
 
-## Step 3: Fix the docking instructions
+## Step 3: Fix the DestinationRule
 
 Save this as `destinationrule-scout.yaml`:
 
@@ -99,7 +99,7 @@ destinationrule.networking.istio.io/scout configured
 
 ## Step 4: Prove it works
 
-The `v2` cluster now holds a ship:
+Then check the result. The `v2` cluster in the proxy of `shuttle` now holds an endpoint:
 
 ```sh
 istioctl proxy-config endpoints deploy/shuttle -n starfleet \
@@ -121,7 +121,7 @@ istioctl analyze -n starfleet
 ✔ No validation issues found when analyzing namespace: starfleet.
 ```
 
-And the signals land where the flight plan sends them. Send 10 as jason and 10 without a label:
+And the requests reach the versions the `VirtualService` names. Send 10 requests with the `end-user: jason` header and 10 without it:
 
 ```sh
 for i in $(seq 1 10); do
@@ -147,7 +147,7 @@ astrona submit -c sections/section-010/module-01/labs/lab-03
 
 ## Common Mistakes
 
-- **Changing the `VirtualService`.** Sending jason to `v1` or `v3` makes the `503` go away, but it breaks the mission. The flight plan was correct; the grader checks that it is unchanged.
+- **Changing the `VirtualService`.** Sending `jason` to `v1` or `v3` makes the `503` go away, but it fails the task. The `VirtualService` was correct, and the grader checks that it is unchanged.
 - **Relabelling the pods.** Changing the `scout-v2` pods to `version: v20` also "fixes" it, but the subset's labels must match the pods as they are. The grader checks the pod labels.
 - **Deleting the `v3` subset or adding a fourth one.** The `DestinationRule` must define exactly `v1`, `v2` and `v3`.
-- **Testing too fast.** `kubectl apply` returns before the shuttle's proxy has the new orders. If jason still gets `503`, wait a few seconds and send the signal again.
+- **Testing too fast.** `kubectl apply` returns before `istiod` has sent the new configuration to the proxy of `shuttle`. If `jason` still gets `503`, wait a few seconds and send the request again.

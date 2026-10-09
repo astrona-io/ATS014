@@ -5,8 +5,8 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system for astronauts: a sandbox that starts up, installs Istio and the Starfleet, and then waits
-for you. Use it for every hands-on step in this module. Nothing to submit.
+A sandbox that starts a `kind` cluster, installs Istio and the Starfleet sample app, and then waits. Use it for
+every hands-on step in this module. Nothing to submit.
 
 ## Run it
 
@@ -25,8 +25,7 @@ grading.
 | --- | --- |
 | `config.yaml` | Environment definition: runtime, port forward to the bridge, the two bootstrap scripts |
 | `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm: `istio-base` (the CRDs) and `istiod` |
-| `bootstrap/deploy.sh` | Creates the planet `starfleet` and applies everything in `bootstrap/manifests/` |
-| `bootstrap/manifests/` | Namespace, access logs, the Starfleet, the shuttle, the probe v1/v2, the scout subsets and the jason → scout v2 flight plan |
-| `examples/` | Every flight plan and docking instruction the module's parts save, for anyone who cloned the repository |
-| `docs/overview.md` | What the environment contains, helper functions and ideas to try |
-| `docs/practice.md` | Two exam-style tasks with checked solutions |
+| `bootstrap/deploy.sh` | Creates the `starfleet` namespace and applies everything in `bootstrap/manifests/` |
+| `bootstrap/manifests/` | Namespace, access logs, the Starfleet, the shuttle, the probe v1/v2, the scout subsets and the `VirtualService` that sends `end-user: jason` to scout v2 |
+| `examples/` | Every `VirtualService` and `DestinationRule` the module's parts save, for authors who cloned the repository |
+| `docs/overview.md` | The learner page: what the environment contains, helper functions, ideas to try and a final `## Practice tasks` section |

@@ -3,7 +3,7 @@
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
 #   - shuttle (test client)
 #   - probe v1 (3 pods) and v2 (1 pod) behind one Service on port 8000.
-#     Its /hostname path answers with the name of the pod that served the signal.
+#     Its /hostname path answers with the name of the pod that served the request.
 # No DestinationRule is created: choosing the load balancer is the module.
 set -euo pipefail
 

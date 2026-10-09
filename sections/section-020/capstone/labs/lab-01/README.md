@@ -1,13 +1,37 @@
-# Capstone: Canary And Shadow At The Same Time
+---
+estimated_duration: 45m
+---
 
-This is the Section 020 integration challenge, astronaut — a full mission with a new ship class on a test flight and a test ship listening in. It puts both of the section's answers to "is the new version safe?" on one rule at the same time: a weighted canary that exposes a slice of real users to the candidate, and a mirror that sends a full copy of the same traffic to a separate shadow service nobody sees.
+# Combine A Header Rule, A Weighted Canary And A Mirror Capstone Lab
 
-The two features sit side by side on the same `http` rule and are easy to confuse — a mirror written as a route destination becomes a traffic split, and a weighted destination written as a mirror disappears from the caller entirely.
+This is the integration lab for traffic shifting. It puts both ways to test a new version on one `VirtualService` rule at the same time. A weighted canary split sends a share of real requests to the new version. A mirror sends a copy of the same requests to a separate shadow Service, whose responses no client ever sees.
 
-There is no step-by-step guide until you have tried it. Work from the specification.
+The two features sit side by side on the same `http` rule and are easy to confuse. A mirror written as a `route` destination becomes part of a traffic split. A weighted destination written as a mirror never sends a response to the client.
 
-## Launching the Lab
-Run the following command in your terminal to boot the kind Kubernetes cluster:
+There is no step-by-step guide until you have tried it. Work from the task.
+
+## What is in the lab
+
+- A `kind` Kubernetes cluster with **Istio 1.30.5** installed with `istioctl install --set profile=demo`.
+- The namespace `checkout` with `notification-service` v1 and v2 behind one Service, a separate `notification-shadow` Deployment and Service, and a `tester` client pod.
+- No `DestinationRule` and no `VirtualService`.
+
+## Running the lab
+
+Start the cluster with the starting state in place:
+
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/capstone/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-020/capstone/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
+astrona destroy ats-014-capstone-020
 ```

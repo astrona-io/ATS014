@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The drill had no `match`, so every sender of navcom was in its blast radius. The fix keeps the drill, but moves it onto a first rule that only `end-user: tester` fits, with a plain rule below it for everyone else.
+The fault had no `match`, so it hit every client of `navcom`. The fix keeps the fault, but moves it onto a first rule that only requests with `end-user: tester` match, with a plain rule below it for every other request.
 
 ---
 
 ## Step 1: See the Problem
 
-Send one ordinary signal to the scout, then look at the flight plans:
+Send one request without a header to `scout`, then look at the `VirtualService` objects:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s http://scout:9080/reviews/0
@@ -23,13 +23,13 @@ scout               ["scout"]    9s
 |500 100
 ```
 
-No star ratings, for a signal without any label. Navcom's flight plan has one rule with an empty `match` (before the `|`) and an abort with `500` for 100 percent of signals: an unscoped drill.
+There are no star ratings, even for a request without any header. The `navcom` `VirtualService` has one rule with an empty `match` (before the `|`) and an abort with `500` for 100 percent of requests: an unscoped fault.
 
 ---
 
-## Step 2: Scope the Drill to tester
+## Step 2: Scope the Fault to tester
 
-Put the drill on a first rule that matches `end-user: tester`, and add a plain rule below it. Save this as `virtualservice-navcom.yaml`:
+Put the fault on a first rule that matches `end-user: tester`, and add a plain rule below it. The sidecar proxy uses the first rule that matches, so the order matters. Save this as `virtualservice-navcom.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -74,7 +74,7 @@ virtualservice.networking.istio.io/navcom configured
 
 ## Step 3: Prove It
 
-Send one ordinary signal and one tester signal through the scout:
+Then check the result. Send one request without a header and one with `end-user: tester` through `scout`:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s http://scout:9080/reviews/0 | grep -o '"rating": {[^}]*}'
@@ -88,9 +88,9 @@ kubectl exec -n starfleet deploy/shuttle -- curl -s -H "end-user: tester" http:/
 "rating": {"error": "Ratings service is currently unavailable"}
 ```
 
-Star ratings are back for everyone, and the test crew's signals still meet the drill. That works because the scout passes the `end-user` label on to navcom.
+Star ratings are back for every other request, and the requests of `tester` still get the fault. That works because the `scout` application copies the `end-user` header onto its own request to `navcom`.
 
-Now send a tester signal and an ordinary signal straight to navcom, and read the shuttle's flight log:
+Now send one request with `end-user: tester` and one without a header straight to `navcom`, and read the access log of `shuttle`:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" -H "end-user: tester" http://navcom:9080/ratings/0
@@ -105,24 +105,24 @@ kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
 [2026-10-08T21:55:15.897Z] "GET /ratings/0 HTTP/1.1" 200 - via_upstream - "-" 0 48 19 18 "-" "curl/8.11.1" "e902657e-1a00-43c7-8d59-a398b85fe3c0" "navcom:9080" "10.244.0.7:9080" outbound|9080|v1|navcom.starfleet.svc.cluster.local 10.244.0.14:44944 10.96.92.206:9080 10.244.0.14:37188 - -
 ```
 
-The tester signal fails with `500 FI`: made by the shuttle's own communications officer, never sent to navcom. The ordinary signal reaches navcom and gets a `200`.
+The request of `tester` fails with `500 FI`: the sidecar proxy of `shuttle` made the response itself and never sent the request to `navcom`. The request without a header reaches `navcom` and gets a `200`.
 
-Then submit:
+Then send the lab for grading:
 
 ```sh
 astrona submit -c sections/section-050/module-01/labs/lab-03
 ```
 
 ```text
-PASS: the drill on navcom now only hits end-user: tester (500 FI), and every other signal gets its star ratings again
+PASS: the abort fault on navcom now only hits end-user: tester (500 FI), and every other request gets its star ratings again
 ```
 
 ---
 
-## Mistakes That Fail This Mission
+## Mistakes That Fail This Lab
 
-- **Deleting the drill.** Everyone gets star ratings again, but the test crew loses its drill. The grader checks that tester still meets it.
-- **Putting the plain rule first.** It fits every signal, so the drill rule below it is never reached.
-- **Leaving the fault on the plain rule too.** Then everyone still meets the drill.
-- **Changing the scout flight plan to send signals to v1.** Scout v1 never calls navcom, so the problem only hides. The grader checks that the scout flight plan is unchanged.
+- **Deleting the fault.** Every request gets star ratings again, but the test team loses its fault. The grader checks that requests of `tester` still get it.
+- **Putting the plain rule first.** It matches every request, so the proxy never reaches the fault rule below it.
+- **Leaving the fault on the plain rule too.** Then every request still gets the fault.
+- **Changing the `scout` `VirtualService` to send requests to v1.** `scout` v1 never calls `navcom`, so the problem only hides. The grader checks that the `scout` `VirtualService` is unchanged.
 - **Matching with `prefix` or on another header.** The task asks for an exact match on `end-user: tester`.

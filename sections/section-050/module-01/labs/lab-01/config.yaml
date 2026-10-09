@@ -25,7 +25,7 @@ testing:
 validation:
   scripts:
     - name: "verify-fault-injection"
-      description: "Confirms a header-scoped abort affects only marked requests, that an unmarked request is untouched, that the fault is enforced in the caller's proxy with the FI flag, and that a delay above a route timeout makes the timeout fire on demand"
+      description: "Confirms a header-scoped fault affects only requests with end-user: tester, that unmarked requests are untouched, that the fault filter is in the caller's sidecar proxy, and that a 7s delay behind a 3s route timeout makes the timeout fire with UT in the client's access log"
       type: "file"
       source: "validation/validate-completed.sh"
 

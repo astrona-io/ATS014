@@ -1,12 +1,10 @@
 # Route Requests Within The Mesh
 
-Astronaut, your first real mission is to steer signals. Right now a plain Kubernetes Service sends them blindly. A Service is a beacon: one call sign that a group of spaceships (pods) answers to. In your fleet, the `scout` beacon is answered by three ship classes, v1, v2 and v3. Every signal (request) lands on whichever ship `kube-proxy` happens to pick, like a message thrown into space for any ship to catch. You cannot say "send *my* signals to v2 while everyone else stays on v1", because a Service cannot read a signal. It only knows which ships answer its call sign.
+A plain Kubernetes Service cannot choose which version of an application gets a request. The `scout` Service selects three versions, v1, v2 and v3, and `kube-proxy` sends each connection to any of them. It cannot read a header or a path, so it cannot send some requests to v2 while the rest stay on v1.
 
-Istio replaces that blind pick with a decision. The decision is made by the sidecar proxy, which can read the request. Think of the proxy as the communications officer on board each ship: every signal in or out goes through them. Two objects give it its orders, and the split between them is the thing to get right first:
+Istio moves that choice into the sidecar proxy (Envoy) of the client pod, which can read the request. Two Istio objects configure it. A **`VirtualService`** decides **where** a request goes. A **`DestinationRule`** defines **what the named destinations are**, such as a subset of pods with the label `version: v2`.
 
-> A `VirtualService` is the **flight plan**: it decides **where** a request goes. A `DestinationRule` is the **docking instructions**: it decides **what the named destinations mean**.
-
-This module spends nine parts on these two objects because almost every later mission is this pair plus one extra field. Weighted shifting is a `VirtualService` route with numbers on it. Mirroring is the same rule with a `mirror` beside it. Timeouts, retries and fault injection are fields on the same `http` rule. Connection pools, load balancing and outlier detection are fields on the same `DestinationRule`. Learn the two objects well here, and most of the domain stops being new ideas and becomes new field names.
+This module spends twelve parts on these two objects, because most traffic management features are one more field on one of them. Weighted routing, mirroring, timeouts, retries and fault injection are fields on a `VirtualService` rule. Connection pools, load balancing and outlier detection are fields on a `DestinationRule`.
 
 ## Learning objectives
 
@@ -25,41 +23,39 @@ After this module you can:
 
 ## Before you start
 
-Every mission starts with a pre-flight check, astronaut. Before you write your first routing rule, make sure you have the knowledge this module expects, know what is waiting in your playground, and have one small helper ready in your terminal. It takes five minutes, and it saves you from chasing problems that have nothing to do with routing.
+This module expects some knowledge, and a playground that is ready before the first hands-on step.
 
 ### What you should already know
 
-- **How the mesh works.** A proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You can read those orders with `istioctl proxy-config`.
+- **How the mesh works.** A sidecar proxy runs in every pod, and `istiod`, Istio's control plane, sends it configuration. You can read that configuration with `istioctl proxy-config`.
 - **Kubernetes basics.** Namespaces, Deployments, Services, pod labels and `kubectl exec`.
 
 ### What is in your playground
 
-Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** already installed. Everything you need is on one planet, the namespace **`starfleet`**.
+Your playground is one `kind` cluster with **Istio 1.30.5** already installed. Everything you need is in the namespace **`starfleet`**, which has sidecar injection switched on. It runs the Istio Bookinfo sample app with other names:
 
-The fleet on that planet is **the Starfleet**. It is the Bookinfo sample app that the official Istio docs use, with space names instead of the original ones. Here is the role each ship plays:
-
-| Ship | Its role in the fleet |
+| Workload | What it does |
 | --- | --- |
-| `bridge` | The **flagship**. It is the page astronauts see, and it sends signals to the other ships to build it |
-| `cargo` | The **supply ship**. It answers with facts about an item |
-| `scout` v1, v2, v3 | Three **ship classes** of the same scout. They answer the same call sign, but each one reports back differently: v1 with no stars, v2 with black stars, v3 with red stars. Yes, real stars |
-| `navcom` | The **navigation computer**. The v2 and v3 scouts ask it for the star rating |
-| `shuttle` | **Your shuttle**. You send every test signal from here, with the `curl` command |
-| `probe` v1, v2 | An **echo probe**. It sends back exactly what it receives, so you can see what a signal looked like on arrival. The rewriting and non-HTTP parts use it |
+| `bridge` | Web frontend (`/productpage`) on port `9080`; it calls `cargo` and `scout` |
+| `cargo` | Backend that returns item details |
+| `scout` v1, v2, v3 | Backend in three versions behind one Service: v1 shows no stars, v2 black stars, v3 red stars |
+| `navcom` | Backend that `scout` v2 and v3 call for the star rating |
+| `shuttle` | Test client pod; you send test requests from here with `curl` |
+| `probe` v1, v2 | HTTP echo server on Service port `8000`; it returns what it receives |
 
-Every pod shows `2/2`: the app plus its communications officer (the `istio-proxy` sidecar). There is **no** `VirtualService` and **no** `DestinationRule` yet. Writing them is your mission in this module.
+Every pod shows `2/2`: the application container plus the `istio-proxy` sidecar. There is **no** `VirtualService` and **no** `DestinationRule` yet.
 
-One thing keeps its old name: the web paths built into the ships. A signal to the scout goes to `http://scout:9080/reviews/0`, and the bridge page lives at `/productpage`. The names of the ships changed, the paths inside them did not.
+The URL paths inside the images keep their original names. A request to `scout` goes to `http://scout:9080/reviews/0`, and the `bridge` page is at `/productpage`.
 
-You can also watch the flagship from your browser at `http://127.0.0.1:9080/productpage`. Log in as your fellow astronaut `jason` (any password works). From then on, every signal the flagship sends to `scout` carries the label `end-user: jason`, and you will soon steer exactly those signals.
+You can also open the `bridge` page in your browser at `http://127.0.0.1:9080/productpage`. Log in as `jason` (any password works). From then on, every request that `bridge` sends to `scout` carries the header `end-user: jason`.
 
-Launch your playground now, and keep it running next to you while you read the parts:
+Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
 ### One helper to paste first
 
-Paste this into each new terminal before you start. It sends 10 signals to `scout` and counts which version answered:
+Paste this into each new terminal before you start. It sends 10 requests from `shuttle` to `scout` and counts which version answered:
 
 ```sh
 count_versions() { for i in $(seq 1 10); do
@@ -70,8 +66,14 @@ SCOUT=http://scout:9080/reviews
 
 Use it like this: `count_versions $SCOUT/0`. Any `curl` options you add, such as `-H "end-user: jason"`, are passed on.
 
-## Why this matters
+## The order of the parts
 
-`VirtualService` and `DestinationRule` are the base of almost everything else in Istio traffic management. Most later features are one more field on one of these two objects, so time spent here pays off on every mission after it.
+The module has twelve parts, five labs placed right after the parts they practise, and a summary at the end.
 
-This module also trains the one habit every Istio astronaut needs. An object that `kubectl get` shows you and a proxy that actually follows it are two different facts. When your rule seems to do nothing, do not guess: ask the communications officer what orders they really hold, with `istioctl proxy-config`.
+The first part shows where requests go with no routing rules, and that the client's proxy makes the choice. The second part defines subsets with a `DestinationRule` and shows what happens when a subset selects no pod. Its lab asks you to fix a `DestinationRule` subset that selects no pods.
+
+The third part writes the first `VirtualService` and sends requests from `jason` to their own version. The fourth part covers the three ways to compare text: `exact`, `prefix` and `regex`. The fifth part shows when two conditions in a `match` are combined with AND and when with OR. The sixth part proves which one you wrote by reading the proxy's route table. The seventh part puts the rules in order and adds a catch-all. Its lab asks you to route requests by header, URI and query parameter.
+
+The eighth part shows how Istio fills in short host names from the object's namespace. The ninth part reads the access log and the proxy's live configuration, and ends with a debugging checklist. Its lab asks you to fix a `VirtualService` that does not apply.
+
+The tenth part uses `redirect` and `rewrite` on a matched rule. The eleventh part changes request and response headers and answers browser preflight requests with `corsPolicy`. Its lab asks you to redirect, rewrite and change the headers of a request. The twelfth part explains how Istio picks a port's protocol and how `tcp` and `tls` routing work. Its lab asks you to declare a Service port as HTTP.

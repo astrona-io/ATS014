@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Deploy what the 040-04 playground needs (runs after install-istio.sh):
-#   - the node labelled region "local", zone "zone-a" (the shuttle's orbit)
+#   - the node labelled region "local", zone "zone-a" (the shuttle's zone)
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
 #   - shuttle (test client, locality local/zone-a from the node)
-#   - the probe in two orbits (zone-a and zone-b) + a damaged zone-a probe at 0
+#   - the probe in two zones (zone-a and zone-b) + a damaged zone-a probe at 0
 # No DestinationRule is created: writing it is the module.
 set -euo pipefail
 
@@ -23,7 +23,7 @@ done
 echo "==> Namespace and access logs"
 kubectl apply -f manifests/namespace.yaml -f manifests/access-logs.yaml
 
-echo "==> Shuttle and the probe in two orbits"
+echo "==> Shuttle and the probe in two zones"
 kubectl apply -f manifests/shuttle.yaml
 kubectl apply -f manifests/probe-orbits.yaml
 

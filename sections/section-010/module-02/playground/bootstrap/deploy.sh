@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deploy what the 010-02 playground needs (runs after install-istio.sh):
-#   - planets starfleet and outpost (sidecar injection) + mesh-wide access logs
+#   - namespaces starfleet and outpost (sidecar injection) + mesh-wide access logs
 #   - starfleet: shuttle (test client) and cargo (a local service on port 9080)
 #   - outpost:   probe v1/v2 (echo service on port 8000)
 # No Sidecar resource is created: writing one is the module.
@@ -13,7 +13,7 @@ kubectl config view --minify --flatten --context "kind-astro-ats-014-playground-
 export KUBECONFIG="$KCFG"
 cd "$(dirname "$0")"
 
-echo "==> Planets and access logs"
+echo "==> Namespaces and access logs"
 kubectl apply -f manifests/namespace.yaml -f manifests/access-logs.yaml
 
 echo "==> Shuttle and cargo on starfleet, probe on outpost"

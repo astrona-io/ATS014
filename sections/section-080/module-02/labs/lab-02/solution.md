@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Two faults, astronaut, and each one hides behind a `503`. Fix the route first, read what the gate says next, then hand it its keys.
+There are two faults, and each one shows up as a `503`. Fix the route first, read what the egress gateway reports next, then give it the client certificate.
 
 ---
 
-## Step 1: Read the gate's flight log
+## Step 1: Read the egress gateway's access log
 
-Send a test signal, then read the newest line of the gate's flight log. The first answer can take up to 30 seconds:
+Send a test request, then read the newest line of the egress gateway's access log. The first response can take up to 30 seconds:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -w "\n%{http_code}\n" http://partner.outpost.example/
@@ -19,13 +19,13 @@ upstream connect error or disconnect/reset before headers. retried and the lates
 [2026-10-08T23:42:56.440Z] "GET / HTTP/2" 503 URX,UF upstream_reset_before_response_started{connection_timeout} - "-" 0 114 30036 - "10.244.0.7" "curl/8.11.1" "e17710d6-59ce-43ad-82c2-e645058f63b7" "partner.outpost.example" "10.96.44.169:80" outbound|80||partner.outpost.example - 10.244.0.6:80 10.244.0.7:36430 - -
 ```
 
-The gate carried the signal, so stage 1 and the `Gateway` work. But the gate sent it on to `10.96.44.169:80`, through the cluster `outbound|80||partner.outpost.example`. The partner only listens on port `443`, so the connection timed out. Stage 2 routes to the wrong port.
+The egress gateway received the request, so the first routing rule and the `Gateway` work. But the egress gateway sent it on to `10.96.44.169:80`, through the cluster `outbound|80||partner.outpost.example`. The partner server only listens on port `443`, so the connection timed out. The second routing rule uses the wrong port.
 
 ---
 
-## Step 2: Send stage 2 to port 443
+## Step 2: Route the second rule to port 443
 
-Stage 2 is the second rule in the `http` list. Change its port to `443`, where the partner listens and where the TLS settings of `partner-tls` apply:
+The second rule is the second entry in the `http` list. Change its port to `443`, where the partner server listens and where the TLS settings of `partner-tls` apply:
 
 ```sh
 kubectl patch virtualservice partner-via-gate -n starfleet --type json \
@@ -36,7 +36,7 @@ kubectl patch virtualservice partner-via-gate -n starfleet --type json \
 virtualservice.networking.istio.io/partner-via-gate patched
 ```
 
-Send the signal again and read the gate's flight log:
+Send the request again and read the egress gateway's access log:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -w "\n%{http_code}\n" http://partner.outpost.example/
@@ -49,11 +49,11 @@ upstream connect error or disconnect/reset before headers. retried and the lates
 [2026-10-08T23:43:43.525Z] "GET / HTTP/2" 503 URX,UF upstream_reset_before_response_started{remote_connection_failure|TLS_error:_Secret_is_not_supplied_by_SDS} - "TLS_error:_Secret_is_not_supplied_by_SDS" 0 121 26 - "10.244.0.7" "curl/8.11.1" "751b4206-7e73-44b2-8bea-48704bebede4" "partner.outpost.example" "10.96.44.169:443" outbound|443||partner.outpost.example - 10.244.0.6:80 10.244.0.7:36430 - -
 ```
 
-Still `503`, but a different one. The gate now calls port `443`, but it cannot start the handshake: `Secret is not supplied by SDS`. It has the order to show a client certificate, and no certificate.
+It is still a `503`, but a different one. The egress gateway now calls port `443`, but it cannot start the handshake: `Secret is not supplied by SDS`. SDS (Secret Discovery Service) is how `istiod` sends certificates to a proxy. The egress gateway has the configuration to present a client certificate, but no certificate.
 
 ---
 
-## Step 3: Ask the gate which keys it holds
+## Step 3: List the egress gateway's certificates
 
 ```sh
 istioctl proxy-config secret deploy/istio-egress -n istio-egress
@@ -67,7 +67,7 @@ default                                     Cert Chain     ACTIVE      true     
 ROOTCA                                      CA             ACTIVE      true           e3f2b11217e069631d06812f1ef1f290     2036-10-05T23:42:15Z     2026-10-08T23:42:15Z
 ```
 
-Both partner keys are `WARMING`: asked for, never received. Mission control's log says why:
+Both partner entries are `WARMING`: requested, but never received. The `istiod` log says why:
 
 ```sh
 kubectl logs -n istio-system deploy/istiod | grep partner-client-cert | grep warn
@@ -78,11 +78,11 @@ kubectl logs -n istio-system deploy/istiod | grep partner-client-cert | grep war
 2026-10-08T23:42:37.366082Z	warn	ads	failed to fetch ca certificate for kubernetes://partner-client-cert-cacert: secret istio-egress/partner-client-cert not found
 ```
 
-`credentialName` is read from the namespace of the proxy that uses it. That proxy is the gate, so mission control looked in `istio-egress`. The delivered `Secret` is in `starfleet`.
+`credentialName` is read from the namespace of the proxy that uses it. That proxy is the egress gateway, so `istiod` looked in `istio-egress`. The delivered `Secret` is in `starfleet`.
 
 ---
 
-## Step 4: Store the keys on the gate's planet
+## Step 4: Create the `Secret` in the egress gateway's namespace
 
 Copy the three keys out of the delivered `Secret`, and create the same `Secret` in `istio-egress`:
 
@@ -98,13 +98,13 @@ kubectl create secret generic partner-client-cert -n istio-egress \
 secret/partner-client-cert created
 ```
 
-No restart is needed. Mission control sends the keys to the gate as soon as the `Secret` exists.
+No restart is needed. `istiod` sends the certificate to the egress gateway as soon as the `Secret` exists.
 
 ---
 
 ## Step 5: Prove it
 
-Send the signal, read the gate's flight log, and list the gate's keys:
+Send the request, read the egress gateway's access log, and list its certificates:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -w "\n%{http_code}\n" http://partner.outpost.example/
@@ -124,7 +124,7 @@ kubernetes://partner-client-cert-cacert     CA             ACTIVE     true      
 ROOTCA                                      CA             ACTIVE     true           e3f2b11217e069631d06812f1ef1f290             2036-10-05T23:42:15Z     2026-10-08T23:42:15Z
 ```
 
-The partner accepted the gate's certificate (`verify=SUCCESS`), the gate's line ends at port `443`, and both keys are `ACTIVE`. Last, check that the shuttle's sidecar holds no TLS settings for the partner:
+The partner server accepted the egress gateway's certificate (`verify=SUCCESS`), the egress gateway's line ends at port `443`, and both certificate entries are `ACTIVE`. Last, check that the shuttle's sidecar proxy holds no TLS settings for the partner:
 
 ```sh
 istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn partner.outpost.example -o json | grep -c transportSocket
@@ -134,15 +134,15 @@ istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn partner.outpost
 0
 ```
 
-Only the gate starts the TLS connection, and only the gate holds the keys.
+Only the egress gateway starts the TLS connection, and only the egress gateway holds the certificate.
 
 ---
 
-## Common Mistakes
+## Common mistakes
 
-- **Fixing only one fault.** Each fault gives its own `503`. After the port fix, the flight log changes from `connection_timeout` to `Secret_is_not_supplied_by_SDS`: read it again after every change.
-- **Leaving the `Secret` in `starfleet`, or changing `credentialName`.** `credentialName` has no namespace. The gate reads it from `istio-egress`.
-- **Switching to `SIMPLE` or adding `insecureSkipVerify: true`.** The partner asks for a client certificate, and the grader expects `partner-tls` unchanged.
-- **Removing `exportTo`.** The shuttle's sidecar then gets the TLS settings too, and the grader checks that it has none.
-- **Creating the `Secret` without `ca.crt`.** The task asks for all three keys: the gate needs the partner's authority to check the partner.
-- **Testing right after a change.** Mission control needs a few seconds to send new orders. If the answer looks old, send the signal again.
+- **Fixing only one fault.** Each fault gives its own `503`. After the port fix, the access log changes from `connection_timeout` to `Secret_is_not_supplied_by_SDS`, so read it again after every change.
+- **Leaving the `Secret` in `starfleet`, or changing `credentialName`.** `credentialName` has no namespace. The egress gateway reads it from `istio-egress`.
+- **Switching to `SIMPLE` or adding `insecureSkipVerify: true`.** The partner server asks for a client certificate, and the grader expects `partner-tls` unchanged.
+- **Removing `exportTo`.** The shuttle's sidecar proxy then gets the TLS settings too, and the grader checks that it has none.
+- **Creating the `Secret` without `ca.crt`.** The task asks for all three keys: the egress gateway needs the partner's certificate authority to verify the partner server.
+- **Testing right after a change.** `istiod` needs a few seconds to send new configuration. If the response looks old, send the request again.

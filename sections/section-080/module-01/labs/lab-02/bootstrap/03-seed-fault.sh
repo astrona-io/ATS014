@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# The lab's starting state: a route through the departure gate that is never
+# The lab's starting state: a route through the egress gateway that is never
 # used, and would be refused if it were.
 #   - the ServiceEntry for relay.outpost.example and the DestinationRule with
 #     the empty subset "relay" are correct
 #   - the VirtualService lists only the gateway in its top-level gateways, so
-#     the sidecars never get stage 1 and the shuttle flies direct (fault 1)
+#     the sidecars never get stage 1 and the shuttle calls the relay direct (fault 1)
 #   - the Gateway names the gateway's own Service in servers[].hosts instead of
 #     the external host, so the gateway has no route for the relay (fault 2)
 set -euo pipefail

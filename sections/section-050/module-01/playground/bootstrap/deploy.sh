@@ -4,7 +4,7 @@
 #   - the Starfleet: bridge, cargo, scout v1-v3, navcom (scout v2 and v3 call navcom)
 #   - shuttle (test client) + probe v1/v2 (echo service)
 #   - the scout subsets (v1, v2, v3) and the navcom subset (v1)
-# No flight plan (VirtualService) is created: writing them is the module.
+# No VirtualService is created: writing them is the module.
 set -euo pipefail
 
 # Pin this playground's cluster: use a private kubeconfig, so nothing else that

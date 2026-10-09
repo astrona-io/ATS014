@@ -1,17 +1,21 @@
+---
+estimated_duration: 30m
+---
+
 # Question
 
 Solve this question on: `terminal`
 
-Astronaut, your mission: open the spaceport arrival gate (the ingress gateway) for two ships and steer each outside signal to the right one by its hostname.
+Two teams want their applications reachable from outside the cluster through the same ingress gateway, the Envoy proxy at the edge of the mesh that accepts traffic from outside. Route each request to the right application by its host name.
 
 Namespace `ingress-demo` holds two applications that must be reachable from outside the cluster:
 
 * `booking-service` — a Service on port 80
 * `catalog-service` — a Service on port 80
 
-Istio is installed with the `demo` profile, so `istio-ingressgateway` is running in `istio-system` — unconfigured, and currently answering 404 to everything. There is no `Gateway` and no `VirtualService`.
+Istio is installed with the `demo` profile, so the `istio-ingressgateway` Deployment runs in `istio-system`. It has no configuration yet, so it has no listener for application traffic. There is no `Gateway` and no `VirtualService`.
 
-`kind` has no load balancer, so reach the gateway with a port-forward:
+`kind` has no load balancer, so reach the gateway with a port forward. Start it after your `Gateway` exists: a request sent before then gets an empty reply, and the port forward stops.
 
 ```bash
 kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80 >/dev/null 2>&1 &
@@ -32,7 +36,7 @@ Expose both applications through the **one shared gateway**, separated by hostna
 
 5.  `GET /book` with `Host: booking.ica.local` returns **200**.
 6.  `GET /items` with `Host: catalog.ica.local` returns **200**.
-7.  `GET /book` with `Host: unknown.ica.local` does **not** return 200 — the listener only accepts the two named hosts.
-8.  `GET /book` with `Host: catalog.ica.local` does **not** return 200 — each host only carries its own routes.
+7.  `GET /book` with `Host: unknown.ica.local` does **not** return 200. The listener only accepts the two named hosts.
+8.  `GET /book` with `Host: catalog.ica.local` does **not** return 200. Each host only carries its own routes.
 9.  Both hosts appear in the gateway proxy's route table. A `VirtualService` that exists but is not bound to the gateway fails this check even though the objects look correct.
 10. Both `VirtualService` objects name the gateway in their `gateways` field.

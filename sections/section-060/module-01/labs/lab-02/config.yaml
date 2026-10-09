@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-open-gate"
-      description: "Confirms the Gateway selects the real gateway pods with one HTTP server on port 80 for starfleet.example.com, the gateway proxy holds the listener and the bridge routes, the VirtualService is unchanged, and live signals through the gate reach the bridge"
+      description: "Confirms the Gateway selects the real gateway pods with one HTTP server on port 80 for starfleet.example.com, the gateway proxy holds the listener and the bridge routes, the VirtualService is unchanged, and live requests through the ingress gateway reach the bridge"
       type: "file"
       source: "validation/validate-completed.sh"
 

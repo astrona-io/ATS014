@@ -1,38 +1,37 @@
 # Solution Walkthrough
 
-Three objects: one listener (the gate), two route sets (the flight plans). The field that decides whether any of it works is one line long.
+You need three objects: one `Gateway`, which opens the listener, and two `VirtualService` objects, which hold the routes for each host. One line in each `VirtualService`, the `gateways:` field, decides whether any of it works.
 
 ---
 
-## Step 1: Set Up Access And See the Starting State
+## Step 1: Set Up Access And See The Starting State
 
-`kind` has no load balancer, so the gateway's `EXTERNAL-IP` will never be assigned. Port-forward instead:
+Look at the gateway pod, the Istio objects and the listeners of the gateway proxy:
 
 ```sh
-kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80 >/dev/null 2>&1 &
-export GATEWAY_URL=localhost:8080
-
 kubectl -n istio-system get pods -l istio=ingressgateway
 kubectl -n ingress-demo get gateway,virtualservice
-curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
+istioctl proxy-config listeners deploy/istio-ingressgateway -n istio-system
 ```
 
 ```text
-NAME                                    READY   STATUS    AGE
-istio-ingressgateway-6d9c5b8f7c-4kx2n   1/1     Running   6m
+NAME                                    READY   STATUS    RESTARTS   AGE
+istio-ingressgateway-7f54444996-gg6kb   1/1     Running   0          25s
 No resources found in ingress-demo namespace.
-404
+ADDRESSES PORT  MATCH DESTINATION
+0.0.0.0   15021 ALL   Inline Route: /healthz/ready*
+0.0.0.0   15090 ALL   Inline Route: /stats/prometheus*
 ```
 
-The pod is `1/1` — a standalone proxy, no application container. It is healthy and reachable and answers 404 because nothing has configured it.
+The pod is `1/1`: an Envoy proxy with no application container. It is healthy, but it has only its health and metrics listeners. No `Gateway` configures it yet, so nothing listens on port `8080`, the container port behind the Service's port `80`.
+
+`kind` has no load balancer, so the gateway Service never gets an `EXTERNAL-IP`, and you reach it with `kubectl port-forward`. Do not start the port forward yet. With no listener on port `8080`, the first request gets an empty reply (curl prints `000`), and `kubectl port-forward` stops with `error: lost connection to pod`.
 
 ---
 
-## Step 2: Open the Listener
+## Step 2: Open The Listener
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
-
-Save this as `gateway-public-gateway.yaml`:
+Write the `Gateway` to a file and apply the file. On the exam this habit pays off: you can read the file again, edit it and apply it again. Save this as `gateway-public-gateway.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -63,15 +62,22 @@ kubectl apply -f gateway-public-gateway.yaml
 gateway.networking.istio.io/public-gateway created
 ```
 
-Three things the grader checks here:
+The gateway proxy now has a listener on port `8080`, so start the port forward:
 
-- **`selector: istio: ingressgateway`** — a pod label selector, matching the gateway the `demo` profile installed. A selector matching nothing produces an object that configures no proxy.
-- **`protocol: HTTP`** — this is what gives you host and path routing. `TCP` would give a byte pipe that silently ignores every rule you write.
-- **Both hosts listed, and no `*`.** The task requires the listener to reject unknown hosts, so a wildcard fails check 7.
+```sh
+kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80 >/dev/null 2>&1 &
+export GATEWAY_URL=localhost:8080
+```
 
-Note the `Gateway` lives in `ingress-demo` while the pod it configures lives in `istio-system`. That split is normal.
+The grader checks three things in this object:
 
-Confirm the listener exists — and that it still serves nothing:
+- **`selector: istio: ingressgateway`** is a pod label selector. It matches the gateway pods that the `demo` profile installed. A selector that matches no pod gives an object that configures no proxy.
+- **`protocol: HTTP`** lets the gateway route by host and path. `TCP` would only forward bytes and ignore every HTTP rule you write.
+- **Both hosts are listed, and there is no `*`.** The listener must reject unknown hosts, so a `*` fails check 7.
+
+The `Gateway` lives in `ingress-demo`, while the pod it configures lives in `istio-system`. That split is normal: the selector is the only link between them.
+
+Send a first request:
 
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
@@ -81,13 +87,13 @@ curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GA
 404
 ```
 
-Expected. A listener with no routes attached serves nothing.
+This is expected. The listener exists now, but it has no routes, so the gateway answers `404`.
 
 ---
 
-## Step 3: Attach Both Route Sets
+## Step 3: Bind Both VirtualServices
 
-Save this as `booking-manifests.yaml`:
+Each host gets its own `VirtualService`, bound to the same `Gateway`. Save this as `virtualservice-booking.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -109,7 +115,21 @@ spec:
             host: booking-service
             port:
               number: 80
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f virtualservice-booking.yaml
+```
+
+```text
+virtualservice.networking.istio.io/booking created
+```
+
+Then save this as `virtualservice-catalog.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -134,7 +154,11 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f booking-manifests.yaml
+kubectl apply -f virtualservice-catalog.yaml
+```
+
+```text
+virtualservice.networking.istio.io/catalog created
 ```
 
 Then check the result:
@@ -144,42 +168,42 @@ istioctl analyze -n ingress-demo
 ```
 
 ```text
-virtualservice.networking.istio.io/booking created
-virtualservice.networking.istio.io/catalog created
 ✔ No validation issues found when analyzing namespace: ingress-demo.
 ```
 
-**`gateways: [public-gateway]` is the whole exercise.** Omit it and the routes attach to `mesh` — sidecars only — the gateway keeps returning 404, and `istioctl analyze` stays perfectly clean because an unbound `VirtualService` is a valid object.
+**`gateways: [public-gateway]` is the key line.** Without it, the routes go to `mesh`, which means all sidecar proxies. The gateway keeps answering `404`, and `istioctl analyze` stays clean, because a `VirtualService` that is not bound to a gateway is still a valid object.
 
-Note also that each `VirtualService` names only its own host. Both attach to the same listener; the listener's host list and the route's host list are what keep them separate.
+Each `VirtualService` names only its own host. Both use the same listener. The host list on each `VirtualService` keeps their routes apart.
 
 ---
 
-## Step 4: Confirm the Routes Reached the Gateway
+## Step 4: Confirm The Routes Reached The Gateway
 
-This is the check that distinguishes "my routes are wrong" from "my routes are not there":
+This check tells "my routes are wrong" apart from "my routes are not there". Read the gateway's route table and keep only the lines for your two hosts:
 
 ```sh
 istioctl proxy-config routes deploy/istio-ingressgateway -n istio-system | grep -E 'booking|catalog'
 ```
 
 ```text
-http.8080   booking.ica.local   /book*    booking.ingress-demo
-http.8080   catalog.ica.local   /items*   catalog.ingress-demo
+http.8080     booking.ica.local:80     booking.ica.local     /book*                 booking.ingress-demo
+http.8080     catalog.ica.local:80     catalog.ica.local     /items*                catalog.ingress-demo
 ```
 
-Both hosts, with their path matches and the `VirtualService` that produced each. If a host is missing here, its `VirtualService` never attached.
+The columns are `NAME`, `VHOST NAME`, `DOMAINS`, `MATCH` and `VIRTUAL SERVICE`; `grep` removed the header line. Both hosts are there, each in its own virtual host, with their path matches and the `VirtualService` that produced each route. If a host is missing here, its `VirtualService` never reached the gateway.
 
 ---
 
 ## Step 5: Verify All Four Cases
 
+Send the four requests that the grader sends:
+
 ```sh
-for t in "booking.ica.local /book" "catalog.ica.local /items" \
-         "unknown.ica.local /book" "catalog.ica.local /book"; do
-  set -- $t
-  printf '%-20s %-8s -> ' "$1" "$2"
-  curl -s -o /dev/null -w '%{http_code}\n' -H "Host: $1" "http://$GATEWAY_URL$2"
+for request in "booking.ica.local /book" "catalog.ica.local /items" \
+               "unknown.ica.local /book" "catalog.ica.local /book"; do
+  read -r host uri <<< "$request"
+  printf '%-20s %-8s -> ' "$host" "$uri"
+  curl -s -o /dev/null -w '%{http_code}\n' -H "Host: $host" "http://$GATEWAY_URL$uri"
 done
 ```
 
@@ -190,19 +214,19 @@ unknown.ica.local    /book    -> 404
 catalog.ica.local    /book    -> 404
 ```
 
-The last two are the interesting ones and they fail for different reasons. `unknown.ica.local` matched **no listener host**, so the gateway had nowhere to send it. `catalog.ica.local /book` matched the listener fine but found **no route** for that path under that host — the `catalog` `VirtualService` only knows `/items`.
+The last two requests fail for different reasons. `unknown.ica.local` matched no host on the listener, so the gateway had no routes for it. `catalog.ica.local /book` matched a host on the listener, but found no route for that path under that host: the `catalog` `VirtualService` only matches `/items`.
 
-Both are 404, which is why the route dump in step 4 matters: the status code alone cannot tell them apart.
+Both answers are `404`, so the status code alone cannot tell them apart. That is why the route table in step 4 matters.
 
 ---
 
 ## Common Mistakes
 
-- **Omitting `gateways:`.** The routes attach to `mesh`, the gateway 404s, and nothing reports an error. The single most common failure here.
-- **`hosts: ["*"]` on the `Gateway`.** Convenient, and it fails the "unknown host must be rejected" check.
-- **One `VirtualService` listing both hosts.** It would work for traffic, but then `/book` and `/items` are both reachable under both hostnames — check 8 fails.
-- **`protocol: TCP`.** No host or path routing at all.
-- **A `selector` that matches nothing.** The `Gateway` exists and configures no proxy; `istioctl analyze` catches this one.
-- **Forgetting `-H "Host: ..."` when testing.** Without it curl sends `localhost:8080`, which matches no listener host.
-- **Expecting `EXTERNAL-IP` to be assigned.** `<pending>` is correct on `kind`.
-- **Referencing the gateway as `istio-system/public-gateway`.** The `Gateway` object is in `ingress-demo`, so the bare name is right here — a namespace prefix would point at nothing.
+- **Leaving out `gateways:`.** The routes go to `mesh`, the gateway answers `404`, and nothing reports an error. This is the most common failure here.
+- **`hosts: ["*"]` on the `Gateway`.** It is convenient, but it fails the check that an unknown host is rejected.
+- **One `VirtualService` that lists both hosts.** Traffic would work, but then `/book` and `/items` are reachable under both host names, and check 8 fails.
+- **`protocol: TCP`.** The gateway then does no routing by host or path at all.
+- **A `selector` that matches no pod.** The `Gateway` exists but configures no proxy. `istioctl analyze` reports this one.
+- **Forgetting `-H "Host: ..."` when testing.** Without it, curl sends `localhost:8080` as the host, which matches no host on the listener.
+- **Expecting an `EXTERNAL-IP`.** `<pending>` is correct on `kind`.
+- **Referring to the gateway as `istio-system/public-gateway`.** The `Gateway` object is in `ingress-demo`, so the bare name is right here. A namespace prefix would point at a `Gateway` that does not exist.

@@ -1,10 +1,12 @@
 # Solution Walkthrough
 
-Astronaut, here is the mission debrief. One small object raises the shields. The work is in the verification, because the whole point of this module is that a plausible-looking test proves nothing.
+One small object sets the limits. Most of the work is in the proof, because a test that looks right can prove nothing: a limit on requests at the same time never trips when you send requests one by one.
 
 ---
 
-## Step 1: Establish the Unbounded Baseline
+## Step 1: Establish the baseline without limits
+
+Check that no `DestinationRule` exists, then send 50 requests, 5 at a time:
 
 ```sh
 kubectl -n circuit-demo get destinationrule
@@ -17,13 +19,13 @@ No resources found in circuit-demo namespace.
 Code 200 : 50 (100.0 %)
 ```
 
-Fifty requests, five at a time, all successful. Nothing is capping concurrency.
+All 50 requests got a `200`. Nothing limits how many requests may be open at the same time.
 
 ---
 
-## Step 2: Apply the Connection Pool
+## Step 2: Apply the connection pool
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+Write the manifest to a file and apply the file. You can then read it again, change it and apply it again, which a command typed once does not allow.
 
 Save this as `destinationrule-notification-service.yaml`:
 
@@ -54,13 +56,15 @@ kubectl apply -f destinationrule-notification-service.yaml
 destinationrule.networking.istio.io/notification-service created
 ```
 
-Note the two-level nesting: `tcp` and `http` are separate groups under `connectionPool`, and `maxConnections` belongs to `tcp` while the other two belong to `http`. Putting `maxConnections` under `http` is a schema error, which at least tells you immediately.
+Note the two levels under `connectionPool`. `tcp` and `http` are separate groups: `maxConnections` belongs to `tcp`, and the other two settings belong to `http`. If you put `maxConnections` under `http`, the API server rejects the object with a schema error, so you see the mistake at once.
 
-Do **not** add a `VirtualService`. A retry policy would re-send the rejected requests and mask the very behaviour you are demonstrating — the grader checks none exists.
+Do **not** add a `VirtualService`. A retry policy would send the refused requests again and hide the behaviour you must show. The grader checks that none exists.
 
 ---
 
-## Step 3: Confirm the Limits Reached the Proxy
+## Step 3: Confirm that the limits reached the proxy
+
+`istiod`, the Istio control plane, turns the connection pool into circuit-breaker thresholds on the Envoy cluster for `notification-service`. Read them from the `fortio` sidecar proxy:
 
 ```sh
 istioctl proxy-config cluster deploy/fortio -n circuit-demo \
@@ -77,13 +81,13 @@ istioctl proxy-config cluster deploy/fortio -n circuit-demo \
       "maxRetries": 4294967295
 ```
 
-Your two settings, plus two unset fields at `2^32 - 1` — unbounded. `maxRequests` is `http2MaxRequests`; it does not bind on HTTP/1 traffic, which is why the HTTP/1 breaker is built from the first two.
+You see your two settings, plus two unset fields at `2^32 - 1`, which means no limit. `maxRequests` is where `http2MaxRequests` would land. It does not bind on HTTP/1 traffic, so the HTTP/1 circuit breaker is built from the first two settings.
 
 ---
 
-## Step 4: Prove the Limit Is on Concurrency, Not Volume
+## Step 4: Prove that the limit is on requests at the same time
 
-This is the step that distinguishes understanding from guessing. Same total request count, different concurrency:
+This step shows that you understand the limit. Send requests one at a time first:
 
 ```sh
 kubectl -n circuit-demo exec deploy/fortio -c fortio -- \
@@ -94,9 +98,9 @@ kubectl -n circuit-demo exec deploy/fortio -c fortio -- \
 Code 200 : 20 (100.0 %)
 ```
 
-Twenty requests through a pool of one connection, all successful — because at `-c 1` there was never more than one in flight. A thousand would also succeed. If you stopped here you would wrongly conclude the policy did nothing.
+Twenty requests went through a pool of one connection, and all of them got a `200`. At `-c 1` there was never more than one request open, so a thousand requests would also succeed. If you stopped here, you would wrongly decide that the policy did nothing.
 
-Now raise the concurrency:
+Now send requests 5 at a time:
 
 ```sh
 kubectl -n circuit-demo exec deploy/fortio -c fortio -- \
@@ -108,15 +112,15 @@ Code 200 : 31 (62.0 %)
 Code 503 : 19 (38.0 %)
 ```
 
-Your split will differ — on a fast local cluster requests complete quickly enough that many still get through. Note the run took roughly the same wall-clock time as the successful one: rejection is immediate, not a delay.
+Your split will be different. On a fast local cluster, requests finish quickly enough that many still get through. The run took about as long as the successful one, because the proxy refuses a request at once instead of delaying it.
 
 ---
 
-## Step 5: Prove the 503s Are the Breaker
+## Step 5: Prove that the 503s come from the circuit breaker
 
-Two independent pieces of evidence, plus one absence.
+Two pieces of evidence and one absence prove it.
 
-**The `UO` flag** in the caller's access log:
+The first is the **`UO` flag** in the access log of the client proxy:
 
 ```sh
 kubectl -n circuit-demo logs deploy/fortio -c istio-proxy --tail=50 | grep ' 503 UO ' | head -2
@@ -126,23 +130,25 @@ kubectl -n circuit-demo logs deploy/fortio -c istio-proxy --tail=50 | grep ' 503
 [2026-09-27T11:41:09.882Z] "GET /notify HTTP/1.1" 503 UO upstream_reset_before_response_started{overflow} - "-" 0 81 0 - ...
 ```
 
-`UO` is upstream overflow. An application 503 carries no flag.
+`UO` means upstream overflow: the proxy refused the request because a connection pool limit was full. A `503` from an application has no flag.
 
-**The counter**:
+The second is the **overflow counter** in the client proxy:
 
 ```sh
 kubectl -n circuit-demo exec deploy/fortio -c istio-proxy -- \
   pilot-agent request GET stats | grep notification-service | grep -E 'pending_overflow|cx_overflow'
 ```
 
+The output below is shortened:
+
 ```text
 cluster.outbound|80||notification-service...upstream_cx_overflow: 6
 cluster.outbound|80||notification-service...upstream_rq_pending_overflow: 19
 ```
 
-Nineteen requests rejected for lack of a pending slot. `upstream_rq_pending_overflow` is the counter to name if you are asked how to prove a breaker tripped.
+The proxy refused 19 requests because no waiting slot was free. `upstream_rq_pending_overflow` is the counter to name if someone asks how to prove that a circuit breaker tripped. The `fortio` pod has the `sidecar.istio.io/statsInclusionPrefixes: "cluster.outbound"` annotation; without it, the proxy does not keep these counters.
 
-**The absence** at the backend:
+The absence is in the **backend**:
 
 ```sh
 kubectl -n circuit-demo logs -l app=notification-service -c istio-proxy --tail=100 | grep -c ' 503 '
@@ -152,16 +158,16 @@ kubectl -n circuit-demo logs -l app=notification-service -c istio-proxy --tail=1
 0
 ```
 
-Zero. The backend never heard about any of them, because the caller's proxy rejected them before they left. That asymmetry is the strongest single proof of where the limit lives.
+The backend's proxy logged no `503` at all. The backend never received any of the refused requests, because the client proxy refused them before they left the `fortio` pod. This difference between the two logs is the strongest single proof of where the limit acts.
 
 ---
 
 ## Common Mistakes
 
-- **Testing with `-c 1`.** Sequential load never trips a concurrency limit, however many requests you send.
-- **Adding a `VirtualService` with retries.** The retries re-send the rejected requests and the failure rate appears to improve, while the real load goes up. The grader rejects it.
+- **Testing with `-c 1`.** Requests sent one by one never trip a limit on requests at the same time, however many you send.
+- **Adding a `VirtualService` with retries.** The retries send refused requests again, so the failure rate looks better while the real load goes up. The grader rejects it.
 - **Putting `maxConnections` under `http`.** It belongs under `tcp`.
-- **Looking for the 503s in the backend's logs.** They are not there and never will be.
-- **Concluding "no breaker" because the counters are zero.** If `pending_overflow` and `cx_overflow` are both flat while you are seeing 503s, the cause is elsewhere — that is useful information, not a failed test.
-- **Expecting the limit to protect the service globally.** Each client enforces its own pool; the backend's exposure is `limit × number of callers`.
-- **Forgetting `http2MaxRequests` for gRPC.** On HTTP/2 one connection carries many streams, so `maxConnections` barely constrains anything.
+- **Looking for the `503`s in the backend's logs.** The client proxy refused them, so they are not there.
+- **Deciding there is no circuit breaker because the counters are zero.** If `pending_overflow` and `cx_overflow` both stay flat while you see `503`s, the cause is somewhere else. That is useful information, not a failed test.
+- **Expecting the client's limit to protect the service on its own.** Each client proxy enforces its own pool, so more clients means more open connections in total. The sidecar proxy in each backend pod also applies the same limits to what that pod accepts.
+- **Forgetting `http2MaxRequests` for gRPC.** On HTTP/2, one connection carries many requests, so `maxConnections` barely limits anything.

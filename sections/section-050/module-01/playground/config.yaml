@@ -18,7 +18,7 @@ runtime:
       hostPort: 9080
       targetPort: 9080
       scheme: http
-      description: "The bridge – open /productpage and log in as jason to see the drills"
+      description: "The bridge – open /productpage and log in as jason to see the injected faults"
 
 bootstrap:
   init:

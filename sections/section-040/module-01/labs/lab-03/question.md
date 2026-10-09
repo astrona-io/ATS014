@@ -2,14 +2,14 @@
 
 Solve this question on: `terminal`
 
-Astronaut, your mission: make the probe's retry policy re-send only the signals that are worth re-sending.
+The `probe` keeps getting four copies of every failed request, even for errors that fail the same way on every try. Make its retry policy retry only the one status code worth another try.
 
-The planet `starfleet` runs:
+The `starfleet` namespace runs:
 
-* `probe` — an echo service, v1 and v2 behind one Service on port 8000. `/status/<code>` answers with exactly that status code.
-* `shuttle` — your test client, with `curl`.
+* `probe` — an HTTP echo service, v1 and v2 behind one Service on port 8000. `/status/<code>` answers with exactly that status code.
+* `shuttle` — the test client, with `curl`.
 
-The probe's flight plan already has a retry policy: every 5xx is re-sent three times. That includes the probe's own `500` errors, which are bugs that fail the same way on every try. Each one reaches the probe four times.
+The `probe` `VirtualService` already has a retry policy: the client's sidecar proxy retries every 5xx three times. That includes the probe's own `500` errors, which are application bugs that fail the same way on every try. Each one reaches the probe four times.
 
 Change the `VirtualService` named `probe` so that:
 
@@ -19,10 +19,10 @@ Change the `VirtualService` named `probe` so that:
 4.  Each try may take at most **1 second** (`perTryTimeout`).
 5.  The route `timeout` leaves room for every try: at least `(attempts + 1) × perTryTimeout`.
 
-The grader sends one signal at a time from the `shuttle` and counts how often each one reached the probe:
+The grader sends one request at a time from `shuttle` and counts, in the probe's access log, how often each one reached the probe:
 
-6.  A signal to `/status/503` reaches the probe **3** times.
-7.  A signal to `/status/500` reaches the probe exactly **once**.
-8.  A signal to `/status/502` reaches the probe exactly **once**.
+6.  A request to `/status/503` reaches the probe **3** times.
+7.  A request to `/status/500` reaches the probe exactly **once**.
+8.  A request to `/status/502` reaches the probe exactly **once**.
 
 Leave the Deployments and Services unchanged.

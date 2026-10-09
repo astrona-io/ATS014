@@ -2,13 +2,13 @@
 estimated_duration: 15m
 ---
 
-# Stop The Drill That Never Ended
+# Scope A Forgotten Abort To One Test User Lab
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, somebody ran an abort drill on the navigation computer and never cleaned it up. Every scout answer now arrives without its star ratings, for every crew on the planet.
+In the `starfleet` namespace, somebody injected an abort fault on `navcom` and never removed it. Every response from `scout` now arrives without its star ratings, for every client in the namespace.
 
-Your job is to keep the drill for test signals only, and to give everyone else their star ratings back.
+Your job is to keep the fault for test requests only, with a header match, and to give every other request its star ratings back.
 
-## Launching the Lab
+## Running the lab
 
 Run this command to start the cluster with the problem already in place:
 
