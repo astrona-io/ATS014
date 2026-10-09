@@ -120,11 +120,11 @@ billing-8c6f4d5b93-x7k2m   2/2   Running
 
 The output is shortened: it shows only the pod lines of the two `kubectl` commands, without headers and extra columns. All three pods show `2/2`, and all three now appear in `istioctl proxy-status`. These are the two facts the grader checks, and you want both.
 
-To see *why* a pod with one application container shows `2/2`, look at where the proxy is listed:
+To see *why* a pod with one application container shows `2/2`, look at where the proxy is listed. A `-l` label selector returns a list of pods, so the path starts at `.items[0]`, the first pod in that list:
 
 ```sh
 kubectl -n legacy-app get pod -l app=billing \
-  -o jsonpath='{range .spec.initContainers[*]}{.name}{" restartPolicy="}{.restartPolicy}{"\n"}{end}'
+  -o jsonpath='{range .items[0].spec.initContainers[*]}{.name}{" restartPolicy="}{.restartPolicy}{"\n"}{end}'
 ```
 
 ```text

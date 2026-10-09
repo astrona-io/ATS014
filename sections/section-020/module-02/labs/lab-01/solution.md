@@ -182,15 +182,19 @@ The sidecar proxy of the **client** sends the copy, so the mirror policy lives i
 istioctl proxy-config routes deploy/tester -n mirror-demo -o json | grep -i -A6 requestMirrorPolicies
 ```
 
-You should see (shortened):
+You should see:
 
 ```text
-"requestMirrorPolicies": [
-  {
-    "cluster": "outbound|80|v2|notification-service.mirror-demo.svc.cluster.local",
+                            "requestMirrorPolicies": [
+                                {
+                                    "cluster": "outbound|80|v2|notification-service.mirror-demo.svc.cluster.local",
+                                    "runtimeFraction": {
+                                        "defaultValue": {
+                                            "numerator": 1000000,
+                                            "denominator": "MILLION"
 ```
 
-The `|v2|` in the cluster name shows that the copies go to the `v2` subset.
+The `|v2|` in the cluster name shows that the copies go to the `v2` subset. `runtimeFraction` is your `mirrorPercentage`: Envoy stores it as a fraction of one million, so `1000000` out of `MILLION` is 100%.
 
 The two checks together give three states:
 

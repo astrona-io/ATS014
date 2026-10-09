@@ -174,7 +174,22 @@ AFTER=$(kubectl -n sessions logs -l app=httpbin,version=canary -c istio-proxy --
 echo "mirrored: $((AFTER - BEFORE)) of 40"
 ```
 
-You should see a number at or close to 40, for example `mirrored: 40 of 40`. The grader accepts 30 or more. Each new line in the canary logs names a canary pod as its upstream. Across many copies both canary pods appear, because `LEAST_REQUEST` spreads the copies, as the task asks.
+```text
+mirrored: 40 of 40
+```
+
+You should see a number at or close to 40. The grader accepts 30 or more. Look at the last line of each canary pod's log to see what a copy looks like:
+
+```sh
+kubectl -n sessions logs -l app=httpbin,version=canary -c istio-proxy --tail=1
+```
+
+```text
+[2026-10-09T20:59:57.397Z] "GET /get HTTP/1.1" 200 - via_upstream - "-" 0 733 0 0 "10.244.0.13" "curl/8.22.0" "4bac2d12-7f1a-91ef-a74d-00863b4f8ff3" "httpbin:8000" "10.244.0.9:8080" inbound|8080|| 127.0.0.6:32919 10.244.0.9:8080 10.244.0.13:0 outbound_.8000_.canary_.httpbin.sessions.svc.cluster.local default
+[2026-10-09T20:59:57.401Z] "GET /get HTTP/1.1" 200 - via_upstream - "-" 0 733 0 0 "10.244.0.13" "curl/8.22.0" "eb31073e-20b0-9340-9265-c9316026d684" "httpbin:8000" "10.244.0.12:8080" inbound|8080|| 127.0.0.6:45645 10.244.0.12:8080 10.244.0.13:0 outbound_.8000_.canary_.httpbin.sessions.svc.cluster.local default
+```
+
+Each line names its canary pod as the upstream (`10.244.0.9:8080` and `10.244.0.12:8080`), and the request came from the `tester` pod (`10.244.0.13`) through its `canary` cluster. The authority is the plain `httpbin:8000`, with no `-shadow` suffix. Both canary pods appear, because `LEAST_REQUEST` spreads the copies, as the task asks. In this run the two pods received 18 and 22 of the 40 copies.
 
 The grader also checks that the `tester` pod's proxy holds the mirror in its routes:
 
@@ -182,7 +197,11 @@ The grader also checks that the `tester` pod's proxy holds the mirror in its rou
 istioctl proxy-config routes deploy/tester -n sessions -o json | grep -c requestMirrorPolicies
 ```
 
-Any number above `0` means the mirror reached the sidecar proxy.
+```text
+2
+```
+
+Any number above `0` means the mirror reached the sidecar proxy. Here the count is `2`: the `tester` proxy holds the mirror for the `httpbin` host in two route tables, named `80` and `8000`.
 
 When all checks look right, send the lab for grading:
 

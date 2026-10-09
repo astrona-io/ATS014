@@ -11,23 +11,27 @@ PARTNER=$(cat /tmp/partner-ip); VM=$(cat /tmp/vm-ip); BLOCKED=$(cat /tmp/blocked
 echo "partner=$PARTNER  vm=$VM  blocked=$BLOCKED"
 kubectl -n istio-system get cm istio -o jsonpath='{.data.mesh}' | grep -A2 outboundTrafficPolicy
 
-for u in "http://$PARTNER:8443/" "http://$VM:8080/get" "http://$BLOCKED:8080/get"; do
-  printf '%-32s -> ' "$u"
+for url in "http://$PARTNER:8443/" "http://$VM:8080/get" "http://$BLOCKED:8080/get"; do
+  printf '%-32s -> ' "$url"
   kubectl -n integrations exec deploy/tester -- \
-    curl -s -o /dev/null -w '%{http_code}\n' --max-time 10 "$u"
+    curl -s -o /dev/null -w '%{http_code}\n' --max-time 10 "$url"
 done
 ```
 
 ```text
-partner=10.244.0.20  vm=10.244.0.22  blocked=10.244.0.21
+partner=10.244.0.8  vm=10.244.0.10  blocked=10.244.0.9
 outboundTrafficPolicy:
   mode: REGISTRY_ONLY
-http://10.244.0.20:8443/         -> 502
-http://10.244.0.22:8080/get      -> 502
-http://10.244.0.21:8080/get      -> 502
+rootNamespace: istio-system
+http://10.244.0.8:8443/          -> 000
+command terminated with exit code 56
+http://10.244.0.10:8080/get      -> 000
+command terminated with exit code 56
+http://10.244.0.9:8080/get       -> 000
+command terminated with exit code 56
 ```
 
-All three requests are blocked. The `tester` sidecar proxy sends a request to an address outside the service registry to `BlackHoleCluster`, and returns `502`. The `legacy-vm` pod is blocked too, even though it runs in the `integrations` namespace: it has no Service, so it is not in the registry either.
+All three requests are blocked. The `tester` sidecar proxy sends a connection to an address outside the service registry to `BlackHoleCluster`, which closes it. No HTTP response comes back, so curl prints `000` and exits with code `56` (connection reset; you may also see `52`, empty reply). `kubectl exec` reports that exit code on the next line. Once a `ServiceEntry` adds an HTTP port `8080` to the proxy, a blocked request on that port gets a `502` response instead. The `legacy-vm` pod is blocked too, even though it runs in the `integrations` namespace: it has no Service, so it is not in the registry either.
 
 ## Step 2: A: Add the partner to the registry, with both ports
 
@@ -227,6 +231,7 @@ kubectl -n istio-system get cm istio -o jsonpath='{.data.mesh}' | grep -A2 outbo
 blocked: 502
 outboundTrafficPolicy:
   mode: REGISTRY_ONLY
+rootNamespace: istio-system
 ```
 
 Two hosts are in the registry, the third endpoint is still blocked, and the mesh still blocks unknown destinations by default.
@@ -240,12 +245,12 @@ istioctl proxy-config cluster deploy/tester -n integrations | grep -E 'partner|l
 ```
 
 ```text
-legacy.integrations.svc   8080   -   outbound   STATIC
-partner.example.com       8080   -   outbound   STATIC
-partner.example.com       8443   -   outbound   STATIC
+legacy.integrations.svc                                        8080      -          outbound      EDS              legacy-plaintext.integrations
+partner.example.com                                            8080      -          outbound      EDS              partner.integrations
+partner.example.com                                            8443      -          outbound      EDS              partner.integrations
 ```
 
-Two hosts give three clusters. The partner has one cluster per declared port, which is what lets the `VirtualService` route from port 8080 to port 8443.
+The columns are `SERVICE FQDN`, `PORT`, `SUBSET`, `DIRECTION`, `TYPE` and `DESTINATION RULE`. Two hosts give three clusters. Their `TYPE` is `EDS` (Endpoint Discovery Service), not `STATIC`, even though both `ServiceEntry` objects have `resolution: STATIC`: `istiod` sends the endpoint addresses to the proxy separately, the same way as for a Kubernetes Service. The last column names the `DestinationRule` that applies to each cluster. The partner has one cluster per declared port, which is what lets the `VirtualService` route from port 8080 to port 8443.
 
 Send the setup for grading with `astrona submit -c sections/section-070/capstone/labs/lab-01`.
 

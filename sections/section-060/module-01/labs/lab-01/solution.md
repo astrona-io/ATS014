@@ -6,25 +6,26 @@ You need three objects: one `Gateway`, which opens the listener, and two `Virtua
 
 ## Step 1: Set Up Access And See The Starting State
 
-`kind` has no load balancer, so the gateway Service never gets an `EXTERNAL-IP`. Start a port forward instead, then look at the gateway pod, the Istio objects and the first response:
+Look at the gateway pod, the Istio objects and the listeners of the gateway proxy:
 
 ```sh
-kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80 >/dev/null 2>&1 &
-export GATEWAY_URL=localhost:8080
-
 kubectl -n istio-system get pods -l istio=ingressgateway
 kubectl -n ingress-demo get gateway,virtualservice
-curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
+istioctl proxy-config listeners deploy/istio-ingressgateway -n istio-system
 ```
 
 ```text
-NAME                                    READY   STATUS    AGE
-istio-ingressgateway-6d9c5b8f7c-4kx2n   1/1     Running   6m
+NAME                                    READY   STATUS    RESTARTS   AGE
+istio-ingressgateway-7f54444996-gg6kb   1/1     Running   0          25s
 No resources found in ingress-demo namespace.
-404
+ADDRESSES PORT  MATCH DESTINATION
+0.0.0.0   15021 ALL   Inline Route: /healthz/ready*
+0.0.0.0   15090 ALL   Inline Route: /stats/prometheus*
 ```
 
-The pod is `1/1`: an Envoy proxy with no application container. It is healthy and reachable, and it answers `404` because no `Gateway` or `VirtualService` configures it yet.
+The pod is `1/1`: an Envoy proxy with no application container. It is healthy, but it has only its health and metrics listeners. No `Gateway` configures it yet, so nothing listens on port `8080`, the container port behind the Service's port `80`.
+
+`kind` has no load balancer, so the gateway Service never gets an `EXTERNAL-IP`, and you reach it with `kubectl port-forward`. Do not start the port forward yet. With no listener on port `8080`, the first request gets an empty reply (curl prints `000`), and `kubectl port-forward` stops with `error: lost connection to pod`.
 
 ---
 
@@ -61,6 +62,13 @@ kubectl apply -f gateway-public-gateway.yaml
 gateway.networking.istio.io/public-gateway created
 ```
 
+The gateway proxy now has a listener on port `8080`, so start the port forward:
+
+```sh
+kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80 >/dev/null 2>&1 &
+export GATEWAY_URL=localhost:8080
+```
+
 The grader checks three things in this object:
 
 - **`selector: istio: ingressgateway`** is a pod label selector. It matches the gateway pods that the `demo` profile installed. A selector that matches no pod gives an object that configures no proxy.
@@ -69,7 +77,7 @@ The grader checks three things in this object:
 
 The `Gateway` lives in `ingress-demo`, while the pod it configures lives in `istio-system`. That split is normal: the selector is the only link between them.
 
-Send the same request again:
+Send a first request:
 
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GATEWAY_URL/book
@@ -79,7 +87,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GA
 404
 ```
 
-This is expected. The listener exists now, but it has no routes, so the gateway still answers `404`.
+This is expected. The listener exists now, but it has no routes, so the gateway answers `404`.
 
 ---
 
@@ -178,11 +186,11 @@ istioctl proxy-config routes deploy/istio-ingressgateway -n istio-system | grep 
 ```
 
 ```text
-http.8080   booking.ica.local   /book*    booking.ingress-demo
-http.8080   catalog.ica.local   /items*   catalog.ingress-demo
+http.8080     booking.ica.local:80     booking.ica.local     /book*                 booking.ingress-demo
+http.8080     catalog.ica.local:80     catalog.ica.local     /items*                catalog.ingress-demo
 ```
 
-Both hosts are there, with their path matches and the `VirtualService` that produced each route. If a host is missing here, its `VirtualService` never reached the gateway.
+The columns are `NAME`, `VHOST NAME`, `DOMAINS`, `MATCH` and `VIRTUAL SERVICE`; `grep` removed the header line. Both hosts are there, each in its own virtual host, with their path matches and the `VirtualService` that produced each route. If a host is missing here, its `VirtualService` never reached the gateway.
 
 ---
 
@@ -191,11 +199,11 @@ Both hosts are there, with their path matches and the `VirtualService` that prod
 Send the four requests that the grader sends:
 
 ```sh
-for t in "booking.ica.local /book" "catalog.ica.local /items" \
-         "unknown.ica.local /book" "catalog.ica.local /book"; do
-  set -- $t
-  printf '%-20s %-8s -> ' "$1" "$2"
-  curl -s -o /dev/null -w '%{http_code}\n' -H "Host: $1" "http://$GATEWAY_URL$2"
+for request in "booking.ica.local /book" "catalog.ica.local /items" \
+               "unknown.ica.local /book" "catalog.ica.local /book"; do
+  read -r host uri <<< "$request"
+  printf '%-20s %-8s -> ' "$host" "$uri"
+  curl -s -o /dev/null -w '%{http_code}\n' -H "Host: $host" "http://$GATEWAY_URL$uri"
 done
 ```
 

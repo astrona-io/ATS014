@@ -13,9 +13,9 @@ Namespace `ingress-demo` holds two applications that must be reachable from outs
 * `booking-service` — a Service on port 80
 * `catalog-service` — a Service on port 80
 
-Istio is installed with the `demo` profile, so the `istio-ingressgateway` Deployment runs in `istio-system`. It has no configuration yet and answers `404` to every request. There is no `Gateway` and no `VirtualService`.
+Istio is installed with the `demo` profile, so the `istio-ingressgateway` Deployment runs in `istio-system`. It has no configuration yet, so it has no listener for application traffic. There is no `Gateway` and no `VirtualService`.
 
-`kind` has no load balancer, so reach the gateway with a port forward:
+`kind` has no load balancer, so reach the gateway with a port forward. Start it after your `Gateway` exists: a request sent before then gets an empty reply, and the port forward stops.
 
 ```bash
 kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80 >/dev/null 2>&1 &

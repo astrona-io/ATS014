@@ -135,13 +135,13 @@ istioctl proxy-config endpoints deploy/tester -n vm-demo \
 
 ```text
 by name: 200
-legacy.vm-demo.svc   8080   -   outbound   STATIC
-ENDPOINT             STATUS    OUTLIER CHECK   CLUSTER
-10.244.0.31:8080     HEALTHY   OK              outbound|8080||legacy.vm-demo.svc
-10.244.0.33:8080     HEALTHY   OK              outbound|8080||legacy.vm-demo.svc
+legacy.vm-demo.svc                                             8080      -          outbound      EDS              legacy-plaintext.vm-demo
+ENDPOINT            STATUS      OUTLIER CHECK     CLUSTER
+10.244.0.8:8080     HEALTHY     OK                outbound|8080||legacy.vm-demo.svc
+10.244.0.9:8080     HEALTHY     OK                outbound|8080||legacy.vm-demo.svc
 ```
 
-The host name works, and the cluster has two endpoints, one per machine, joined by the shared label. Load balancing, outlier detection and locality settings now apply to them the same way as to two pods.
+The host name works, and the cluster has two endpoints, one per machine, joined by the shared label. The cluster `TYPE` is `EDS` (Endpoint Discovery Service), not `STATIC`: because the `ServiceEntry` selects its endpoints with `workloadSelector`, `istiod` sends the endpoint list to the proxy separately, the same way as for a Kubernetes Service. The last column shows that the `legacy-plaintext` `DestinationRule` applies to this cluster. Load balancing, outlier detection and locality settings now apply to them the same way as to two pods.
 
 If you see only one endpoint, one of the entries has a different label than the selector.
 

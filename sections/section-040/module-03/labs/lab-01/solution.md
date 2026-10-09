@@ -13,16 +13,20 @@ kubectl -n outlier-demo exec deploy/tester -- sh -c \
   'for i in $(seq 1 20); do curl -s -o /dev/null -w "%{http_code} " http://httpbin:8000/get; done; echo'
 ```
 
+The output below is shortened: the `NODE`, `NOMINATED NODE` and `READINESS GATES` columns are left out.
+
 ```text
-httpbin-bad-7d8c9f45b-q2wxl    1/1   Running   10.244.0.15
-httpbin-good-6f4b8d7c9-kn3pz   1/1   Running   10.244.0.14
-tester-5c9d7f8b6-x4mtv         1/1   Running   10.244.0.16
-NAME      ENDPOINTS                            AGE
-httpbin   10.244.0.14:8080,10.244.0.15:8080    5m
-200 503 200 503 503 200 200 503 200 503 200 503 200 200 503 200 503 200 503 200
+NAME                            READY   STATUS    RESTARTS   AGE   IP
+httpbin-bad-854489b47f-6lfws    2/2     Running   0          13s   10.244.0.8
+httpbin-good-664569f479-6zh7v   2/2     Running   0          13s   10.244.0.9
+tester-69699fd775-drpgh         2/2     Running   0          13s   10.244.0.10
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME      ENDPOINTS                         AGE
+httpbin   10.244.0.8:8080,10.244.0.9:8080   13s
+503 200 503 503 200 200 200 200 503 503 200 503 503 200 200 503 503 200 503 503
 ```
 
-`httpbin-bad` is `Running` and listed as an endpoint of the Service, so Kubernetes sees nothing wrong. About half of the requests return `503`. Write down the address of `httpbin-bad`, here `10.244.0.15`. That is the endpoint the proxy must learn to avoid.
+Each pod shows `2/2`: the application container and its sidecar proxy. The `Warning` line comes from Kubernetes and does not matter here. `httpbin-bad` is `Running` and listed as an endpoint of the Service, so Kubernetes sees nothing wrong. About half of the requests return `503`. Write down the address of `httpbin-bad`, here `10.244.0.8`. That is the endpoint the proxy must learn to avoid.
 
 ## Step 2: Choose `maxEjectionPercent`
 
@@ -58,6 +62,10 @@ Apply it:
 kubectl apply -f destinationrule-httpbin.yaml
 ```
 
+```text
+destinationrule.networking.istio.io/httpbin created
+```
+
 Then check that the rule reached the `tester` proxy. `istioctl proxy-config cluster` prints the proxy's configuration for the `httpbin` Envoy cluster, which is the proxy's name for the group of `httpbin` endpoints:
 
 ```sh
@@ -65,16 +73,19 @@ istioctl proxy-config cluster deploy/tester -n outlier-demo \
   --fqdn httpbin.outlier-demo.svc.cluster.local -o json | grep -A6 outlierDetection
 ```
 
-You should see this (the first line is the output of `kubectl apply`):
+You should see:
 
 ```text
-destinationrule.networking.istio.io/httpbin created
-"outlierDetection": {
-  "consecutive5xxErrors": 3,
-  "interval": "5s",
-  "baseEjectionTime": "30s",
-  "maxEjectionPercent": 100
+        "outlierDetection": {
+            "consecutive5xx": 3,
+            "interval": "5s",
+            "baseEjectionTime": "30s",
+            "maxEjectionPercent": 100,
+            "enforcingConsecutive5xx": 100,
+            "enforcingSuccessRate": 0
 ```
+
+The proxy shows Envoy's own field names. `istiod` translated `consecutive5xxErrors` into `consecutive5xx`, and added `enforcingConsecutive5xx: 100`, which means every endpoint that reaches the limit is really ejected.
 
 ## Step 4: Send enough traffic
 
@@ -86,7 +97,7 @@ kubectl -n outlier-demo exec deploy/tester -- sh -c \
 ```
 
 ```text
-200 503 503 200 503 503 503 200 200 503 200 200 200 200 200 200 200 200 200 200 ...
+200 503 200 200 503 503 200 200 200 200 200 200 200 200 200 200 200 200 200 200 ...
 ```
 
 The `503` responses come at the start and then stop. That change is the ejection: three failures in a row reached the limit, and the proxy removed the endpoint from its own pool at once. The output above is shortened.
@@ -102,6 +113,13 @@ kubectl -n outlier-demo exec deploy/tester -c istio-proxy -- \
   pilot-agent request GET clusters | grep 'outbound|8000||httpbin' | grep failed_outlier_check
 ```
 
+```text
+2026/10/09 20:47:49 INFO GOMEMLIMIT is already set, skipping package=github.com/KimMachineGun/automemlimit/memlimit GOMEMLIMIT=1073741824
+outbound|8000||httpbin.outlier-demo.svc.cluster.local::10.244.0.8:8080::health_flags::/failed_outlier_check
+```
+
+The first line is a log message from `pilot-agent` itself, and you can ignore it. The second line names the ejected endpoint, `10.244.0.8:8080`, and its health flag.
+
 `istioctl proxy-config endpoints` shows the same result in a table:
 
 ```sh
@@ -109,15 +127,15 @@ istioctl proxy-config endpoints deploy/tester -n outlier-demo \
   --cluster "outbound|8000||httpbin.outlier-demo.svc.cluster.local"
 ```
 
-You should see (the cluster names are shortened):
+You should see:
 
 ```text
-ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
-10.244.0.14:8080     HEALTHY     OK                outbound|8000||httpbin...
-10.244.0.15:8080     HEALTHY     FAILED            outbound|8000||httpbin...
+ENDPOINT            STATUS      OUTLIER CHECK     CLUSTER
+10.244.0.8:8080     HEALTHY     FAILED            outbound|8000||httpbin.outlier-demo.svc.cluster.local
+10.244.0.9:8080     HEALTHY     OK                outbound|8000||httpbin.outlier-demo.svc.cluster.local
 ```
 
-Read the two columns separately. `STATUS: HEALTHY` is what Kubernetes reports through `istiod`. `OUTLIER CHECK: FAILED` is this proxy's own decision about `10.244.0.15`, the bad pod from step 1.
+Read the two columns separately. `STATUS: HEALTHY` is what Kubernetes reports through `istiod`. `OUTLIER CHECK: FAILED` is this proxy's own decision about `10.244.0.8`, the bad pod from step 1.
 
 The proxy also has counters for ejections. Istio keeps them only for pods with the annotation `sidecar.istio.io/statsInclusionPrefixes`, and the `tester` pod in this lab does not have it, so this command may print nothing:
 
@@ -126,12 +144,12 @@ kubectl -n outlier-demo exec deploy/tester -c istio-proxy -- \
   pilot-agent request GET stats | grep -E 'httpbin.*ejections_(active|total|enforced_consecutive_5xx)'
 ```
 
-On a pod that keeps the counters, the output looks like this (the cluster names are shortened):
+On a pod that keeps the counters, for example with the annotation `sidecar.istio.io/statsInclusionPrefixes: "cluster.outbound|8000||httpbin"` on its pod template, the output looks like this (the `pilot-agent` log line is left out):
 
 ```text
-cluster.outbound|8000||httpbin...outlier_detection.ejections_active: 1
-cluster.outbound|8000||httpbin...outlier_detection.ejections_enforced_consecutive_5xx: 1
-cluster.outbound|8000||httpbin...outlier_detection.ejections_total: 1
+cluster.outbound|8000||httpbin.outlier-demo.svc.cluster.local;.outlier_detection.ejections_active: 1
+cluster.outbound|8000||httpbin.outlier-demo.svc.cluster.local;.outlier_detection.ejections_enforced_consecutive_5xx: 1
+cluster.outbound|8000||httpbin.outlier-demo.svc.cluster.local;.outlier_detection.ejections_total: 1
 ```
 
 `ejections_enforced_consecutive_5xx` names the rule that ejected the endpoint. That helps when several limits are set.
@@ -148,10 +166,11 @@ kubectl -n outlier-demo exec deploy/tester -- sh -c \
 ```
 
 ```text
-NAME      ENDPOINTS                            AGE
-httpbin   10.244.0.14:8080,10.244.0.15:8080    12m
-NAME          READY   UP-TO-DATE   AVAILABLE
-httpbin-bad   1/1     1            1
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME      ENDPOINTS                         AGE
+httpbin   10.244.0.8:8080,10.244.0.9:8080   50s
+NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+httpbin-bad   1/1     1            1           50s
   40 200
 ```
 
@@ -159,7 +178,7 @@ Both endpoints are still listed, the bad pod is still ready, and all 40 requests
 
 ## Step 7: Watch the ejection end
 
-Do this once, so you recognise the pattern and do not mistake it for a fault. The loop prints `ejections_active` and `ejections_total` and then sends 20 requests, six times. Like the counters in step 5, it needs a pod that keeps the counters:
+Do this once, so you recognise the pattern and do not mistake it for a fault. The loop prints `ejections_active` and `ejections_total`, sends 20 requests and waits 10 seconds, six times. That takes about a minute, which is longer than the 30-second `baseEjectionTime`. Like the counters in step 5, it needs a pod that keeps the counters:
 
 ```sh
 for i in 1 2 3 4 5 6; do
@@ -168,6 +187,7 @@ for i in 1 2 3 4 5 6; do
   echo
   kubectl -n outlier-demo exec deploy/tester -- sh -c \
     'for i in $(seq 1 20); do curl -s -o /dev/null http://httpbin:8000/get; done'
+  sleep 10
 done
 ```
 

@@ -14,18 +14,21 @@ kubectl -n gwapi-demo get gateway,httproute
 ```
 
 ```text
-gatewayclasses.gateway.networking.k8s.io   2026-09-27T09:12:00Z
-gateways.gateway.networking.k8s.io         2026-09-27T09:12:00Z
-httproutes.gateway.networking.k8s.io       2026-09-27T09:12:00Z
-NAME    CONTROLLER                    ACCEPTED   AGE
-istio   istio.io/gateway-controller   True       8m
+gatewayclasses.gateway.networking.k8s.io    Cluster      v1(storage),v1beta1            2026-10-09T20:35:59Z
+gateways.gateway.networking.k8s.io          Namespaced   v1(storage),v1beta1            2026-10-09T20:35:59Z
+grpcroutes.gateway.networking.k8s.io        Namespaced   v1(storage)                    2026-10-09T20:35:59Z
+httproutes.gateway.networking.k8s.io        Namespaced   v1(storage),v1beta1            2026-10-09T20:35:59Z
+referencegrants.gateway.networking.k8s.io   Namespaced   v1beta1(storage)               2026-10-09T20:35:59Z
+NAME           CONTROLLER                    ACCEPTED   AGE
+istio          istio.io/gateway-controller   True       20s
+istio-remote   istio.io/unmanaged-gateway    True       20s
 NAME         STATUS   AGE   LABELS
-gwapi-demo   Active   8m    istio-injection=enabled,kubernetes.io/metadata.name=gwapi-demo
-gwapi-team   Active   8m    istio-injection=enabled,kubernetes.io/metadata.name=gwapi-team
+gwapi-demo   Active   11s   istio-injection=enabled,kubernetes.io/metadata.name=gwapi-demo
+gwapi-team   Active   11s   istio-injection=enabled,kubernetes.io/metadata.name=gwapi-team
 No resources found in gwapi-demo namespace.
 ```
 
-The CRDs are present, the `GatewayClass` is accepted, and neither namespace carries `gateway-access` yet. The controller name is `istio.io/gateway-controller`. It is a different name from `istio.io/ingress-controller`, the controller for the older Kubernetes `Ingress` object: the two APIs have separate controllers.
+The CRDs are present, the `istio` `GatewayClass` is accepted (Istio also creates `istio-remote`, which this task does not use), and neither namespace carries `gateway-access` yet. The controller name is `istio.io/gateway-controller`. It is a different name from `istio.io/ingress-controller`, the controller for the older Kubernetes `Ingress` object: the two APIs have separate controllers.
 
 ## Step 2: Create the Gateway
 
@@ -63,6 +66,10 @@ Apply it:
 kubectl apply -f gateway-shared-gateway.yaml
 ```
 
+```text
+gateway.gateway.networking.k8s.io/shared-gateway created
+```
+
 Then check the result:
 
 ```sh
@@ -71,15 +78,15 @@ kubectl -n gwapi-demo get deploy,svc -l gateway.networking.k8s.io/gateway-name=s
 ```
 
 ```text
-gateway.networking.k8s.io/shared-gateway created
 deployment "shared-gateway-istio" successfully rolled out
-NAME                                   READY   AGE
-deployment.apps/shared-gateway-istio   1/1     28s
-NAME                           TYPE           PORT(S)        AGE
-service/shared-gateway-istio   LoadBalancer   80:31380/TCP   28s
+NAME                                   READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/shared-gateway-istio   1/1     1            1           17s
+
+NAME                           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)            AGE
+service/shared-gateway-istio   ClusterIP   10.96.37.238   <none>        15021/TCP,80/TCP   17s
 ```
 
-You created one object, and Istio created a Deployment and a Service **in `gwapi-demo`**. Confirm that nothing for this `Gateway` appeared in `istio-system`:
+You created one object, and Istio created a Deployment and a Service **in `gwapi-demo`**. The Service has type `ClusterIP` because of the `networking.istio.io/service-type` annotation; without it, Istio creates a `LoadBalancer` Service that stays at `<pending>` on `kind`. Confirm that nothing for this `Gateway` appeared in `istio-system`:
 
 ```sh
 kubectl -n istio-system get deploy | grep shared || echo "(nothing - correct)"
@@ -193,9 +200,9 @@ The Gateway API reports what is wrong in the status of each object. This is its 
 ```sh
 kubectl -n gwapi-demo get gateway shared-gateway \
   -o jsonpath='{range .status.conditions[*]}{.type}={.status} {end}{"\n"}'
-for r in gwapi-demo/booking gwapi-team/catalog; do
-  ns=${r%%/*}; name=${r##*/}
-  printf '%-22s ' "$r"
+for route in gwapi-demo/booking gwapi-team/catalog; do
+  ns=${route%%/*}; name=${route##*/}
+  printf '%-22s ' "$route"
   kubectl -n "$ns" get httproute "$name" \
     -o jsonpath='{range .status.parents[0].conditions[*]}{.type}={.status} {end}{"\n"}'
 done
@@ -218,10 +225,12 @@ kubectl label namespace gwapi-team gateway-access=true
 ```
 
 ```text
-Accepted=False (NotAllowedByListeners)
+namespace/gwapi-team unlabeled
+Accepted=False (NotAllowedByListeners) ResolvedRefs=True (ResolvedRefs)
+namespace/gwapi-team labeled
 ```
 
-The reason `NotAllowedByListeners` names the problem exactly, in the route's own status. With the Kubernetes `Ingress` API, the same situation gives no status at all, only a `404`.
+The reason `NotAllowedByListeners` names the problem exactly, in the route's own status. `ResolvedRefs=True` shows that the backend Service is fine: only the attachment to the `Gateway` failed. With the Kubernetes `Ingress` API, the same situation gives no status at all, only a `404`.
 
 ## Step 7: Verify Traffic
 
@@ -230,10 +239,10 @@ Start a port forward to the Service of the **new** gateway, not to `istio-ingres
 ```sh
 kubectl -n gwapi-demo port-forward svc/shared-gateway-istio 8080:80 >/dev/null 2>&1 &
 sleep 3
-for t in "booking.ica.local /book" "catalog.ica.local /items"; do
-  set -- $t
-  printf '%-20s %-8s -> ' "$1" "$2"
-  curl -s -o /dev/null -w '%{http_code}\n' -H "Host: $1" "http://localhost:8080$2"
+for request in "booking.ica.local /book" "catalog.ica.local /items"; do
+  read -r host uri <<< "$request"
+  printf '%-20s %-8s -> ' "$host" "$uri"
+  curl -s -o /dev/null -w '%{http_code}\n' -H "Host: $host" "http://localhost:8080$uri"
 done
 ```
 

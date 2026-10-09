@@ -143,19 +143,18 @@ Envoy stores the endpoints of one destination as a **cluster**: one for the whol
 ```sh
 istioctl proxy-config cluster deploy/tester -n lb-demo \
   --fqdn httpbin.lb-demo.svc.cluster.local -o json \
-  | grep -E '"name"|lbPolicy'
+  | grep -E '"name": "outbound|lbPolicy'
 ```
 
 ```text
-"name": "outbound|8000||httpbin.lb-demo.svc.cluster.local",
-"lbPolicy": "RING_HASH",
-"name": "outbound|8000|canary|httpbin.lb-demo.svc.cluster.local",
-"lbPolicy": "ROUND_ROBIN",
-"name": "outbound|8000|stable|httpbin.lb-demo.svc.cluster.local",
-"lbPolicy": "RING_HASH",
+        "name": "outbound|8000||httpbin.lb-demo.svc.cluster.local",
+        "lbPolicy": "RING_HASH",
+        "name": "outbound|8000|canary|httpbin.lb-demo.svc.cluster.local",
+        "name": "outbound|8000|stable|httpbin.lb-demo.svc.cluster.local",
+        "lbPolicy": "RING_HASH",
 ```
 
-There are three clusters: the one without a subset and one per subset. `stable` inherited `RING_HASH` from the host policy. `RING_HASH` is Envoy's name for `consistentHash`. `canary` uses round robin, because its own policy replaced the host's. Round robin is Envoy's own default, and the dump often leaves default values out. If your dump shows no `lbPolicy` line under the `canary` cluster, that also means round robin, and the grader reads it that way.
+There are three clusters: the one without a subset and one per subset. `stable` inherited `RING_HASH` from the host policy. `RING_HASH` is Envoy's name for `consistentHash`. The `canary` cluster has no `lbPolicy` line at all. Round robin is Envoy's own default, and the dump leaves default values out, so a missing `lbPolicy` means `ROUND_ROBIN`: the `canary` subset's own policy replaced the host's. The grader reads it the same way.
 
 ---
 

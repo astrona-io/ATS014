@@ -16,7 +16,7 @@ kubectl -n orders exec deploy/tester -- \
 
 ```text
 No resources found in orders namespace.
-200 0.041s
+200 0.012958s
 ```
 
 Other teams use this namespace. Every rule you add without a `match` block changes their requests too. That is why each test gets its own header value, and a clean plain rule goes last.
@@ -156,11 +156,11 @@ done
 ```
 
 ```text
-200 0.039s
-200 0.042s
-200 0.040s
-200 0.043s
-200 0.038s
+200 0.006104s
+200 0.007915s
+200 0.002709s
+200 0.003174s
+200 0.002417s
 ```
 
 ---
@@ -180,12 +180,12 @@ kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=5 | grep ' F
 ```
 
 ```text
-503 0.008s
+503 0.006800s
 FI-flagged attempts: 1
-[2026-09-28T19:12:22.462Z] "POST /notify HTTP/1.1" 503 FI fault_filter_abort - "-" 0 18 0 - ...
+[2026-10-09T20:56:01.489Z] "POST /notify HTTP/1.1" 503 FI fault_filter_abort - "-" 0 18 0 - "-" "curl/8.22.0" "bb2766f3-615a-9b89-8de5-98bc2ca94722" "notification-service" "-" outbound|80||notification-service.orders.svc.cluster.local - 10.96.115.125:80 10.244.0.8:41832 - -
 ```
 
-One client request produced one attempt, with the flag `FI`, in 8 milliseconds. If you expected three, read step 2 again: the retry policy is there and it is correct, but the router never had a chance to use it. Now confirm that nothing reached `notification-service`:
+One client request produced one attempt, with the flag `FI`, in about 7 milliseconds. The upstream host in the line is `"-"`: the proxy of `booking-service` answered the request itself and never opened a connection to `notification-service`. If you expected three, read step 2 again: the retry policy is there and it is correct, but the router never had a chance to use it. Now confirm that nothing reached `notification-service`:
 
 ```sh
 kubectl -n orders logs -l app=notification-service -c istio-proxy --tail=20 | grep -c ' 503 '
@@ -211,8 +211,8 @@ kubectl -n orders logs deploy/tester -c istio-proxy --tail=-1 | grep ' 504 UT ' 
 ```
 
 ```text
-504 2.041s
-[2026-09-28T19:03:07.140Z] "POST /book HTTP/1.1" 504 UT response_timeout - "-" 0 24 2000 - ...
+504 2.008974s
+[2026-10-09T20:56:07.384Z] "POST /book HTTP/1.1" 504 UT response_timeout - "-" 0 24 2001 - "-" "curl/8.22.0" "dd38e4be-c545-9d66-ae38-ba2130e66a58" "booking-service" "10.244.0.8:8083" outbound|80||booking-service.orders.svc.cluster.local 10.244.0.10:42692 10.96.17.210:80 10.244.0.10:49752 - -
 ```
 
 The request ended after two seconds, not seven: the timeout stopped the delay. Note which proxy logged it. `UT` (upstream request timeout) is in the log of the **client**, `tester`, on its request to `booking-service`, because that proxy enforces the 2-second timeout. The delay itself is applied one hop further, in the proxy of **`booking-service`** on its request to `notification-service`.

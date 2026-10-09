@@ -16,10 +16,10 @@ kubectl -n fault-demo exec deploy/tester -- \
 
 ```text
 No resources found in fault-demo namespace.
-200 0.043s
+200 0.015694s
 ```
 
-The request takes about 40 milliseconds across two hops. Both numbers matter: the abort changes the status, and the delay changes the time.
+The request takes about 16 milliseconds across two hops. Both numbers matter: the abort changes the status, and the delay changes the time.
 
 ---
 
@@ -142,10 +142,30 @@ The grader checks four things in these objects:
 `istioctl proxy-config routes` prints the routes that a proxy holds right now. Read the routes of the `booking-service` proxy and search for the fault filter:
 
 ```sh
-istioctl proxy-config routes deploy/booking-service-v1 -n fault-demo -o json | grep -i -A8 'envoy.filters.http.fault'
+istioctl proxy-config routes deploy/booking-service-v1 -n fault-demo -o json | grep -i -A16 'envoy.filters.http.fault'
 ```
 
-The output starts with the key `"envoy.filters.http.fault"`, followed by the delay with `"fixedDelay": "7s"` and the abort. Envoy writes the percentage of 100 as a numerator of one million out of a million.
+```text
+                            "envoy.filters.http.fault": {
+                                "@type": "type.googleapis.com/envoy.extensions.filters.http.fault.v3.HTTPFault",
+                                "delay": {
+                                    "fixedDelay": "7s",
+                                    "percentage": {
+                                        "numerator": 1000000,
+                                        "denominator": "MILLION"
+                                    }
+                                },
+                                "abort": {
+                                    "httpStatus": 500,
+                                    "percentage": {
+                                        "numerator": 1000000,
+                                        "denominator": "MILLION"
+                                    }
+                                }
+                            }
+```
+
+The fault filter holds the delay with `"fixedDelay": "7s"` and the abort with `"httpStatus": 500`. Envoy writes the percentage of 100 as a numerator of one million out of a million.
 
 Note which proxy that is: **`booking-service`**, the client of `notification-service`. The `VirtualService` names the destination host, but the sidecar proxy of the calling workload applies the fault.
 
@@ -163,11 +183,11 @@ done
 ```
 
 ```text
-200 0.041s
-200 0.038s
-200 0.044s
-200 0.039s
-200 0.042s
+200 0.006043s
+200 0.002570s
+200 0.002220s
+200 0.002077s
+200 0.002123s
 ```
 
 All five requests return `200`, fast. Every other client's requests work as before.
@@ -182,7 +202,7 @@ kubectl -n fault-demo exec deploy/tester -- \
 ```
 
 ```text
-504 3.052s
+504 3.003825s
 ```
 
 The request returns after three seconds, not seven, with a `504` and not the `500` you configured. That is the result step 2 predicted.
@@ -200,8 +220,10 @@ kubectl -n fault-demo logs deploy/tester -c istio-proxy --tail=-1 | grep ' 504 U
 ```
 
 ```text
-[2026-09-28T19:03:07.140Z] "POST /book HTTP/1.1" 504 UT response_timeout - "-" 0 24 3000 - ...
+[2026-10-09T20:53:49.877Z] "POST /book HTTP/1.1" 504 UT response_timeout - "-" 0 24 3000 - "-" "curl/8.22.0" "11f06109-9816-9534-be22-242da259866b" "booking-service" "10.244.0.8:8083" outbound|80||booking-service.fault-demo.svc.cluster.local 10.244.0.10:42828 10.96.181.6:80 10.244.0.10:36036 - -
 ```
+
+The proxy writes the line a moment after the request ends. If `grep` prints nothing right after step 6, run the command again.
 
 The response flag `UT` (upstream request timeout) is in the log of the **client**, `tester`, on its request to `booking-service`. That is the 3-second route timeout firing. The fault itself is applied one hop further, in the proxy of `booking-service` on its request to `notification-service`. So you do not find `UT` in the log of `booking-service`: no timeout is set on that hop.
 
