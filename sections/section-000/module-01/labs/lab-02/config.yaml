@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-supply-ship"
-      description: "Confirms the cargo Service selects the cargo pods again, the shuttle's proxy holds a healthy cargo endpoint, the workloads are unchanged, and live signals to cargo and the bridge page succeed"
+      description: "Confirms the cargo Service selects the cargo pods again, the shuttle's proxy holds a healthy cargo endpoint, the workloads are unchanged, and live requests to cargo and the bridge page succeed"
       type: "file"
       source: "validation/validate-completed.sh"
 

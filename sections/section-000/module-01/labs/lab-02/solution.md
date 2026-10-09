@@ -139,7 +139,7 @@ astrona submit -c sections/section-000/module-01/labs/lab-02
 ```
 
 ```text
-PASS: the cargo Service selects the cargo ships again, the shuttle's proxy holds a healthy cargo endpoint, 10 of 10 signals to cargo answered 200, and the bridge page shows the product details
+PASS: the cargo Service selects the cargo pods again, the shuttle's proxy holds a healthy cargo endpoint, 10 of 10 requests to cargo answered 200, and the bridge page shows the product details
 ```
 
 ---
