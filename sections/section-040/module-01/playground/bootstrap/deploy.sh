@@ -3,7 +3,7 @@
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
 #   - the Starfleet: bridge, cargo, scout v1-v3, navcom (scout v2 and v3 call navcom)
 #   - shuttle (test client) + probe v1/v2 (echo service that fails or waits on demand)
-#   - the scout subsets and the jason -> scout v2 flight plan
+#   - the scout subsets and the VirtualService that sends jason to scout v2
 # No timeout and no retry rule is created: writing them is the module.
 set -euo pipefail
 
@@ -24,7 +24,7 @@ echo "==> Shuttle and probe"
 kubectl apply -f manifests/shuttle.yaml
 kubectl apply -f manifests/probe.yaml
 
-echo "==> Scout subsets and the jason -> v2 flight plan"
+echo "==> Scout subsets and the VirtualService that sends jason to v2"
 kubectl apply -f manifests/scout-subsets.yaml
 kubectl apply -f manifests/scout-jason-route.yaml
 

@@ -1,5 +1,5 @@
-# Docking instructions for the scout beacon: three ship classes, one per version.
-# Already applied, so the flight plan below can name the subsets.
+# DestinationRule for scout: three subsets, one per version label (v1, v2, v3).
+# Applied first, so the scout VirtualService can name the subsets.
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:

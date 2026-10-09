@@ -1,5 +1,5 @@
-# Flight plan for the scout beacon: jason flies to v2, everyone else to v1.
-# scout v2 calls navcom, so jason's signals reach navcom.
+# VirtualService for scout: requests with end-user: jason go to v2, all others to v1.
+# scout v2 calls navcom, so the jason requests reach navcom.
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:

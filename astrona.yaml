@@ -667,25 +667,25 @@ modules:
         title: "Timeouts And Retries"
         path: sections/section-040/module-01/course.md
       - type: reading
-        title: "Set An Abort Window"
-        path: sections/section-040/module-01/course-01-set-an-abort-window.md
+        title: "Set A Route Timeout"
+        path: sections/section-040/module-01/course-01-set-a-route-timeout.md
       - type: reading
-        title: "Test A Timeout Across Two Ships"
-        path: sections/section-040/module-01/course-02-test-a-timeout-across-two-ships.md
+        title: "Test A Timeout With A Delay Fault"
+        path: sections/section-040/module-01/course-02-test-a-timeout-with-a-delay-fault.md
       - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Free The Shuttle From A Slow Navcom Lab"
+        title: "Move A Timeout Off A Fault Rule Lab"
         path: sections/section-040/module-01/labs/lab-02
         difficulty: beginner
         estimated_duration: 15m
         topic: resilience
         task_kind: troubleshooting
-        tags: [virtualservice, timeouts, fault-injection, delay, 504-ut]
+        tags: [virtualservice, timeouts, fault-injection, delay, 504-ut, access-log]
         learning_goals:
-          - Find a timeout that never fires because it shares a rule with a fault
-          - Move the abort window to the caller's route and prove it with 504 UT in the access log
+          - Find a timeout that never fires because it shares a rule with a delay fault
+          - Move the timeout to the caller's route and prove it with 504 UT in the access log
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
@@ -696,13 +696,13 @@ modules:
           - name: "Envoy access log response flags"
             url: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage
       - type: reading
-        title: "Re-Send Lost Signals"
-        path: sections/section-040/module-01/course-03-re-send-lost-signals.md
+        title: "Configure Retries"
+        path: sections/section-040/module-01/course-03-configure-retries.md
       - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-03/question.md
       - type: lab
-        title: "Retry Only The Signals Worth Re-Sending Lab"
+        title: "Retry Only One Status Code Lab"
         path: sections/section-040/module-01/labs/lab-03
         difficulty: intermediate
         estimated_duration: 15m
@@ -721,30 +721,30 @@ modules:
           - name: "Envoy router filter"
             url: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter
       - type: reading
-        title: "Share One Clock, Retry What Is Safe"
-        path: sections/section-040/module-01/course-04-share-one-clock-and-retry-what-is-safe.md
+        title: "Fit Retries Inside The Timeout"
+        path: sections/section-040/module-01/course-04-fit-retries-inside-the-timeout.md
       - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Timeouts And Retries Lab"
+        title: "Set Timeouts And Retries Per HTTP Method Lab"
         path: sections/section-040/module-01/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
         topic: resilience
         task_kind: build
-        tags: [virtualservice, timeouts, retries, rule-order]
+        tags: [virtualservice, timeouts, retries, rule-order, proxy-config, 504-ut]
         learning_goals:
           - Give a write path a timeout with retries switched off
-          - Give the read path bounded retries with a per-try timeout
+          - Give the read path bounded retries with a per-try timeout that fit inside the route timeout
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
           - name: "Request timeouts task"
             url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-040/module-01/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-040/module-01/course-05-summary.md
 
       - type: reading
         title: "Circuit Breaking With Connection Pool Limits"

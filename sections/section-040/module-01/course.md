@@ -1,71 +1,60 @@
 # Timeouts And Retries
 
-Astronaut, picture a convoy of spaceships passing signals down a line. If one ship stops answering, the ship that called it waits with its radio channel open. That ship's own callers wait too. One stuck ship can stall a whole chain, and nothing crashes anywhere. More ships do not fix this. A deadline does.
+When one backend stops answering, the client that called it waits with the connection open, and the clients of that client wait too. One slow service can stall a whole chain of calls, and nothing crashes anywhere. Adding more pods does not fix this. A time limit does.
 
-A **timeout** is that deadline: the mission's abort window. If no answer has come back by then, the signal is given up, and the sender gets an error instead of waiting forever.
+A **timeout** is that time limit: if no response has come back in time, the client's sidecar proxy gives up and returns an error instead of waiting forever. The sidecar proxy is the Envoy container that Istio adds to each pod; all traffic in and out of the pod passes through it. **Retries** handle the other side: many failures last only a moment, so the sidecar proxy can send a failed request again without the application knowing.
 
-**Retries** are the same idea from the other side. Many failures only last a moment: a ship restarts, or a connection drops. A retry is re-sending a signal that got lost in space. Istio's communications officers can do it for you, without the app knowing.
-
-The two settings share one clock, and that is the detail exams like to test most:
-
-> The route `timeout` is the abort window for the **whole** signal, **including** all retries. A timeout shorter than (`attempts` + 1) × `perTryTimeout` quietly cuts the retries short.
+Both are fields on a rule of a `VirtualService`, the Istio object that sets how requests to a host are routed. They share one time limit, and that is the detail exams like to test most: the route `timeout` covers the whole request, **including** all retries. A timeout shorter than (`attempts` + 1) × `perTryTimeout` cuts the retries short without any error.
 
 ## Learning objectives
 
 After this module you can:
 
-- Set a route `timeout`, say which proxy measures it, and name the status the sender receives.
-- Test a timeout by putting a delay on the ship being called and the timeout on the caller, and explain why the two cannot share one rule.
-- Explain why a timeout protects the sender but does not stop the receiver's work.
+- Set a route `timeout`, say which proxy measures it, and name the status code the client receives.
+- Test a timeout by putting a delay fault on the service being called and the timeout on the caller, and explain why the two cannot share one rule.
+- Explain why a timeout protects the client but does not stop the receiver's work.
 - Configure `retries` with `attempts`, `perTryTimeout` and `retryOn`, and choose between `5xx`, `gateway-error` and an exact status code.
 - Read `attempts` correctly as the number of retries *after* the first try.
 - State Istio's default retry policy and how to switch retries off for real.
-- Calculate the abort window a retry policy needs, and recognise cut-off retries from a `504` with `UT` and used-up retries from `URX`.
-- Prove how many tries really happened from the receiver's flight log.
-- Keep retries away from signals that are not safe to send twice.
+- Calculate the timeout a retry policy needs, and recognise cut-off retries from a `504` with `UT` and used-up retries from `URX`.
+- Prove how many tries really happened from the receiver's access log.
+- Keep retries away from requests that are not safe to send twice.
 
 ## Before you start
 
-Every mission starts with a pre-flight check, astronaut. Make sure you have the knowledge this module expects, know what is waiting in your playground, and have two small helpers ready in your terminal.
+This module expects some knowledge of Istio routing, and a playground that is ready before the first hands-on step.
 
 ### What you should already know
 
-- **How the mesh works.** A proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You can read those orders with `istioctl proxy-config`.
-- **Flight plans.** How to write a `VirtualService` with routing rules. Both settings in this module are extra fields on a rule you already know how to write.
+- **How the mesh works.** A sidecar proxy runs beside every application container, and `istiod`, the Istio control plane, sends it configuration. You can read that configuration with `istioctl proxy-config`.
+- **`VirtualService` routing.** How to write a `VirtualService` with routing rules. Both settings in this module are extra fields on such a rule.
 
 ### What is in your playground
 
-Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** installed with Helm, and flight logs (access logs) switched on for every ship. Everything you need is on one planet, the namespace **`starfleet`**:
+Your playground is one `kind` cluster with **Istio 1.30.5** installed with Helm. Access logs are switched on, so every sidecar proxy writes one line per request. Everything you need runs in the **`starfleet`** namespace:
 
-| Ship | Its role in the fleet |
+| Workload | What it does |
 | --- | --- |
-| `bridge`, `cargo` | The flagship and the supply ship of the Starfleet |
-| `scout` v1, v2, v3 | Three ship classes of one scout. Only v2 and v3 call `navcom`, which matters when you test a timeout across two ships |
-| `navcom` | The navigation computer that the v2 and v3 scouts ask |
-| `probe` v1, v2 | An echo probe that fails on demand. `/delay/<seconds>` waits before it answers, and `/status/<code>` answers with exactly that status. `/status/200,503` picks one of the two at random |
-| `shuttle` | Your test client. You send every test signal from here |
+| `bridge`, `cargo` | Web frontend on port `9080` and the backend that returns item details |
+| `scout` v1, v2, v3 | Backend in three versions on port `9080`. Only v2 and v3 call `navcom` |
+| `navcom` | Backend that `scout` v2 and v3 call for a rating |
+| `probe` v1, v2 | HTTP echo server on Service port `8000` that fails on request. `/delay/<seconds>` waits before it answers, `/status/<code>` answers with exactly that status code, and `/status/200,503` picks one of the two at random |
+| `shuttle` | Test client pod; you send every test request from here |
 
-The scout's docking instructions (subsets v1, v2, v3) and a flight plan that sends `end-user: jason` to scout v2 are already applied. There is **no** timeout and **no** retry rule yet. Writing them is your mission in this module.
+A `DestinationRule` with the `scout` subsets v1, v2 and v3 is already applied, and so is a `VirtualService` that sends requests with the header `end-user: jason` to `scout` v2. There is **no** timeout and **no** retry rule yet. You write them in this module.
 
-Launch your playground now, and keep it running next to you while you read the parts:
+Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
-### Two helpers to paste first
+The playground guide ends with two exam-style practice tasks with checked solutions, for when you want more practice.
 
-Paste these into each new terminal before you start:
+## The order of the parts
 
-```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
-count_received() { sleep 4; kubectl logs -n starfleet -l app=probe -c istio-proxy --since=${2:-8s} | grep -c "$1"; }
-```
+The module has four parts, a lab after each of the last three parts, and a summary at the end.
 
-`status_and_time` sends one signal from the shuttle and prints the status code and the time it took. `count_received` counts how many signals the probe ships really received, from their flight logs. That is the only place where you can see retries, because the sender always gets just one answer.
+The first part shows that Istio sets no route timeout by default, how to set one, and how to find the `UT` response flag in the access log. The second part tests a timeout across two services with a delay fault, shows that the receiver keeps working, and shows why a delay and a timeout on the same rule never fire. Its lab asks you to move a timeout off a rule with a fault.
 
-### Extra practice
+The third part configures retries with `attempts`, `perTryTimeout` and `retryOn`, counts the retries at the receiver, and shows the default retry policy and how to switch it off. Its lab asks you to narrow a retry policy to one status code.
 
-The playground also comes with two exam-style practice tasks with checked solutions. You find them in the playground folder, under `docs/practice.md`.
-
-## Why this matters
-
-Timeouts and retries decide how the rest of the mesh behaves under trouble. A missing timeout lets one stuck ship stall every caller. A careless retry policy turns a short hiccup into a retry storm that hits an overloaded ship harder. Get these two settings right, and every other failure feature has a stable base to build on.
+The fourth part fits the retries inside the route timeout, reads both settings from the proxy, and keeps retries away from requests that are not safe to repeat. Its lab asks you to give a write path no retries and a read path retries that fit inside their timeout.

@@ -43,14 +43,14 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 4 parts and 3 labs:
 
-1. Set An Abort Window
-2. Test A Timeout Across Two Ships
-   - Lab: Free The Shuttle From A Slow Navcom Lab
-3. Re-Send Lost Signals
-   - Lab: Retry Only The Signals Worth Re-Sending Lab
-4. Share One Clock, Retry What Is Safe
-   - Lab: Timeouts And Retries Lab
-5. Wrap-Up: Mission Debrief
+1. Set A Route Timeout
+2. Test A Timeout With A Delay Fault
+   - Lab: Move A Timeout Off A Fault Rule Lab
+3. Configure Retries
+   - Lab: Retry Only One Status Code Lab
+4. Fit Retries Inside The Timeout
+   - Lab: Set Timeouts And Retries Per HTTP Method Lab
+5. Summary
 
 ### Circuit Breaking With Connection Pool Limits
 
