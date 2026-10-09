@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# The lab's starting state: a quiet shadow.
-# The flight plan sends every signal to v1 and mirrors every signal to subset v2.
-# The docking instructions define v2 with the label version=canary, which no
-# probe ship carries. So the mirror cluster is empty: the proxy holds a mirror
-# policy, the sender is perfectly happy, and the shadow receives nothing.
+# The lab's starting state: the mirror target receives no copies.
+# The VirtualService sends every request to v1 and mirrors every request to
+# subset v2. The DestinationRule defines v2 with the label version=canary,
+# which no probe pod carries. So the mirror cluster has no endpoints: the proxy
+# holds a mirror policy, the client still gets 200 responses, and probe-v2
+# receives nothing.
 # Fixing the DestinationRule is the task - the VirtualService is correct.
 set -euo pipefail
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# The lab's starting state: correct docking instructions (subsets v1, v2, v3)
-# and a flight plan that sends every scout signal to v1.
-# Turning that flight plan into a three-way weighted split is the task.
+# The lab's starting state: a correct DestinationRule (subsets v1, v2, v3)
+# and a VirtualService that sends every scout request to v1.
+# Turning that VirtualService into a three-way weighted split is the task.
 set -euo pipefail
 
 kubectl apply -f - <<'YAML'

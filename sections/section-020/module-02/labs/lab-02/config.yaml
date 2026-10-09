@@ -15,7 +15,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-020-02-02-fault"
-      description: "Applies the starting state: a flight plan that mirrors every signal to subset v2, and docking instructions whose v2 subset selects a label no pod has"
+      description: "Applies the starting state: a VirtualService that mirrors every request to subset v2, and a DestinationRule whose v2 subset selects a label no pod has"
       type: "file"
       source: "bootstrap/03-seed-fault.sh"
 
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-quiet-shadow"
-      description: "Confirms the probe DestinationRule defines v1 and v2 over the version label, the VirtualService still routes to v1 and mirrors to v2, the mirror cluster has endpoints, every sender answer comes from v1, and the shadow really receives the copies"
+      description: "Confirms the probe DestinationRule defines v1 and v2 over the version label, the VirtualService still routes to v1 and mirrors to v2, the mirror cluster has endpoints, every response to the client comes from v1, and probe-v2 really receives the copies"
       type: "file"
       source: "validation/validate-completed.sh"
 

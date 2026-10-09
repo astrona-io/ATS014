@@ -160,10 +160,8 @@ astrona submit -c sections/section-020/module-02/labs/lab-02
 ```
 
 ```text
-PASS: subsets v1 and v2 select their probe pods, the flight plan still routes to v1 and mirrors 100% to v2, the mirror cluster has ships, all 30 sender answers came from probe-v1, and the shadow received 20 copies of 20 signals
+PASS: subsets v1 and v2 select their probe pods, the VirtualService still routes to v1 and mirrors 100% to v2, the mirror cluster has endpoints, all 30 responses to the client came from probe-v1, and probe-v2 received 20 copies of 20 requests
 ```
-
-The grader's message uses older wording: "flight plan" means the `VirtualService`, and "ships" means the endpoints of the mirror cluster.
 
 ---
 

@@ -141,7 +141,7 @@ astrona submit -c sections/section-020/module-01/labs/lab-02
 You should see this (shortened):
 
 ```text
-PASS: one flight plan sends the scout v1 60, v2 30 and v3 10, the shuttle's proxy holds those weights, the docking instructions and ships are unchanged, and 200 live signals split v1=129 v2=54 v3=17 of 200
+PASS: one VirtualService sends the scout v1 60, v2 30 and v3 10, the shuttle's proxy holds those weights, the DestinationRule and deployments are unchanged, and 200 live requests split v1=129 v2=54 v3=17 of 200
 PROCTOR: PASS
 ```
 
