@@ -29,24 +29,24 @@ The same feature answers a second question that is hard to test any other way: w
 
 ## Modules In This Section
 
-Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
+Work through the modules in this order. Each part teaches one idea. A graded lab comes right after the part it practises, and the last page of each module is a summary. The capstone lab at the end uses everything in the section at once.
 
 ### Fault Injection With Delays And Aborts
 
-4 parts and 3 missions:
+4 parts and 3 labs:
 
-1. Slow A Ship Down
-2. Fail A Signal Before It Leaves
-   - Mission: Run Two Simulation Drills Lab
-3. Scope A Drill To Your Own Signals
-   - Mission: Stop The Drill That Never Ended Lab
-4. Drive Your Resilience Settings With Faults
-   - Mission: Fault Injection With Delays And Aborts Lab
-5. Wrap-Up: Mission Debrief
+1. Inject A Delay Into Requests
+2. Abort Requests In The Client Proxy
+   - Lab: Inject A Delay And An Abort Lab
+3. Scope Fault Injection With Match Rules
+   - Lab: Scope A Forgotten Abort To One Test User Lab
+4. Test Timeouts And Retries With Fault Injection
+   - Lab: Trigger A Route Timeout With A Scoped Delay Lab
+5. Summary
 
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **A Controlled Chaos Experiment Capstone Lab**.
+The section ends with a capstone lab that uses everything in it: **Test Retries And Timeouts With Scoped Faults Capstone Lab**.
 
 ---
 

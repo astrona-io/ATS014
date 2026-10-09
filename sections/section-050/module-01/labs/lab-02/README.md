@@ -2,13 +2,13 @@
 estimated_duration: 20m
 ---
 
-# Run Two Simulation Drills
+# Inject A Delay And An Abort Lab
 
-Welcome to a drill mission, astronaut. On the planet `starfleet`, mission control wants to know how the fleet copes with trouble. You set up two simulation drills: one ship that answers slowly, and one ship that seems to be down.
+In the `starfleet` namespace, the team wants to know how the services behave when something goes wrong. You inject two faults with `VirtualService` objects: a delay that makes `navcom` slow, and an abort that makes `probe` look down.
 
-Your job is to write both drills, and to prove from the flight logs that each one was carried out by the right communications officer.
+Your job is to write both faults, and to prove from the access logs that the sidecar proxy of the right client applied each one.
 
-## Launching the Lab
+## Running the lab
 
 Run this command to start the cluster:
 

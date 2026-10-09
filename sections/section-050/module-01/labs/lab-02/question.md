@@ -2,21 +2,21 @@
 
 Solve this question on: `terminal`
 
-Astronaut, your mission: run two simulation drills on the planet `starfleet`, one slow ship and one ship that seems to be down.
+The fleet must survive a slow navigation computer and a lost probe. In the `starfleet` namespace, inject one fault that makes `navcom` slow and one that makes `probe` look down.
 
-The planet `starfleet` runs the Starfleet, the probe and the `shuttle` test client:
+The `starfleet` namespace has sidecar injection switched on and runs these workloads:
 
-* `scout` — three ship classes, v1, v2 and v3, on port 9080. The flight plan sends signals with the header `end-user: jason` to v2 and everything else to v1. Only v2 and v3 call `navcom`.
-* `navcom` — the navigation computer, on port 9080. Its docking instructions define subset `v1`.
-* `probe` — an echo probe, v1 and v2 behind one Service on port 8000.
-* `shuttle` — your test client, with `curl`.
+* `scout`: a backend in three versions, v1, v2 and v3, on port `9080`. A `VirtualService` named `scout` sends requests with the header `end-user: jason` to subset `v2` and every other request to subset `v1`. Only v2 and v3 call `navcom`.
+* `navcom`: a backend on port `9080`. A `DestinationRule` defines its subset `v1`.
+* `probe`: an HTTP echo server, v1 and v2 behind one Service on port `8000`.
+* `shuttle`: a client pod with `curl`. Send your test requests from here.
 
-There is no drill yet. Set them up so that:
+Istio 1.30.5 is installed and access logs are switched on. There is no fault yet. Configure the faults so that:
 
-1.  A `VirtualService` named `navcom` holds **every** signal to navcom for **2 seconds** with `fault.delay`, and routes it to subset `v1`. It has no abort.
-2.  A `VirtualService` named `probe` fails **every** signal to the probe with **503** using `fault.abort`. It has no delay.
-3.  A signal from the `shuttle` to `http://scout:9080/reviews/0` with `end-user: jason` still gets a **200**, about 2 seconds late, and scout v2's flight log marks its signal to navcom with the flag **`DI`**.
-4.  A signal from the `shuttle` to `http://probe:8000/get` gets a **503** at once, the shuttle's flight log marks it with the flag **`FI`**, and the probe never receives it.
-5.  Leave the `scout` flight plan, the Deployments and the Services unchanged.
+1.  A `VirtualService` named `navcom` delays **every** request to `navcom` by **2 seconds** with `fault.delay`, and routes it to subset `v1`. It has no abort.
+2.  A `VirtualService` named `probe` fails **every** request to `probe` with **503** with `fault.abort`. It has no delay.
+3.  A request from `shuttle` to `http://scout:9080/reviews/0` with the header `end-user: jason` still gets a **200**, about 2 seconds late, and the access log of `scout-v2` marks its request to `navcom` with the response flag **`DI`** (delay injected).
+4.  A request from `shuttle` to `http://probe:8000/get` gets a **503** at once, the access log of `shuttle` marks it with the response flag **`FI`** (fault injected), and `probe` never receives it.
+5.  The `scout` `VirtualService`, the Deployments and the Services stay unchanged.
 
-The grader sends real signals from the `shuttle`, reads the flight logs of the shuttle, scout v2 and the probe, and checks both flight plans.
+The grader sends real requests from `shuttle`, reads the access logs of `shuttle`, `scout-v2` and `probe`, and checks both `VirtualService` objects.

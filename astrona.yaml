@@ -996,16 +996,16 @@ modules:
         title: "Fault Injection With Delays And Aborts"
         path: sections/section-050/module-01/course.md
       - type: reading
-        title: "Slow A Ship Down"
-        path: sections/section-050/module-01/course-01-slow-a-ship-down.md
+        title: "Inject A Delay Into Requests"
+        path: sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
       - type: reading
-        title: "Fail A Signal Before It Leaves"
-        path: sections/section-050/module-01/course-02-fail-a-signal-before-it-leaves.md
+        title: "Abort Requests In The Client Proxy"
+        path: sections/section-050/module-01/course-02-abort-requests-in-the-client-proxy.md
       - type: reading
         title: Question
         path: sections/section-050/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Run Two Simulation Drills Lab"
+        title: "Inject A Delay And An Abort Lab"
         path: sections/section-050/module-01/labs/lab-02
         difficulty: beginner
         estimated_duration: 20m
@@ -1013,8 +1013,8 @@ modules:
         task_kind: build
         tags: [virtualservice, fault-injection, delay, abort, access-log]
         learning_goals:
-          - Put a delay drill and an abort drill on the flight plan of the ship you pretend is in trouble
-          - Prove each drill from the DI and FI flags in the sender's access log
+          - Put a delay fault and an abort fault on the VirtualService of the service that should look slow or broken
+          - Prove each fault from the DI and FI flags in the client's access log
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
@@ -1023,13 +1023,13 @@ modules:
           - name: "Envoy access log response flags"
             url: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage
       - type: reading
-        title: "Scope A Drill To Your Own Signals"
-        path: sections/section-050/module-01/course-03-scope-a-drill-to-your-own-signals.md
+        title: "Scope Fault Injection With Match Rules"
+        path: sections/section-050/module-01/course-03-scope-fault-injection-with-match-rules.md
       - type: reading
         title: Question
         path: sections/section-050/module-01/labs/lab-03/question.md
       - type: lab
-        title: "Stop The Drill That Never Ended Lab"
+        title: "Scope A Forgotten Abort To One Test User Lab"
         path: sections/section-050/module-01/labs/lab-03
         difficulty: beginner
         estimated_duration: 15m
@@ -1037,53 +1037,55 @@ modules:
         task_kind: troubleshooting
         tags: [virtualservice, fault-injection, abort, header-matching, rule-order, catch-all]
         learning_goals:
-          - Find an unscoped abort drill that breaks every caller
-          - Scope the drill to one test user with a header match and a catch-all rule below it
+          - Find an unscoped abort fault that breaks every client of a service
+          - Scope the fault to one test user with a header match and a plain rule below it
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
           - name: "Fault injection task"
             url: https://istio.io/latest/docs/tasks/traffic-management/fault-injection/
       - type: reading
-        title: "Drive Your Resilience Settings With Faults"
-        path: sections/section-050/module-01/course-04-drive-your-resilience-settings-with-faults.md
+        title: "Test Timeouts And Retries With Fault Injection"
+        path: sections/section-050/module-01/course-04-test-timeouts-and-retries-with-fault-injection.md
       - type: reading
         title: Question
         path: sections/section-050/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Fault Injection With Delays And Aborts Lab"
+        title: "Trigger A Route Timeout With A Scoped Delay Lab"
         path: sections/section-050/module-01/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
         topic: fault-injection
         task_kind: build
-        tags: [virtualservice, fault-injection, delay, abort, timeouts, header-matching]
+        tags: [virtualservice, fault-injection, delay, abort, timeouts, header-matching, proxy-config]
         learning_goals:
           - Inject a delay and an abort for one test user only
-          - Show how a caller timeout interacts with an injected delay
+          - Make a route timeout one hop before the injected delay fire with a 504 and the UT flag
+          - Confirm that the client's sidecar proxy holds the fault in its route configuration
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
           - name: "Fault injection task"
             url: https://istio.io/latest/docs/tasks/traffic-management/fault-injection/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-050/module-01/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-050/module-01/course-05-summary.md
 
       - type: reading
         title: Question
         path: sections/section-050/capstone/labs/lab-01/question.md
       - type: lab
-        title: "A Controlled Chaos Experiment Capstone Lab"
+        title: "Test Retries And Timeouts With Scoped Faults Capstone Lab"
         path: sections/section-050/capstone/labs/lab-01
         difficulty: advanced
         estimated_duration: 45m
         topic: fault-injection
         task_kind: build
-        tags: [fault-injection, abort, delay, retries, timeouts, header-matching]
+        tags: [fault-injection, abort, delay, retries, timeouts, header-matching, access-log]
         learning_goals:
-          - Run a controlled chaos experiment with scoped aborts and delays
-          - Prove whether retries and timeouts survive the injected failures
+          - Run two header-scoped fault tests on one host without changing other requests
+          - Prove from the access log that a retry policy on the same rule never retries an injected abort
+          - Stop an injected delay with a timeout that a different proxy enforces one hop earlier
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/

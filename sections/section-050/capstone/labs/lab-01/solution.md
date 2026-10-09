@@ -1,14 +1,16 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. One object, three rules, two independent simulation drills — and the first drill's result is the lesson.
+The task needs one `VirtualService` with three rules for `notification-service`, one `VirtualService` with a timeout for `booking-service`, and two fault tests that run independently. The result of the first test is the lesson of the lab.
 
 ---
 
-## Step 1: Baseline, And Note Who Else Is Here
+## Step 1: Measure the Baseline
+
+List the `VirtualService` objects, then send one request from the `tester` pod and print the status code and the time:
 
 ```sh
 kubectl -n orders get virtualservice
-kubectl -n orders run t0 --rm -i --restart=Never --image=curlimages/curl -- \
+kubectl -n orders exec deploy/tester -- \
   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -X POST http://booking-service/book
 ```
 
@@ -17,49 +19,36 @@ No resources found in orders namespace.
 200 0.041s
 ```
 
-The namespace is shared: other crews live on this planet. Every rule you add that lacks a `match` block is a change to somebody else's signals, which is why both experiments get their own header and a clean catch-all goes last.
+Other teams use this namespace. Every rule you add without a `match` block changes their requests too. That is why each test gets its own header value, and a clean plain rule goes last.
 
 ---
 
-## Step 2: Predict Experiment 1 Before Running It
+## Step 2: Predict the Result of the Abort Test
 
-The first rule aborts with 503 **and** carries a retry policy that retries on `gateway-error` — which covers 503. So how many attempts do you expect?
+The first rule aborts with `503` **and** has a retry policy with `retryOn: gateway-error`, which covers `503`. So how many attempts do you expect?
 
-The intuitive answer is three: the original plus two retries, each one re-faulted.
-The actual answer is **one**, and the reason is the filter chain:
+Most people expect three: the first attempt plus two retries, each one aborted again. The real answer is **one**. The reason is the order of the filters inside the sidecar proxy (Envoy):
 
-```text
-  client request
-        │
-        ▼
-  ┌───────────────┐
-  │ fault filter  │ ── abort: answer 503 right here (FI)
-  └───────────────┘
-        │  ✗ never continues
-        ▼
-  ┌───────────────┐
-  │    router     │ ← the retry policy lives here, and is never consulted
-  └───────────────┘
+```mermaid
+flowchart TB
+    R["request"] --> F["fault filter"]
+    F -->|"abort: 503, FI"| C["client"]
+    F -.->|"never reached"| X["router with retry policy"]
 ```
 
-The fault filter sits **before** the router. An injected abort is a local reply:
-the router never dispatches an upstream request, so there is no failed attempt
-for it to retry. The retry policy is perfectly valid configuration and simply
-never runs.
+The diagram shows that the fault filter answers the request with `503` itself, so the request never reaches the router, where the retry policy lives.
 
-That is the point of the experiment, and it is a sharper version of the usual
-lesson. Retries recover from *transient upstream* failures. An injected fault is
-not upstream at all — it never leaves the caller's proxy.
+The **router** is the part of the proxy that sends the request to the destination, and it is also the part that retries it. An injected abort is a response that the fault filter makes on its own. The router never sends a request, so it has no failed attempt to retry. The retry policy is valid configuration, and it never runs.
 
-Check the budget too, since the rule has both: `attempts: 2` plus the original
-would be 3 attempts × `perTryTimeout: 1s` = 3s, and `timeout: 5s` leaves room —
-so if retries were going to run, nothing here would truncate them.
+That is the point of the test. Retries recover from short failures of the destination. An injected abort never reaches the destination: it never leaves the client's proxy.
+
+Check the time budget as well, because the rule has both settings. Two retries plus the first attempt would be 3 attempts × `perTryTimeout: 1s` = 3 seconds, and `timeout: 5s` leaves room. So if the retries did run, nothing in this rule would cut them short.
 
 ---
 
 ## Step 3: Write All Three Rules
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+Write each object to a file and apply the file. In the exam, a file is easy to read again, edit and apply again.
 
 Save this as `virtualservice-notification.yaml`:
 
@@ -113,6 +102,10 @@ Apply it:
 kubectl apply -f virtualservice-notification.yaml
 ```
 
+```text
+virtualservice.networking.istio.io/notification created
+```
+
 Save this as `virtualservice-booking.yaml`:
 
 ```yaml
@@ -144,21 +137,20 @@ istioctl analyze -n orders
 ```
 
 ```text
-virtualservice.networking.istio.io/notification created
 ✔ No validation issues found when analyzing namespace: orders.
 ```
 
-Both chaos rules are above the catch-all, each matching a different value of the same header. The third rule has no `fault`, no `timeout` and no `retries` — the grader checks all three are absent.
+Both fault rules are above the plain rule, and each matches a different value of the same header. The third rule has no `fault`, no `timeout` and no `retries`. The grader checks that all three are missing.
 
 ---
 
-## Step 4: Verify Unmarked Traffic First
+## Step 4: Check Other Requests First
 
-Always this order. If the scoping is wrong, you want to find out before you start generating failures.
+Always check in this order. If the scoping is wrong, you want to know before you start to cause failures.
 
 ```sh
 for i in 1 2 3 4 5; do
-  kubectl -n orders run "u$i" --rm -i --restart=Never --image=curlimages/curl --quiet -- \
+  kubectl -n orders exec deploy/tester -- \
     curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -X POST http://booking-service/book
 done
 ```
@@ -173,7 +165,9 @@ done
 
 ---
 
-## Step 5: Run Experiment 1 And Count the Attempts
+## Step 5: Run the Abort Test and Count the Attempts
+
+The access log is where each sidecar proxy writes one line for every request. Count the `FI` lines in the log of the `booking-service` proxy before and after one request with `x-chaos: abort`:
 
 ```sh
 BEFORE=$(kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=-1 | grep -c ' FI ')
@@ -191,10 +185,7 @@ FI-flagged attempts: 1
 [2026-09-28T19:12:22.462Z] "POST /notify HTTP/1.1" 503 FI fault_filter_abort - "-" 0 18 0 - ...
 ```
 
-One attempt for one client request, flagged `FI`, finished in 8 milliseconds. If
-you expected three, re-read step 2: the retry policy is there, it is correct, and
-the router never got the chance to use it. Confirm that nothing reached the
-dependency:
+One client request produced one attempt, with the flag `FI`, in 8 milliseconds. If you expected three, read step 2 again: the retry policy is there and it is correct, but the router never had a chance to use it. Now confirm that nothing reached `notification-service`:
 
 ```sh
 kubectl -n orders logs -l app=notification-service -c istio-proxy --tail=20 | grep -c ' 503 '
@@ -204,35 +195,29 @@ kubectl -n orders logs -l app=notification-service -c istio-proxy --tail=20 | gr
 0
 ```
 
-The dependency never heard about any of it.
+The access log of `notification-service` has no `503` at all. None of these requests reached it.
 
 ---
 
-## Step 6: Run Experiment 2
+## Step 6: Run the Delay Test
+
+Send one request with `x-chaos: delay`, then read the access log of the `tester` proxy:
 
 ```sh
 kubectl -n orders exec deploy/tester -- \
   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -H "x-chaos: delay" -X POST http://booking-service/book
 sleep 2
 kubectl -n orders logs deploy/tester -c istio-proxy --tail=-1 | grep ' 504 UT ' | tail -1
-kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=5 | grep ' FI ' | tail -1
 ```
 
 ```text
 504 2.041s
 [2026-09-28T19:03:07.140Z] "POST /book HTTP/1.1" 504 UT response_timeout - "-" 0 24 2000 - ...
-[2026-09-28T19:03:07.140Z] "POST /notify HTTP/1.1" 500 FI - "-" ...
 ```
 
-Two seconds, not seven — the timeout cut the delay off. Note which proxy logged
-what: `UT` is in the **client's** log against `booking-service`, because that is
-where the 2-second timeout is enforced; `FI` is in **`booking-service`'s** log
-against `notification-service`, because that is where the fault filter is
-holding the request.
+The request ended after two seconds, not seven: the timeout stopped the delay. Note which proxy logged it. `UT` (upstream request timeout) is in the log of the **client**, `tester`, on its request to `booking-service`, because that proxy enforces the 2-second timeout. The delay itself is applied one hop further, in the proxy of **`booking-service`** on its request to `notification-service`.
 
-Those two flags side by side are the section's diagnostic payoff: `FI` means
-"I fabricated this", `UT` means "my deadline expired" — and they appear one hop
-apart, which is exactly why the timeout had to go on the other object.
+The two flags of this lab are the key to reading such failures. `FI` means "the proxy made this response itself", and `UT` means "the proxy's timeout expired". In this lab they appear one hop apart, which is exactly why the timeout had to go on the other `VirtualService`.
 
 ---
 
@@ -242,18 +227,17 @@ apart, which is exactly why the timeout had to go on the other object.
 kubectl -n orders delete virtualservice notification
 ```
 
-A fault is configuration. Left in place, the `x-chaos` rules are harmless — nobody sends that header — but the habit of deleting is what stops an unscoped one becoming an outage.
+A fault is configuration. The `x-chaos` rules do no harm if you leave them, because nobody else sends that header. But the habit of deleting faults is what stops an unscoped one from becoming an outage.
 
 ---
 
 ## Common Mistakes
 
-- **Expecting retries to rescue the abort, or even to run.** They do not run: the fault filter answers before the router, so exactly one `FI` line appears. Counting it is the proof.
-- **Expecting the retry policy to produce three attempts.** It produces one. The fault filter answers before the router, so the retries never run — that is the experiment's whole result.
-- **Putting the 2s timeout next to the delay on rule 2.** Inert: the fault filter holds the request before the router starts timing it, so the call takes the full seven seconds and no `UT` is ever logged.
-- **Adding retries to rule 2.** The task asks for none, and the grader checks.
-- **Anything on the catch-all rule.** No fault, no timeout, no retries — unscoped traffic must be untouched.
-- **Both chaos rules matching the same header value.** They need distinct values; first match wins.
-- **The catch-all placed first.** It matches everything and neither experiment ever runs.
-- **Putting the faults on `booking-service`.** That delays the inbound request and tests the wrong hop.
-- **Reading only the outer status.** The `FI` evidence is in the intermediate service's proxy log, and the `UT` evidence is in the client's.
+- **Expecting the retry policy to produce three attempts.** It produces one. The fault filter answers before the router, so the retries never run, and exactly one `FI` line appears. Counting it is the proof.
+- **Putting the 2s timeout next to the delay on rule 2.** It does nothing there: the fault filter holds the request before the router starts timing it. The call takes the full seven seconds, and the proxy never logs `UT`.
+- **Adding retries to rule 2.** The task asks for none, and the grader checks it.
+- **Anything on the plain rule.** No fault, no timeout, no retries: requests without the header must not change.
+- **Both fault rules matching the same header value.** They need different values, because the first matching rule wins.
+- **The plain rule placed first.** It matches every request, so neither test ever runs.
+- **Putting the faults on `booking-service`.** That delays the request from `tester` and tests the wrong hop.
+- **Reading only the final status.** The `FI` evidence is in the proxy log of the middle service, and the `UT` evidence is in the log of the client.
