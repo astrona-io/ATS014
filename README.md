@@ -4,18 +4,18 @@ Course material for the **Traffic Management** domain of the Istio Certified Ass
 
 Built and verified against **Istio 1.30.5**.
 
-Welcome aboard, astronaut. Your missions here all deal with one thing: **signals**. Every request one spaceship (a pod) sends to another is a signal. Istio puts a communications officer (the sidecar proxy) on every ship, and mission control (`istiod`) tells each communications officer where signals may fly, how long to wait for a reply, and what to do when a ship is damaged. This course trains you to give those orders, and to prove they work, on a real solar system (a Kubernetes cluster).
+The course is about one thing: **requests** between workloads. Istio adds a sidecar proxy (Envoy) to every pod, and all traffic in and out of the pod passes through it. Istio's control plane, `istiod`, sends each proxy its configuration: where requests may go, how long to wait for a response, and what to do when an endpoint fails. This course teaches you to write that configuration and to prove it works on a real Kubernetes cluster.
 
 The repository has four layers:
 
 | Layer | Path | What it is |
 | --- | --- | --- |
 | **Manifest** | `astrona.yaml` | The course outline the platform reads — every reading and lab, in order |
-| **Reading** | `sections/section-0N0/module-0M/` | A short landing page, ordered parts that teach one idea each with hands-on steps, and a wrap-up |
-| **Practice** | `.../module-0M/labs/lab-0N/` and `.../playground/` | Graded labs (missions) placed right after the part they practise, and one ungraded sandbox per module |
+| **Reading** | `sections/section-0N0/module-0M/` | A short landing page, ordered parts that teach one idea each with hands-on steps, and a summary |
+| **Practice** | `.../module-0M/labs/lab-0N/` and `.../playground/` | Graded labs placed right after the part they practise, and one ungraded sandbox per module |
 | **Integration** | `sections/section-0N0/capstone/labs/lab-01/` | One graded capstone per section, combining that section's modules |
 
-Your flight path for each module: read its parts with its playground open alongside (your training simulator). When a part ends with **Your mission**, pause the playground and take that lab without looking at the solution. The wrap-up page lists the missions and cleans up the playground. Finish each section with its capstone, the bigger mission that combines everything in that section.
+How to work through a module: read its parts with its playground running alongside. When a part ends with **Your mission**, pause the playground and take that lab without looking at the solution. The last page of the module closes it and removes the playground. Finish each section with its capstone, a bigger graded lab that combines everything in that section.
 
 ---
 
@@ -39,7 +39,7 @@ The Traffic Management domain is seven topics. Every section below is named afte
 | 6 | Using Resilience Features (circuit breaking, failover, outlier detection, timeouts, retries) | [040](sections/section-040) |
 | 7 | Using Fault Injection | [050](sections/section-050) |
 
-Section [000](sections/section-000) is not an exam topic. It is pre-flight training that the other seven assume: what a sidecar is (the communications officer), how `istiod` programs it (mission control's orders), and how to read a proxy's live configuration.
+Section [000](sections/section-000) is not an exam topic. It covers the basics the other seven assume: what a sidecar proxy is, how `istiod` sends it configuration, and how to read a proxy's live configuration.
 
 ## Sections
 
@@ -65,7 +65,7 @@ Sections are ordered so each needs only what came before. Section 000 is foundat
 
 ## Modules
 
-Each module is a landing page, its ordered parts and a wrap-up. The landing page links them in order, and each section's overview lists every part with the missions that follow it.
+Each module is a landing page, its ordered parts and a closing page. The landing page lists the parts in order, and each section's overview lists every part with the labs that follow it.
 
 | Module | Reader | Parts | Graded labs |
 | --- | --- | --- | --- |
@@ -94,16 +94,16 @@ Each module is a landing page, its ordered parts and a wrap-up. The landing page
 
 ## Running a playground
 
-Every module has one. Think of it as a training solar system in the simulator: a **kind** cluster with Istio 1.30.5 installed and the module's starting workloads applied. It has deliberately no Istio traffic configuration, because writing that is your mission.
+Every module has one: a **kind** cluster with Istio 1.30.5 installed and the module's starting workloads applied. It has no Istio traffic configuration on purpose, because writing that configuration is the exercise.
 
-Every playground runs **the Starfleet**: the Bookinfo sample app from the Istio documentation, with space names (`bridge`, `cargo`, `scout` v1, v2 and v3, `navcom`) in namespace `starfleet`, plus the `shuttle` test client and any extra ships the module needs. The playgrounds install Istio with Helm (`istiod`, plus a gateway where the module needs one), so you need `istioctl` on your own machine. Each one has `examples/` with ready YAML files, and most also have `docs/practice.md` with an exam-style task. A few older graded labs and capstones still use their own small apps.
+Every playground runs **the Starfleet**: the Bookinfo sample app from the Istio documentation, with space names (`bridge`, `cargo`, `scout` v1, v2 and v3, `navcom`) in namespace `starfleet`, plus the `shuttle` test client and any extra workloads the module needs. The playgrounds install Istio with Helm (`istiod`, plus a gateway where the module needs one), so you need `istioctl` on your own machine. Each one has `examples/` with ready YAML files, and most also have `docs/practice.md` with an exam-style task. A few older graded labs and capstones still use their own small apps.
 
 ```bash
 astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-010/module-01/playground
 astrona destroy ats-014-playground-010-01
 ```
 
-Playgrounds are **ungraded**: no task, no `astrona submit`, no pass/fail. Crash as often as you like. Each one's `docs/overview.md` lists what is in the box and things worth trying, including deliberate mistakes. Breaking things on purpose is often the fastest way to learn what a failure looks like.
+Playgrounds are **ungraded**: no task, no `astrona submit`, no pass/fail. Break it as often as you like. Each one's `docs/overview.md` lists what is in the box and things worth trying, including deliberate mistakes. Breaking things on purpose is often the fastest way to learn what a failure looks like.
 
 `astrona destroy` takes the environment **name** (`metadata.name` in the playground's `config.yaml`), not the configuration path.
 
@@ -114,7 +114,7 @@ astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/m
 astrona submit -c sections/section-010/module-01/labs/lab-01
 ```
 
-Labs are your real missions: they are **graded** against the live state of the solar system. Each carries a `question.md` (the task), a `solution.md` (a full walkthrough, plus the mistakes that fail it), and a validation script that checks behaviour rather than just object fields.
+Labs are **graded** against the live state of the cluster. Each carries a `question.md` (the task), a `solution.md` (a full walkthrough, plus the mistakes that fail it), and a validation script that checks behaviour rather than just object fields.
 
 ---
 

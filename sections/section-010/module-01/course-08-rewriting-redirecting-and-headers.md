@@ -392,6 +392,6 @@ astrona submit -c sections/section-010/module-01/labs/lab-02
 When the mission is done, remove it and wake your playground up again:
 
 ```sh
-astrona destroy ats-014-lab-010-02
+astrona destroy ats-014-lab-010-01-02
 astrona start ats-014-playground-010-01
 ```

@@ -1,12 +1,12 @@
 # Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries)
 
-Astronaut, this is the section where things break in space. Every spaceship (pod) in the fleet depends on ships it does not control. A signal can get lost, a ship can be overloaded, a ship can be damaged, and a whole planet's squadron can go dark.
+This section is about failure. Every pod in the mesh depends on services it does not control. A request can get lost, a service can be overloaded, a pod can start returning errors, and every pod in one zone can go down at once.
 
-Resilience features are what the **calling** ship can do about that, without any help from the ship it is calling. It can set an abort window (a timeout), re-send a lost signal (a retry), raise its shields instead of queueing work it cannot finish (a circuit breaker), pull a damaged ship out of formation (outlier detection), and prefer ships orbiting a planet that still works (locality failover).
+Resilience features are what the **calling** side can do about that, without any change to the service it calls. It can stop waiting after a set time (a timeout), send a failed request again (a retry), reject requests at once instead of queueing work that cannot finish (circuit breaking), remove a failing endpoint for a while (outlier detection), and prefer endpoints in a locality that still works (locality failover).
 
-All four modules configure the **calling** side. Nothing here requires the backend to change, and nothing here protects the server: a connection pool is per client, and an ejection is one communications officer's (one proxy's) private decision. The exam keeps coming back to that point.
+All four modules configure the **calling** side. Nothing here requires the backend to change, and nothing here protects the server. A connection pool limit applies per client, and an ejection is the decision of one proxy only. The exam keeps coming back to that point.
 
-The modules build on each other, and so do their failure modes. Timeouts and retries share one clock. Circuit breaking is the pool that retries can overwhelm. Outlier detection is what marks an endpoint bad, and locality failover cannot work without it. Put together, they stop one failing ship from becoming a Death Star: one weak spot that takes the whole fleet down.
+The modules build on each other, and so do their failure modes. Timeouts and retries share one time budget. Circuit breaking limits the connection pool that retries can fill up. Outlier detection is what marks an endpoint as failing, and locality failover cannot work without it. Together they stop one failing service from becoming a single point of failure for the whole application.
 
 **Curriculum item covered:** Using Resilience Features (circuit breaking, failover, outlier detection, timeouts, retries)
 
@@ -18,7 +18,7 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 - `retries` with `attempts`, `perTryTimeout` and `retryOn`, including which conditions exist and why 4xx is never retried.
 - The off-by-one: `attempts` counts retries *after* the first try; Envoy calls it `numRetries`.
 - Istio's implicit default retry policy, and that only `attempts: 0` disables it.
-- The budget rule — `timeout ≥ (attempts + 1) × perTryTimeout` — and the 504 that signals you broke it.
+- The budget rule — `timeout ≥ (attempts + 1) × perTryTimeout` — and the 504 that shows you broke it.
 - Splitting a route by `method` so writes are never retried.
 - `connectionPool` TCP and HTTP limits as a two-stage queue, enforced per client, capping concurrency rather than volume.
 - Identifying a breaker rejection by the `UO` flag and `upstream_rq_pending_overflow`, and confirming it by the backend's silence.
@@ -39,56 +39,56 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 
 Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
 
-### [Timeouts And Retries](module-01/course.md)
+### Timeouts And Retries
 
 4 parts and 3 missions:
 
-1. [Set An Abort Window](module-01/course-01-set-an-abort-window.md)
-2. [Test A Timeout Across Two Ships](module-01/course-02-test-a-timeout-across-two-ships.md)
-   - Mission: [Free The Shuttle From A Slow Navcom Lab](module-01/labs/lab-02/question.md)
-3. [Re-Send Lost Signals](module-01/course-03-re-send-lost-signals.md)
-   - Mission: [Retry Only The Signals Worth Re-Sending Lab](module-01/labs/lab-03/question.md)
-4. [Share One Clock, Retry What Is Safe](module-01/course-04-share-one-clock-and-retry-what-is-safe.md)
-   - Mission: [Timeouts And Retries Lab](module-01/labs/lab-01/question.md)
-5. [Wrap-Up: Mission Debrief](module-01/course-05-wrap-up.md)
+1. Set An Abort Window
+2. Test A Timeout Across Two Ships
+   - Mission: Free The Shuttle From A Slow Navcom Lab
+3. Re-Send Lost Signals
+   - Mission: Retry Only The Signals Worth Re-Sending Lab
+4. Share One Clock, Retry What Is Safe
+   - Mission: Timeouts And Retries Lab
+5. Wrap-Up: Mission Debrief
 
-### [Circuit Breaking With Connection Pool Limits](module-02/course.md)
-
-3 parts and 2 missions:
-
-1. [The Connection Pool](module-02/course-01-the-connection-pool.md)
-2. [Overflow And Its Signatures](module-02/course-02-overflow-and-its-signatures.md)
-   - Mission: [Circuit Breaking With Connection Pool Limits Lab](module-02/labs/lab-01/question.md)
-3. [Scope, Verification And Retry Amplification](module-02/course-03-scope-verification-and-retry-amplification.md)
-   - Mission: [Calm The Retry Storm Lab](module-02/labs/lab-02/question.md)
-4. [Wrap-Up: Mission Debrief](module-02/course-04-wrap-up.md)
-
-### [Outlier Detection And Endpoint Ejection](module-03/course.md)
+### Circuit Breaking With Connection Pool Limits
 
 3 parts and 2 missions:
 
-1. [Passive Health Checking](module-03/course-01-passive-health-checking.md)
-2. [Ejection Mechanics And Limits](module-03/course-02-ejection-mechanics-and-limits.md)
-   - Mission: [Outlier Detection And Endpoint Ejection Lab](module-03/labs/lab-01/question.md)
-3. [Local, Temporary, And Verified](module-03/course-03-local-temporary-and-verified.md)
-   - Mission: [Raise Both Shields Lab](module-03/labs/lab-02/question.md)
-4. [Wrap-Up: Mission Debrief](module-03/course-04-wrap-up.md)
+1. The Connection Pool
+2. Overflow And Its Signatures
+   - Mission: Circuit Breaking With Connection Pool Limits Lab
+3. Scope, Verification And Retry Amplification
+   - Mission: Calm The Retry Storm Lab
+4. Wrap-Up: Mission Debrief
 
-### [Locality Load Balancing And Failover](module-04/course.md)
+### Outlier Detection And Endpoint Ejection
+
+3 parts and 2 missions:
+
+1. Passive Health Checking
+2. Ejection Mechanics And Limits
+   - Mission: Outlier Detection And Endpoint Ejection Lab
+3. Local, Temporary, And Verified
+   - Mission: Raise Both Shields Lab
+4. Wrap-Up: Mission Debrief
+
+### Locality Load Balancing And Failover
 
 3 parts and 3 missions:
 
-1. [Where Locality Comes From](module-04/course-01-where-locality-comes-from.md)
-   - Mission: [Give Every Ship Its Orbit Lab](module-04/labs/lab-02/question.md)
-2. [Preference, Distribute And Failover](module-04/course-02-preference-distribute-and-failover.md)
-   - Mission: [Split Signals Between Two Orbits Lab](module-04/labs/lab-03/question.md)
-3. [The Health Dependency And Scope](module-04/course-03-the-health-dependency-and-scope.md)
-   - Mission: [Locality Load Balancing And Failover Lab](module-04/labs/lab-01/question.md)
-4. [Wrap-Up: Mission Debrief](module-04/course-04-wrap-up.md)
+1. Where Locality Comes From
+   - Mission: Give Every Ship Its Orbit Lab
+2. Preference, Distribute And Failover
+   - Mission: Split Signals Between Two Orbits Lab
+3. The Health Dependency And Scope
+   - Mission: Locality Load Balancing And Failover Lab
+4. Wrap-Up: Mission Debrief
 
 ### Capstone
 
-Your final mission for this section: **[A Resilient Payment Path Capstone Lab](capstone/labs/lab-01/README.md)**.
+The section ends with a capstone lab that uses everything in it: **A Resilient Payment Path Capstone Lab**.
 
 ---
 

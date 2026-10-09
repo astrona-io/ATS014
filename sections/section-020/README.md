@@ -1,8 +1,10 @@
 # Configuring Traffic Shifting
 
-Astronaut, this section is about launching a new ship class into a fleet that is already flying. Releasing a new version is a traffic problem before it is a deployment problem. The spaceships (pods) are easy to launch; the hard questions are how many real signals (requests) reach them, and how fast you can change your mind.
+This section is about releasing a new version of a service while the old one keeps serving traffic. Releasing a new version is a traffic problem before it is a deployment problem. Starting the new pods is easy. The hard questions are how many real requests reach them, and how fast you can go back.
 
-Istio gives two answers and this section covers both. Weighted routing moves a controllable percentage of live traffic to the new version — like sending a small share of signals to the new ship class before the whole fleet switches. Real users, real responses, reversible in one apply. Mirroring sends the new version a *copy* of production traffic and throws the answer away — a test ship that hears every signal while nobody listens to its replies. It sees real load while no user is exposed to it. They solve the same problem from opposite ends, and choosing between them is a real decision: weights give you the candidate's answers, mirroring gives you its behaviour under load with no way to compare output.
+Istio gives two answers, and this section covers both. Weighted routing sends a set percentage of live requests to the new version. Real users get real responses from it, and one apply undoes it. Mirroring sends the new version a *copy* of each request and throws its response away. The new version sees real load, and no user ever gets its response.
+
+The two features solve the same problem from opposite ends, so choosing between them is a real decision. Weights show you the new version's responses. Mirroring shows you its behaviour under load, but gives you no way to compare its output.
 
 **Curriculum item covered:** Configuring Traffic Shifting
 
@@ -30,31 +32,31 @@ Istio gives two answers and this section covers both. Weighted routing moves a c
 
 Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
 
-### [Shift Traffic With Weighted Routing](module-01/course.md)
+### Shift Traffic With Weighted Routing
 
 3 parts and 2 missions:
 
-1. [Weighted Destinations](module-01/course-01-weighted-destinations.md)
-   - Mission: [Split The Scout Three Ways Lab](module-01/labs/lab-02/question.md)
-2. [Running A Rollout](module-01/course-02-running-a-rollout.md)
-3. [Weight Versus Replicas, And Proof](module-01/course-03-weight-versus-replicas-and-proof.md)
-   - Mission: [Shift Traffic With Weighted Routing Lab](module-01/labs/lab-01/question.md)
-4. [Wrap-Up: Mission Debrief](module-01/course-04-wrap-up.md)
+1. Weighted Destinations
+   - Mission: Split The Scout Three Ways Lab
+2. Running A Rollout
+3. Weight Versus Replicas, And Proof
+   - Mission: Shift Traffic With Weighted Routing Lab
+4. Wrap-Up: Mission Debrief
 
-### [Mirror Live Traffic To A Shadow Service](module-02/course.md)
+### Mirror Live Traffic To A Shadow Service
 
 3 parts and 2 missions:
 
-1. [Mirror As A Sibling Of Route](module-02/course-01-mirror-as-a-sibling-of-route.md)
-2. [Identifying And Sampling Shadow Traffic](module-02/course-02-identifying-and-sampling-shadow-traffic.md)
-   - Mission: [Mirror Live Traffic To A Shadow Service Lab](module-02/labs/lab-01/question.md)
-3. [Consequences, Verification And Limits](module-02/course-03-consequences-verification-and-limits.md)
-   - Mission: [Find The Quiet Shadow Lab](module-02/labs/lab-02/question.md)
-4. [Wrap-Up: Mission Debrief](module-02/course-04-wrap-up.md)
+1. Mirror As A Sibling Of Route
+2. Identifying And Sampling Shadow Traffic
+   - Mission: Mirror Live Traffic To A Shadow Service Lab
+3. Consequences, Verification And Limits
+   - Mission: Find The Quiet Shadow Lab
+4. Wrap-Up: Mission Debrief
 
 ### Capstone
 
-Your final mission for this section: **[Canary And Shadow At The Same Time Capstone Lab](capstone/labs/lab-01/README.md)**.
+The section ends with a capstone lab that uses everything in it: **Canary And Shadow At The Same Time Capstone Lab**.
 
 ---
 

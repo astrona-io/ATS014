@@ -1,10 +1,10 @@
 # Configuring Ingress And Egress Traffic — Egress
 
-Astronaut, without an egress gateway every spaceship (pod) sends its own signals straight out of the solar system (cluster). That gives you as many source addresses as you have nodes. The audit trail is spread across every communications officer's (sidecar's) log. And if a planet in another solar system wants a client certificate, every ship that calls it needs a copy.
+Without an egress gateway, every pod sends its own requests straight out of the cluster. That gives you as many source addresses as you have nodes. The record of outbound traffic is spread across the log of every sidecar proxy. And if an outside service asks for a client certificate, every pod that calls it needs a copy.
 
-An egress gateway pulls all of that into one place. Think of it as the solar system's **departure gate**: one checked exit that outgoing signals can be sent through. It is one standalone proxy. In this section you build the path to that gate, then move the TLS handshake onto it.
+An **egress gateway** pulls all of that into one place. It is a standalone Envoy proxy that outbound requests can be sent through, so traffic leaves the mesh at one point. In this section you build the route to the egress gateway, then move the TLS handshake onto it.
 
-The most important idea of this section comes first. Carry it into the exam: **an egress gateway intercepts nothing**. A signal reaches the gate only because a two-stage `VirtualService` (a flight plan) sent it there. A running egress gateway pod proves nothing at all.
+The most important idea of this section comes first. Carry it into the exam: **an egress gateway intercepts nothing**. A request reaches the egress gateway only because a two-stage `VirtualService` sent it there. A running egress gateway pod proves nothing at all.
 
 **Curriculum item covered:** Configuring Ingress and Egress Traffic (the egress half)
 
@@ -31,35 +31,35 @@ The most important idea of this section comes first. Carry it into the exam: **a
 
 Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
 
-### [Route External Traffic Through An Egress Gateway](module-01/course.md)
+### Route External Traffic Through An Egress Gateway
 
 5 parts and 2 missions:
 
-1. [A Gateway That Carries Nothing](module-01/course-01-a-gateway-that-carries-nothing.md)
-2. [Open The Departure Gate](module-01/course-02-open-the-departure-gate.md)
-3. [The Two-Stage `VirtualService`](module-01/course-03-the-two-stage-virtualservice.md)
-4. [Prove The Hop, And Break It](module-01/course-04-prove-the-hop-and-break-it.md)
-   - Mission: [Repair The Departure Gate Lab](module-01/labs/lab-02/question.md)
-5. [Choose Who Flies Through The Gate](module-01/course-05-choose-who-flies-through-the-gate.md)
-   - Mission: [Send One Ship Through The Departure Gate Lab](module-01/labs/lab-01/question.md)
-6. [Wrap-Up: Mission Debrief](module-01/course-06-wrap-up.md)
+1. A Gateway That Carries Nothing
+2. Open The Departure Gate
+3. The Two-Stage `VirtualService`
+4. Prove The Hop, And Break It
+   - Mission: Repair The Departure Gate Lab
+5. Choose Who Flies Through The Gate
+   - Mission: Send One Ship Through The Departure Gate Lab
+6. Wrap-Up: Mission Debrief
 
-### [TLS Origination At The Egress Gateway](module-02/course.md)
+### TLS Origination At The Egress Gateway
 
 5 parts and 2 missions:
 
-1. [The Five-Step Chain](module-02/course-01-the-five-step-chain.md)
-2. [Originate TLS At The Gate](module-02/course-02-originate-tls-at-the-gate.md)
-3. [Where The `DestinationRule` Attaches](module-02/course-03-where-the-destinationrule-attaches.md)
-   - Mission: [Lock The Signal At The Departure Gate Lab](module-02/labs/lab-01/question.md)
-4. [A Partner That Checks IDs](module-02/course-04-a-partner-that-checks-ids.md)
-5. [Hand The Gate Its Keys](module-02/course-05-hand-the-gate-its-keys.md)
-   - Mission: [Open The Partner's Locked Door Lab](module-02/labs/lab-02/question.md)
-6. [Wrap-Up: Mission Debrief](module-02/course-06-wrap-up.md)
+1. The Five-Step Chain
+2. Originate TLS At The Gate
+3. Where The `DestinationRule` Attaches
+   - Mission: Lock The Signal At The Departure Gate Lab
+4. A Partner That Checks IDs
+5. Hand The Gate Its Keys
+   - Mission: Open The Partner's Locked Door Lab
+6. Wrap-Up: Mission Debrief
 
 ### Capstone
 
-Your final mission for this section: **[One Exit, Two Partners Capstone Lab](capstone/labs/lab-01/README.md)**.
+The section ends with a capstone lab that uses everything in it: **One Exit, Two Partners Capstone Lab**.
 
 ---
 

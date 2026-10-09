@@ -1,14 +1,14 @@
 # Configuring Routing Within A Service Mesh
 
-Welcome to your first steering mission, astronaut. In this section you learn to decide where every signal in the fleet flies.
+In this section you learn to decide where every request in the mesh goes.
 
-A Kubernetes Service is a beacon: one call sign that a whole group of ships (pods) answers to. It shares the signals out between the ships, but it cannot read a signal, and it cannot be told that some signals matter more than others. Istio's answer is a communications officer (a proxy) on every ship, plus two objects that tell that officer what to do with the signals it sees. A `VirtualService` is the flight plan. A `DestinationRule` is the docking instructions.
+A Kubernetes Service gives a group of pods one name and one address. It spreads requests across those pods, but it cannot read a request, and it cannot treat some requests differently from others. Istio adds a sidecar proxy to every pod, plus two objects that tell the proxy what to do with each request. A `VirtualService` sets how requests to a host are routed. A `DestinationRule` defines the destinations a route can pick, such as subsets of pods by version.
 
-This section covers both ends of that idea. First, it follows the signal’s journey: how a rule matches, which destination it selects, what else a matched rule can do to it, and how to prove the rule reached the proxy.
+The section starts with the path of one request: how a rule matches, which destination it selects, what else a matched rule can change, and how to prove the rule reached the proxy.
 
-Then it looks at the opposite direction. It asks how much of the star chart each ship should carry, and how to reduce the full service registry to only the hosts a workload actually needs to communicate with.
+Then it looks at the proxy's configuration size. By default every sidecar proxy gets configuration for every host in the service registry. The `Sidecar` resource cuts that down to only the hosts a workload needs.
 
-Finally, it covers timing: the order in which these objects should be applied and removed so no signal ever points to something that does not exist yet — “make before break” — along with the defaults Istio uses when you leave the configuration unspecified.
+Finally, it covers order: how to apply and remove these objects so no route ever points at something that does not exist yet ("make before break"), and the defaults Istio uses when you leave a setting out.
 
 ---
 
@@ -38,50 +38,50 @@ Finally, it covers timing: the order in which these objects should be applied an
 
 Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
 
-### [Route Requests Within The Mesh](module-01/course.md)
+### Route Requests Within The Mesh
 
 9 parts and 5 missions:
 
-1. [Where Signals Go Today](module-01/course-01-where-signals-go-today.md)
-2. [Name The Ship Classes](module-01/course-02-name-the-ship-classes.md)
-   - Mission: [Fix The Docking Instructions Lab](module-01/labs/lab-03/question.md)
-3. [Write A Flight Plan](module-01/course-03-write-a-flight-plan.md)
-4. [Match Exactly What You Mean](module-01/course-04-match-exactly-what-you-mean.md)
-5. [Put Your Rules In Order](module-01/course-05-put-your-rules-in-order.md)
-   - Mission: [Route Requests By Header, URI And Query Parameter Lab](module-01/labs/lab-01/question.md)
-6. [Put The Flight Plan On The Right Planet](module-01/course-06-put-the-flight-plan-on-the-right-planet.md)
-7. [Read The Flight Log And The Proxy's Orders](module-01/course-07-read-the-flight-log-and-the-proxys-orders.md)
-   - Mission: [Find Out Why The Flight Plan Does Nothing Lab](module-01/labs/lab-04/question.md)
-8. [Rewriting, Redirecting And Headers](module-01/course-08-rewriting-redirecting-and-headers.md)
-   - Mission: [Reshape A Request Lab](module-01/labs/lab-02/question.md)
-9. [Routing Non-HTTP Traffic](module-01/course-09-routing-non-http-traffic.md)
-   - Mission: [Bring HTTP Routing Back Lab](module-01/labs/lab-05/question.md)
-10. [Wrap-Up: Mission Debrief](module-01/course-10-wrap-up.md)
+1. Where Signals Go Today
+2. Name The Ship Classes
+   - Mission: Fix The Docking Instructions Lab
+3. Write A Flight Plan
+4. Match Exactly What You Mean
+5. Put Your Rules In Order
+   - Mission: Route Requests By Header, URI And Query Parameter Lab
+6. Put The Flight Plan On The Right Planet
+7. Read The Flight Log And The Proxy's Orders
+   - Mission: Find Out Why The Flight Plan Does Nothing Lab
+8. Rewriting, Redirecting And Headers
+   - Mission: Reshape A Request Lab
+9. Routing Non-HTTP Traffic
+   - Mission: Bring HTTP Routing Back Lab
+10. Wrap-Up: Mission Debrief
 
-### [Scope Proxy Configuration With The Sidecar Resource](module-02/course.md)
+### Scope Proxy Configuration With The Sidecar Resource
 
 4 parts and 2 missions:
 
-1. [Every Ship Carries The Whole Star Chart](module-02/course-01-every-ship-carries-the-whole-star-chart.md)
-2. [Give A Ship A Smaller Star Chart](module-02/course-02-give-a-ship-a-smaller-star-chart.md)
-   - Mission: [Scope Proxy Configuration With The Sidecar Resource Lab](module-02/labs/lab-01/question.md)
-3. [Which Star Chart A Ship Uses](module-02/course-03-which-star-chart-a-ship-uses.md)
-   - Mission: [Fix One Ship's Star Chart Lab](module-02/labs/lab-02/question.md)
-4. [A Star Chart Is Not A Shield](module-02/course-04-a-star-chart-is-not-a-shield.md)
-5. [Wrap-Up: Mission Debrief](module-02/course-05-wrap-up.md)
+1. Every Ship Carries The Whole Star Chart
+2. Give A Ship A Smaller Star Chart
+   - Mission: Scope Proxy Configuration With The Sidecar Resource Lab
+3. Which Star Chart A Ship Uses
+   - Mission: Fix One Ship's Star Chart Lab
+4. A Star Chart Is Not A Shield
+5. Wrap-Up: Mission Debrief
 
-### [Apply And Remove Traffic Rules Safely](module-03/course.md)
+### Apply And Remove Traffic Rules Safely
 
 2 parts and 1 mission:
 
-1. [The Order To Apply And Remove Rules](module-03/course-01-the-order-to-apply-and-remove-rules.md)
-   - Mission: [Retire A Ship Class Safely Lab](module-03/labs/lab-01/question.md)
-2. [One Object Per Host, And The Defaults](module-03/course-02-one-object-per-host-and-the-defaults.md)
-3. [Wrap-Up: Mission Debrief](module-03/course-03-wrap-up.md)
+1. The Order To Apply And Remove Rules
+   - Mission: Retire A Ship Class Safely Lab
+2. One Object Per Host, And The Defaults
+3. Wrap-Up: Mission Debrief
 
 ### Capstone
 
-Your final mission for this section: **[Route And Scope A Storefront Capstone Lab](capstone/labs/lab-01/README.md)**.
+The section ends with a capstone lab that uses everything in it: **Route And Scope A Storefront Capstone Lab**.
 
 ---
 
