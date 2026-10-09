@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-relay-route"
-      description: "Confirms the starfleet Sidecar is still REGISTRY_ONLY, the VirtualService is unchanged, one ServiceEntry registers the relay with an HTTP port and reaches the shuttle's proxy, and live signals reach the relay, hit the 2s timeout and still cannot reach the rogue"
+      description: "Confirms the starfleet Sidecar is still REGISTRY_ONLY, the VirtualService is unchanged, one ServiceEntry registers the relay with an HTTP port and reaches the shuttle's proxy, and live requests reach the relay, hit the 2s timeout and still cannot reach the rogue"
       type: "file"
       source: "validation/validate-completed.sh"
 

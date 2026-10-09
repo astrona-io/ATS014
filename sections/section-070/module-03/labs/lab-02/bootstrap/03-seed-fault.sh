@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# The lab's starting state: a freighter beacon broken in three places.
+# The lab's starting state: a freighter ServiceEntry broken in three places.
 #   1. The ServiceEntry's workloadSelector asks for app=freighters, a label no
 #      WorkloadEntry carries, so the host has zero endpoints (503 UH).
 #   2. WorkloadEntry freighter-vm-2 carries app=freigther (two letters swapped),
 #      so even with the selector fixed, only freighter-vm-1 answers.
-#   3. The ServiceEntry says MESH_EXTERNAL. Signals work with it, but it treats
-#      the fleet's own machines as strangers. The task demands MESH_INTERNAL.
+#   3. The ServiceEntry says MESH_EXTERNAL. Requests work with it, but it treats
+#      machines that belong to the mesh as external services. The task demands MESH_INTERNAL.
 # The DestinationRule (tls DISABLE) is part of the environment, not a fault:
 # the stand-ins have no sidecar and cannot answer mutual TLS.
 set -euo pipefail

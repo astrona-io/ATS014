@@ -18,7 +18,7 @@ cd "$(dirname "$0")"
 echo "==> Namespace and access logs"
 kubectl apply -f manifests/namespace.yaml -f manifests/access-logs.yaml
 
-echo "==> Shuttle and the two old freighters"
+echo "==> Shuttle and the two freighter pods"
 kubectl apply -f manifests/shuttle.yaml
 kubectl apply -f manifests/freighter.yaml
 

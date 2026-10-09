@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # The lab's starting state: TLS origination to the vault, with two mistakes.
 #   - The VirtualService matches port 80, but the shuttle calls port 8080, so
-#     the signal is never moved to 8443.
-#   - The DestinationRule seals port 8080 instead of 8443: the proxy speaks
+#     the request is never moved to 8443.
+#   - The DestinationRule sets TLS on port 8080 instead of 8443: the proxy speaks
 #     TLS to the plain port and plain HTTP to the TLS port.
 # The ServiceEntry is correct. Fixing the other two is the task.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.
