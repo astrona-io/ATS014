@@ -22,7 +22,7 @@ training:
 modules:
 
   - id: module-intro
-    title: "Mission Briefing"
+    title: "Introduction"
     description: >
       Start here. What this course trains you to do, how it is laid out, how
       to get your machine ready with the astrona command-line tool, how the
@@ -31,14 +31,14 @@ modules:
 
     content:
       - type: reading
-        title: Mission Briefing
+        title: Introduction
         path: sections/intro/README.md
       - type: reading
-        title: "Welcome, Astronaut"
+        title: "Welcome To The Course"
         path: sections/intro/course-01-welcome.md
       - type: reading
-        title: "Before Your First Launch"
-        path: sections/intro/course-02-before-your-first-launch.md
+        title: "Get Your Machine Ready"
+        path: sections/intro/course-02-get-your-machine-ready.md
       - type: reading
         title: "How This Course Is Made"
         path: sections/intro/course-03-how-this-course-is-made.md

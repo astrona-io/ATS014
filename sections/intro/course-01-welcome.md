@@ -1,4 +1,4 @@
-# Welcome, Astronaut
+# Welcome To The Course
 
 This course trains you for the **Traffic Management** part of the **Istio Certified Associate (ICA)** exam. That part is 35% of the exam, the biggest single piece of it.
 

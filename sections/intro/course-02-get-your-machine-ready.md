@@ -1,4 +1,4 @@
-# Before Your First Launch
+# Get Your Machine Ready
 
 Every playground and lab in this course runs on your own machine, in a small Kubernetes cluster. A tool called `astrona` builds it for you, sets it up, grades your work and removes it again. This page gets your machine ready.
 

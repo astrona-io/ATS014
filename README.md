@@ -21,7 +21,7 @@ Your flight path for each module: read its parts with its playground open alongs
 
 ## Start Here
 
-New to the course? Read the **[Mission Briefing](sections/intro/README.md)** first. It explains how the course is laid out, how to get your machine ready, how the content is made, who maintains it, and how to report a mistake.
+New to the course? Read the **[Introduction](sections/intro/README.md)** first. It explains how the course is laid out, how to get your machine ready, how the content is made, who maintains it, and how to report a mistake.
 
 ---
 
@@ -57,7 +57,7 @@ Section [000](sections/section-000) is not an exam topic. It is pre-flight train
 
 **20 modules · 80 parts · 48 graded labs · 8 capstones · 20 playgrounds.**
 
-The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml): 245 entries across the briefing and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
+The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml): 245 entries across the introduction and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
 
 Sections are ordered so each needs only what came before. Section 000 is foundations — what a sidecar is, how `istiod` programs it, and how to read a proxy's live configuration — because every section after it assumes all three. `VirtualService` and `DestinationRule` are introduced first because everything else is a field on one of them; `ServiceEntry` (070) precedes the egress gateway (080) that depends on it.
 
