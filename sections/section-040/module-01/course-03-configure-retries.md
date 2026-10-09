@@ -2,7 +2,7 @@
 
 Many failures only last a moment. A pod restarts, a connection drops, or one request reaches a pod that is briefly in trouble. Send the same request again a moment later and it often succeeds. A **retry** is exactly that: the client's sidecar proxy sends a failed request again, before the application ever sees the failure.
 
-A sidecar proxy is the Envoy container that Istio adds to each pod; all traffic in and out of the pod passes through it. This part covers the three fields that control retries, the off-by-one in the most important one, how to choose which failures to retry, and the retry policy that runs even when you set none.
+A sidecar proxy is the Envoy container that Istio adds to each pod; all traffic in and out of the pod passes through it. This part covers how a retry works, the three fields of a retry policy, the off-by-one in the most important one, and how many retries run when you set none or set `attempts: 0`.
 
 ## How a retry works
 
@@ -49,38 +49,7 @@ http:
 
 Learn the `attempts` off-by-one now. Envoy's own name for the field, `numRetries`, says it more clearly. When a task says "three attempts", decide whether it means three requests (`attempts: 2`) or three retries (`attempts: 3`).
 
-## Which failures `retryOn` retries
-
-The `retryOn` field takes a list of conditions. These are the ones you meet most often:
-
-| Condition | Retries when |
-| --- | --- |
-| `5xx` | the receiver answered with any 5xx status, or a try ran past its `perTryTimeout` |
-| `gateway-error` | narrower: only 502, 503 and 504 |
-| `connect-failure` | the connection could not be made |
-| `refused-stream` | the receiver refused the stream (HTTP/2) |
-| `reset` | the receiver reset the connection before it answered |
-| `retriable-4xx` | the receiver answered 409 |
-| `"503"` | the response has exactly this status code. Write the number in quotes |
-
-You can mix names and numbers: `retryOn: connect-failure,reset,503`. For each failed try, the sidecar proxy asks three questions in this order:
-
-```mermaid
-flowchart TB
-    A["a try fails"] --> Q{"matches retryOn?"}
-    Q -->|"no"| S["client gets the failure"]
-    Q -->|"yes"| B{"retries left?"}
-    B -->|"no"| S
-    B -->|"yes"| T{"time left?"}
-    T -->|"no"| X["504, no more retries"]
-    T -->|"yes"| R["retry"]
-```
-
-The diagram shows that a retry needs a matching failure, a retry left and time left. The third question matters most: the route `timeout` is one time limit for the first try and every retry together. If it runs out, no retry is sent, however many are left.
-
-Notice what is missing from the table: most **4xx** codes. A `400` or `404` is the client's own mistake, and a retry gets the same response, only slower.
-
-The choice between `5xx` and `gateway-error` also matters. `gateway-error` means "the receiver, or something on the way to it, had a problem". `5xx` also includes `500`, which is an error inside the application itself. A `500` usually fails the same way on every try, so retrying it rarely helps.
+In the example, `retryOn: 5xx,connect-failure,reset` retries any response with a 5xx status code, a connection that could not be made, and a connection the receiver reset before it answered. That is a broad list, which makes it a good start for watching retries happen.
 
 ## Watch the retries happen
 
@@ -161,102 +130,6 @@ You should see something like:
 ```
 
 Without retries, about half of these requests would fail. With three retries, a request only fails when four tries in a row fail, so most of them succeed. Retries make failures rarer. They do not make them impossible.
-
-## Choose which failures to retry
-
-The `retryOn` field decides which failures count. Two choices from the table are worth seeing for yourself.
-
-### Retry only gateway errors
-
-The first choice is `gateway-error`. Save this as `virtualservice-probe-retry-gateway-error.yaml`:
-
-```yaml
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: probe
-  namespace: starfleet
-spec:
-  hosts:
-  - probe
-  http:
-  - route:
-    - destination:
-        host: probe
-    retries:
-      attempts: 3
-      retryOn: gateway-error
-```
-
-Apply it:
-
-```sh
-kubectl apply -f virtualservice-probe-retry-gateway-error.yaml
-```
-
-Then send a `500` and a `502`, and count each at the probe:
-
-```sh
-status_and_time http://probe:8000/status/500; count_received "status/500"
-status_and_time http://probe:8000/status/502; count_received "status/502"
-```
-
-You should see:
-
-```text
-500 0.007943s
-1
-502 0.145082s
-4
-```
-
-The application's own `500` reached the probe once: it was not retried. The `502` is a gateway error, so the sidecar proxy retried it three times.
-
-### Retry one exact status code
-
-The second choice is one exact status code. Save this as `virtualservice-probe-retry-503.yaml`:
-
-```yaml
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: probe
-  namespace: starfleet
-spec:
-  hosts:
-  - probe
-  http:
-  - route:
-    - destination:
-        host: probe
-    retries:
-      attempts: 3
-      retryOn: "503"
-```
-
-Apply it:
-
-```sh
-kubectl apply -f virtualservice-probe-retry-503.yaml
-```
-
-Then send a `503` and a `502`:
-
-```sh
-status_and_time http://probe:8000/status/503; count_received "status/503"
-status_and_time http://probe:8000/status/502; count_received "status/502"
-```
-
-You should see:
-
-```text
-503 0.124179s
-4
-502 0.003489s
-1
-```
-
-Only the exact code `503` is retried. The `502` now reaches the probe once.
 
 ## The retry policy nobody configured
 
@@ -345,7 +218,7 @@ You should see something like:
 
 Each request now gets exactly one try, so the flaky path fails about as often as it fails on its own.
 
-You can now write a retry policy, choose which failures it retries, count the retries at the receiver, and switch retries off. The open question is how retries and the route timeout work together, because they share one time limit.
+You can now write a retry policy, count the retries at the receiver, read the default retry policy from the proxy, and switch retries off. The open question is which failures a policy should retry, because retrying the wrong ones only sends a backend more requests.
 
 ## Common pitfalls
 
@@ -353,35 +226,5 @@ You can now write a retry policy, choose which failures it retries, count the re
 > - **Reading `attempts` as the total number of requests.** It counts retries *after* the first try. `attempts: 3` sends up to four requests.
 > - **Expecting the default retries to cover application errors.** The default only covers connection problems. Add `retryOn: 5xx`, `gateway-error` or an exact code.
 > - **Believing that removing the `retries` block switches retries off.** The default still retries twice on connection problems. Only `attempts: 0` turns retries off.
-> - **Retrying a `500` with `5xx`.** A `500` is usually an application bug that fails the same way every time. `gateway-error` or an exact code skips it.
 > - **Looking for retries at the client.** The client gets one response. Count the tries in the receiver's access log, or look for `URX` in the client's access log.
 > - **Retrying a broken backend.** Retries help with short failures, not with a backend that is down.
-
-## Your mission: Retry Only One Status Code Lab
-
-You can now set a retry policy, choose which failures it retries, and count the retries at the receiver. In the lab, a policy retries every 5xx, and you must narrow it to the one status code worth another try.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-01/labs/lab-03
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-01/labs/lab-03
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-01-03
-astrona start ats-014-playground-040-01
-```

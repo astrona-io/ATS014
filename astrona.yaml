@@ -705,6 +705,9 @@ modules:
         title: "Configure Retries"
         path: sections/section-040/module-01/course-03-configure-retries.md
       - type: reading
+        title: "Choose Which Failures To Retry"
+        path: sections/section-040/module-01/course-04-choose-which-failures-to-retry.md
+      - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-03/question.md
       - type: lab
@@ -728,7 +731,10 @@ modules:
             url: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter
       - type: reading
         title: "Fit Retries Inside The Timeout"
-        path: sections/section-040/module-01/course-04-fit-retries-inside-the-timeout.md
+        path: sections/section-040/module-01/course-05-fit-retries-inside-the-timeout.md
+      - type: reading
+        title: "Retry Only Idempotent Requests"
+        path: sections/section-040/module-01/course-06-retry-only-idempotent-requests.md
       - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-01/question.md
@@ -750,7 +756,7 @@ modules:
             url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
       - type: reading
         title: "Summary"
-        path: sections/section-040/module-01/course-05-summary.md
+        path: sections/section-040/module-01/course-07-summary.md
 
       - type: reading
         title: "Circuit Breaking With Connection Pool Limits"

@@ -41,16 +41,18 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 ### Timeouts And Retries
 
-4 parts and 3 labs:
+6 parts and 3 labs:
 
 1. Set A Route Timeout
 2. Test A Timeout With A Delay Fault
    - Lab: Move A Timeout Off A Fault Rule Lab
 3. Configure Retries
+4. Choose Which Failures To Retry
    - Lab: Retry Only One Status Code Lab
-4. Fit Retries Inside The Timeout
+5. Fit Retries Inside The Timeout
+6. Retry Only Idempotent Requests
    - Lab: Set Timeouts And Retries Per HTTP Method Lab
-5. Summary
+7. Summary
 
 ### Circuit Breaking With Connection Pool Limits
 

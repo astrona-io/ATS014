@@ -51,10 +51,10 @@ The playground guide ends with two exam-style practice tasks with checked soluti
 
 ## The order of the parts
 
-The module has four parts, a lab after each of the last three parts, and a summary at the end.
+The module has six parts, a lab after the second, fourth and sixth parts, and a summary at the end.
 
 The first part shows that Istio sets no route timeout by default, how to set one, and how to find the `UT` response flag in the access log. The second part tests a timeout across two services with a delay fault, shows that the receiver keeps working, and shows why a delay and a timeout on the same rule never fire. Its lab asks you to move a timeout off a rule with a fault.
 
-The third part configures retries with `attempts`, `perTryTimeout` and `retryOn`, counts the retries at the receiver, and shows the default retry policy and how to switch it off. Its lab asks you to narrow a retry policy to one status code.
+The third part configures retries with `attempts` and `perTryTimeout`, counts the retries at the receiver, and shows the default retry policy and how to switch it off. The fourth part chooses which failures to retry with `retryOn`, comparing `gateway-error` with an exact status code. Its lab asks you to narrow a retry policy to one status code.
 
-The fourth part fits the retries inside the route timeout, reads both settings from the proxy, and keeps retries away from requests that are not safe to repeat. Its lab asks you to give a write path no retries and a read path retries that fit inside their timeout.
+The fifth part fits the retries inside the route timeout and reads both settings from the proxy. The sixth part keeps retries away from requests that are not safe to repeat. Its lab asks you to give a write path no retries and a read path retries that fit inside their timeout.
