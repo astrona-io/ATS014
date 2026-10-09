@@ -417,6 +417,9 @@ modules:
         title: "Split Traffic With Weighted Destinations"
         path: sections/section-020/module-01/course-01-split-traffic-with-weighted-destinations.md
       - type: reading
+        title: "Weight Totals, Three-Way Splits And Missing Subsets"
+        path: sections/section-020/module-01/course-02-weight-totals-three-way-splits-and-missing-subsets.md
+      - type: reading
         title: Question
         path: sections/section-020/module-01/labs/lab-02/question.md
       - type: lab
@@ -439,10 +442,13 @@ modules:
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
         title: "Run A Canary Rollout And Roll It Back"
-        path: sections/section-020/module-01/course-02-run-a-canary-rollout-and-roll-it-back.md
+        path: sections/section-020/module-01/course-03-run-a-canary-rollout-and-roll-it-back.md
+      - type: reading
+        title: "Change Weights With A Patch And A Header Rule"
+        path: sections/section-020/module-01/course-04-change-weights-with-a-patch-and-a-header-rule.md
       - type: reading
         title: "Traffic Share, Replica Count And The Route Table"
-        path: sections/section-020/module-01/course-03-traffic-share-replica-count-and-the-route-table.md
+        path: sections/section-020/module-01/course-05-traffic-share-replica-count-and-the-route-table.md
       - type: reading
         title: Question
         path: sections/section-020/module-01/labs/lab-01/question.md
@@ -465,7 +471,7 @@ modules:
             url: https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/
       - type: reading
         title: "Summary"
-        path: sections/section-020/module-01/course-04-summary.md
+        path: sections/section-020/module-01/course-06-summary.md
 
       - type: reading
         title: "Mirror Live Traffic To A Shadow Service"

@@ -65,8 +65,8 @@ Use it like this: `count_versions` for 20 requests, `count_versions 100` for 100
 
 ## The order of the parts
 
-The module has three parts, a lab after the first part, a lab after the third part, and a summary at the end.
+The module has five parts, a lab after the second part, a lab after the fifth part, and a summary at the end.
 
-The first part writes a route with several weighted destinations. It shows where `weight` goes, how the proxy uses it, and what happens when the weights do not add up to 100, when a weight is 0, or when a weight points at a subset that does not exist. Its lab asks you to split the `scout` requests three ways.
+The first part writes a route with two weighted destinations. It shows where `weight` goes and how the proxy uses it: one random pick for each request, before load balancing picks a pod. The second part covers the less tidy cases: weights that do not add up to 100, three destinations, a weight of 0, and a weight on a subset that does not exist. Its lab asks you to split the `scout` requests three ways.
 
-The second part runs a canary rollout: it moves the weights forward step by step, rolls them back in one apply, changes them with a merge patch, and keeps one user out of the split with a header rule. The third part shows that traffic share does not follow the replica count, and reads the weights out of a live proxy. Its lab asks you to run a canary with a header rule above the split, without changing any replica count.
+The third part runs a canary rollout: it measures a split, moves the weights forward step by step, and rolls them back in one apply. The fourth part changes the weights with a merge patch and keeps one user out of the split with a header rule. The fifth part shows that traffic share does not follow the replica count, and reads the weights out of a live proxy. Its lab asks you to run a canary with a header rule above the split, without changing any replica count.

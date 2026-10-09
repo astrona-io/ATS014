@@ -34,14 +34,16 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 ### Shift Traffic With Weighted Routing
 
-3 parts and 2 labs:
+5 parts and 2 labs:
 
 1. Split Traffic With Weighted Destinations
+2. Weight Totals, Three-Way Splits And Missing Subsets
    - Lab: Split Traffic Three Ways With Weights Lab
-2. Run A Canary Rollout And Roll It Back
-3. Traffic Share, Replica Count And The Route Table
+3. Run A Canary Rollout And Roll It Back
+4. Change Weights With A Patch And A Header Rule
+5. Traffic Share, Replica Count And The Route Table
    - Lab: Run A Canary With A Header Rule Above The Split Lab
-4. Summary
+6. Summary
 
 ### Mirror Live Traffic To A Shadow Service
 

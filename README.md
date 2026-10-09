@@ -73,7 +73,7 @@ Each module is a landing page, its ordered parts and a closing page. The landing
 | 010-01 | [Route Requests Within The Mesh](sections/section-010/module-01/course.md) | 12 | 5 |
 | 010-02 | [Scope Proxy Configuration With The Sidecar Resource](sections/section-010/module-02/course.md) | 4 | 2 |
 | 010-03 | [Apply And Remove Traffic Rules Safely](sections/section-010/module-03/course.md) | 2 | 1 |
-| 020-01 | [Shift Traffic With Weighted Routing](sections/section-020/module-01/course.md) | 3 | 2 |
+| 020-01 | [Shift Traffic With Weighted Routing](sections/section-020/module-01/course.md) | 5 | 2 |
 | 020-02 | [Mirror Live Traffic To A Shadow Service](sections/section-020/module-02/course.md) | 4 | 2 |
 | 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | 5 | 3 |
 | 040-01 | [Timeouts And Retries](sections/section-040/module-01/course.md) | 6 | 3 |
