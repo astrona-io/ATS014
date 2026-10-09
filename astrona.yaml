@@ -75,7 +75,7 @@ modules:
         estimated_duration: 15m
         topic: foundations
         task_kind: troubleshooting
-        tags: [sidecar-injection, proxy-status, istioctl-analyze]
+        tags: [sidecar-injection, native-sidecar, proxy-status, istioctl-analyze]
         learning_goals:
           - Find workloads that run without a sidecar although nothing reports an error
           - Enable injection for a namespace and remove a pod-level opt-out so every workload joins the mesh

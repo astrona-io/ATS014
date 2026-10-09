@@ -460,7 +460,7 @@ this order:
 - Edge and outside: `ingress-gateway`, `allowed-routes`, `egress-gateway`,
   `tls-origination`, `tls-termination`, `registry-only`,
   `external-services`, `virtual-machines`, `sidecar-scoping`,
-  `sidecar-injection`
+  `sidecar-injection`, `native-sidecar`
 - Failure signatures: `404-nr`, `503-nc`, `503-uh`, `503-uo`, `504-ut`,
   `ist0101`, `ist0130`, `ist0173`
 - Tools: `proxy-config`, `proxy-status`, `istioctl-analyze`, `access-log`
