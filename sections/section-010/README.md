@@ -42,21 +42,21 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 9 parts and 5 labs:
 
-1. Where Signals Go Today
-2. Name The Ship Classes
-   - Lab: Fix The Docking Instructions Lab
-3. Write A Flight Plan
-4. Match Exactly What You Mean
-5. Put Your Rules In Order
+1. See Where Requests Go Without Routing Rules
+2. Define Subsets With A DestinationRule
+   - Lab: Fix A DestinationRule Subset That Selects No Pods Lab
+3. Route Requests With A VirtualService
+4. Match Headers, URIs And Query Parameters
+5. Order Routing Rules And Add A Catch-All
    - Lab: Route Requests By Header, URI And Query Parameter Lab
-6. Put The Flight Plan On The Right Planet
-7. Read The Flight Log And The Proxy's Orders
-   - Lab: Find Out Why The Flight Plan Does Nothing Lab
-8. Rewriting, Redirecting And Headers
-   - Lab: Reshape A Request Lab
-9. Routing Non-HTTP Traffic
-   - Lab: Bring HTTP Routing Back Lab
-10. Wrap-Up: Mission Debrief
+6. Resolve Short Host Names To The Right Namespace
+7. Debug Routing With The Access Log And proxy-config
+   - Lab: Fix A VirtualService That Does Not Apply Lab
+8. Redirect, Rewrite, Headers And CORS
+   - Lab: Redirect, Rewrite And Change Headers Of A Request Lab
+9. Protocol Selection And Non-HTTP Routing
+   - Lab: Declare A Service Port As HTTP Lab
+10. Summary
 
 ### Scope Proxy Configuration With The Sidecar Resource
 

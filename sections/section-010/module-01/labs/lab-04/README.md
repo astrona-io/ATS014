@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Find Out Why The Flight Plan Does Nothing
+# Fix A VirtualService That Does Not Apply
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the scout flight plan was supposed to send `jason` to `scout-v2` and everyone else to `scout-v1`. Instead, every signal lands on a random scout ship. `kubectl` accepted the flight plan without a word, and `istioctl analyze -n starfleet` finds nothing wrong.
+In the namespace `starfleet`, the `scout` `VirtualService` should send requests from `jason` to `scout-v2` and every other request to `scout-v1`. Instead, every request lands on a random `scout` version. `kubectl` accepted the `VirtualService` with no warning, and `istioctl analyze -n starfleet` finds nothing wrong.
 
-More than one thing is wrong with it. Your job is to find every fault with `kubectl get -A`, `istioctl analyze`, the shuttle's flight log and the proxy's own orders, repair the flight plan, and prove that every signal lands on the right ship class.
+The `VirtualService` has more than one fault. Your job is to find every fault with `kubectl get -A`, `istioctl analyze`, the access log of the `shuttle` proxy and `istioctl proxy-config`, repair the `VirtualService`, and prove that every request reaches the right version.
 
 ## Launching the Lab
 

@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Two objects again, and the same ordering discipline as lab 1 — but this time most of the work is on fields *beside* `route` rather than inside it. The one genuinely awkward step is proving the rewrite, because no flight log (access log) will show it to you.
+You create two objects: a `DestinationRule` and a `VirtualService`. The rule order matters, as always, but most of the work is in fields *next to* `route`, not inside it. The hardest step is proving the rewrite, because no access log shows it.
 
 ---
 
@@ -26,7 +26,7 @@ Nothing configured. The application serves everything at `/notify` and will neve
 
 Task 3 routes to `v2`, so the subset names have to exist first.
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+Write the manifest to a file and apply the file. You can then read it again, edit it and apply it again.
 
 Save this as `destinationrule-notification-service.yaml`:
 
@@ -57,13 +57,13 @@ kubectl apply -f destinationrule-notification-service.yaml
 astrona submit
 ```
 
-Expect a failure naming the missing `VirtualService` — the subsets alone move no traffic, exactly as the module said.
+Expect a failure that names the missing `VirtualService`. A `DestinationRule` only names the subsets; it routes no traffic by itself.
 
 ---
 
 ## Step 3: The Redirect Rule, First
 
-`/legacy` must be answered by the communications officer, not forwarded. A rule with `redirect` has **no** `route` — Istio rejects an object that has both.
+The sidecar proxy (Envoy) of the client must answer `/legacy` itself and not forward it. A rule with `redirect` has **no** `route`: Istio rejects an object that has both.
 
 ```yaml
 - match:
@@ -74,7 +74,7 @@ Expect a failure naming the missing `VirtualService` — the subsets alone move 
     redirectCode: 301
 ```
 
-It goes first because the rules below it are broader. Put the catch-all above it and `/legacy` never gets its 301 — the silent failure from lab 1, in a new costume.
+It goes first because the rules below it are broader. Put the catch-all above it and `/legacy` never gets its 301. No tool reports an error for that.
 
 ---
 
@@ -98,7 +98,7 @@ It goes first because the rules below it are broader. Put the catch-all above it
 
 ## Step 5: Headers And CORS On Every Serving Rule
 
-`headers` and `corsPolicy` are per-rule, not per-object. The redirect rule needs neither — nothing is forwarded and the proxy writes the 301 itself — but **both** serving rules need them:
+`headers` and `corsPolicy` belong to one rule, not to the whole object. The redirect rule needs neither, because nothing is forwarded and the proxy writes the 301 itself. But **both** rules that route requests need them:
 
 ```yaml
   headers:
@@ -205,7 +205,7 @@ access-control-allow-origin: https://shop.example.com
 
 ---
 
-## Step 7: Prove The Rewrite — Not From A Log
+## Step 7: Prove The Rewrite From The Route Table
 
 This is the step that catches people. Istio's access log format is `%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%`, so when Envoy rewrites a path it logs the **original** one. A correct rewrite therefore looks like no rewrite at all in every log you can reach.
 
@@ -221,7 +221,7 @@ istioctl proxy-config routes deploy/tester -n routing-demo -o json \
 "prefixRewrite": "/",
 ```
 
-The matched prefix and its replacement on the same route entry. That is what the grader checks, because it is the only honest evidence available.
+The matched prefix and its replacement sit on the same route entry. The grader checks this, because it is the only reliable proof available.
 
 ---
 
@@ -235,10 +235,10 @@ astrona submit
 
 ## Common Mistakes
 
-* **`redirect` and `route` on the same rule.** Alternatives. The object is rejected.
+* **`redirect` and `route` on the same rule.** They are alternatives. Istio rejects the object.
 * **Putting the catch-all first.** `/legacy` and `/beta` become unreachable, with no error anywhere.
 * **Expecting the rewrite in an access log.** It reports the original path by design. Check `prefixRewrite`.
 * **`remove` written as a map.** It is a list of header names.
-* **`allowOrigins: ["https://shop.example.com"]`.** The field takes string matches — use `exact:`.
+* **`allowOrigins: ["https://shop.example.com"]`.** The field takes string matches, so use `exact:`.
 * **Putting `headers` on only one serving rule.** Every response leaving the service must carry the header, so both serving rules need it.
 * **Assuming `rewrite.uri: /` replaces the whole path.** After a `prefix` match it replaces only the matched prefix.

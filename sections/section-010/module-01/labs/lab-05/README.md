@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Bring HTTP Routing Back
+# Declare A Service Port As HTTP
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, a flight plan for the echo probe is supposed to send every signal marked `x-mission: test` to `probe-v2`, and every other signal to `probe-v1`. The flight plan is correct. `kubectl` accepted it, and `istioctl analyze` finds nothing wrong. Yet the signals still land on both probe ships.
+In the namespace `starfleet`, a `VirtualService` for the `probe` echo server should send every request with the header `x-mission: test` to `probe-v2`, and every other request to `probe-v1`. The `VirtualService` is correct. `kubectl` accepted it, and `istioctl analyze` finds nothing wrong. Yet requests still reach both versions.
 
-One word somewhere else has switched the flight plan off. Your job is to find it with the shuttle's route table and the listener, bring HTTP routing back, and prove that every signal lands on the right ship class.
+The port declaration of the `probe` Service has switched the `VirtualService` off. Your job is to find it with the route table and the listener of the `shuttle` proxy, declare the port as HTTP again, and prove that every request reaches the right version.
 
 ## Launching the Lab
 

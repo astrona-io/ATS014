@@ -137,16 +137,16 @@ modules:
         title: "Route Requests Within The Mesh"
         path: sections/section-010/module-01/course.md
       - type: reading
-        title: "Where Signals Go Today"
-        path: sections/section-010/module-01/course-01-where-signals-go-today.md
+        title: "See Where Requests Go Without Routing Rules"
+        path: sections/section-010/module-01/course-01-see-where-requests-go-without-routing-rules.md
       - type: reading
-        title: "Name The Ship Classes"
-        path: sections/section-010/module-01/course-02-name-the-ship-classes.md
+        title: "Define Subsets With A DestinationRule"
+        path: sections/section-010/module-01/course-02-define-subsets-with-a-destinationrule.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-03/question.md
       - type: lab
-        title: "Fix The Docking Instructions Lab"
+        title: "Fix A DestinationRule Subset That Selects No Pods Lab"
         path: sections/section-010/module-01/labs/lab-03
         difficulty: beginner
         estimated_duration: 15m
@@ -164,14 +164,14 @@ modules:
           - name: "istioctl analyze messages"
             url: https://istio.io/latest/docs/reference/config/analysis/
       - type: reading
-        title: "Write A Flight Plan"
-        path: sections/section-010/module-01/course-03-write-a-flight-plan.md
+        title: "Route Requests With A VirtualService"
+        path: sections/section-010/module-01/course-03-route-requests-with-a-virtualservice.md
       - type: reading
-        title: "Match Exactly What You Mean"
-        path: sections/section-010/module-01/course-04-match-exactly-what-you-mean.md
+        title: "Match Headers, URIs And Query Parameters"
+        path: sections/section-010/module-01/course-04-match-headers-uris-and-query-parameters.md
       - type: reading
-        title: "Put Your Rules In Order"
-        path: sections/section-010/module-01/course-05-put-your-rules-in-order.md
+        title: "Order Routing Rules And Add A Catch-All"
+        path: sections/section-010/module-01/course-05-order-routing-rules-and-add-a-catch-all.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-01/question.md
@@ -194,16 +194,16 @@ modules:
           - name: "Request routing task"
             url: https://istio.io/latest/docs/tasks/traffic-management/request-routing/
       - type: reading
-        title: "Put The Flight Plan On The Right Planet"
-        path: sections/section-010/module-01/course-06-put-the-flight-plan-on-the-right-planet.md
+        title: "Resolve Short Host Names To The Right Namespace"
+        path: sections/section-010/module-01/course-06-resolve-short-host-names-to-the-right-namespace.md
       - type: reading
-        title: "Read The Flight Log And The Proxy's Orders"
-        path: sections/section-010/module-01/course-07-read-the-flight-log-and-the-proxys-orders.md
+        title: "Debug Routing With The Access Log And proxy-config"
+        path: sections/section-010/module-01/course-07-debug-routing-with-the-access-log-and-proxy-config.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-04/question.md
       - type: lab
-        title: "Find Out Why The Flight Plan Does Nothing Lab"
+        title: "Fix A VirtualService That Does Not Apply Lab"
         path: sections/section-010/module-01/labs/lab-04
         difficulty: intermediate
         estimated_duration: 20m
@@ -222,13 +222,13 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Rewriting, Redirecting And Headers"
-        path: sections/section-010/module-01/course-08-rewriting-redirecting-and-headers.md
+        title: "Redirect, Rewrite, Headers And CORS"
+        path: sections/section-010/module-01/course-08-redirect-rewrite-headers-and-cors.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Reshape A Request Lab"
+        title: "Redirect, Rewrite And Change Headers Of A Request Lab"
         path: sections/section-010/module-01/labs/lab-02
         difficulty: intermediate
         estimated_duration: 30m
@@ -242,13 +242,13 @@ modules:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
       - type: reading
-        title: "Routing Non-HTTP Traffic"
-        path: sections/section-010/module-01/course-09-routing-non-http-traffic.md
+        title: "Protocol Selection And Non-HTTP Routing"
+        path: sections/section-010/module-01/course-09-protocol-selection-and-non-http-routing.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-05/question.md
       - type: lab
-        title: "Bring HTTP Routing Back Lab"
+        title: "Declare A Service Port As HTTP Lab"
         path: sections/section-010/module-01/labs/lab-05
         difficulty: intermediate
         estimated_duration: 15m
@@ -266,8 +266,8 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-010/module-01/course-10-wrap-up.md
+        title: "Summary"
+        path: sections/section-010/module-01/course-10-summary.md
 
       - type: reading
         title: "Scope Proxy Configuration With The Sidecar Resource"

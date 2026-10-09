@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Fix The Docking Instructions
+# Fix A DestinationRule Subset That Selects No Pods
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, every signal that `jason` sends to the scout beacon fails with `503`. The flight plan is correct. Somewhere in the docking instructions, one value points at ships that do not exist.
+In the namespace `starfleet`, every request that the user `jason` sends to the `scout` Service fails with `503`. The `VirtualService` is correct. One label value in the `DestinationRule` selects no pod.
 
-Your job is to find that value with the flight log, `istioctl analyze` and the shuttle's proxy, fix it, and prove that jason's signals land on `scout-v2` again.
+Your job is to find that value with the access log, `istioctl analyze` and the proxy of the `shuttle` pod, fix it, and prove that requests from `jason` reach `scout-v2` again.
 
 ## Launching the Lab
 
