@@ -48,18 +48,18 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 5 parts and 2 labs:
 
-1. The Five-Step Chain
-2. Originate TLS At The Gate
-3. Where The `DestinationRule` Attaches
-   - Lab: Lock The Signal At The Departure Gate Lab
-4. A Partner That Checks IDs
-5. Hand The Gate Its Keys
-   - Lab: Open The Partner's Locked Door Lab
-6. Wrap-Up: Mission Debrief
+1. Route Plain HTTP Through The Egress Gateway
+2. Originate TLS On The External Host
+3. Prove Which Proxy Originates TLS
+   - Lab: Originate TLS At The Egress Gateway Lab
+4. Server And Client Certificates In The TLS Handshake
+5. Present A Client Certificate With MUTUAL And credentialName
+   - Lab: Fix Mutual TLS Origination At The Egress Gateway Lab
+6. Summary
 
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **One Exit, Two Partners Capstone Lab**.
+The section ends with a capstone lab that uses everything in it: **Route Two External Hosts Through One Egress Gateway Capstone Lab**.
 
 ---
 

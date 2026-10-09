@@ -1,10 +1,12 @@
 # Solution Walkthrough
 
-Eight objects, two partner planets, one departure gate. The structure is module 1's chain twice over, with module 2's origination added to the second one.
+You build eight objects for two external hosts and one egress gateway. Each host gets the same two-stage route through the egress gateway, and the secure host also gets a `DestinationRule` that starts TLS (Transport Layer Security) at the egress gateway.
 
 ---
 
-## Step 1: Establish the Baseline
+## Step 1: Check the starting state
+
+Read both IP addresses, call each server directly from `tester`, and count the egress gateway's access log lines for the partners:
 
 ```sh
 PLAIN=$(cat /tmp/plain-ip); SECURE=$(cat /tmp/secure-ip)
@@ -23,19 +25,21 @@ scheme=https
 0
 ```
 
-Both endpoints reachable directly, and the gate carrying no signals.
+Both servers answer when called directly, and the egress gateway carries no traffic yet.
 
 ---
 
-## Step 2: Register Both Hosts
+## Step 2: Add both hosts
+
+Each `ServiceEntry` adds one external host to Istio's service registry and needs that host's IP address. Read both addresses into variables first:
 
 ```sh
 PLAIN=$(cat /tmp/plain-ip); SECURE=$(cat /tmp/secure-ip)
 ```
 
-Replace `<PLAIN>`, `<SECURE>` in the YAML below with the real addresses from the step above. To see them, run `echo $PLAIN` `echo $SECURE`.
+Replace `<PLAIN>` and `<SECURE>` in the YAML below with the real addresses. To see them, run `echo $PLAIN` and `echo $SECURE`.
 
-Save this as `plain-manifests.yaml`:
+Save this as `serviceentry-plain.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -52,7 +56,17 @@ spec:
   resolution: STATIC
   endpoints:
     - address: <PLAIN>
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f serviceentry-plain.yaml
+```
+
+Save this as `serviceentry-secure.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
@@ -73,18 +87,16 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f plain-manifests.yaml
+kubectl apply -f serviceentry-secure.yaml
 ```
 
-The plain host needs one port; the secure host needs **two** — 8081 where the sidecar's plaintext arrives, 8443 where the gateway will send it.
+The plain host needs one port. The secure host needs **two**: 8081, where the plain request from the sidecar proxy arrives, and 8443, where the egress gateway sends it on with TLS.
 
 ---
 
-## Step 3: One Gateway, Two Listeners, Two Subsets
+## Step 3: One `Gateway` with two listeners, and two subsets
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
-
-Save this as `egress-gateway-manifests.yaml`:
+The `Gateway` opens one listener per host on the egress gateway. Save this as `gateway-egress-gateway.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -100,7 +112,19 @@ spec:
       hosts: [plain.partner.example]
     - port: { number: 8081, name: http-secure, protocol: HTTP }
       hosts: [secure.partner.example]
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f gateway-egress-gateway.yaml
+```
+
+Each server names its own **external** host. A separate listener port per host keeps the two routes apart. The two server `name` values are different, which Istio requires.
+
+Rule 1 of each `VirtualService` names a subset of the egress gateway's Service. Save this as `destinationrule-egressgateway-subsets.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -116,16 +140,14 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f egress-gateway-manifests.yaml
+kubectl apply -f destinationrule-egressgateway-subsets.yaml
 ```
 
-One `Gateway` with two servers, each naming its own **external** hostname. A separate listener port per host keeps the two chains distinguishable — and note both server `name` values are unique, which Istio requires.
-
-Two label-less subsets, one per partner. They narrow nothing; they exist so each chain names a distinct cluster and the proxy configuration stays readable with two partners on one gateway.
+The two subsets have no labels, so they select the same pods. They exist so that each route uses its own Envoy cluster, which keeps the proxy configuration readable with two hosts on one egress gateway.
 
 ---
 
-## Step 4: Partner A — Plain, Restricted
+## Step 4: Partner A, plain HTTP for one workload
 
 Save this as `virtualservice-plain-through-egress.yaml`:
 
@@ -163,13 +185,13 @@ Apply it:
 kubectl apply -f virtualservice-plain-through-egress.yaml
 ```
 
-Module 1's chain exactly, with `sourceLabels` on stage 1.
+This is the usual two-stage route, with `sourceLabels` on rule 1. Only pods with the label `egress-allowed: "true"` get the route to the egress gateway.
 
 ---
 
-## Step 5: Partner B — TLS At The Gateway
+## Step 5: Partner B, TLS at the egress gateway
 
-Save this as `secure-through-egress-manifests.yaml`:
+Save this as `virtualservice-secure-through-egress.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -196,7 +218,19 @@ spec:
         - destination:
             host: secure.partner.example
             port: { number: 8443 }
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f virtualservice-secure-through-egress.yaml
+```
+
+Rule 2 sends to **8443**, while the listener stays on **8081**. One is the port the egress gateway receives on, the other the port it sends on.
+
+Save this as `destinationrule-originate-tls-for-secure.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -222,16 +256,16 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f secure-through-egress-manifests.yaml
+kubectl apply -f destinationrule-originate-tls-for-secure.yaml
 ```
 
-Stage 2 goes to **8443** while the listener stays on **8081** — receive port and send port, two directions.
-
-The origination rule names **`secure.partner.example`**, the external host. The gateway is the proxy calling it, so that is where the policy takes effect. Pointing it at the gateway Service would originate nothing.
+The rule names **`secure.partner.example`**, the external host. A `DestinationRule` is applied by the proxy that calls the host it names, and the egress gateway calls this host. A rule on the egress gateway Service would start no TLS toward the partner.
 
 ---
 
-## Step 6: Verify Both Chains
+## Step 6: Check both routes
+
+The loop below sends one request to each host from `tester` and prints how many lines the egress gateway logged for it:
 
 ```sh
 for t in "plain plain.partner.example 8080 /get" "secure secure.partner.example 8081 /"; do
@@ -254,9 +288,9 @@ secure  -> scheme=https
          gateway lines: +1
 ```
 
-Both partners reached through the one gate, and the secure one reporting `scheme=https` to a plain `http://` caller.
+Both hosts are reached through the one egress gateway, and the secure server reports `scheme=https` to a client that sent plain `http://`.
 
-Confirm the upstream port and the TLS placement:
+Then check the upstream port and where the TLS settings are:
 
 ```sh
 kubectl -n istio-system logs deploy/istio-egressgateway --tail=20 | grep secure.partner.example | tail -1
@@ -266,6 +300,8 @@ echo -n "sidecar transportSocket: "
 istioctl proxy-config cluster deploy/tester -n edge-egress --fqdn secure.partner.example -o json | grep -c transportSocket
 ```
 
+You should see (log line shortened):
+
 ```text
 [...] "GET / HTTP/1.1" 200 ... "secure.partner.example" "10.244.0.22:8443" outbound|8443||secure.partner.example ...
 gateway transportSocket: 1
@@ -274,7 +310,9 @@ sidecar transportSocket: 0
 
 ---
 
-## Step 7: Verify The Restriction
+## Step 7: Check the `sourceLabels` limit
+
+Send the plain request from `other-client`, which does not carry `egress-allowed: "true"`, and count the egress gateway's lines before and after:
 
 ```sh
 B=$(kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c plain.partner.example)
@@ -290,17 +328,17 @@ other-client: 200
 gateway lines: +0
 ```
 
-Reached the endpoint, bypassed the gate. `sourceLabels` narrowed the route, not the permission — the distinction to carry out of this section, astronaut. Mission complete.
+`other-client` reached the server directly, without the egress gateway. `sourceLabels` limits which workloads get a route; it does not block the others.
 
 ---
 
-## Common Mistakes
+## Common mistakes
 
-- **The origination `DestinationRule` on the gateway Service.** Nothing originates.
-- **Stage 2 for the secure host routing to 8081.** Plaintext to a TLS-only endpoint.
-- **One listener for both hosts.** Workable, but the task asks for two so the chains stay distinguishable — and duplicate server `name` values are rejected.
-- **Only one subset.** Both chains would share a cluster and the proxy configuration becomes ambiguous.
-- **`mesh` missing from either top-level `gateways`.** That chain never diverts.
-- **`sourceLabels` on the secure chain.** The task puts it only on the plain one.
-- **Expecting `other-client` to be blocked.** It is un-diverted, not denied.
-- **Counting gateway log lines without a baseline.** The log accumulates across both partners.
+- **The TLS `DestinationRule` on the egress gateway Service.** Nothing starts TLS toward the partner.
+- **Rule 2 for the secure host routes to 8081.** The egress gateway sends plain text to a server that only speaks TLS.
+- **One listener for both hosts.** It can work, but the task asks for two so the routes stay apart, and Istio rejects duplicate server `name` values.
+- **Only one subset.** Both routes then share one cluster, and the proxy configuration is harder to read.
+- **`mesh` missing from either top-level `gateways`.** That route never reaches the sidecar proxies.
+- **`sourceLabels` on the secure route.** The task puts it only on the plain route.
+- **Expecting `other-client` to be blocked.** It is not routed through the egress gateway, but it is not denied.
+- **Counting the egress gateway's log lines without a starting count.** The log keeps growing for both partners, so compare before and after.

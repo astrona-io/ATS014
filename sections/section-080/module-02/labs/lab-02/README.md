@@ -2,11 +2,11 @@
 estimated_duration: 25m
 ---
 
-# Open The Partner's Locked Door
+# Fix Mutual TLS Origination At The Egress Gateway Lab
 
-Welcome to a repair mission, astronaut. Signals from the planet `starfleet` to the partner should leave through the departure gate (the egress gateway), and the gate should show the partner a client certificate in a mutual TLS handshake. The route is written and the client certificate was delivered. But every signal bounces off the partner's locked door.
+A troubleshooting lab. Requests from the `starfleet` namespace to a partner server should leave through the egress gateway, and the egress gateway should present a client certificate to the partner in a mutual TLS handshake. The route is written and the client certificate was delivered as a `Secret`, but every request fails.
 
-Your job is to find out why with the flight logs, the gate's keys and mission control's log, fix every fault, and prove that the partner accepts the gate's certificate. This lab needs no outbound internet access.
+Your job is to find out why with the access logs, the egress gateway's certificates (`istioctl proxy-config secret`) and the `istiod` log, fix every fault, and prove that the partner server accepts the egress gateway's certificate. This lab needs no outbound internet access.
 
 ## Launching the Lab
 

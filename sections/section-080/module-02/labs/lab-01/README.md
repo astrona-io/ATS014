@@ -2,11 +2,11 @@
 estimated_duration: 45m
 ---
 
-# Lock The Signal At The Departure Gate
+# Originate TLS At The Egress Gateway Lab
 
-Welcome to a build mission, astronaut. A partner planet only accepts sealed (TLS) signals, your ship only sends plain `http://`, and the departure gate (the egress gateway) in between has to put the lock on. You write five objects, and the partner itself tells you whether you got it right: it answers with the scheme it was reached over.
+A build lab. A partner server only accepts TLS (Transport Layer Security) connections, the client pod only sends plain `http://`, and the egress gateway in between must start the TLS connection. You write five objects, and the partner server itself tells you whether you got it right: it answers with the scheme it was reached over.
 
-This lab runs its own small app on the `demo` install of Istio: the client is `tester` in the namespace `egwtls-demo`, and the gate is `istio-egressgateway` in `istio-system`. It needs **no** outbound internet access.
+This lab runs its own small app on the `demo` install of Istio: the client is `tester` in the namespace `egwtls-demo`, and the egress gateway is `istio-egressgateway` in `istio-system`. It needs **no** outbound internet access.
 
 ## Launching the Lab
 

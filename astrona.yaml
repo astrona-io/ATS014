@@ -1658,28 +1658,28 @@ modules:
         title: "TLS Origination At The Egress Gateway"
         path: sections/section-080/module-02/course.md
       - type: reading
-        title: "The Five-Step Chain"
-        path: sections/section-080/module-02/course-01-the-five-step-chain.md
+        title: "Route Plain HTTP Through The Egress Gateway"
+        path: sections/section-080/module-02/course-01-route-plain-http-through-the-egress-gateway.md
       - type: reading
-        title: "Originate TLS At The Gate"
-        path: sections/section-080/module-02/course-02-originate-tls-at-the-gate.md
+        title: "Originate TLS On The External Host"
+        path: sections/section-080/module-02/course-02-originate-tls-on-the-external-host.md
       - type: reading
-        title: "Where The `DestinationRule` Attaches"
-        path: sections/section-080/module-02/course-03-where-the-destinationrule-attaches.md
+        title: "Prove Which Proxy Originates TLS"
+        path: sections/section-080/module-02/course-03-prove-which-proxy-originates-tls.md
       - type: reading
         title: Question
         path: sections/section-080/module-02/labs/lab-01/question.md
       - type: lab
-        title: "Lock The Signal At The Departure Gate Lab"
+        title: "Originate TLS At The Egress Gateway Lab"
         path: sections/section-080/module-02/labs/lab-01
         difficulty: intermediate
         estimated_duration: 45m
         topic: ingress-egress
         task_kind: build
-        tags: [egress-gateway, tls-origination, destinationrule, serviceentry, virtualservice, proxy-config, access-log]
+        tags: [egress-gateway, tls-origination, destinationrule, serviceentry, gateway, virtualservice, proxy-config, access-log]
         learning_goals:
-          - Build the five objects that route a plain HTTP call through the egress gateway and start TLS there
-          - Prove from both proxies' clusters that the gateway, not the sidecar, holds the TLS settings
+          - Build the five objects that route a plain HTTP request through the egress gateway and start TLS there
+          - Prove from the clusters of both proxies that the egress gateway, not the sidecar proxy, holds the TLS settings
         resources:
           - name: "Egress gateway TLS origination task"
             url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/
@@ -1688,16 +1688,16 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "A Partner That Checks IDs"
-        path: sections/section-080/module-02/course-04-a-partner-that-checks-ids.md
+        title: "Server And Client Certificates In The TLS Handshake"
+        path: sections/section-080/module-02/course-04-server-and-client-certificates-in-the-handshake.md
       - type: reading
-        title: "Hand The Gate Its Keys"
-        path: sections/section-080/module-02/course-05-hand-the-gate-its-keys.md
+        title: "Present A Client Certificate With MUTUAL And credentialName"
+        path: sections/section-080/module-02/course-05-present-a-client-certificate-with-credentialname.md
       - type: reading
         title: Question
         path: sections/section-080/module-02/labs/lab-02/question.md
       - type: lab
-        title: "Open The Partner's Locked Door Lab"
+        title: "Fix Mutual TLS Origination At The Egress Gateway Lab"
         path: sections/section-080/module-02/labs/lab-02
         difficulty: intermediate
         estimated_duration: 25m
@@ -1705,8 +1705,8 @@ modules:
         task_kind: troubleshooting
         tags: [egress-gateway, tls-origination, destinationrule, virtualservice, proxy-config, access-log]
         learning_goals:
-          - Find a wrong onward port and a client certificate Secret in the wrong namespace from the gateway's flight log, istioctl proxy-config secret and the istiod log
-          - Present a client certificate from the egress gateway with MUTUAL and credentialName, and prove the partner accepts it
+          - Find a wrong onward port and a client certificate Secret in the wrong namespace with the egress gateway's access log, istioctl proxy-config secret and the istiod log
+          - Present a client certificate from the egress gateway with MUTUAL and credentialName, and prove the partner server accepts it
         resources:
           - name: "Egress gateway TLS origination task"
             url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/
@@ -1715,23 +1715,23 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-080/module-02/course-06-wrap-up.md
+        title: "Summary"
+        path: sections/section-080/module-02/course-06-summary.md
 
       - type: reading
         title: Question
         path: sections/section-080/capstone/labs/lab-01/question.md
       - type: lab
-        title: "One Exit, Two Partners Capstone Lab"
+        title: "Route Two External Hosts Through One Egress Gateway Capstone Lab"
         path: sections/section-080/capstone/labs/lab-01
         difficulty: advanced
         estimated_duration: 60m
         topic: ingress-egress
         task_kind: build
-        tags: [egress-gateway, tls-origination, serviceentry, gateway, virtualservice]
+        tags: [egress-gateway, tls-origination, serviceentry, gateway, virtualservice, destinationrule, external-services, proxy-config]
         learning_goals:
-          - Send two partners through one egress gateway, one restricted to a single workload
-          - Originate TLS at the gateway for one partner and prove both paths
+          - Route two external hosts through one egress gateway, one of them for a single workload only
+          - Start TLS at the egress gateway for one host and prove both routes with real requests
         resources:
           - name: "Egress gateways task"
             url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway/

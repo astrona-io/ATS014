@@ -1,10 +1,12 @@
 # Solution Walkthrough
 
-Five objects, astronaut. Build them in order, and the verification is three independent checks.
+You build five objects in order, then prove the result with three separate checks: the response of the partner server, the egress gateway's access log, and the TLS settings in each proxy.
 
 ---
 
-## Step 1: Understand the Two Constraints
+## Step 1: Check the starting state
+
+Before you write anything, confirm the two facts the task depends on. Read the partner's IP address, send a plain request and a TLS request straight to it, and count the egress gateway's access log lines for the partner:
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip); echo "partner: $PARTNER"
@@ -21,17 +23,19 @@ scheme=https
 0
 ```
 
-Two constraints and one starting fact: the partner planet refuses plaintext (nginx answers `400` to a plain request on its TLS port), it reports the scheme honestly, and the departure gate currently carries no signals.
+The partner server rejects plain text: nginx answers `400` to a plain request on its TLS port. It reports the scheme it was reached over. The egress gateway carries no traffic yet.
 
 ---
 
-## Step 2: Register the Host With Both Ports
+## Step 2: Add the host with both ports
+
+The `ServiceEntry` adds `partner.example.com` to Istio's service registry. It needs the partner's IP address, so read it into a variable first:
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
 ```
 
-Replace `<PARTNER>` in the YAML below with the real address from the step above. To see it, run `echo $PARTNER`.
+Replace `<PARTNER>` in the YAML below with the real address. To see it, run `echo $PARTNER`.
 
 Save this as `serviceentry-partner.yaml`:
 
@@ -65,13 +69,13 @@ Apply it:
 kubectl apply -f serviceentry-partner.yaml
 ```
 
-Port 8080 is where the sidecar's plaintext traffic arrives; 8443 is where stage 2 will send it. Both are needed.
+Port 8080 is where the plain request from the sidecar proxy arrives. Port 8443 is where rule 2 sends it on. Both are needed.
 
 ---
 
-## Step 3: The Gateway Listener And Its Subset
+## Step 3: Add the listener and its subset
 
-Save this as `egress-gateway-manifests.yaml`:
+The `Gateway` opens a listener on port 8080 of the egress gateway for the external host. Save this as `gateway-egress-gateway.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -89,7 +93,17 @@ spec:
         protocol: HTTP
       hosts:
         - partner.example.com
----
+```
+
+Apply it:
+
+```sh
+kubectl apply -f gateway-egress-gateway.yaml
+```
+
+Rule 1 of the `VirtualService` names a subset of the egress gateway's Service, so that subset must exist. Save this as `destinationrule-egressgateway-for-partner.yaml`:
+
+```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -104,14 +118,14 @@ spec:
 Apply it:
 
 ```sh
-kubectl apply -f egress-gateway-manifests.yaml
+kubectl apply -f destinationrule-egressgateway-for-partner.yaml
 ```
 
-The listener is on **8080** — the radio channel the gateway *receives* on. It will *send* on 8443. Those are two directions, and the apparent mismatch is the thing to get comfortable with.
+The listener is on **8080**, the port the egress gateway *receives* on. The egress gateway will *send* on 8443. These are two directions, so the two numbers do not have to match.
 
 ---
 
-## Step 4: The Two-Stage Route
+## Step 4: Add the two routing rules
 
 Save this as `virtualservice-partner-through-egress.yaml`:
 
@@ -153,9 +167,9 @@ Apply it:
 kubectl apply -f virtualservice-partner-through-egress.yaml
 ```
 
-Stage 2's `port: 8443` is the line that matters. Route it to 8080 and the gateway forwards plaintext to a TLS-only endpoint — a failure that looks like a TLS problem and is a routing one.
+Rule 2's `port: 8443` is the important line. If it routes to 8080, the egress gateway sends plain text to a server that only speaks TLS. That failure looks like a TLS problem, but it is a routing problem.
 
-Test now, before the last object:
+Test now, before you add the last object:
 
 ```sh
 PARTNER=$(cat /tmp/partner-ip)
@@ -167,11 +181,11 @@ kubectl -n egwtls-demo exec deploy/tester -- \
 without origination: 400
 ```
 
-The signal reaches port 8443 — as plaintext, so the partner answers `400`. Each object has its own failure, and this is the one for a missing origination rule.
+The request reaches port 8443 as plain text, so the partner server answers `400`. This is the failure you get when the TLS `DestinationRule` is missing.
 
 ---
 
-## Step 5: Originate TLS — On the External Host
+## Step 5: Originate TLS on the external host
 
 Save this as `destinationrule-originate-tls-for-partner.yaml`:
 
@@ -217,15 +231,15 @@ kubectl -n egwtls-demo exec deploy/tester -- curl -s --max-time 20 "http://partn
 scheme=https
 ```
 
-**`host: partner.example.com`** — the external host, not the gateway Service. Traffic policy is applied by whichever proxy is *calling* that host, and that is the gateway. Point it at `istio-egressgateway...` instead and nothing originates, because that is the policy for the sidecar's leg, which is plain HTTP by design.
+The rule names **`host: partner.example.com`**, the external host, not the egress gateway Service. A `DestinationRule` is applied by whichever proxy *calls* the host it names, and here that is the egress gateway. If you name `istio-egressgateway...` instead, nothing starts TLS toward the partner: that rule would apply to the sidecar proxy's hop to the egress gateway, which is plain HTTP on purpose.
 
-If the sidecars put the lock on themselves, this object would look exactly the same. Only the proxy that follows it changes, because only the caller changes.
+If the sidecar proxies started TLS themselves, this object would look exactly the same. Only the proxy that applies it would change, because only the caller changes.
 
 ---
 
-## Step 6: Three Independent Verifications
+## Step 6: Prove the result three ways
 
-**The gateway was in the path, on port 8443:**
+First, prove that the egress gateway was in the path and sent the request on to port 8443. Read its newest log line for the partner:
 
 ```sh
 kubectl -n istio-system logs deploy/istio-egressgateway --tail=5 | grep partner.example.com | tail -1
@@ -235,9 +249,9 @@ kubectl -n istio-system logs deploy/istio-egressgateway --tail=5 | grep partner.
 [2026-10-08T23:49:16.014Z] "GET / HTTP/1.1" 200 - via_upstream - "-" 0 13 3 2 "10.244.0.9" "curl/8.22.0" "e17944c4-90fb-9b55-adb0-e55bcf4824bf" "partner.example.com:8080" "10.244.0.8:8443" outbound|8443||partner.example.com 10.244.0.6:53522 10.244.0.6:8080 10.244.0.9:54788 - -
 ```
 
-A readable HTTP request, upstream on **8443**, cluster `outbound|8443||partner.example.com`.
+The line shows a readable HTTP request, the upstream on **8443**, and the cluster `outbound|8443||partner.example.com`.
 
-**The TLS context is on the gateway and not the sidecar:**
+Second, prove that the TLS settings are on the egress gateway and not on the sidecar proxy. Count the `transportSocket` entries, the TLS settings of a cluster, in each proxy:
 
 ```sh
 echo -n "gateway: "
@@ -253,19 +267,19 @@ gateway: 1
 sidecar: 0
 ```
 
-One and zero — the most compact proof that policy follows the caller. If the sidecar sealed the signal itself, these same two commands would give the opposite answer.
+One and zero is the shortest proof that the egress gateway, the proxy that calls the host, applies the rule. If the sidecar proxy started TLS itself, these two commands would give the opposite result.
 
-**The endpoint saw HTTPS:** `scheme=https` from step 5, reported by the server itself.
+Third, the server saw HTTPS: it answered `scheme=https` in step 5.
 
 ---
 
-## Common Mistakes
+## Common mistakes
 
-- **The origination `DestinationRule` on the gateway Service.** Nothing originates — that is the sidecar's leg, which is plaintext by design.
-- **Stage 2 routing to port 8080.** Plaintext to a TLS-only endpoint.
-- **Declaring only port 8443 in the `ServiceEntry`.** The task asks for both ports: 8080 for the plain signal from the sidecar, 8443 for the gate's sealed onward leg.
-- **`tls` at the top of `trafficPolicy`.** It would apply to 8080 as well.
-- **Omitting `sni` or `insecureSkipVerify`.** The certificate names `partner.example.com` and is self-signed; both are needed here.
-- **Confusing the two `DestinationRule` objects.** One names the gateway Service and holds an empty subset; the other names the external host and holds the TLS settings.
-- **`mesh` missing from the top-level `gateways`.** Stage 1 never reaches sidecars and the call goes direct — which, on this endpoint, fails outright.
-- **Counting gateway log lines without a baseline.** The log accumulates.
+- **The TLS `DestinationRule` on the egress gateway Service.** Nothing starts TLS toward the partner, because that rule covers the sidecar proxy's hop, which is plain text on purpose.
+- **Rule 2 routes to port 8080.** The egress gateway sends plain text to a server that only speaks TLS.
+- **Only port 8443 in the `ServiceEntry`.** The task asks for both ports: 8080 for the plain request from the sidecar proxy, 8443 for the TLS hop from the egress gateway.
+- **`tls` at the top of `trafficPolicy`.** It would apply to port 8080 as well.
+- **No `sni` or no `insecureSkipVerify`.** The certificate names `partner.example.com` and is self-signed, so both are needed here.
+- **Mixing up the two `DestinationRule` objects.** One names the egress gateway Service and holds an empty subset. The other names the external host and holds the TLS settings.
+- **`mesh` missing from the top-level `gateways`.** Rule 1 never reaches the sidecar proxies, so the request goes straight to the partner and fails.
+- **Counting the egress gateway's log lines without a starting count.** The log keeps growing, so compare the count before and after your request.
