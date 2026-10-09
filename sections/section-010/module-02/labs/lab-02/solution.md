@@ -1,10 +1,10 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The planet default was correct all along. The shuttle's own `Sidecar` replaced it, and that `Sidecar` listed only the shuttle's own planet. Here is how to find that and repair it.
+The namespace-wide `Sidecar` was correct all along. The `shuttle` pod's own `Sidecar` replaced it, and that `Sidecar` listed only the pod's own namespace. The steps below find that and repair it.
 
-## Step 1: See the failure
+## Step 1: See The Failure
 
-Send a signal from the shuttle to the probe, and read the shuttle's flight log:
+Send a request from `shuttle` to `probe`, and read the last line of the `shuttle` proxy's access log:
 
 ```sh
 kubectl -n starfleet exec deploy/shuttle -- curl -s -o /dev/null -w '%{http_code}\n' --max-time 5 http://probe.outpost:8000/get
@@ -17,11 +17,11 @@ command terminated with exit code 56
 [2026-10-08T20:09:46.799Z] "- - -" 0 UH - - "-" 0 0 0 - "-" "-" "-" "-" "-" BlackHoleCluster - 10.96.9.72:8000 10.244.0.6:47394 - -
 ```
 
-`000` means no answer at all, and `BlackHoleCluster` with `UH` means the shuttle's communications officer has no destination for this host. Under `REGISTRY_ONLY`, an uncharted host falls into the black hole.
+`000` means no response at all. `BlackHoleCluster` with the flag `UH` means the `shuttle` proxy has no destination for this host. Under `REGISTRY_ONLY`, the proxy sends a request for an unknown host to the `BlackHoleCluster`, which drops it.
 
-## Step 2: Compare the shuttle with a ship that works
+## Step 2: Compare With A Workload That Works
 
-The cargo ship lives on the same planet. Compare the two star charts:
+`cargo` runs in the same namespace. Compare the cluster lists of the two proxies:
 
 ```sh
 istioctl proxy-config cluster deploy/shuttle -n starfleet | grep -E "SERVICE|outpost|istiod|cargo"
@@ -38,11 +38,11 @@ istiod.istio-system.svc.cluster.local     15014     -          outbound      EDS
 probe.outpost.svc.cluster.local           8000      -          outbound      EDS
 ```
 
-The shuttle knows only `cargo`. The cargo ship knows `istiod` and the probe too. Same planet, different charts: so a different `Sidecar` applies to the shuttle.
+The `shuttle` proxy knows only `cargo`. The `cargo-v1` proxy also knows `istiod` and `probe`. Both pods are in the same namespace but have different configuration, so a different `Sidecar` applies to `shuttle`.
 
-## Step 3: Find the `Sidecar` that wins
+## Step 3: Find The Sidecar That Applies
 
-List the `Sidecar` objects on the planet, and read the shuttle's own:
+List the `Sidecar` objects in the namespace, and read the one for `shuttle`:
 
 ```sh
 kubectl get sidecar -n starfleet
@@ -55,7 +55,7 @@ default        16s
 shuttle-only   16s
 ```
 
-Trimmed to `spec`:
+The second command, shortened to `spec`:
 
 ```text
 spec:
@@ -69,11 +69,11 @@ spec:
       app: shuttle
 ```
 
-`shuttle-only` selects the shuttle, so it beats the planet default. A selector `Sidecar` **replaces** the planet default; it inherits nothing. It lists only `./*`, so the shuttle lost `istio-system` and `outpost`.
+`shuttle-only` selects the `shuttle` pod, so `istiod` uses it instead of the namespace-wide `default`. A selector `Sidecar` **replaces** the namespace default; it takes nothing from it. It lists only `./*`, so the `shuttle` proxy lost `istio-system` and `outpost`.
 
-## Step 4: Repair it
+## Step 4: Repair It
 
-Keep the selector and `REGISTRY_ONLY`, and list everything the shuttle needs. Save this as `sidecar-shuttle-only.yaml`:
+Keep the selector and `REGISTRY_ONLY`, and list every host the `shuttle` pod needs. Save this as `sidecar-shuttle-only.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -104,9 +104,9 @@ kubectl apply -f sidecar-shuttle-only.yaml
 sidecar.networking.istio.io/shuttle-only configured
 ```
 
-## Step 5: Prove it
+## Step 5: Prove It
 
-Check the shuttle's star chart, then send signals to the probe and the cargo ship:
+Check the `shuttle` proxy's clusters, then send requests to `probe` and `cargo`:
 
 ```sh
 istioctl proxy-config cluster deploy/shuttle -n starfleet | grep -E "outpost|istiod|cargo"
@@ -127,16 +127,16 @@ probe.outpost.svc.cluster.local           8000      -          outbound      EDS
 200
 ```
 
-The probe and `istiod` are back on the shuttle's chart. The signal leaves through `outbound|8000||probe.outpost.svc.cluster.local`, its own destination, not a passthrough. Submit:
+The `probe` and `istiod` clusters are back in the `shuttle` proxy. The request leaves through `outbound|8000||probe.outpost.svc.cluster.local`, the cluster of the `probe` Service, not through a passthrough. Submit:
 
 ```sh
 astrona submit -c sections/section-010/module-02/labs/lab-02
 ```
 
-## Mistakes that fail the grader
+## Mistakes That Fail The Grader
 
-- **Deleting `shuttle-only`.** The probe becomes reachable through the planet default, but the task is to repair the shuttle's own `Sidecar`.
-- **Adding only `outpost/*`.** The shuttle still lacks `istio-system/*`. A selector `Sidecar` must list it itself.
-- **Removing `outboundTrafficPolicy` from `shuttle-only`.** The shuttle falls back to `ALLOW_ANY` and the probe answers through `PassthroughCluster`. That is not the probe's own destination.
-- **Changing the planet default.** It was correct. Change only `shuttle-only`.
-- **Relabelling the shuttle** so the selector no longer matches. The grader checks the shuttle still carries `app: shuttle`.
+- **Deleting `shuttle-only`.** `probe` becomes reachable through the namespace default, but the task is to repair the `shuttle` pod's own `Sidecar`.
+- **Adding only `outpost/*`.** The `shuttle` proxy still lacks `istio-system/*`. A selector `Sidecar` must list it itself.
+- **Removing `outboundTrafficPolicy` from `shuttle-only`.** The `shuttle` pod falls back to `ALLOW_ANY`, and `probe` answers through `PassthroughCluster`. That is not the cluster of the `probe` Service.
+- **Changing the namespace default.** It was correct. Change only `shuttle-only`.
+- **Changing the `shuttle` pod labels** so the selector no longer matches. The grader checks that the pods still carry `app: shuttle`.

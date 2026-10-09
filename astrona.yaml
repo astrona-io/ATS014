@@ -273,22 +273,22 @@ modules:
         title: "Scope Proxy Configuration With The Sidecar Resource"
         path: sections/section-010/module-02/course.md
       - type: reading
-        title: "Every Ship Carries The Whole Star Chart"
-        path: sections/section-010/module-02/course-01-every-ship-carries-the-whole-star-chart.md
+        title: "What Every Proxy Receives By Default"
+        path: sections/section-010/module-02/course-01-what-every-proxy-receives-by-default.md
       - type: reading
-        title: "Give A Ship A Smaller Star Chart"
-        path: sections/section-010/module-02/course-02-give-a-ship-a-smaller-star-chart.md
+        title: "Limit Egress Hosts With A Namespace-Wide Sidecar"
+        path: sections/section-010/module-02/course-02-limit-egress-hosts-with-a-namespace-wide-sidecar.md
       - type: reading
         title: Question
         path: sections/section-010/module-02/labs/lab-01/question.md
       - type: lab
-        title: "Scope Proxy Configuration With The Sidecar Resource Lab"
+        title: "Limit A Namespace's Proxy Configuration With A Sidecar Lab"
         path: sections/section-010/module-02/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
         topic: routing
         task_kind: build
-        tags: [sidecar, sidecar-scoping, proxy-config]
+        tags: [sidecar, sidecar-scoping, registry-only, proxy-config]
         learning_goals:
           - Limit a namespace's proxies to the hosts they need with a Sidecar resource
           - Prove the reduction from the proxy's own cluster list while keeping the needed services reachable
@@ -300,22 +300,22 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Which Star Chart A Ship Uses"
-        path: sections/section-010/module-02/course-03-which-star-chart-a-ship-uses.md
+        title: "Which Sidecar Applies To A Workload"
+        path: sections/section-010/module-02/course-03-which-sidecar-applies-to-a-workload.md
       - type: reading
         title: Question
         path: sections/section-010/module-02/labs/lab-02/question.md
       - type: lab
-        title: "Fix One Ship's Star Chart Lab"
+        title: "Repair A Workload-Selected Sidecar Lab"
         path: sections/section-010/module-02/labs/lab-02
         difficulty: intermediate
         estimated_duration: 15m
         topic: routing
         task_kind: troubleshooting
-        tags: [sidecar, sidecar-scoping, registry-only, proxy-config]
+        tags: [sidecar, sidecar-scoping, registry-only, proxy-config, access-log]
         learning_goals:
           - Explain why a workload-selected Sidecar replaces the namespace default instead of adding to it
-          - Repair one ship's Sidecar so it reaches its own namespace, istio-system and another namespace again
+          - Repair one workload's Sidecar so it reaches its own namespace, istio-system and another namespace again
         resources:
           - name: "Sidecar reference"
             url: https://istio.io/latest/docs/reference/config/networking/sidecar/
@@ -324,11 +324,11 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "A Star Chart Is Not A Shield"
-        path: sections/section-010/module-02/course-04-a-star-chart-is-not-a-shield.md
+        title: "What A Sidecar Resource Cannot Enforce"
+        path: sections/section-010/module-02/course-04-what-a-sidecar-resource-cannot-enforce.md
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-010/module-02/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-010/module-02/course-05-summary.md
 
       - type: reading
         title: "Apply And Remove Traffic Rules Safely"

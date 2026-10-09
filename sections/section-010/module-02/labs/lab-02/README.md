@@ -1,16 +1,26 @@
 ---
-estimated_duration: 3m
+estimated_duration: 15m
 ---
 
-# Fix One Ship's Star Chart
+# Repair A Workload-Selected Sidecar Lab
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the planet default `Sidecar` gives every ship a correct star chart. One ship, the shuttle, has its own `Sidecar` as well, and since then its signals to the probe on `outpost` vanish into a black hole.
+This graded lab practises one rule of the `Sidecar` resource: a `Sidecar` with a `workloadSelector` replaces the namespace-wide `Sidecar` for the pods it selects, and takes nothing from it.
 
-Your job is to find out why the shuttle's own `Sidecar` lost those planets, repair it without removing it, and prove that the shuttle reaches the probe again.
+## What you will practise
 
-## Launching the Lab
+In the `starfleet` namespace, the namespace-wide `Sidecar` gives every proxy correct configuration. The `shuttle` pod also has its own `Sidecar`, and since then its requests to the `probe` Service in `outpost` end in the `BlackHoleCluster`.
 
-Run this command to start the cluster with the fault already in place:
+Your task is to find out why the `shuttle` pod's own `Sidecar` lost those hosts, repair it without removing it, and prove that `shuttle` reaches `probe` again through the `probe` cluster.
+
+## What is in the lab
+
+- A `kind` Kubernetes cluster with **Istio 1.30.5** installed with Helm, and access logs switched on for every proxy.
+- `starfleet` (`shuttle`, `cargo`) and `outpost` (`probe` v1 and v2), both with sidecar injection.
+- Two `Sidecar` objects in `starfleet`: `default` (correct) and `shuttle-only` (the fault).
+
+## Running the lab
+
+Start the cluster with the fault already in place:
 
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-02/labs/lab-02

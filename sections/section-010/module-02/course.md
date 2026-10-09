@@ -1,62 +1,53 @@
 # Scope Proxy Configuration With The Sidecar Resource
 
-Astronaut, this module is about the star chart each ship carries. Ask a communications officer (the sidecar proxy) in a fresh mesh which beacons it knows about, and the answer is: all of them. Every Service on every planet, whether or not the ship beside it will ever send a signal there.
+In a fresh Istio mesh, every sidecar proxy holds configuration for every Service in the mesh, whether or not its application ever calls that Service. The sidecar proxy is the Envoy container that Istio adds to each pod; all traffic in and out of the pod passes through it. `istiod`, Istio's control plane, builds that configuration and sends it to every proxy.
 
-That default means routing works without you declaring anything. But it has a cost that grows with the size of the solar system, not with your app. The `Sidecar` resource is how you cut it down: it gives a ship a smaller star chart, with only the planets it needs.
+This default means routing works without any setup. But its cost grows with the size of the mesh, not with your application. The `Sidecar` resource is the Istio object that limits it: it tells `istiod` which hosts the proxies in a namespace, or in a few selected pods, need to know about.
 
-> Every communications officer knows every beacon by default. The `Sidecar` resource is how you cut that down.
-
-The object itself is small: four fields. The interesting parts are what it changes inside the proxy, the little host language it uses, which `Sidecar` wins when several could apply, and what it can never do for you.
-
-## How this module is organised
-
-1. **[Every Ship Carries The Whole Star Chart](./course-01-every-ship-carries-the-whole-star-chart.md)**: what mission control gives every proxy by default, how it gets there, and why the cost grows with the mesh.
-2. **[Give A Ship A Smaller Star Chart](./course-02-give-a-ship-a-smaller-star-chart.md)**: the four fields, the `<namespace>/<host>` language, and what really happens to a signal for a planet that is off the chart.
-3. **[Which Star Chart A Ship Uses](./course-03-which-star-chart-a-ship-uses.md)**: selector, planet and mesh-wide defaults, and why the winner replaces the rest.
-4. **[A Star Chart Is Not A Shield](./course-04-a-star-chart-is-not-a-shield.md)**: what a `Sidecar` cannot stop, which object does, and the order to check things in when a host goes missing.
-
-Parts 2 and 3 each end with a graded mission. The wrap-up recaps the module and cleans up your playground.
+The object itself is small, with four fields. This module covers what it changes inside the proxy, the short host syntax it uses, which `Sidecar` wins when several could apply, and what it can never do for you.
 
 ## Learning objectives
 
 After this module you can:
 
-- Describe what a proxy is given when no `Sidecar` exists, and explain why that scales badly.
+- Describe what a proxy receives when no `Sidecar` exists, and explain why that scales badly.
 - Explain how a configuration change reaches a running proxy, and why no pod restart is involved.
-- Write a planet-wide `Sidecar` that limits `egress.hosts`, using the `<namespace>/<host>` language correctly.
-- Explain what `./*`, `*/*` and `istio-system/*` each select, and why the last is near-mandatory.
-- Predict what happens to a signal for a host that is off the chart, under `ALLOW_ANY` and under `REGISTRY_ONLY`.
-- Predict which `Sidecar` applies to a given ship, including selector precedence and the root default.
-- Prove a scoping change took effect without sending any signal.
-- Explain why a `Sidecar` is not a security boundary, and name what to combine it with.
+- Write a namespace-wide `Sidecar` that limits `egress.hosts`, using the `<namespace>/<host>` syntax correctly.
+- Explain what `./*`, `*/*` and `istio-system/*` each select, and why `istio-system/*` belongs in almost every list.
+- Predict what happens to a request for a host that is not in the proxy's configuration, under `ALLOW_ANY` and under `REGISTRY_ONLY`.
+- Predict which `Sidecar` applies to a given pod, including selector precedence and the root default.
+- Prove that a `Sidecar` took effect without sending any request.
+- Explain why a `Sidecar` is not a security boundary, and name the objects to combine it with.
 
 ## Before you start
 
-Every mission starts with a pre-flight check, astronaut. Make sure you have the knowledge this module expects and know what is waiting in your playground.
+This module expects some knowledge, and a playground that is ready before the first hands-on step.
 
 ### What you should already know
 
-- **How the mesh works.** A proxy (the communications officer) sits beside every pod, and `istiod` (mission control) sends it orders. You can read those orders with `istioctl proxy-config`.
+- **How the mesh works.** A sidecar proxy runs in every meshed pod, and `istiod` sends it configuration. You can read that configuration with `istioctl proxy-config`.
 - **Kubernetes basics.** Namespaces, Deployments, Services, pod labels and `kubectl exec`.
 
 ### What is in your playground
 
-Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** already installed, and two planets (namespaces), both with sidecar injection:
+Your playground is one `kind` cluster with **Istio 1.30.5** already installed, and two namespaces, both with sidecar injection switched on:
 
-| Planet | Ship | What it does |
+| Namespace | Workload | What it does |
 | --- | --- | --- |
-| `starfleet` | `shuttle` | your shuttle: every test signal is sent from here |
-| `starfleet` | `cargo` | the supply ship, a local service on port `9080` |
-| `outpost` | `probe` v1, v2 | the echo probe on another planet, on port `8000` |
+| `starfleet` | `shuttle` | Test client pod; you send every test request from here |
+| `starfleet` | `cargo` | Backend Service on port `9080` that returns item details |
+| `outpost` | `probe` v1, v2 | HTTP echo server on Service port `8000` |
 
-Every pod shows `2/2`: the app plus its communications officer. There is **no** `Sidecar` resource yet. The mesh uses Istio's default outbound policy, `ALLOW_ANY`.
+Every pod shows `2/2`: the application container plus its sidecar proxy. There is **no** `Sidecar` resource yet, and the mesh uses Istio's default outbound policy, `ALLOW_ANY`. Every proxy writes an access log.
 
-Launch your playground now, and keep it running next to you while you read the parts:
+Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
-## Why this matters
+## The order of the parts
 
-Everything else in Istio traffic management adds configuration to proxies. The `Sidecar` resource is the one that takes it away. In a big mesh with no scoping, every proxy carries every Service and gets new orders whenever anything changes anywhere.
+The module has four parts, a lab after the second part, a lab after the third part, and a summary at the end.
 
-It is also a quiet cause of failures. A perfectly correct host can be missing from one ship, simply because a `Sidecar` on that ship's planet never listed it. After this module, you can tell that apart from a host that was never defined.
+The first part measures what every proxy receives by default, shows how `istiod` delivers it over xDS, and explains why the cost grows with the mesh. The second part introduces the four fields of the `Sidecar` resource and the `<namespace>/<host>` syntax, and shows what happens to a request for a host that the proxy no longer knows. Its lab asks you to limit one namespace to the namespaces it calls.
+
+The third part explains which `Sidecar` applies when a selector, a namespace and the root namespace each hold one, and why the winner replaces the others. Its lab asks you to repair a workload-selected `Sidecar` that lists too few hosts. The fourth part shows what a `Sidecar` cannot enforce, which objects do, and the order of checks to use when a host goes missing.

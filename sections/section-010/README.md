@@ -62,13 +62,13 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 4 parts and 2 labs:
 
-1. Every Ship Carries The Whole Star Chart
-2. Give A Ship A Smaller Star Chart
-   - Lab: Scope Proxy Configuration With The Sidecar Resource Lab
-3. Which Star Chart A Ship Uses
-   - Lab: Fix One Ship's Star Chart Lab
-4. A Star Chart Is Not A Shield
-5. Wrap-Up: Mission Debrief
+1. What Every Proxy Receives By Default
+2. Limit Egress Hosts With A Namespace-Wide Sidecar
+   - Lab: Limit A Namespace's Proxy Configuration With A Sidecar Lab
+3. Which Sidecar Applies To A Workload
+   - Lab: Repair A Workload-Selected Sidecar Lab
+4. What A Sidecar Resource Cannot Enforce
+5. Summary
 
 ### Apply And Remove Traffic Rules Safely
 
