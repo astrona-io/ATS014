@@ -1580,32 +1580,32 @@ modules:
         title: "Route External Traffic Through An Egress Gateway"
         path: sections/section-080/module-01/course.md
       - type: reading
-        title: "A Gateway That Carries Nothing"
-        path: sections/section-080/module-01/course-01-a-gateway-that-carries-nothing.md
+        title: "Why An Egress Gateway Carries No Traffic By Itself"
+        path: sections/section-080/module-01/course-01-why-an-egress-gateway-carries-no-traffic.md
       - type: reading
-        title: "Open The Departure Gate"
-        path: sections/section-080/module-01/course-02-open-the-departure-gate.md
+        title: "Write The Egress `Gateway` And Its `DestinationRule`"
+        path: sections/section-080/module-01/course-02-write-the-egress-gateway-and-destinationrule.md
       - type: reading
-        title: "The Two-Stage `VirtualService`"
-        path: sections/section-080/module-01/course-03-the-two-stage-virtualservice.md
+        title: "Write The Two-Stage `VirtualService`"
+        path: sections/section-080/module-01/course-03-write-the-two-stage-virtualservice.md
       - type: reading
-        title: "Prove The Hop, And Break It"
-        path: sections/section-080/module-01/course-04-prove-the-hop-and-break-it.md
+        title: "Prove The Egress Hop And Diagnose Broken Routes"
+        path: sections/section-080/module-01/course-04-prove-the-egress-hop-and-diagnose-broken-routes.md
       - type: reading
         title: Question
         path: sections/section-080/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Repair The Departure Gate Lab"
+        title: "Fix An Egress Route That Skips The Gateway Lab"
         path: sections/section-080/module-01/labs/lab-02
         difficulty: intermediate
         estimated_duration: 25m
         topic: ingress-egress
         task_kind: troubleshooting
-        tags: [egress-gateway, gateway, virtualservice, serviceentry, access-log, proxy-config, istioctl-analyze]
+        tags: [egress-gateway, gateway, virtualservice, serviceentry, 404-nr, access-log, proxy-config, istioctl-analyze]
         learning_goals:
-          - Prove from both access logs whether a signal really flew through the egress gateway
-          - Find a two-stage VirtualService that never reaches the sidecars because mesh is missing
-          - Fix a Gateway that serves the wrong host, so the egress gateway answers 404 NR
+          - Prove from both access logs whether a request really passed through the egress gateway
+          - Find a two-stage VirtualService that never reaches the sidecars because mesh is missing from its top-level gateways
+          - Fix a Gateway that serves the wrong host, so the egress gateway stops answering 404 NR
         resources:
           - name: "Egress gateways task"
             url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway/
@@ -1614,13 +1614,13 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Choose Who Flies Through The Gate"
-        path: sections/section-080/module-01/course-05-choose-who-flies-through-the-gate.md
+        title: "Limit The Egress Route With `sourceLabels`"
+        path: sections/section-080/module-01/course-05-limit-the-egress-route-with-sourcelabels.md
       - type: reading
         title: Question
         path: sections/section-080/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Send One Ship Through The Departure Gate Lab"
+        title: "Route One Workload Through The Egress Gateway Lab"
         path: sections/section-080/module-01/labs/lab-01
         difficulty: intermediate
         estimated_duration: 45m
@@ -1629,8 +1629,8 @@ modules:
         tags: [egress-gateway, gateway, serviceentry, virtualservice, destinationrule, access-log, proxy-config]
         learning_goals:
           - Route one workload's external traffic through the egress gateway in two hops
-          - Prove the hop from the gateway's own access log and the sidecar's route
-          - Narrow the egress path with sourceLabels and show that other workloads still go direct
+          - Prove the hop from the egress gateway's own access log and the sidecar's route
+          - Limit the egress route with sourceLabels and show that other workloads still go direct
         resources:
           - name: "Egress gateways task"
             url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway/
@@ -1639,8 +1639,8 @@ modules:
           - name: "ServiceEntry reference"
             url: https://istio.io/latest/docs/reference/config/networking/service-entry/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-080/module-01/course-06-wrap-up.md
+        title: "Summary"
+        path: sections/section-080/module-01/course-06-summary.md
 
       - type: reading
         title: "TLS Origination At The Egress Gateway"

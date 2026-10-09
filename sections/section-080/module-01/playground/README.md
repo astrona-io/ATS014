@@ -4,7 +4,7 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio, an egress gateway in `istio-egress`, and the `shuttle` client in namespace `starfleet`, then waits for you, astronaut. Use it alongside the module's parts. Nothing to submit.
+A clean environment for the module: it starts a `kind` cluster with Istio, an egress gateway in `istio-egress`, and the `shuttle` client in the namespace `starfleet`, then waits. Use it alongside the module's parts. There is nothing to submit.
 
 **Needs outbound internet access.** The module calls `https://httpbin.org` and `https://www.google.com` from inside the cluster.
 
@@ -27,5 +27,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `bootstrap/deploy.sh` | Namespace `starfleet` with injection, access logs, and the `shuttle` client |
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/` | The module's `ServiceEntry`, `Gateway`, `DestinationRule` and `VirtualService` YAML, plus the mistake cases in `cases/` |
-| `docs/overview.md` | What is in the box, the helpers, things to try |
-| `docs/practice.md` | An exam-style task with a checked solution |
+| `docs/overview.md` | The only learner page: what is in the playground, the helpers, and the practice tasks (with an exam-style task and a checked solution) |

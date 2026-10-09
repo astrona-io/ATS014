@@ -29,32 +29,32 @@ The most important idea of this section comes first. Carry it into the exam: **a
 
 ## Modules In This Section
 
-Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
+Work through the modules in this order. Each part teaches one idea. A graded lab comes right after the part it practises, and the last page of each module is a summary. The capstone lab at the end uses everything in the section at once.
 
 ### Route External Traffic Through An Egress Gateway
 
-5 parts and 2 missions:
+5 parts and 2 labs:
 
-1. A Gateway That Carries Nothing
-2. Open The Departure Gate
-3. The Two-Stage `VirtualService`
-4. Prove The Hop, And Break It
-   - Mission: Repair The Departure Gate Lab
-5. Choose Who Flies Through The Gate
-   - Mission: Send One Ship Through The Departure Gate Lab
-6. Wrap-Up: Mission Debrief
+1. Why An Egress Gateway Carries No Traffic By Itself
+2. Write The Egress `Gateway` And Its `DestinationRule`
+3. Write The Two-Stage `VirtualService`
+4. Prove The Egress Hop And Diagnose Broken Routes
+   - Lab: Fix An Egress Route That Skips The Gateway Lab
+5. Limit The Egress Route With `sourceLabels`
+   - Lab: Route One Workload Through The Egress Gateway Lab
+6. Summary
 
 ### TLS Origination At The Egress Gateway
 
-5 parts and 2 missions:
+5 parts and 2 labs:
 
 1. The Five-Step Chain
 2. Originate TLS At The Gate
 3. Where The `DestinationRule` Attaches
-   - Mission: Lock The Signal At The Departure Gate Lab
+   - Lab: Lock The Signal At The Departure Gate Lab
 4. A Partner That Checks IDs
 5. Hand The Gate Its Keys
-   - Mission: Open The Partner's Locked Door Lab
+   - Lab: Open The Partner's Locked Door Lab
 6. Wrap-Up: Mission Debrief
 
 ### Capstone
