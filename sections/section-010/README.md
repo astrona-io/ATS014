@@ -56,9 +56,9 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
    - Lab: Fix A VirtualService That Does Not Apply Lab
 10. Redirect And Rewrite Requests
 11. Change Headers And Answer CORS Preflight Requests
-   - Lab: Redirect, Rewrite And Change Headers Of A Request Lab
+    - Lab: Redirect, Rewrite And Change Headers Of A Request Lab
 12. Protocol Selection And Non-HTTP Routing
-   - Lab: Declare A Service Port As HTTP Lab
+    - Lab: Declare A Service Port As HTTP Lab
 13. Summary
 
 ### Scope Proxy Configuration With The Sidecar Resource
