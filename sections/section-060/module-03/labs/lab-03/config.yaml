@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-routes"
-      description: "Confirms the Gateway is unchanged, both HTTPRoutes keep their names, hosts and paths, both report Accepted and ResolvedRefs on starfleet-gateway, the gate holds two routes, and live signals through the gate reach the bridge and the scout"
+      description: "Confirms the Gateway is unchanged, both HTTPRoutes keep their names, hosts and paths, both report Accepted and ResolvedRefs on starfleet-gateway, the Gateway listener holds two routes, and live requests through the gateway proxy reach the bridge and the scout"
       type: "file"
       source: "validation/validate-completed.sh"
 

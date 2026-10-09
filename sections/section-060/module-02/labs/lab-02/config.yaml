@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-claimed-ingress"
-      description: "Confirms the IngressClass istio names istio.io/ingress-controller, the Ingress is unchanged and claimed by it, no Gateway or VirtualService was added, and live signals through the ingress gateway reach the probe"
+      description: "Confirms the IngressClass istio names istio.io/ingress-controller, the Ingress is unchanged and claimed by it, no Gateway or VirtualService was added, and live requests through the ingress gateway reach the probe"
       type: "file"
       source: "validation/validate-completed.sh"
 

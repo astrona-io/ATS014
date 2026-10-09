@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# The lab's starting state: an arrival gate broken in three places.
+# The lab's starting state: ingress configuration broken in three places.
 #   1. The Gateway serves starfleet.exmaple.com (a typo), not starfleet.example.com.
 #   2. The VirtualService has no gateways: field, so its routes go to mesh
-#      (the sidecars) and never reach the gate.
-#   3. The VirtualService sends /productpage to host bridges, a ship that does
-#      not exist.
-# The gate's selector, port and the Starfleet itself are correct.
+#      (the sidecars) and never reach the ingress gateway.
+#   3. The VirtualService sends /productpage to host bridges, a Service that
+#      does not exist.
+# The Gateway's selector and port, and the Starfleet itself, are correct.
 set -euo pipefail
 
 kubectl apply -f - <<'YAML'

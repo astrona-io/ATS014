@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# The lab's starting state: a correct gate and two broken flight plans.
+# The lab's starting state: a correct Gateway and two broken HTTPRoutes.
 #   Gateway   starfleet-gateway: correct, one HTTP listener for starfleet.example.com
 #   HTTPRoute bridge: backendRefs names `brigde`, a Service that does not exist
-#             (ResolvedRefs=False BackendNotFound, signals get 500 NC)
+#             (ResolvedRefs=False BackendNotFound, requests get 500 NC)
 #   HTTPRoute scout:  parentRefs names `starfleet-gate`, a Gateway that does not
-#             exist (no status at all, signals get 404 NR)
+#             exist (no status at all, requests get 404 NR)
 # Fixing the two routes is the task - the Gateway is correct.
 set -euo pipefail
 

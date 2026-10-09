@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# The lab's starting state: a flight plan with no gate to dock at.
+# The lab's starting state: an HTTPRoute with no Gateway to attach to.
 # The HTTPRoute `bridge` names the Gateway `starfleet-gateway` in parentRefs,
-# but no such Gateway exists, so the route has no status and no gate proxy runs.
+# but no such Gateway exists, so the route has no status and no gateway proxy runs.
 # Building the Gateway is the task - the HTTPRoute is correct.
 set -euo pipefail
 

@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-gateway"
-      description: "Confirms the Gateway uses the istio class with the asked-for listener, Istio built its proxy in starfleet, the Gateway and the waiting HTTPRoute report healthy conditions, the route is unchanged, and live signals through the gate reach the bridge only for starfleet.example.com"
+      description: "Confirms the Gateway uses the istio class with the asked-for listener, Istio built its proxy in starfleet, the Gateway and the waiting HTTPRoute report healthy conditions, the route is unchanged, and live requests through the gateway proxy reach the bridge only for starfleet.example.com"
       type: "file"
       source: "validation/validate-completed.sh"
 
