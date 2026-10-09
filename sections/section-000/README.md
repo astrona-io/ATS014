@@ -26,17 +26,17 @@ This section shows you what Istio adds to a pod, how `istiod` sets up the proxie
 
 ## Modules In This Section
 
-Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up.
+Work through the modules in this order. Each part teaches one idea. A graded lab comes right after the part it practises, and the last page of each module is a summary.
 
 ### How A Request Moves Through The Mesh
 
-5 parts and 2 missions:
+5 parts and 2 labs:
 
-1. Meet The Communications Officer
-2. Follow A Signal Through Two Proxies
-   - Mission: Which Workloads Are Actually In The Mesh Lab
-3. How Mission Control Sends Orders
-4. Read The Proxy's Orders Layer By Layer
-5. The Diagnostic Toolkit
-   - Mission: Find The Missing Supply Ship Lab
-6. Wrap-Up: Mission Debrief
+1. What Sidecar Injection Adds To A Pod
+2. Follow A Request Through Two Proxies
+   - Lab: Bring Workloads Into The Mesh With Sidecar Injection Lab
+3. How istiod Sends Configuration Over xDS
+4. Read Listeners, Routes, Clusters And Endpoints
+5. Diagnose The Mesh With istioctl And Access Logs
+   - Lab: Fix A Service Selector That Matches No Pod Lab
+6. Summary

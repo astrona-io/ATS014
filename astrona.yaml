@@ -60,16 +60,16 @@ modules:
         title: "How A Request Moves Through The Mesh"
         path: sections/section-000/module-01/course.md
       - type: reading
-        title: "Meet The Communications Officer"
-        path: sections/section-000/module-01/course-01-meet-the-communications-officer.md
+        title: "What Sidecar Injection Adds To A Pod"
+        path: sections/section-000/module-01/course-01-what-sidecar-injection-adds-to-a-pod.md
       - type: reading
-        title: "Follow A Signal Through Two Proxies"
-        path: sections/section-000/module-01/course-02-follow-a-signal-through-two-proxies.md
+        title: "Follow A Request Through Two Proxies"
+        path: sections/section-000/module-01/course-02-follow-a-request-through-two-proxies.md
       - type: reading
         title: Question
         path: sections/section-000/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Which Workloads Are Actually In The Mesh Lab"
+        title: "Bring Workloads Into The Mesh With Sidecar Injection Lab"
         path: sections/section-000/module-01/labs/lab-01
         difficulty: intermediate
         estimated_duration: 15m
@@ -86,25 +86,25 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "How Mission Control Sends Orders"
-        path: sections/section-000/module-01/course-03-how-mission-control-sends-orders.md
+        title: "How istiod Sends Configuration Over xDS"
+        path: sections/section-000/module-01/course-03-how-istiod-sends-configuration-over-xds.md
       - type: reading
-        title: "Read The Proxy's Orders Layer By Layer"
-        path: sections/section-000/module-01/course-04-read-the-proxys-orders-layer-by-layer.md
+        title: "Read Listeners, Routes, Clusters And Endpoints"
+        path: sections/section-000/module-01/course-04-read-listeners-routes-clusters-and-endpoints.md
       - type: reading
-        title: "The Diagnostic Toolkit"
-        path: sections/section-000/module-01/course-05-the-diagnostic-toolkit.md
+        title: "Diagnose The Mesh With istioctl And Access Logs"
+        path: sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
       - type: reading
         title: Question
         path: sections/section-000/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Find The Missing Supply Ship Lab"
+        title: "Fix A Service Selector That Matches No Pod Lab"
         path: sections/section-000/module-01/labs/lab-02
         difficulty: beginner
         estimated_duration: 15m
         topic: foundations
         task_kind: troubleshooting
-        tags: [503-uh, proxy-config, access-log]
+        tags: [503-uh, proxy-config, access-log, istioctl-analyze]
         learning_goals:
           - Trace a 503 UH to a Service selector that matches no pod
           - Prove with istioctl proxy-config endpoints that the cluster has a healthy endpoint again
@@ -116,8 +116,8 @@ modules:
           - name: "Envoy access logs"
             url: https://istio.io/latest/docs/tasks/observability/logs/access-log/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-000/module-01/course-06-wrap-up.md
+        title: Summary
+        path: sections/section-000/module-01/course-06-summary.md
 
   - id: module-010
     title: "Configuring Routing Within A Service Mesh"

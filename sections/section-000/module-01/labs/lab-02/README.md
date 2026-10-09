@@ -2,13 +2,13 @@
 estimated_duration: 3m
 ---
 
-# Find The Missing Supply Ship
+# Fix A Service Selector That Matches No Pod Lab
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the bridge page says "Error fetching product details". Every ship is running, every pod shows `2/2`, and `istioctl analyze` finds nothing wrong. Yet the bridge can no longer reach its supply ship, `cargo`.
+In the `starfleet` namespace, the `bridge` page says "Error fetching product details". Every pod is running, every pod shows `2/2`, and `istioctl analyze` finds nothing wrong. Yet the `bridge` workload can no longer reach the `cargo` Service.
 
-Your job is to walk the fault-finding checklist, from `kubectl get` to the flight log and the shuttle's proxy, find the one value that is wrong, fix it, and prove the bridge can reach cargo again.
+Your job is to walk the fixed order of checks, from `kubectl get` to the access log and the `shuttle` sidecar proxy. Find the one value that is wrong, fix it, and prove that `bridge` can reach `cargo` again.
 
-## Launching the Lab
+## Running the lab
 
 Run this command to start the cluster with the fault already in place:
 
