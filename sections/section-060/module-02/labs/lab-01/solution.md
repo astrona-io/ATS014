@@ -1,10 +1,12 @@
 # Solution Walkthrough
 
-Two objects and a secret. The secret is the real test of this mission — everything else is ordinary Kubernetes YAML.
+The task needs two objects and a secret: an `IngressClass`, an `Ingress` and a TLS (Transport Layer Security) secret. The secret's namespace is the real test. Everything else is ordinary Kubernetes YAML.
 
 ---
 
 ## Step 1: Set Up Access And Confirm the Starting State
+
+Forward local ports `8080` and `8443` to the ingress gateway, then check that nothing exists yet:
 
 ```sh
 kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80  >/dev/null 2>&1 &
@@ -23,13 +25,13 @@ No resources found in k8s-ingress-demo namespace.
 -rw------- 1 root root 1704 /tmp/booking.key
 ```
 
-Nothing exists yet, and the key pair is waiting.
+No `IngressClass` and no `Ingress` exist yet, and the certificate and key are on disk.
 
 ---
 
 ## Step 2: Create the IngressClass
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+Write the manifest to a file and apply the file. This habit pays off in the exam: you can read the file again, edit it and apply it again.
 
 Save this as `ingressclass-istio.yaml`:
 
@@ -52,9 +54,9 @@ kubectl apply -f ingressclass-istio.yaml
 ingressclass.networking.k8s.io/istio created
 ```
 
-`spec.controller` must be **exactly** `istio.io/ingress-controller`. The `metadata.name` is arbitrary — `istio` is convention — but the controller string is the identifier `istiod` watches for. Get it wrong and the class exists, `Ingress` objects reference it happily, and nothing implements them.
+`spec.controller` must be **exactly** `istio.io/ingress-controller`. You can choose any `metadata.name` (`istio` is only a habit), but the controller string is the value that `istiod`, Istio's control plane, looks for. If the string is wrong, the class exists and `Ingress` objects point at it, but no controller serves them.
 
-The object is cluster-scoped, so there is no namespace on it.
+An `IngressClass` is cluster-wide, so it has no namespace.
 
 ---
 
@@ -112,9 +114,9 @@ NAME      CLASS   HOSTS               ADDRESS   PORTS     AGE
 booking   istio   booking.ica.local             80, 443   4s
 ```
 
-`CLASS: istio` is the claim. If that column read `<none>`, nothing would be serving the object and the requests below would 404 with no error anywhere.
+`CLASS: istio` shows that the `Ingress` names Istio's class. If the column showed `<none>`, no controller would serve the object, and the requests below would fail with no error anywhere.
 
-`ADDRESS` stays empty on `kind` — there is no load balancer address to publish — so do not read anything into it.
+`ADDRESS` stays empty on `kind`, because there is no load balancer address to show. Do not read anything into it.
 
 HTTP already works:
 
@@ -126,13 +128,13 @@ curl -s -o /dev/null -w '%{http_code}\n' -H "Host: booking.ica.local" http://$GA
 200
 ```
 
-HTTPS does not, because the secret does not exist yet.
+HTTPS does not work yet, because the secret does not exist.
 
 ---
 
-## Step 4: Create the Secret — In the Right Namespace
+## Step 4: Create the Secret in the Right Namespace
 
-This is the step that decides the task.
+This step decides the task. Create the secret in `istio-system` and test HTTPS:
 
 ```sh
 kubectl -n istio-system create secret tls booking-credential \
@@ -147,21 +149,21 @@ secret/booking-credential created
 200
 ```
 
-**`-n istio-system`, not `-n k8s-ingress-demo`.** The `Ingress` lives with the application; the gateway *pod* lives in `istio-system`, and a pod can only read secrets from its own namespace. Put the secret beside the `Ingress` and you get:
+**Use `-n istio-system`, not `-n k8s-ingress-demo`.** The `Ingress` lives next to the application, but the ingress gateway runs in `istio-system`. The gateway is the component that loads the certificate, and it reads TLS secrets only from its own namespace. If you put the secret next to the `Ingress`, the HTTPS request returns:
 
 ```text
 000
 ```
 
-— with HTTP still returning 200 the whole time, no event on the `Ingress`, and nothing in its status. That asymmetry is the signature, and it is why this mistake survives a casual test.
+HTTP still returns 200 the whole time, and the `Ingress` shows no event and nothing in its status. HTTP works while HTTPS fails: that pattern is the sign of this mistake, and it is why a quick HTTP test does not catch it.
 
-`-k` skips verification because the certificate is self-signed; `--resolve` makes curl send the correct SNI and `Host` for a name that resolves nowhere.
+`-k` skips certificate verification, because the certificate is self-signed. `--resolve` makes curl send the correct SNI (Server Name Indication, the host name in the TLS handshake) and `Host` header for a name that has no DNS (Domain Name System) entry.
 
 ---
 
 ## Step 5: Verify the Path Types
 
-The two path types behave differently, and the grader checks both boundaries:
+The two path types behave differently, and the grader checks the edge of each one:
 
 ```sh
 for p in /book /book/123 /booking /status/200 /status/200/extra; do
@@ -178,15 +180,17 @@ done
 /status/200/extra    -> 404
 ```
 
-`/booking` is the interesting one. It starts with the characters `/book` and it does **not** match, because `pathType: Prefix` splits on `/` and compares element by element — the element is `booking`, not `book`.
+`/booking` is the interesting one. It starts with the characters `/book`, and it does **not** match. `pathType: Prefix` splits the path at each `/` and compares whole elements, and the element here is `booking`, not `book`.
 
-Write the same rule as an Istio `VirtualService` with `uri: { prefix: /book }` and `/booking` **would** return 200, because Istio's `prefix` is a plain string prefix. Same word, two APIs, different semantics — and it is exactly the kind of thing that breaks quietly during a migration.
+If you write the same rule as an Istio `VirtualService` with `uri: { prefix: /book }`, `/booking` **would** return 200, because Istio's `prefix` compares characters. The same word means different things in the two APIs, and this difference breaks routes quietly during a migration.
 
-`/status/200/extra` failing confirms `Exact` does not match below itself.
+`/status/200/extra` returns 404, which confirms that `Exact` matches nothing below its path.
 
 ---
 
 ## Step 6: Confirm the Translation
+
+Check that the route reached the gateway, and that no Istio routing objects exist in the namespace:
 
 ```sh
 istioctl proxy-config routes deploy/istio-ingressgateway -n istio-system | grep booking
@@ -198,17 +202,17 @@ http.8080   booking.ica.local   /book*   booking-service.k8s-ingress-demo
 No resources found in k8s-ingress-demo namespace.
 ```
 
-The route is in the gateway's table and there is no `Gateway` and no `VirtualService` anywhere — `istiod` translated the `Ingress` into the same internal configuration those objects would have produced. A `Gateway` with a `VirtualService` would produce a nearly identical route line, arrived at from a different API.
+The route is in the gateway's route table, and there is no `Gateway` and no `VirtualService` anywhere. `istiod` translated the `Ingress` into the same kind of configuration those objects would produce. A `Gateway` with a `VirtualService` would give an almost identical route line.
 
 ---
 
 ## Common Mistakes
 
-- **Secret in the application namespace.** HTTPS silently never comes up while HTTP keeps working. The single most common failure here.
+- **Secret in the application namespace.** HTTPS never comes up while HTTP keeps working, and nothing reports an error. This is the most common failure here.
 - **Wrong `spec.controller`.** It must be `istio.io/ingress-controller` exactly.
-- **Omitting `ingressClassName`.** `CLASS: <none>`, nothing serves the object, 404 with no error.
-- **Reading `pathType: Prefix` as a string prefix.** `/book` does not match `/booking`.
+- **Leaving out `ingressClassName`.** The `CLASS` column shows `<none>`, nothing serves the object, and requests fail with no error.
+- **Reading `pathType: Prefix` as a character prefix.** `/book` does not match `/booking`.
 - **Using `pathType: Prefix` for `/status/200`.** It would match `/status/200/extra` and fail check 10.
-- **Creating a `Gateway` or `VirtualService` to "help".** The grader checks neither exists.
+- **Creating a `Gateway` or `VirtualService` as well.** The grader checks that neither exists.
 - **Creating the secret with `create secret generic`.** It must be type `kubernetes.io/tls`; use `create secret tls`.
-- **Testing HTTPS without `--resolve`.** The hostname resolves nowhere, and SNI has to match the certificate.
+- **Testing HTTPS without `--resolve`.** The host name has no DNS entry, and the SNI name has to match the certificate.

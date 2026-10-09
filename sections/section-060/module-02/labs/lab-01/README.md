@@ -4,7 +4,7 @@ estimated_duration: 30m
 
 # Expose A Service With A Kubernetes Ingress
 
-Welcome to your graded mission, astronaut. You'll have Istio's gateway serve a plain Kubernetes `Ingress`: an ingress class it answers, host and path rules with two path types, and TLS with the secret on the planet where the gate can read it. That last part catches almost everybody the first time.
+In this lab, Istio's ingress gateway serves a plain Kubernetes `Ingress`. You create an `IngressClass` that Istio serves, host and path rules with two path types, and TLS with the secret in the namespace where the gateway can read it. Most people get that last step wrong the first time.
 
 ## Launching the Lab
 

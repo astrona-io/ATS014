@@ -82,7 +82,7 @@ Each module is a landing page, its ordered parts and a closing page. The landing
 | 040-04 | [Locality Load Balancing And Failover](sections/section-040/module-04/course.md) | 3 | 3 |
 | 050-01 | [Fault Injection With Delays And Aborts](sections/section-050/module-01/course.md) | 4 | 3 |
 | 060-01 | [Expose A Service With An Istio Ingress Gateway](sections/section-060/module-01/course.md) | 4 | 3 |
-| 060-02 | [Expose A Service With A Kubernetes Ingress](sections/section-060/module-02/course.md) | 3 | 2 |
+| 060-02 | [Expose A Service With A Kubernetes Ingress](sections/section-060/module-02/course.md) | 4 | 2 |
 | 060-03 | [Ingress With The Kubernetes Gateway API](sections/section-060/module-03/course.md) | 4 | 3 |
 | 070-01 | [Control External Access With ServiceEntry](sections/section-070/module-01/course.md) | 4 | 2 |
 | 070-02 | [TLS Origination For External Services](sections/section-070/module-02/course.md) | 4 | 2 |

@@ -4,9 +4,9 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio,
-its ingress gateway and the Starfleet, then waits for you, astronaut. Use it
-alongside the module's parts. Nothing to submit.
+A clean environment: it starts a `kind` cluster with Istio, its ingress
+gateway and the Starfleet example workloads, then waits. Use it alongside the
+module's parts. Nothing to submit.
 
 ## Run it
 
@@ -26,4 +26,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `bootstrap/install-istio.sh` | Installs Istio 1.30.5 (`istio-base`, `istiod` and the gateway chart released as `istio-ingressgateway`) with Helm |
 | `bootstrap/deploy.sh` | Namespace `starfleet` with injection, access logs, the Starfleet, `shuttle` client, `probe` v1/v2 |
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
-| `docs/overview.md` | What is in the box, things to try |
+| `docs/overview.md` | What is in the box, helpers and practice tasks |

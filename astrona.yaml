@@ -1179,23 +1179,23 @@ modules:
         title: "Expose A Service With A Kubernetes Ingress"
         path: sections/section-060/module-02/course.md
       - type: reading
-        title: "Claiming An Ingress"
-        path: sections/section-060/module-02/course-01-claiming-an-ingress.md
+        title: "Assign An Ingress To Istio With An IngressClass"
+        path: sections/section-060/module-02/course-01-assign-an-ingress-to-istio-with-an-ingressclass.md
       - type: reading
         title: Question
         path: sections/section-060/module-02/labs/lab-02/question.md
       - type: lab
-        title: "Claim The Unclaimed Ingress Lab"
+        title: "Fix An IngressClass That No Controller Serves Lab"
         path: sections/section-060/module-02/labs/lab-02
         difficulty: beginner
         estimated_duration: 15m
         topic: ingress-egress
         task_kind: troubleshooting
-        tags: [ingress-resource, ingress-gateway, uri-matching, proxy-config]
+        tags: [ingress-resource, ingress-gateway, proxy-config, access-log]
         learning_goals:
           - Recognise an Ingress that no controller serves even though its CLASS column looks right
-          - Fix an IngressClass controller by deleting and recreating it, since the field is immutable
-          - Prove the gateway serves the Ingress with live signals and its route table
+          - Fix an IngressClass controller by deleting and recreating it, because the field cannot be changed
+          - Prove that the gateway serves the Ingress with live requests and its route table
         resources:
           - name: "Kubernetes Ingress with Istio"
             url: https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/
@@ -1204,11 +1204,14 @@ modules:
           - name: "Mesh configuration reference (ingressClass, ingressService)"
             url: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/
       - type: reading
-        title: "Rules, Path Types And Translation"
-        path: sections/section-060/module-02/course-02-rules-path-types-and-translation.md
+        title: "Match Paths With pathType And Read The Generated Routes"
+        path: sections/section-060/module-02/course-02-match-paths-with-pathtype-and-read-the-generated-routes.md
       - type: reading
-        title: "TLS And The Feature Ceiling"
-        path: sections/section-060/module-02/course-03-tls-and-the-feature-ceiling.md
+        title: "Add TLS To An Ingress"
+        path: sections/section-060/module-02/course-03-add-tls-to-an-ingress.md
+      - type: reading
+        title: "Know What The Ingress API Cannot Express"
+        path: sections/section-060/module-02/course-04-know-what-the-ingress-api-cannot-express.md
       - type: reading
         title: Question
         path: sections/section-060/module-02/labs/lab-01/question.md
@@ -1219,7 +1222,7 @@ modules:
         estimated_duration: 30m
         topic: ingress-egress
         task_kind: build
-        tags: [ingress-resource, ingress-gateway, tls-termination, uri-matching]
+        tags: [ingress-resource, ingress-gateway, tls-termination, uri-matching, proxy-config]
         learning_goals:
           - Serve a host through Istio with a Kubernetes Ingress and the istio IngressClass
           - Choose between Prefix and Exact path types and predict which paths match
@@ -1232,8 +1235,8 @@ modules:
           - name: "Secure gateways task"
             url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-060/module-02/course-04-wrap-up.md
+        title: "Summary"
+        path: sections/section-060/module-02/course-05-summary.md
 
       - type: reading
         title: "Ingress With The Kubernetes Gateway API"

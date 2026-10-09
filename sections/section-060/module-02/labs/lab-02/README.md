@@ -2,11 +2,11 @@
 estimated_duration: 15m
 ---
 
-# Claim The Unclaimed Ingress
+# Fix An IngressClass That No Controller Serves
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, an `Ingress` points at an ingress class that looks right, and still no signal gets through the arrival gate. There is no error anywhere.
+This is a troubleshooting lab. In the `starfleet` namespace, an `Ingress` points at an ingress class that looks right, and still no request gets through Istio's ingress gateway. There is no error anywhere.
 
-Your job is to find out why no controller serves the `Ingress`, fix the ingress class, and prove that signals reach the echo probe through the gate.
+Your job is to find out why no controller serves the `Ingress`, fix the `IngressClass`, and prove that requests reach the `probe` Service through the gateway.
 
 ## Launching the Lab
 
