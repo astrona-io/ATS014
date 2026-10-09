@@ -1255,8 +1255,8 @@ modules:
         title: "Ingress With The Kubernetes Gateway API"
         path: sections/section-060/module-03/course.md
       - type: reading
-        title: "Three Objects, Three Owners"
-        path: sections/section-060/module-03/course-01-three-objects-three-owners.md
+        title: "The Gateway API Objects And Their Owners"
+        path: sections/section-060/module-03/course-01-the-gateway-api-objects-and-their-owners.md
       - type: reading
         title: "A Gateway That Creates Its Own Data Plane"
         path: sections/section-060/module-03/course-02-a-gateway-that-creates-its-own-data-plane.md
@@ -1264,7 +1264,7 @@ modules:
         title: Question
         path: sections/section-060/module-03/labs/lab-02/question.md
       - type: lab
-        title: "Open The Spaceport Gate Lab"
+        title: "Create A Gateway API Gateway For A Waiting HTTPRoute Lab"
         path: sections/section-060/module-03/labs/lab-02
         difficulty: beginner
         estimated_duration: 15m
@@ -1272,9 +1272,9 @@ modules:
         task_kind: build
         tags: [gateway-api, ingress-gateway, access-log, 404-nr]
         learning_goals:
-          - Create a Gateway API Gateway that fits an HTTPRoute that is already waiting
-          - Find the gateway proxy that Istio builds in the Gateway's own namespace
-          - Prove with live signals that the gate serves only its own host name
+          - Create a Gateway API Gateway that matches an HTTPRoute that already exists
+          - Find the gateway proxy that Istio deploys in the Gateway's own namespace
+          - Prove with real requests that the gateway serves only its own host name
         resources:
           - name: "Istio Gateway API task"
             url: https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
@@ -1287,7 +1287,7 @@ modules:
         title: Question
         path: sections/section-060/module-03/labs/lab-03/question.md
       - type: lab
-        title: "Fix The Broken Flight Plans Lab"
+        title: "Fix Two Broken HTTPRoutes From Their Status Conditions Lab"
         path: sections/section-060/module-03/labs/lab-03
         difficulty: intermediate
         estimated_duration: 20m
@@ -1306,13 +1306,13 @@ modules:
           - name: "Gateway API documentation"
             url: https://gateway-api.sigs.k8s.io/
       - type: reading
-        title: "Decide Who May Dock"
-        path: sections/section-060/module-03/course-04-decide-who-may-dock.md
+        title: "Control Route Attachment With allowedRoutes"
+        path: sections/section-060/module-03/course-04-control-route-attachment-with-allowedroutes.md
       - type: reading
         title: Question
         path: sections/section-060/module-03/labs/lab-01/question.md
       - type: lab
-        title: "Share One Gateway Between Two Planets Lab"
+        title: "Share One Gateway API Gateway Across Two Namespaces Lab"
         path: sections/section-060/module-03/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
@@ -1328,14 +1328,14 @@ modules:
           - name: "Gateway API documentation"
             url: https://gateway-api.sigs.k8s.io/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-060/module-03/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-060/module-03/course-05-summary.md
 
       - type: reading
         title: Question
         path: sections/section-060/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Three APIs, One Edge Capstone Lab"
+        title: "Expose Three Services Through Three Ingress APIs Capstone Lab"
         path: sections/section-060/capstone/labs/lab-01
         difficulty: advanced
         estimated_duration: 60m

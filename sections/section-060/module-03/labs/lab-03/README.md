@@ -2,11 +2,11 @@
 estimated_duration: 20m
 ---
 
-# Fix The Broken Flight Plans
+# Fix Two Broken HTTPRoutes From Their Status Conditions Lab
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the gate is built and working, but signals through it never reach the bridge or the scout. Two flight plans dock at the gate, and each one is broken in its own way.
+A troubleshooting lab. In the `starfleet` namespace, a Gateway API `Gateway` runs and works, but requests through it never reach the `bridge` or the `scout` Service. Two `HTTPRoute` objects are meant to attach to the `Gateway`, and each one has a different fault.
 
-Your job is to read the status lights of both `HTTPRoute` objects, find each fault, fix it without touching the gate, and prove that signals reach both ships.
+The learner reads the status conditions of both `HTTPRoute` objects, finds each fault, fixes it without changing the `Gateway`, and proves that requests reach both Services.
 
 ## Launching the Lab
 

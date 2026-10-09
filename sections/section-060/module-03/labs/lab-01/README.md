@@ -2,9 +2,9 @@
 estimated_duration: 30m
 ---
 
-# Share One Gateway Between Two Planets
+# Share One Gateway API Gateway Across Two Namespaces Lab
 
-Welcome to a building mission, astronaut. Two crews on two different planets (namespaces) both need signals from outside the solar system. You build one shared gate for them with a Gateway API `Gateway`, which brings its own proxy with it. Then you let a route from the *other* planet dock at it, which this API refuses by default.
+A build lab. Two teams in two namespaces both need requests from outside the cluster. The learner creates one shared Gateway API `Gateway`, for which Istio deploys its own proxy. Then the learner lets an `HTTPRoute` from the *other* namespace attach to it, which the Gateway API refuses by default, using a namespace label selector in `allowedRoutes`.
 
 ## Launching the Lab
 

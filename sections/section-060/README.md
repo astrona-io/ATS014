@@ -64,18 +64,18 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 4 parts and 3 labs:
 
-1. Three Objects, Three Owners
+1. The Gateway API Objects And Their Owners
 2. A Gateway That Creates Its Own Data Plane
-   - Lab: Open The Spaceport Gate Lab
+   - Lab: Create A Gateway API Gateway For A Waiting HTTPRoute Lab
 3. Attach An HTTPRoute And Read Its Status
-   - Lab: Fix The Broken Flight Plans Lab
-4. Decide Who May Dock
-   - Lab: Share One Gateway Between Two Planets Lab
-5. Wrap-Up: Mission Debrief
+   - Lab: Fix Two Broken HTTPRoutes From Their Status Conditions Lab
+4. Control Route Attachment With allowedRoutes
+   - Lab: Share One Gateway API Gateway Across Two Namespaces Lab
+5. Summary
 
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **Three APIs, One Edge Capstone Lab**.
+The section ends with a capstone lab that uses everything in it: **Expose Three Services Through Three Ingress APIs Capstone Lab**.
 
 ---
 

@@ -4,10 +4,10 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with the
-Gateway API objects, Istio and the Starfleet (the Istio docs' Bookinfo sample,
-renamed), then waits for you, astronaut. Use it alongside the module's parts.
-Nothing to submit.
+An ungraded environment: it starts a `kind` cluster with the Gateway API
+CRDs, Istio and the Starfleet (the Istio Bookinfo sample with renamed
+workloads), then waits. Use it alongside the module's parts. Nothing to
+submit.
 
 ## Run it
 
