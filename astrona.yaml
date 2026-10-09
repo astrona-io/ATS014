@@ -334,22 +334,23 @@ modules:
         title: "Apply And Remove Traffic Rules Safely"
         path: sections/section-010/module-03/course.md
       - type: reading
-        title: "The Order To Apply And Remove Rules"
-        path: sections/section-010/module-03/course-01-the-order-to-apply-and-remove-rules.md
+        title: "Apply And Remove Objects In Dependency Order"
+        path: sections/section-010/module-03/course-01-apply-and-remove-objects-in-dependency-order.md
       - type: reading
         title: Question
         path: sections/section-010/module-03/labs/lab-01/question.md
       - type: lab
-        title: "Retire A Ship Class Safely Lab"
+        title: "Retire A Subset Without Failed Requests Lab"
         path: sections/section-010/module-03/labs/lab-01
         difficulty: intermediate
         estimated_duration: 15m
         topic: routing
         task_kind: migration
-        tags: [virtualservice, destinationrule, subsets, 503-nc, access-log]
+        tags: [virtualservice, destinationrule, subsets, 503-nc, ist0101, proxy-config, access-log]
         learning_goals:
           - Retire a subset in the safe order: stop routing to it before you remove it
-          - Prove from a live caller's access log that no signal failed during the change
+          - Check with istioctl proxy-config that the new routes reached the client's proxy before you remove the subset
+          - Prove from a live client's access log that no request failed during the change
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
@@ -358,26 +359,27 @@ modules:
           - name: "Traffic management best practices"
             url: https://istio.io/latest/docs/ops/best-practices/traffic-management/
       - type: reading
-        title: "One Object Per Host, And The Defaults"
-        path: sections/section-010/module-03/course-02-one-object-per-host-and-the-defaults.md
+        title: "One Object Per Host And Istio's Defaults"
+        path: sections/section-010/module-03/course-02-one-object-per-host-and-istios-defaults.md
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-010/module-03/course-03-wrap-up.md
+        title: "Summary"
+        path: sections/section-010/module-03/course-03-summary.md
 
       - type: reading
         title: Question
         path: sections/section-010/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Route And Scope A Storefront Capstone Lab"
+        title: "Route With Subsets And Scope Proxies With A Sidecar Capstone Lab"
         path: sections/section-010/capstone/labs/lab-01
         difficulty: advanced
         estimated_duration: 45m
         topic: routing
         task_kind: build
-        tags: [virtualservice, destinationrule, sidecar, header-matching, rule-order, sidecar-scoping]
+        tags: [virtualservice, destinationrule, sidecar, header-matching, uri-matching, query-matching, rule-order, sidecar-scoping]
         learning_goals:
-          - Combine header, path and query routing with a catch-all in one VirtualService
-          - Scope a namespace's proxies with a Sidecar without breaking the routing you built
+          - Combine header, path and query matches with a catch-all route in one VirtualService
+          - Scope the proxies of a namespace with a Sidecar without breaking the routing you built
+          - Prove with live requests and the proxy's cluster list which hosts the client can still reach
         resources:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/

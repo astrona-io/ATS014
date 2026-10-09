@@ -2,15 +2,15 @@
 estimated_duration: 3m
 ---
 
-# Retire A Ship Class Safely
+# Retire A Subset Without Failed Requests Lab
 
-Welcome to a live-change mission, astronaut. On the planet `starfleet`, every scout signal still flies to the old ship class `v1`. Mission control wants `v1` retired: everyone moves to `v2`, `jason` tests `v3`, and the `v1` subset is removed.
+This graded lab checks one skill: changing live routing in the safe order. In the namespace `starfleet`, every request to `scout` still goes to the old subset `v1`. The task is to retire `v1`: all clients move to `v2`, the end user `jason` gets `v3`, and the `v1` subset is removed from the `DestinationRule`.
 
-The hard part is not the YAML. A patrol ship sends a signal to the scout twice a second for the whole mission, and every one of them must arrive. If a route ever points at a subset that is already gone, the patrol's flight log shows it, and the mission fails.
+The hard part is not the YAML. A client pod, `patrol`, sends a request to `scout` twice a second for the whole lab, and every one of them must succeed. If a route ever points at a subset that is already gone, the `patrol` proxy's access log shows a `503`, and the lab fails.
 
-## Launching the Lab
+## Running the lab
 
-Run this command to start the cluster with the starting state in place:
+Start the cluster with the starting state in place:
 
 ```bash
 astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-03/labs/lab-01

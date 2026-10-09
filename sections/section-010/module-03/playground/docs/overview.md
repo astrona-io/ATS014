@@ -1,63 +1,52 @@
-# Overview: Apply And Remove Traffic Rules Safely (Playground)
+# Playground: Apply And Remove Traffic Rules Safely
 
-> Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
+This is a **playground**, not a lab. It starts a fresh cluster, installs Istio and the sample app, and then waits for you. There is no task, no `astrona submit`, and no pass or fail. Explore, break things, and start over whenever you like.
 
-This is a **playground**, not a lab: your training solar system. It starts a fresh cluster, installs Istio
-and the Starfleet, and then waits. There is no task, no `astrona submit` and
-no pass or fail. Explore, break things, `astrona destroy`, start over.
+## What is in the playground
 
-## What's in the box
+The playground is one small cluster with Istio and one namespace of workloads:
 
-- A single-node `kind` Kubernetes cluster. `kubectl` is already pointed at it.
-- **Istio 1.30.5**, installed with Helm (`istio-base` and `istiod` only, no
-  gateways). `istiod` is mission control: it radios new orders to every proxy.
-- Mesh-wide **access logs**: every proxy writes one line per request, its
-  flight log. Read it with `kubectl logs -n starfleet deploy/shuttle -c istio-proxy`.
-- Namespace **`starfleet`** (the planet), labelled `istio-injection=enabled`, with
-  the fleet: the flagship `bridge`, the supply ship `cargo`, the scout in three
-  ship classes (`scout` v1, v2 and v3), the navigation computer `navcom`, your
-  test client `shuttle`, and the echo `probe` v1/v2. It is the Istio docs'
-  Bookinfo sample with space names; the paths inside a signal keep their old
-  names, so the scout answers on `http://scout:9080/reviews/0`.
-- **No `DestinationRule` and no `VirtualService`.** You apply them in the
-  order the module teaches.
-- The bridge's page in your browser, at `http://127.0.0.1:9080/productpage`.
-
-## Things to try
-
-Each idea below uses the `scout` flight plan and docking instructions from the module's parts. The parts show the full YAML: save it to a file, apply it with `kubectl apply -f`, and watch what happens.
-
-- Apply the "all to v1" `VirtualService` **before** any `DestinationRule`, then call `scout` straight away. Read the `503` and the `NC` flag in the flight log. Then apply the `DestinationRule` and call again.
-- After each change, check that the shuttle's proxy has the new subset with
-  `istioctl proxy-config clusters deploy/shuttle -n starfleet` before you test.
-- Delete the `DestinationRule` while the `VirtualService` still uses it, and
-  read the `503 NC` again. Then do it the right way round: the route first.
-- Apply the same `VirtualService` file twice with a different subset. See that
-  `kubectl apply` replaces the object (`configured`) rather than adding a second one.
-- Check two defaults with no rules at all: `http://probe:8000/delay/3` waits
-  the full 3 seconds, and `http://probe:8000/status/503` reaches the probe
-  only once.
+- A single-node `kind` Kubernetes cluster, with `kubectl` pointed at it.
+- **Istio 1.30.5**, installed with Helm (`istio-base` and `istiod` only, no gateways). `istiod` is Istio's control plane: it sends configuration to every sidecar proxy. You need `istioctl` on your own machine.
+- Envoy **access logs** for the whole mesh. An access log is the log where each sidecar proxy writes one line per request. Read the `shuttle` proxy's log with `kubectl logs -n starfleet deploy/shuttle -c istio-proxy`.
+- The **`starfleet`** namespace, labelled `istio-injection=enabled`, so every pod has a sidecar proxy:
+  - `bridge`, `cargo`, `scout` v1/v2/v3 and `navcom`: the Istio Bookinfo sample app with other names. `bridge` is the web frontend; the others are backends. The URL paths did not change, so `scout` answers on `http://scout:9080/reviews/0`.
+  - `shuttle`: the test client. Send every test request from here.
+  - `probe` v1/v2: an HTTP echo server on Service port `8000`. Paths such as `/delay/3` and `/status/503` make Istio's defaults easy to see.
+- **No `DestinationRule` and no `VirtualService`.** You write and apply them yourself.
+- The `bridge` page in your browser, at `http://127.0.0.1:9080/productpage`.
 
 ## Start over without a new cluster
+
+Delete every `VirtualService` and `DestinationRule` in the namespace:
 
 ```sh
 kubectl delete virtualservice,destinationrule --all -n starfleet
 ```
 
-## Playground not working?
+## When the playground does not work
 
-- `astrona list` shows running environments. "already exists" means an old one
-  is still there: `astrona destroy ats-014-playground-010-03`, then run again.
+- `astrona list` shows the running environments. "already exists" means an old one is still there: run `astrona destroy ats-014-playground-010-03`, then start it again.
 - The full log path is printed at the end of `astrona run` (`~/.astrona/logs/`).
-- `kubectl` talks to another cluster:
-  `kubectl config use-context kind-astro-ats-014-playground-010-03`.
-- A pod shows `1/1` instead of `2/2`: it has no sidecar. Run
-  `kubectl rollout restart deploy -n starfleet`.
+- If `kubectl` talks to another cluster, switch to this one: `kubectl config use-context kind-astro-ats-014-playground-010-03`.
+- A pod that shows `1/1` instead of `2/2` has no sidecar proxy. Restart the workloads: `kubectl rollout restart deploy -n starfleet`.
 
-## When you're done
+## When you are done
+
+Remove the playground:
 
 ```sh
 astrona destroy ats-014-playground-010-03
 ```
 
-(`astrona destroy` takes the environment name, not the configuration path.)
+`astrona destroy` takes the name of the playground, not the folder path.
+
+## Practice tasks
+
+Each task uses a `DestinationRule` named `scout` with the subsets `v1`, `v2` and `v3` (each selecting the pod label `version`), and a `VirtualService` named `scout` that sends every request to subset `v1`. Write both to files yourself and apply them with `kubectl apply -f`.
+
+1. Apply the `VirtualService` **before** any `DestinationRule` exists, then send a request to `scout` straight away. Read the `503` and the `NC` flag in the `shuttle` proxy's access log, and the `IST0101` message from `istioctl analyze -n starfleet`. Then apply the `DestinationRule` and send the request again.
+2. After each change, check that the `shuttle` proxy has the new subset with `istioctl proxy-config clusters deploy/shuttle -n starfleet` before you test.
+3. Delete the `DestinationRule` while the `VirtualService` still uses it, and read the `503 NC` again. Then remove both objects in the safe order: the `VirtualService` first.
+4. Apply a second `VirtualService` file with the same name, `scout`, that sends every request to `v3`. Check that `kubectl apply` prints `configured` and that `kubectl get virtualservice -n starfleet` still lists one object.
+5. Check two defaults with no rules for `probe`: a request to `http://probe:8000/delay/3` waits the full 3 seconds, and a request to `http://probe:8000/status/503` reaches a `probe` pod only once.

@@ -36,52 +36,52 @@ Finally, it covers order: how to apply and remove these objects so no route ever
 
 ## Modules In This Section
 
-Work through the modules in this order. Each part teaches one idea. A mission (a graded lab) comes right after the part it practises, and the last page of each module is a wrap-up. The capstone at the end uses everything in the section at once.
+Work through the modules in this order. Each part teaches one idea. A graded lab comes right after the part it practises, and the last page of each module is a summary. The capstone lab at the end uses everything in the section at once.
 
 ### Route Requests Within The Mesh
 
-9 parts and 5 missions:
+9 parts and 5 labs:
 
 1. Where Signals Go Today
 2. Name The Ship Classes
-   - Mission: Fix The Docking Instructions Lab
+   - Lab: Fix The Docking Instructions Lab
 3. Write A Flight Plan
 4. Match Exactly What You Mean
 5. Put Your Rules In Order
-   - Mission: Route Requests By Header, URI And Query Parameter Lab
+   - Lab: Route Requests By Header, URI And Query Parameter Lab
 6. Put The Flight Plan On The Right Planet
 7. Read The Flight Log And The Proxy's Orders
-   - Mission: Find Out Why The Flight Plan Does Nothing Lab
+   - Lab: Find Out Why The Flight Plan Does Nothing Lab
 8. Rewriting, Redirecting And Headers
-   - Mission: Reshape A Request Lab
+   - Lab: Reshape A Request Lab
 9. Routing Non-HTTP Traffic
-   - Mission: Bring HTTP Routing Back Lab
+   - Lab: Bring HTTP Routing Back Lab
 10. Wrap-Up: Mission Debrief
 
 ### Scope Proxy Configuration With The Sidecar Resource
 
-4 parts and 2 missions:
+4 parts and 2 labs:
 
 1. Every Ship Carries The Whole Star Chart
 2. Give A Ship A Smaller Star Chart
-   - Mission: Scope Proxy Configuration With The Sidecar Resource Lab
+   - Lab: Scope Proxy Configuration With The Sidecar Resource Lab
 3. Which Star Chart A Ship Uses
-   - Mission: Fix One Ship's Star Chart Lab
+   - Lab: Fix One Ship's Star Chart Lab
 4. A Star Chart Is Not A Shield
 5. Wrap-Up: Mission Debrief
 
 ### Apply And Remove Traffic Rules Safely
 
-2 parts and 1 mission:
+2 parts and 1 lab:
 
-1. The Order To Apply And Remove Rules
-   - Mission: Retire A Ship Class Safely Lab
-2. One Object Per Host, And The Defaults
-3. Wrap-Up: Mission Debrief
+1. Apply And Remove Objects In Dependency Order
+   - Lab: Retire A Subset Without Failed Requests Lab
+2. One Object Per Host And Istio's Defaults
+3. Summary
 
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **Route And Scope A Storefront Capstone Lab**.
+The section ends with a capstone lab that uses everything in it: **Route With Subsets And Scope Proxies With A Sidecar Capstone Lab**.
 
 ---
 

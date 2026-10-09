@@ -1,10 +1,12 @@
 # Solution Walkthrough
 
-Two halves that interact. Build the routing first and prove it works, then add the scoping — and watch that a `Sidecar` which forgets its own namespace destroys the routing you just finished.
+The task has two halves that affect each other. Build the routing first and prove that it works. Then add the scoping, and watch how a `Sidecar` that leaves out its own namespace breaks the routing you just finished.
 
 ---
 
 ## Step 1: Read the Starting State
+
+List the pods with their labels, the selector of the `catalog` Service, and the namespaces with sidecar injection switched on:
 
 ```sh
 kubectl -n storefront get pods --show-labels
@@ -23,7 +25,7 @@ partners     Active
 storefront   Active
 ```
 
-Baseline traffic hits both versions, and all three namespaces are reachable:
+With no rules, requests reach both versions, and both outside Services answer:
 
 ```sh
 kubectl -n storefront exec deploy/shopper -- sh -c \
@@ -45,7 +47,7 @@ http://coldstore.archive:8000/get -> 200
 
 ## Step 2: Define the Subsets
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+A `DestinationRule` defines subsets: named groups of pods, selected by pod labels. Write it to a file and apply the file. A file is something you can read again, edit and apply again, which saves time in an exam.
 
 Save this as `destinationrule-catalog.yaml`:
 
@@ -84,11 +86,13 @@ catalog.storefront.svc.cluster.local   8000   v1   outbound   EDS
 catalog.storefront.svc.cluster.local   8000   v2   outbound   EDS
 ```
 
-Three clusters where there was one. Traffic is unchanged — subsets are docking instructions, not a flight plan.
+The `shopper` proxy now has three clusters for `catalog` where it had one. A cluster is Envoy's name for a group of destination pods. Traffic does not change yet: subsets only define the groups, and no route uses them.
 
 ---
 
 ## Step 3: Route, Specific Rules First
+
+A `VirtualService` holds the routing rules for a host. The proxy checks the rules from top to bottom and uses the first one that matches, so the three specific rules go first and the default rule goes last.
 
 Save this as `virtualservice-catalog.yaml`:
 
@@ -139,9 +143,9 @@ istioctl analyze -n storefront
 ✔ No validation issues found when analyzing namespace: storefront.
 ```
 
-The three details that fail a task: `exact: "mobile"` and `exact: "1"` are quoted, the query rule uses `queryParams` rather than `uri`, and the default rule is **last**.
+Three details often fail this task: `exact: "mobile"` and `exact: "1"` are quoted, the query rule uses `queryParams` and not `uri`, and the default rule is **last**.
 
-Verify all five cases the grader checks:
+Now check all five cases that the grader checks:
 
 ```sh
 kubectl -n storefront exec deploy/shopper -- sh -c \
@@ -160,13 +164,13 @@ kubectl -n storefront exec deploy/shopper -- curl -s -X POST -H "x-channel: web"
 ["EMAIL"]
 ```
 
-The last line is the near-miss: a present header with the wrong value must fall through.
+The last line is the near-miss: a request that has the header with the wrong value must fall through to the default rule.
 
 ---
 
 ## Step 4: Scope the Namespace
 
-Measure before you change anything:
+A `Sidecar` resource limits which hosts the proxies in its namespace hold configuration for. Before you change anything, count the clusters in the `shopper` proxy:
 
 ```sh
 istioctl proxy-config cluster deploy/shopper -n storefront | wc -l
@@ -176,7 +180,7 @@ istioctl proxy-config cluster deploy/shopper -n storefront | wc -l
       36
 ```
 
-Now the `Sidecar`. Three entries, no selector.
+Now write the `Sidecar`: three egress hosts, and no `workloadSelector`.
 
 Save this as `sidecar-default.yaml`:
 
@@ -216,13 +220,15 @@ catalog.storefront.svc.cluster.local   8000   v2   outbound   EDS
 pricing.partners.svc.cluster.local     8000   -    outbound   EDS
 ```
 
-`archive` is gone. `catalog` — including both subsets — survived, because `./*` covers the proxy's own namespace.
+`archive` is gone. `catalog` and both of its subsets are still there, because `./*` means every host in the proxy's own namespace.
 
-**This is the interaction the capstone is testing.** Drop `./*` from that list and re-run the routing checks: every request 503s, because the proxy no longer has a `catalog` cluster to route to. The `VirtualService` is still perfect; the destination is simply missing from the ship's star chart.
+**This is the interaction the capstone tests.** Remove `./*` from that list and run the routing checks again: every request gets a `503`, because the proxy no longer has a `catalog` cluster to send it to. The `VirtualService` is still correct. The destination is missing from the proxy's configuration.
 
 ---
 
 ## Step 5: Verify Both Halves Together
+
+Send requests to both outside Services, and repeat two routing checks:
 
 ```sh
 for url in http://pricing.partners:8000/get http://coldstore.archive:8000/get; do
@@ -241,7 +247,7 @@ http://coldstore.archive:8000/get -> 000
 ["EMAIL","SMS"]
 ```
 
-Partners reachable, archive not, routing still correct. Confirm you stopped the traffic by scoping rather than by deleting:
+`pricing` answers, `coldstore` does not (`000` means curl got no HTTP response), and the routing still works. Confirm that the `Sidecar` stopped the traffic, and that `coldstore` still runs:
 
 ```sh
 kubectl -n archive get deploy,svc
@@ -256,11 +262,11 @@ service/coldstore           ClusterIP   8000/TCP
 
 ## Common Mistakes
 
-- **`Sidecar` without `./*`.** Breaks the routing half completely — 503 on every `catalog` request, with a `VirtualService` that is not at fault.
-- **Omitting `istio-system/*`.** Application traffic still works, so the mistake survives a casual test; telemetry and control-plane paths do not.
-- **Default route first.** The three match rules become unreachable, silently.
-- **`uri` used for the query parameter.** The `uri` match stops at the `?`.
-- **Unquoted `exact: 1`.** Parsed as an integer and rejected — quote query and header values.
-- **Adding a `workloadSelector`.** The specification says namespace-wide.
-- **Deleting or scaling `coldstore`.** The grader checks it is still running.
-- **Testing immediately after the `Sidecar` apply.** Wait a few seconds for the push before deciding the object is wrong.
+- **`Sidecar` without `./*`.** This breaks the routing half completely: every `catalog` request gets a `503`, and the `VirtualService` is not at fault.
+- **Leaving out `istio-system/*`.** Application traffic still works, so a quick test does not show the mistake. The grader checks for the entry.
+- **Default route first.** The three match rules can never match, and nothing reports an error.
+- **Using `uri` for the query parameter.** The `uri` match stops at the `?`.
+- **Unquoted `exact: 1`.** YAML reads it as a number, and the API server rejects it. Quote query and header values.
+- **Adding a `workloadSelector`.** The specification asks for a `Sidecar` for the whole namespace.
+- **Deleting or scaling down `coldstore`.** The grader checks that it still runs.
+- **Testing straight after you apply the `Sidecar`.** `istiod` needs a few seconds to push the change to the proxies. Wait before you decide that the object is wrong.
