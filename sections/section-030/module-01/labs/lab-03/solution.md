@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. One ship took every signal because the docking instructions hash the sender's IP address. The fix is one field: swap the hash for an algorithm that takes the ships in turn.
+One pod took every request because the `probe` `DestinationRule` hashes the client's IP address. The fix is one field: replace the hash with an algorithm that takes the pods in turn.
 
 ---
 
 ## Step 1: See the problem
 
-Send 8 signals from the shuttle and count which probe pod answered:
+Send 8 requests from the `shuttle` pod and count which probe pod answered:
 
 ```sh
 for i in $(seq 1 8); do
@@ -18,17 +18,17 @@ done | sort | uniq -c
    8 "probe-v1-7888d6c6d5-6zlch"
 ```
 
-All 8 signals landed on one pod, although the squadron has four.
+All 8 requests landed on one pod, although the Service has four.
 
 ## Step 2: Find the cause
 
-Read the probe's docking instructions:
+A `DestinationRule` is the Istio object that holds policies for traffic to one host, including the load balancer. Read the one for `probe`:
 
 ```sh
 kubectl get destinationrule probe -n starfleet -o yaml
 ```
 
-The part that matters (trimmed):
+The part that matters (shortened):
 
 ```text
 spec:
@@ -39,7 +39,9 @@ spec:
         useSourceIp: true
 ```
 
-`useSourceIp: true` hashes the sender's address. Every signal from the shuttle comes from the same address, so it always hashes to the same pod. The shuttle's proxy confirms it:
+`consistentHash` with `useSourceIp: true` makes the sending proxy calculate a hash from the client's IP address and pick the pod from that hash. Every request from the `shuttle` pod comes from the same address, so it always hashes to the same pod.
+
+Envoy stores the endpoints of one destination as a **cluster**, and it stores the algorithm as the cluster field `lbPolicy`. The `shuttle` pod's proxy confirms the cause:
 
 ```sh
 istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet.svc.cluster.local -o json \
@@ -51,9 +53,9 @@ istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet
         "ringHashLbConfig": {
 ```
 
-`RING_HASH` is how Envoy does consistent hashing.
+`RING_HASH` is Envoy's name for consistent hashing.
 
-## Step 3: Spread the signals in turn
+## Step 3: Spread the requests in turn
 
 Replace the hash with round robin. Save this as `destinationrule-probe.yaml`:
 
@@ -82,7 +84,7 @@ destinationrule.networking.istio.io/probe configured
 
 ## Step 4: Prove it
 
-Count the `lbPolicy` lines the shuttle's proxy now holds for the probe:
+Count the `lbPolicy` lines the `shuttle` pod's proxy now holds for the probe:
 
 ```sh
 istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet.svc.cluster.local -o json \
@@ -93,7 +95,7 @@ istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet
 0
 ```
 
-No `lbPolicy` line at all: round robin is Envoy's own default, and the dump leaves default values out. `RING_HASH` is gone. Now send 8 signals again:
+There is no `lbPolicy` line at all. Round robin is Envoy's own default, and the dump leaves default values out. `RING_HASH` is gone. Now send 8 requests again:
 
 ```sh
 for i in $(seq 1 8); do
@@ -110,7 +112,7 @@ One run gave:
    2 "probe-v2-58767cc46-znght"
 ```
 
-All four pods answered. The spread is roughly even rather than exactly 2, 2, 2, 2, because the proxy runs more than one worker thread and each keeps its own turn order.
+All four pods answered. The spread is roughly even rather than exactly 2, 2, 2, 2. The proxy runs more than one worker thread, and each thread keeps its own turn order.
 
 Send it for grading:
 
@@ -127,6 +129,6 @@ PASS: the probe DestinationRule uses simple ROUND_ROBIN with no consistentHash, 
 ## Mistakes that fail the grader
 
 - **Adding `simple` next to `consistentHash`.** Istio rejects a `loadBalancer` that has both.
-- **Choosing `RANDOM` or `LEAST_REQUEST`.** They spread signals too, but the task asks for round robin.
-- **Scaling the squadron.** More or fewer pods do not change how the proxy picks one. Keep `probe-v1` at 3 and `probe-v2` at 1.
-- **Submitting straight after `kubectl apply`.** The proxy needs a moment to receive the new orders. If the grader still sees `RING_HASH`, wait a few seconds and submit again.
+- **Choosing `RANDOM` or `LEAST_REQUEST`.** They spread requests too, but the task asks for round robin.
+- **Scaling the Deployments.** More or fewer pods do not change how the proxy picks one. Keep `probe-v1` at 3 and `probe-v2` at 1.
+- **Submitting straight after `kubectl apply`.** `istiod`, Istio's control plane, needs a moment to send the new configuration to the proxy. If the grader still sees `RING_HASH`, wait a few seconds and submit again.

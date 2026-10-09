@@ -75,7 +75,7 @@ Each module is a landing page, its ordered parts and a closing page. The landing
 | 010-03 | [Apply And Remove Traffic Rules Safely](sections/section-010/module-03/course.md) | 2 | 1 |
 | 020-01 | [Shift Traffic With Weighted Routing](sections/section-020/module-01/course.md) | 3 | 2 |
 | 020-02 | [Mirror Live Traffic To A Shadow Service](sections/section-020/module-02/course.md) | 3 | 2 |
-| 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | 4 | 3 |
+| 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | 5 | 3 |
 | 040-01 | [Timeouts And Retries](sections/section-040/module-01/course.md) | 4 | 3 |
 | 040-02 | [Circuit Breaking With Connection Pool Limits](sections/section-040/module-02/course.md) | 3 | 2 |
 | 040-03 | [Outlier Detection And Endpoint Ejection](sections/section-040/module-03/course.md) | 4 | 2 |

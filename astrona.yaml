@@ -553,13 +553,13 @@ modules:
         title: "Load Balancer Policy And Session Affinity"
         path: sections/section-030/module-01/course.md
       - type: reading
-        title: "Endpoint Selection And The `simple` Algorithms"
-        path: sections/section-030/module-01/course-01-endpoint-selection-and-simple-algorithms.md
+        title: "Choose A Simple Load Balancing Algorithm"
+        path: sections/section-030/module-01/course-01-choose-a-simple-load-balancing-algorithm.md
       - type: reading
         title: Question
         path: sections/section-030/module-01/labs/lab-03/question.md
       - type: lab
-        title: "Spread The Signals Evenly Lab"
+        title: "Spread Requests Evenly With ROUND_ROBIN Lab"
         path: sections/section-030/module-01/labs/lab-03
         difficulty: beginner
         estimated_duration: 15m
@@ -567,27 +567,27 @@ modules:
         task_kind: troubleshooting
         tags: [destinationrule, load-balancing, consistent-hash, proxy-config]
         learning_goals:
-          - Find why every signal lands on one pod by reading the DestinationRule and the proxy's lbPolicy
-          - Replace a consistentHash policy with simple ROUND_ROBIN and prove the spread with live signals
+          - Find why every request lands on one pod by reading the DestinationRule and the proxy's lbPolicy
+          - Replace a consistentHash policy with simple ROUND_ROBIN and prove the spread with live requests
         resources:
           - name: "DestinationRule load balancer settings"
             url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings
           - name: "Envoy load balancers"
             url: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers
       - type: reading
-        title: "`consistentHash` And The Ring"
-        path: sections/section-030/module-01/course-02-consistent-hash-and-the-ring.md
+        title: "Pin Requests To A Pod With `consistentHash`"
+        path: sections/section-030/module-01/course-02-pin-requests-to-a-pod-with-consistent-hash.md
       - type: reading
-        title: "Sticky Cookies And Other Hash Sources"
-        path: sections/section-030/module-01/course-03-sticky-cookies-and-other-hash-sources.md
+        title: "Hash A Cookie, The Source IP Or A Query Parameter"
+        path: sections/section-030/module-01/course-03-hash-a-cookie-source-ip-or-query-parameter.md
       - type: reading
-        title: "Policy Levels And Verification"
-        path: sections/section-030/module-01/course-04-policy-levels-and-verification.md
+        title: "Set A Load Balancer Per Subset"
+        path: sections/section-030/module-01/course-04-set-a-load-balancer-per-subset.md
       - type: reading
         title: Question
         path: sections/section-030/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Load Balancer Policy And Session Affinity Lab"
+        title: "Pin A Subset By Header And Override Another Subset Lab"
         path: sections/section-030/module-01/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
@@ -597,7 +597,7 @@ modules:
         learning_goals:
           - Keep one subset sticky by header with a host-level consistentHash policy
           - Override the load balancer for one subset with ROUND_ROBIN and prove it per cluster
-          - Route signals to subsets by header so each policy is really used
+          - Route requests to subsets by header so each policy is really used
         resources:
           - name: "DestinationRule reference"
             url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
@@ -606,10 +606,13 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
+        title: "Set A Load Balancer Per Port"
+        path: sections/section-030/module-01/course-05-set-a-load-balancer-per-port.md
+      - type: reading
         title: Question
         path: sections/section-030/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Session Affinity For Browsers Lab"
+        title: "Issue A Sticky Cookie On One Port Lab"
         path: sections/section-030/module-01/labs/lab-02
         difficulty: intermediate
         estimated_duration: 25m
@@ -617,7 +620,7 @@ modules:
         task_kind: build
         tags: [destinationrule, session-affinity, consistent-hash, load-balancing]
         learning_goals:
-          - Make the sidecar hand out a sticky cookie by giving httpCookie a ttl
+          - Make the sidecar proxy create a sticky cookie by giving httpCookie a ttl
           - Apply a load balancer policy to one port with portLevelSettings
           - Prove that a client with the cookie stays on one pod and a client without it does not
         resources:
@@ -626,14 +629,14 @@ modules:
           - name: "Envoy load balancers"
             url: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-030/module-01/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-030/module-01/course-06-summary.md
 
       - type: reading
         title: Question
         path: sections/section-030/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Sticky Sessions With A Shadowed Canary Capstone Lab"
+        title: "Combine Session Affinity With Traffic Mirroring Capstone Lab"
         path: sections/section-030/capstone/labs/lab-01
         difficulty: advanced
         estimated_duration: 45m
@@ -641,8 +644,8 @@ modules:
         task_kind: build
         tags: [destinationrule, consistent-hash, session-affinity, load-balancing, mirroring, subsets]
         learning_goals:
-          - Combine host-level affinity with a different subset policy
-          - Mirror stable traffic to a canary that spreads its load
+          - Combine host-level session affinity with a different load balancer for one subset
+          - Mirror stable traffic to a canary subset that spreads its load
         resources:
           - name: "DestinationRule reference"
             url: https://istio.io/latest/docs/reference/config/networking/destination-rule/

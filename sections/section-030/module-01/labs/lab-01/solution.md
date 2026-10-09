@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Two objects. The interesting part is the second `trafficPolicy` — the one on the subset — because its `loadBalancer` replaces the host's `loadBalancer` for that subset, and the grader checks that you put it in exactly one place.
+You need two objects: a `DestinationRule` (the Istio object that holds policies for traffic to one host) and a `VirtualService` (the Istio object that holds routing rules). The important part is the second `trafficPolicy`, the one on the `canary` subset. Its `loadBalancer` replaces the host's `loadBalancer` for that subset, and the grader checks that you put it in exactly one place.
 
 ---
 
@@ -21,7 +21,7 @@ NAME      ENDPOINTS                                                             
 httpbin   10.244.0.11:8080,10.244.0.12:8080,10.244.0.13:8080 + 2 more...         5m
 ```
 
-Five endpoints behind one Service. Establish the baseline — with no policy, the same user spreads:
+The Service has five endpoints (pod addresses). First record the starting behaviour. With no policy, the requests of the same user spread over the pods. The `tester` pod's sidecar proxy writes an access log line for each request, and each line names the endpoint it picked:
 
 ```sh
 kubectl -n lb-demo exec deploy/tester -- sh -c \
@@ -42,7 +42,7 @@ kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 \
 
 ## Step 2: The DestinationRule, With Policies at Two Levels
 
-Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+Write the manifest to a file and apply the file. In the exam, a file lets you read, edit and apply the configuration again.
 
 Save this as `destinationrule-httpbin.yaml`:
 
@@ -80,11 +80,11 @@ kubectl apply -f destinationrule-httpbin.yaml
 destinationrule.networking.istio.io/httpbin created
 ```
 
-Three placement details the grader checks:
+The grader checks three placement details:
 
-- **`consistentHash` is at `spec.trafficPolicy`** — the host level, so it applies to every subset that does not override it.
-- **`ROUND_ROBIN` is inside the `canary` subset entry**, indented under that subset's own `trafficPolicy`.
-- **The `stable` subset has no `trafficPolicy` at all.** It inherits the host's `consistentHash` as it is. Any field a subset policy sets replaces the host's whole field for that subset, so a `loadBalancer` on `stable` would take its stickiness away.
+- **`consistentHash` is at `spec.trafficPolicy`**, the host level, so it applies to every subset that does not override it. `consistentHash` makes the sending proxy pick the pod from a hash of the `x-user` header, so the same user always reaches the same pod.
+- **`ROUND_ROBIN` is inside the `canary` subset entry**, under that subset's own `trafficPolicy`.
+- **The `stable` subset has no `trafficPolicy` at all.** It inherits the host's `consistentHash` as it is. Any field a subset policy sets replaces the host's whole field for that subset, so a `loadBalancer` on `stable` would remove its session affinity.
 
 ---
 
@@ -132,13 +132,13 @@ istioctl analyze -n lb-demo
 ✔ No validation issues found when analyzing namespace: lb-demo.
 ```
 
-The default rule is last, as always.
+The rule without a `match` is last. The proxy uses the first rule that matches, so a rule without a `match` above the `x-track` rule would catch every request.
 
 ---
 
 ## Step 4: Confirm the Two Clusters Have Different Policies
 
-This is the structural proof that the subset override took effect, and it is faster than any behavioural test:
+Envoy stores the endpoints of one destination as a **cluster**: one for the whole host and one per subset. Each cluster has an `lbPolicy` field. Reading it proves that the subset override reached the proxy, and it is faster than any test with live requests:
 
 ```sh
 istioctl proxy-config cluster deploy/tester -n lb-demo \
@@ -155,13 +155,13 @@ istioctl proxy-config cluster deploy/tester -n lb-demo \
 "lbPolicy": "RING_HASH",
 ```
 
-Three clusters: the subset-less one and one per subset. `stable` inherited `RING_HASH` from the host policy; `canary` shows `ROUND_ROBIN` because its own policy replaced it. `RING_HASH` is Envoy's name for `consistentHash`.
+There are three clusters: the one without a subset and one per subset. `stable` inherited `RING_HASH` from the host policy. `RING_HASH` is Envoy's name for `consistentHash`. `canary` uses round robin, because its own policy replaced the host's. Round robin is Envoy's own default, and the dump often leaves default values out. If your dump shows no `lbPolicy` line under the `canary` cluster, that also means round robin, and the grader reads it that way.
 
 ---
 
 ## Step 5: Verify the Three Behaviours
 
-**Affinity on stable** — same user, twelve times, one pod:
+**Session affinity on `stable`.** Send the same user twelve times; all requests must reach one pod:
 
 ```sh
 kubectl -n lb-demo exec deploy/tester -- sh -c \
@@ -173,7 +173,7 @@ kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 | grep -oE '[0-9.
   12 10.244.0.12:8080
 ```
 
-**The canary override** — same user, but routed to the canary subset, must spread:
+**The `canary` override.** Send the same user, but routed to the `canary` subset. The requests must spread:
 
 ```sh
 kubectl -n lb-demo exec deploy/tester -- sh -c \
@@ -186,9 +186,9 @@ kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 | grep -oE '[0-9.
    6 10.244.0.17:8080
 ```
 
-Identical `x-user`, completely different behaviour — because the cluster it landed in uses a different algorithm.
+The `x-user` value is the same, but the behaviour is completely different, because the `canary` cluster uses a different algorithm.
 
-**Nothing to hash** — no `x-user` at all:
+**Nothing to hash.** Send requests with no `x-user` header at all:
 
 ```sh
 kubectl -n lb-demo exec deploy/tester -- sh -c \
@@ -202,16 +202,22 @@ kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 | grep -oE '[0-9.
    3 10.244.0.13:8080
 ```
 
-The policy is unchanged and still `RING_HASH`; these requests simply have nothing to hash, so the proxy falls back to normal load balancing. This is the failure mode behind most "affinity works in testing but not in production" reports.
+The policy is unchanged and still `RING_HASH`. These requests have nothing to hash, so the proxy falls back to normal load balancing. This is the cause behind most "session affinity works in testing but not in production" reports.
+
+When all three checks look right, send the lab for grading:
+
+```sh
+astrona submit -c sections/section-030/module-01/labs/lab-01
+```
 
 ---
 
 ## Common Mistakes
 
-- **Putting `consistentHash` inside the `stable` subset instead of at host level.** It works for `stable` and the grader still fails you, because the host-level policy is what the specification asked for.
+- **Putting `consistentHash` inside the `stable` subset instead of at host level.** It works for `stable`, but the grader still fails it, because the task asks for the host-level policy.
 - **Adding a `loadBalancer` to the `stable` subset.** A field the subset sets replaces the host's whole field, so `stable` would lose the host's `consistentHash`.
-- **Setting `simple` and `consistentHash` in the same `loadBalancer`.** Mutually exclusive — the object is rejected.
-- **Testing affinity against one replica.** Every request hits the same pod regardless of policy.
-- **Expecting affinity for requests without the header.** They fall back to spreading, silently.
-- **Putting the default rule above the `x-track` rule.** First match wins; the canary rule never runs.
-- **Reading affinity from the application response.** `go-httpbin` does not report which pod answered — the client proxy's access log does.
+- **Setting `simple` and `consistentHash` in the same `loadBalancer`.** You can only use one; Istio rejects the object.
+- **Testing session affinity against one replica.** Every request reaches the same pod, whatever the policy.
+- **Expecting session affinity for requests without the header.** The proxy spreads them, with no error.
+- **Putting the rule without a `match` above the `x-track` rule.** The first matching rule wins, so the `canary` rule never runs.
+- **Reading session affinity from the application response.** `go-httpbin` does not report which pod answered. The client proxy's access log does.
