@@ -11,11 +11,11 @@ bootstrap:
       type: "file"
       source: "bootstrap/01-install-istio.sh"
     - name: "lab-030-01-03-workloads"
-      description: "Creates the starfleet namespace with the shuttle client, the probe squadron (3 v1 pods, 1 v2 pod) and mesh-wide access logs"
+      description: "Creates the starfleet namespace with the shuttle client, the probe (3 v1 pods, 1 v2 pod) and mesh-wide access logs"
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-030-01-03-fault"
-      description: "Applies the starting state: a probe DestinationRule that hashes the source IP, so every signal from the shuttle lands on one pod"
+      description: "Applies the starting state: a probe DestinationRule that hashes the source IP, so every request from the shuttle goes to one pod"
       type: "file"
       source: "bootstrap/03-seed-fault.sh"
 
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-even-spread"
-      description: "Confirms the probe DestinationRule uses simple ROUND_ROBIN at host level with no consistentHash, the shuttle's proxy holds a round robin cluster for the probe, live signals reach all four probe pods, and the ships were left alone"
+      description: "Confirms the probe DestinationRule uses simple ROUND_ROBIN at host level with no consistentHash, the shuttle's proxy holds a round robin cluster for the probe, live requests reach all four probe pods, and the deployments were left alone"
       type: "file"
       source: "validation/validate-completed.sh"
 

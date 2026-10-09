@@ -107,7 +107,7 @@ for c in json.loads(sys.argv[1]):
 PY
 )
 [[ -n "$pol_stable" && -n "$pol_canary" ]] \
-  || fail "could not find both the stable and canary clusters in the proxy dump - check the subsets exist and the push landed"
+  || fail "could not find both the stable and canary clusters in the proxy dump - check the subsets exist and istiod pushed them to the proxy"
 [[ "$pol_stable" == "RING_HASH" ]] \
   || fail "the stable cluster's lbPolicy is '$pol_stable', expected RING_HASH (Envoy's name for consistentHash)"
 [[ "$pol_canary" != "$pol_stable" ]] \

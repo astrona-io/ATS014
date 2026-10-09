@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Confirms the probe DestinationRule spreads signals in turn (simple
+# Confirms the probe DestinationRule sends requests to each pod in turn (simple
 # ROUND_ROBIN at host level, no consistentHash anywhere), that the shuttle's
-# proxy really holds a round robin cluster for the probe, that the ships were
-# left alone, and - the part that matters - that live signals from the shuttle
-# reach all four probe pods.
+# sidecar proxy really holds a round robin cluster for the probe, that the
+# deployments were left alone, and - the part that matters - that live requests
+# from the shuttle reach all four probe pods.
 
 set -u
 
@@ -17,22 +17,22 @@ fail() { echo "FAIL: $*"; exit 1; }
 # --- 0. the environment is still what the lab handed over -------------------
 for d in probe-v1 probe-v2 shuttle; do
   ready=$(kubectl -n "$NS" get deployment "$d" -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
-  [[ -n "$ready" && "$ready" -ge 1 ]] || fail "$d - deployment missing or has no ready replicas in $NS. Leave the ships alone: the fix belongs in the DestinationRule"
+  [[ -n "$ready" && "$ready" -ge 1 ]] || fail "$d - deployment missing or has no ready replicas in $NS. Leave the deployments alone: the fix belongs in the DestinationRule"
 done
 
 deploy_count=$(kubectl -n "$NS" get deployments -o name 2>/dev/null | wc -l | tr -d ' ')
-[[ "$deploy_count" -eq 3 ]] || fail "$NS holds $deploy_count deployments, expected exactly 3 - do not add or remove ships"
+[[ "$deploy_count" -eq 3 ]] || fail "$NS holds $deploy_count deployments, expected exactly 3 - do not add or remove deployments"
 
 v1=$(kubectl -n "$NS" get deployment probe-v1 -o jsonpath='{.spec.replicas}' 2>/dev/null)
 v2=$(kubectl -n "$NS" get deployment probe-v2 -o jsonpath='{.spec.replicas}' 2>/dev/null)
-[[ "$v1" == "3" && "$v2" == "1" ]] || fail "probe-v1 runs $v1 replicas and probe-v2 runs $v2, expected 3 and 1. Do not scale the squadron - change how the proxy picks a ship"
+[[ "$v1" == "3" && "$v2" == "1" ]] || fail "probe-v1 runs $v1 replicas and probe-v2 runs $v2, expected 3 and 1. Do not scale the deployments - change how the proxy picks a pod"
 
 selector=$(kubectl -n "$NS" get service "$SVC" -o jsonpath='{.spec.selector}' 2>/dev/null)
 [[ "$selector" == *'"app":"probe"'* ]] || fail "the probe Service selector is '$selector', expected it to keep selecting app=probe"
 
 # --- 1. the DestinationRule ---------------------------------------------------
 kubectl -n "$NS" get destinationrule "$SVC" >/dev/null 2>&1 \
-  || fail "DestinationRule '$SVC' not found in $NS - the load balancer policy lives in the probe's docking instructions"
+  || fail "DestinationRule '$SVC' not found in $NS - the load balancer policy lives in the probe's DestinationRule"
 
 dr_host=$(kubectl -n "$NS" get destinationrule "$SVC" -o jsonpath='{.spec.host}' 2>/dev/null)
 case "$dr_host" in
@@ -42,7 +42,7 @@ esac
 
 dr_json=$(kubectl -n "$NS" get destinationrule "$SVC" -o json 2>/dev/null)
 if grep -q '"consistentHash"' <<<"$dr_json"; then
-  fail "the DestinationRule still uses consistentHash. Hashing pins signals to ships; this mission needs every ship to take signals in turn. Replace it with simple: ROUND_ROBIN"
+  fail "the DestinationRule still uses consistentHash. Hashing pins requests to one pod; this task needs every pod to take requests in turn. Replace it with simple: ROUND_ROBIN"
 fi
 
 simple=$(kubectl -n "$NS" get destinationrule "$SVC" -o jsonpath='{.spec.trafficPolicy.loadBalancer.simple}' 2>/dev/null)
@@ -65,7 +65,7 @@ for attempt in $(seq 1 15); do
 done
 [[ "$policy" == "ROUND_ROBIN" ]] || fail "the shuttle's proxy uses lbPolicy '${policy:-unknown}' for $CLUSTER, expected round robin. If you just applied the fix, wait a few seconds and submit again"
 
-# --- 3. live signals reach every probe pod ------------------------------------
+# --- 3. live requests reach every probe pod -----------------------------------
 pods=$(kubectl -n "$NS" get pods -l app=probe --field-selector=status.phase=Running -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
 pod_count=$(wc -w <<<"$pods" | tr -d ' ')
 [[ "$pod_count" -eq 4 ]] || fail "found $pod_count running probe pods, expected 4"
@@ -78,10 +78,10 @@ done
 
 for p in $pods; do
   n=$(grep -o "$p" <<<"$answers" | wc -l | tr -d ' ')
-  [[ "$n" -ge 1 ]] || fail "16 signals from the shuttle never reached pod $p. Answers were: $answers. An even spread must reach every ship in the squadron"
+  [[ "$n" -ge 1 ]] || fail "16 requests from the shuttle never reached pod $p. Responses came from: $answers. An even spread must reach every probe pod"
 done
 
 top=$(tr ' ' '\n' <<<"$answers" | grep -v '^$' | sort | uniq -c | sort -rn | head -1 | awk '{print $1}')
-[[ "$top" -le 8 ]] || fail "one pod answered $top of 16 signals - that is not an even spread"
+[[ "$top" -le 8 ]] || fail "one pod answered $top of 16 requests - that is not an even spread"
 
-echo "PASS: the probe DestinationRule uses simple ROUND_ROBIN with no consistentHash, the shuttle's proxy holds a round robin cluster, and 16 live signals reached all 4 probe pods (most on one pod: $top)"
+echo "PASS: the probe DestinationRule uses simple ROUND_ROBIN with no consistentHash, the shuttle's proxy holds a round robin cluster, and 16 live requests reached all 4 probe pods (most on one pod: $top)"

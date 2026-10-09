@@ -121,7 +121,7 @@ astrona submit -c sections/section-030/module-01/labs/lab-03
 ```
 
 ```text
-PASS: the probe DestinationRule uses simple ROUND_ROBIN with no consistentHash, the shuttle's proxy holds a round robin cluster, and 16 live signals reached all 4 probe pods (most on one pod: 4)
+PASS: the probe DestinationRule uses simple ROUND_ROBIN with no consistentHash, the shuttle's proxy holds a round robin cluster, and 16 live requests reached all 4 probe pods (most on one pod: 4)
 ```
 
 ---
