@@ -55,9 +55,9 @@ Section [000](sections/section-000) is not an exam topic. It covers the basics t
 | [070](sections/section-070) | Connecting In-Mesh Workloads To External Workloads And Services | 3 | Connecting In-Mesh Workloads to External Workloads and Services |
 | [080](sections/section-080) | Configuring Ingress And Egress Traffic — Egress | 2 | Configuring Ingress and Egress Traffic |
 
-**20 modules · 80 parts · 48 graded labs · 8 capstones · 20 playgrounds.**
+**20 modules · 87 parts · 48 graded labs · 8 capstones · 20 playgrounds.**
 
-The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml): 245 entries across the introduction and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
+The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml): 249 entries across the introduction and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
 
 Sections are ordered so each needs only what came before. Section 000 is foundations — what a sidecar is, how `istiod` programs it, and how to read a proxy's live configuration — because every section after it assumes all three. `VirtualService` and `DestinationRule` are introduced first because everything else is a field on one of them; `ServiceEntry` (070) precedes the egress gateway (080) that depends on it.
 
@@ -96,7 +96,7 @@ Each module is a landing page, its ordered parts and a closing page. The landing
 
 Every module has one: a **kind** cluster with Istio 1.30.5 installed and the module's starting workloads applied. It has no Istio traffic configuration on purpose, because writing that configuration is the exercise.
 
-Every playground runs **the Starfleet**: the Bookinfo sample app from the Istio documentation, with space names (`bridge`, `cargo`, `scout` v1, v2 and v3, `navcom`) in namespace `starfleet`, plus the `shuttle` test client and any extra workloads the module needs. The playgrounds install Istio with Helm (`istiod`, plus a gateway where the module needs one), so you need `istioctl` on your own machine. Each one has `examples/` with ready YAML files, and most also have `docs/practice.md` with an exam-style task. A few older graded labs and capstones still use their own small apps.
+Every playground runs **the Starfleet**: the Bookinfo sample app from the Istio documentation, with space names (`bridge`, `cargo`, `scout` v1, v2 and v3, `navcom`) in namespace `starfleet`, plus the `shuttle` test client and any extra workloads the module needs. The playgrounds install Istio with Helm (`istiod`, plus a gateway where the module needs one), so you need `istioctl` on your own machine. Each one has `examples/` with the authors' reference YAML, and its `docs/overview.md` ends with exam-style practice tasks. A few older graded labs and capstones still use their own small apps.
 
 ```bash
 astrona run --git ssh://git@github.com/astrona-io/ATS014.git -c sections/section-010/module-01/playground
