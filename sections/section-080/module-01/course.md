@@ -68,8 +68,8 @@ The log helpers wait two seconds first. For an encrypted connection, the proxy w
 
 ## The order of the parts
 
-The module has five parts, a lab after the fourth part, a lab after the fifth part, and a summary at the end.
+The module has six parts, a lab after the fifth part, a lab after the sixth part, and a summary at the end.
 
 The first part shows that a running egress gateway carries no traffic, and why outbound traffic is different from inbound traffic. The second part writes the `Gateway` and the `DestinationRule` for the egress gateway, and explains why each one looks the way it does. The third part writes the two-stage `VirtualService` and follows one request through both proxies.
 
-The fourth part proves the extra hop and breaks the route in four ways, so you can tell each failure by its access log. Its lab asks you to find and fix a route that skips the egress gateway. The fifth part limits the route to labelled workloads with `sourceLabels` and weighs what the egress gateway gives and costs. Its lab asks you to build the route for one workload over plain HTTP.
+The fourth part shows how to prove the extra hop from the access logs, and breaks the `VirtualService` in two ways. The fifth part breaks the `Gateway` and the `DestinationRule`, so you can tell each of the four failures by its access log. Its lab asks you to find and fix a route that skips the egress gateway. The sixth part limits the route to labelled workloads with `sourceLabels` and weighs what the egress gateway gives and costs. Its lab asks you to build the route for one workload over plain HTTP.

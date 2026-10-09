@@ -33,16 +33,17 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 ### Route External Traffic Through An Egress Gateway
 
-5 parts and 2 labs:
+6 parts and 2 labs:
 
 1. Why An Egress Gateway Carries No Traffic By Itself
 2. Write The Egress `Gateway` And Its `DestinationRule`
 3. Write The Two-Stage `VirtualService`
-4. Prove The Egress Hop And Diagnose Broken Routes
+4. Prove The Egress Hop And Find Broken `VirtualService` Rules
+5. Diagnose A Broken Egress `Gateway` Or `DestinationRule`
    - Lab: Fix An Egress Route That Skips The Gateway Lab
-5. Limit The Egress Route With `sourceLabels`
+6. Limit The Egress Route With `sourceLabels`
    - Lab: Route One Workload Through The Egress Gateway Lab
-6. Summary
+7. Summary
 
 ### TLS Origination At The Egress Gateway
 

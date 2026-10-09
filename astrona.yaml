@@ -1604,8 +1604,11 @@ modules:
         title: "Write The Two-Stage `VirtualService`"
         path: sections/section-080/module-01/course-03-write-the-two-stage-virtualservice.md
       - type: reading
-        title: "Prove The Egress Hop And Diagnose Broken Routes"
-        path: sections/section-080/module-01/course-04-prove-the-egress-hop-and-diagnose-broken-routes.md
+        title: "Prove The Egress Hop And Find Broken `VirtualService` Rules"
+        path: sections/section-080/module-01/course-04-prove-the-egress-hop-and-find-broken-virtualservice-rules.md
+      - type: reading
+        title: "Diagnose A Broken Egress `Gateway` Or `DestinationRule`"
+        path: sections/section-080/module-01/course-05-diagnose-a-broken-egress-gateway-or-destinationrule.md
       - type: reading
         title: Question
         path: sections/section-080/module-01/labs/lab-02/question.md
@@ -1630,7 +1633,7 @@ modules:
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
         title: "Limit The Egress Route With `sourceLabels`"
-        path: sections/section-080/module-01/course-05-limit-the-egress-route-with-sourcelabels.md
+        path: sections/section-080/module-01/course-06-limit-the-egress-route-with-sourcelabels.md
       - type: reading
         title: Question
         path: sections/section-080/module-01/labs/lab-01/question.md
@@ -1655,7 +1658,7 @@ modules:
             url: https://istio.io/latest/docs/reference/config/networking/service-entry/
       - type: reading
         title: "Summary"
-        path: sections/section-080/module-01/course-06-summary.md
+        path: sections/section-080/module-01/course-07-summary.md
 
       - type: reading
         title: "TLS Origination At The Egress Gateway"

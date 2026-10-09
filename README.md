@@ -87,7 +87,7 @@ Each module is a landing page, its ordered parts and a closing page. The landing
 | 070-01 | [Control External Access With ServiceEntry](sections/section-070/module-01/course.md) | 5 | 2 |
 | 070-02 | [TLS Origination For External Services](sections/section-070/module-02/course.md) | 4 | 2 |
 | 070-03 | [Add External Workloads With WorkloadEntry](sections/section-070/module-03/course.md) | 4 | 2 |
-| 080-01 | [Route External Traffic Through An Egress Gateway](sections/section-080/module-01/course.md) | 5 | 2 |
+| 080-01 | [Route External Traffic Through An Egress Gateway](sections/section-080/module-01/course.md) | 6 | 2 |
 | 080-02 | [TLS Origination At The Egress Gateway](sections/section-080/module-02/course.md) | 5 | 2 |
 
 ---
