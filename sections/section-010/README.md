@@ -40,23 +40,26 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 ### Route Requests Within The Mesh
 
-9 parts and 5 labs:
+12 parts and 5 labs:
 
 1. See Where Requests Go Without Routing Rules
 2. Define Subsets With A DestinationRule
    - Lab: Fix A DestinationRule Subset That Selects No Pods Lab
 3. Route Requests With A VirtualService
-4. Match Headers, URIs And Query Parameters
-5. Order Routing Rules And Add A Catch-All
+4. Match Text With Exact, Prefix And Regex
+5. Combine Match Conditions With AND Or OR
+6. Read A Compiled Match In The Route Table
+7. Order Routing Rules And Add A Catch-All
    - Lab: Route Requests By Header, URI And Query Parameter Lab
-6. Resolve Short Host Names To The Right Namespace
-7. Debug Routing With The Access Log And proxy-config
+8. Resolve Short Host Names To The Right Namespace
+9. Debug Routing With The Access Log And proxy-config
    - Lab: Fix A VirtualService That Does Not Apply Lab
-8. Redirect, Rewrite, Headers And CORS
+10. Redirect And Rewrite Requests
+11. Change Headers And Answer CORS Preflight Requests
    - Lab: Redirect, Rewrite And Change Headers Of A Request Lab
-9. Protocol Selection And Non-HTTP Routing
+12. Protocol Selection And Non-HTTP Routing
    - Lab: Declare A Service Port As HTTP Lab
-10. Summary
+13. Summary
 
 ### Scope Proxy Configuration With The Sidecar Resource
 

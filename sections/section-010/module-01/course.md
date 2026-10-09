@@ -4,7 +4,7 @@ A plain Kubernetes Service cannot choose which version of an application gets a 
 
 Istio moves that choice into the sidecar proxy (Envoy) of the client pod, which can read the request. Two Istio objects configure it. A **`VirtualService`** decides **where** a request goes. A **`DestinationRule`** defines **what the named destinations are**, such as a subset of pods with the label `version: v2`.
 
-This module spends nine parts on these two objects, because most traffic management features are one more field on one of them. Weighted routing, mirroring, timeouts, retries and fault injection are fields on a `VirtualService` rule. Connection pools, load balancing and outlier detection are fields on a `DestinationRule`.
+This module spends twelve parts on these two objects, because most traffic management features are one more field on one of them. Weighted routing, mirroring, timeouts, retries and fault injection are fields on a `VirtualService` rule. Connection pools, load balancing and outlier detection are fields on a `DestinationRule`.
 
 ## Learning objectives
 
@@ -68,12 +68,12 @@ Use it like this: `count_versions $SCOUT/0`. Any `curl` options you add, such as
 
 ## The order of the parts
 
-The module has nine parts, five labs placed right after the parts they practise, and a summary at the end.
+The module has twelve parts, five labs placed right after the parts they practise, and a summary at the end.
 
 The first part shows where requests go with no routing rules, and that the client's proxy makes the choice. The second part defines subsets with a `DestinationRule` and shows what happens when a subset selects no pod. Its lab asks you to fix a `DestinationRule` subset that selects no pods.
 
-The third part writes the first `VirtualService` and sends requests from `jason` to their own version. The fourth part covers the three ways to compare text and the AND or OR rule in a `match`. The fifth part puts the rules in order and adds a catch-all. Its lab asks you to route requests by header, URI and query parameter.
+The third part writes the first `VirtualService` and sends requests from `jason` to their own version. The fourth part covers the three ways to compare text: `exact`, `prefix` and `regex`. The fifth part shows when two conditions in a `match` are combined with AND and when with OR. The sixth part proves which one you wrote by reading the proxy's route table. The seventh part puts the rules in order and adds a catch-all. Its lab asks you to route requests by header, URI and query parameter.
 
-The sixth part shows how Istio fills in short host names from the object's namespace. The seventh part reads the access log and the proxy's live configuration, and ends with a debugging checklist. Its lab asks you to fix a `VirtualService` that does not apply.
+The eighth part shows how Istio fills in short host names from the object's namespace. The ninth part reads the access log and the proxy's live configuration, and ends with a debugging checklist. Its lab asks you to fix a `VirtualService` that does not apply.
 
-The eighth part uses `redirect`, `rewrite`, `headers` and `corsPolicy` on a matched rule. Its lab asks you to redirect, rewrite and change the headers of a request. The ninth part explains how Istio picks a port's protocol and how `tcp` and `tls` routing work. Its lab asks you to declare a Service port as HTTP.
+The tenth part uses `redirect` and `rewrite` on a matched rule. The eleventh part changes request and response headers and answers browser preflight requests with `corsPolicy`. Its lab asks you to redirect, rewrite and change the headers of a request. The twelfth part explains how Istio picks a port's protocol and how `tcp` and `tls` routing work. Its lab asks you to declare a Service port as HTTP.

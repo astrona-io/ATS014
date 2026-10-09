@@ -70,7 +70,7 @@ Each module is a landing page, its ordered parts and a closing page. The landing
 | Module | Reader | Parts | Graded labs |
 | --- | --- | --- | --- |
 | 000-01 | [How A Request Moves Through The Mesh](sections/section-000/module-01/course.md) | 5 | 2 |
-| 010-01 | [Route Requests Within The Mesh](sections/section-010/module-01/course.md) | 9 | 5 |
+| 010-01 | [Route Requests Within The Mesh](sections/section-010/module-01/course.md) | 12 | 5 |
 | 010-02 | [Scope Proxy Configuration With The Sidecar Resource](sections/section-010/module-02/course.md) | 4 | 2 |
 | 010-03 | [Apply And Remove Traffic Rules Safely](sections/section-010/module-03/course.md) | 2 | 1 |
 | 020-01 | [Shift Traffic With Weighted Routing](sections/section-020/module-01/course.md) | 3 | 2 |

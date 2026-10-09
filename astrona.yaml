@@ -167,11 +167,17 @@ modules:
         title: "Route Requests With A VirtualService"
         path: sections/section-010/module-01/course-03-route-requests-with-a-virtualservice.md
       - type: reading
-        title: "Match Headers, URIs And Query Parameters"
-        path: sections/section-010/module-01/course-04-match-headers-uris-and-query-parameters.md
+        title: "Match Text With Exact, Prefix And Regex"
+        path: sections/section-010/module-01/course-04-match-text-with-exact-prefix-and-regex.md
+      - type: reading
+        title: "Combine Match Conditions With AND Or OR"
+        path: sections/section-010/module-01/course-05-combine-match-conditions-with-and-or-or.md
+      - type: reading
+        title: "Read A Compiled Match In The Route Table"
+        path: sections/section-010/module-01/course-06-read-a-compiled-match-in-the-route-table.md
       - type: reading
         title: "Order Routing Rules And Add A Catch-All"
-        path: sections/section-010/module-01/course-05-order-routing-rules-and-add-a-catch-all.md
+        path: sections/section-010/module-01/course-07-order-routing-rules-and-add-a-catch-all.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-01/question.md
@@ -195,10 +201,10 @@ modules:
             url: https://istio.io/latest/docs/tasks/traffic-management/request-routing/
       - type: reading
         title: "Resolve Short Host Names To The Right Namespace"
-        path: sections/section-010/module-01/course-06-resolve-short-host-names-to-the-right-namespace.md
+        path: sections/section-010/module-01/course-08-resolve-short-host-names-to-the-right-namespace.md
       - type: reading
         title: "Debug Routing With The Access Log And proxy-config"
-        path: sections/section-010/module-01/course-07-debug-routing-with-the-access-log-and-proxy-config.md
+        path: sections/section-010/module-01/course-09-debug-routing-with-the-access-log-and-proxy-config.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-04/question.md
@@ -222,8 +228,11 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Redirect, Rewrite, Headers And CORS"
-        path: sections/section-010/module-01/course-08-redirect-rewrite-headers-and-cors.md
+        title: "Redirect And Rewrite Requests"
+        path: sections/section-010/module-01/course-10-redirect-and-rewrite-requests.md
+      - type: reading
+        title: "Change Headers And Answer CORS Preflight Requests"
+        path: sections/section-010/module-01/course-11-change-headers-and-answer-cors-preflight-requests.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-02/question.md
@@ -243,7 +252,7 @@ modules:
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
       - type: reading
         title: "Protocol Selection And Non-HTTP Routing"
-        path: sections/section-010/module-01/course-09-protocol-selection-and-non-http-routing.md
+        path: sections/section-010/module-01/course-12-protocol-selection-and-non-http-routing.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-05/question.md
@@ -267,7 +276,7 @@ modules:
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
         title: "Summary"
-        path: sections/section-010/module-01/course-10-summary.md
+        path: sections/section-010/module-01/course-13-summary.md
 
       - type: reading
         title: "Scope Proxy Configuration With The Sidecar Resource"
