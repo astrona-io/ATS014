@@ -140,7 +140,7 @@ astrona submit -c sections/section-050/module-01/labs/lab-02
 ```
 
 ```text
-PASS: navcom is delayed 2s and the probe aborted with 503; jason gets 200 after 2.125839s with DI in scout v2's flight log, and the probe signal fails with 503 FI after 0.006220s without ever reaching the probe
+PASS: navcom is delayed 2s and the probe aborted with 503; jason gets 200 after 2.125839s with DI in scout v2's access log, and the probe request fails with 503 FI after 0.006220s without ever reaching the probe
 ```
 
 ---

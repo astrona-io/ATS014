@@ -114,7 +114,7 @@ astrona submit -c sections/section-050/module-01/labs/lab-03
 ```
 
 ```text
-PASS: the drill on navcom now only hits end-user: tester (500 FI), and every other signal gets its star ratings again
+PASS: the abort fault on navcom now only hits end-user: tester (500 FI), and every other request gets its star ratings again
 ```
 
 ---

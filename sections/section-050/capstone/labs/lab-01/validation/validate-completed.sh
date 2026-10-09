@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Section 050 capstone. Confirms two independently scoped chaos experiments on
-# one host: an abort that a retry policy cannot rescue (3 FI-flagged attempts),
-# a delay that drives a timeout (UT), and a clean catch-all that leaves
-# everybody else's traffic untouched.
+# Capstone grader. Confirms two separately scoped fault injection tests on one
+# host: an abort that the retry policy never retries (exactly 1 FI-flagged
+# attempt, because the fault filter answers before the router), a delay that
+# makes a timeout fire (UT), and a clean catch-all that leaves all other
+# traffic untouched.
 
 set -u
 
