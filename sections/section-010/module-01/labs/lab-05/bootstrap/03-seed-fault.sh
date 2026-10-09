@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# The lab's starting state: correct docking instructions and a correct flight
-# plan for the probe, but the probe Service's port is named `tcp`. Istio
+# The lab's starting state: a correct DestinationRule and a correct
+# VirtualService for the probe, but the probe Service's port is named `tcp`. Istio
 # believes the name, treats the port as plain TCP, and never reads the
-# VirtualService's `http` list - so the header rule does nothing and signals
+# VirtualService's `http` list - so the header rule does nothing and requests
 # reach both versions. Declaring the port as HTTP again is the task.
 set -euo pipefail
 

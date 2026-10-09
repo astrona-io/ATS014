@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# The lab's starting state: docking instructions for all three scout ship
-# classes, a flight plan that sends every signal to v1, and the patrol ship
-# that keeps sending signals for the whole mission.
+# The lab's starting state: a DestinationRule with subsets for all three scout
+# versions, a VirtualService that sends every request to v1, and the patrol
+# client pod that keeps sending requests for the whole lab.
 # The rules are applied in the safe order (subsets first, then the route), and
-# the patrol starts only after both have reached the proxies, so its flight log
+# the patrol starts only after both have reached the proxies, so its access log
 # starts clean.
 set -euo pipefail
 cd "$(dirname "$0")"

@@ -158,7 +158,7 @@ astrona submit -c sections/section-010/module-03/labs/lab-01
 ```
 
 ```text
-PASS: v1 is retired - jason flies to scout-v3, everyone else to scout-v2, the DestinationRule holds only v2 and v3, no route points at a missing subset, and the patrol logged 82 signals without a single failure
+PASS: v1 is retired - jason reaches scout-v3, everyone else scout-v2, the DestinationRule holds only v2 and v3, no route points at a missing subset, and the patrol logged 82 requests without a single failure
 ```
 
 ---
@@ -171,7 +171,7 @@ PASS: v1 is retired - jason flies to scout-v3, everyone else to scout-v2, the De
   "GET /reviews/0 HTTP/1.1" 503 NC cluster_not_found ...
   ```
 
-  and the grader answered: `the patrol logged 40 failed signals during your change (first one: 503 NC)`.
+  and the grader answered: `the patrol logged 40 failed requests during your change (first one: 503 NC)`.
 - **Applying both files at once.** `kubectl apply -f` on both files, or one file that holds both objects, gives the proxies no time between the two changes. Change the `VirtualService`, check that it arrived, then remove the subset.
 - **Putting the catch-all rule first.** The `jason` rule must come first. A rule without `match` matches every request, so requests from `jason` would never reach `v3`.
 - **Deleting the `DestinationRule` and creating a new one.** For a moment there are no subsets at all, and every route fails with `503 NC`. Apply the changed object instead: `kubectl apply` replaces it in one step.

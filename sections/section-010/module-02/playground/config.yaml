@@ -1,5 +1,5 @@
 # Scope Proxy Configuration With The Sidecar Resource — Playground environment
-# A clean sandbox: it spins up, installs Istio, two planets and their ships,
+# A clean sandbox: it spins up, installs Istio, two namespaces and their workloads,
 # then stays running for free exploration. No task, no grading, no `astrona submit`.
 #   astrona run -c .                          new kind cluster "astro-ats-014-playground-010-02"
 #   astrona destroy ats-014-playground-010-02  delete the cluster again
@@ -18,7 +18,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Planets starfleet (shuttle, cargo) and outpost (probe v1/v2), access logs"
+      description: "Namespaces starfleet (shuttle, cargo) and outpost (probe v1/v2), access logs"
       type: "file"
       source: "bootstrap/deploy.sh"
 

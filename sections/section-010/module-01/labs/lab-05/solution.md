@@ -147,7 +147,7 @@ astrona submit -c sections/section-010/module-01/labs/lab-05
 ```
 
 ```text
-PASS: the probe's port 8000 is declared as HTTP (http), the probe is back in the shuttle's route table, the flight plan's http rule is read, x-mission: test reaches probe-v2 and everyone else probe-v1
+PASS: the probe's port 8000 is declared as HTTP (http), the probe is back in the shuttle's route table, the VirtualService's http rule is read, x-mission: test reaches probe-v2 and everyone else probe-v1
 ```
 
 ---

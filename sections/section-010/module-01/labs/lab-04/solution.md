@@ -269,7 +269,7 @@ astrona submit -c sections/section-010/module-01/labs/lab-04
 ```
 
 ```text
-PASS: one flight plan (starfleet/scout) describes scout.starfleet.svc.cluster.local, jason's rule comes first with subset v2, the catch-all sends to v1, istioctl analyze is clean for it, jason reaches scout-v2 and everyone else scout-v1
+PASS: one VirtualService (starfleet/scout) describes scout.starfleet.svc.cluster.local, jason's rule comes first with subset v2, the catch-all sends to v1, istioctl analyze is clean for it, jason reaches scout-v2 and everyone else scout-v1
 ```
 
 ## The other way to fix the namespace
