@@ -1102,13 +1102,13 @@ modules:
         title: "Expose A Service With An Istio Ingress Gateway"
         path: sections/section-060/module-01/course.md
       - type: reading
-        title: "The Gateway Pod And Its Listener"
-        path: sections/section-060/module-01/course-01-the-gateway-pod-and-its-listener.md
+        title: "Open A Listener With A Gateway"
+        path: sections/section-060/module-01/course-01-open-a-listener-with-a-gateway.md
       - type: reading
         title: Question
         path: sections/section-060/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Open The Closed Gate Lab"
+        title: "Fix A Gateway Selector That Matches No Pod Lab"
         path: sections/section-060/module-01/labs/lab-02
         difficulty: beginner
         estimated_duration: 15m
@@ -1126,16 +1126,16 @@ modules:
           - name: "Installing gateways"
             url: https://istio.io/latest/docs/setup/additional-setup/gateway/
       - type: reading
-        title: "Binding Routes With `gateways:`"
-        path: sections/section-060/module-01/course-02-binding-routes-with-gateways.md
+        title: "Bind A VirtualService To A Gateway"
+        path: sections/section-060/module-01/course-02-bind-a-virtualservice-to-a-gateway.md
       - type: reading
-        title: "Hosts And References At The Gate"
-        path: sections/section-060/module-01/course-03-hosts-and-references-at-the-gate.md
+        title: "Match Hosts And Reference Gateways Across Namespaces"
+        path: sections/section-060/module-01/course-03-match-hosts-and-reference-gateways-across-namespaces.md
       - type: reading
         title: Question
         path: sections/section-060/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Expose A Service With An Istio Ingress Gateway Lab"
+        title: "Expose Two Hosts Through One Ingress Gateway Lab"
         path: sections/section-060/module-01/labs/lab-01
         difficulty: intermediate
         estimated_duration: 30m
@@ -1153,13 +1153,13 @@ modules:
           - name: "VirtualService reference"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
       - type: reading
-        title: "Diagnosing The Gateway"
-        path: sections/section-060/module-01/course-04-diagnosing-the-gateway.md
+        title: "Diagnose 000, 404 And 503 At The Ingress Gateway"
+        path: sections/section-060/module-01/course-04-diagnose-000-404-and-503-at-the-ingress-gateway.md
       - type: reading
         title: Question
         path: sections/section-060/module-01/labs/lab-03/question.md
       - type: lab
-        title: "Repair The Arrival Gate Lab"
+        title: "Repair A Broken Ingress Gateway Configuration Lab"
         path: sections/section-060/module-01/labs/lab-03
         difficulty: intermediate
         estimated_duration: 25m
@@ -1177,8 +1177,8 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
-        path: sections/section-060/module-01/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-060/module-01/course-05-summary.md
 
       - type: reading
         title: "Expose A Service With A Kubernetes Ingress"

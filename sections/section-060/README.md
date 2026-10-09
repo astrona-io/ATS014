@@ -39,14 +39,14 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 4 parts and 3 labs:
 
-1. The Gateway Pod And Its Listener
-   - Lab: Open The Closed Gate Lab
-2. Binding Routes With `gateways:`
-3. Hosts And References At The Gate
-   - Lab: Expose A Service With An Istio Ingress Gateway Lab
-4. Diagnosing The Gateway
-   - Lab: Repair The Arrival Gate Lab
-5. Wrap-Up: Mission Debrief
+1. Open A Listener With A Gateway
+   - Lab: Fix A Gateway Selector That Matches No Pod Lab
+2. Bind A VirtualService To A Gateway
+3. Match Hosts And Reference Gateways Across Namespaces
+   - Lab: Expose Two Hosts Through One Ingress Gateway Lab
+4. Diagnose 000, 404 And 503 At The Ingress Gateway
+   - Lab: Repair A Broken Ingress Gateway Configuration Lab
+5. Summary
 
 ### Expose A Service With A Kubernetes Ingress
 
