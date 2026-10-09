@@ -2,7 +2,7 @@
 # Deploy what the ats-014-playground-040-03 playground needs (runs after install-istio.sh):
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
 #   - shuttle (test client, keeps the outlier-detection counters)
-#   - probe v1/v2 (two healthy echo ships behind one beacon)
+#   - probe v1/v2 (two healthy echo pods behind one Service)
 #   - fortio (load generator)
 # No broken pod and no DestinationRule: adding them is the module.
 set -euo pipefail

@@ -125,10 +125,8 @@ astrona submit -c sections/section-040/module-02/labs/lab-02
 ```
 
 ```text
-PASS: the shields are unchanged, the flight plan retries only connection failures (attempts=2, retryOn=connect-failure,refused-stream), and 5 failing signals reached the probe exactly 5 times
+PASS: the connection pool is unchanged, the VirtualService retries only connection failures (attempts=2, retryOn=connect-failure,refused-stream), and 5 failing requests reached the probe exactly 5 times
 ```
-
-The grader's message uses older names: "the shields" is the `DestinationRule`, "the flight plan" is the `VirtualService`, and "signals" are requests.
 
 ## Common mistakes
 

@@ -150,7 +150,7 @@ astrona submit -c sections/section-040/module-01/labs/lab-02
 ```
 
 ```text
-PASS: navcom keeps its 3s delay drill with no timeout, jason's scout rule has timeout 1s, jason gets 504 UT after 1.001937s from the shuttle's own sidecar, and everyone else still gets a fast 200
+PASS: navcom keeps its 3s delay fault with no timeout, jason's scout rule has timeout 1s, jason gets 504 UT after 1.001937s from the shuttle's own sidecar, and everyone else still gets a fast 200
 ```
 
 ---

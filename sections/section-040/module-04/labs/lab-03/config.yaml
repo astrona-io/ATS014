@@ -15,7 +15,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-040-04-03-fault"
-      description: "Applies the starting state: a probe DestinationRule with outlierDetection and localityLbSetting that keeps every signal in zone-a, so probe-zone-b gets none"
+      description: "Applies the starting state: a probe DestinationRule with outlierDetection and localityLbSetting that keeps every request in zone-a, so probe-zone-b gets none"
       type: "file"
       source: "bootstrap/03-seed-fault.sh"
 
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-split"
-      description: "Confirms the probe DestinationRule distributes signals from local/zone-a/* with weights 80 to zone-a and 20 to zone-b and no failover, the ships and Service are unchanged, and 100 live signals land in about those shares"
+      description: "Confirms the probe DestinationRule distributes requests from local/zone-a/* with weights 80 to zone-a and 20 to zone-b and no failover, the deployments and Service are unchanged, and 100 live requests land in about those shares"
       type: "file"
       source: "validation/validate-completed.sh"
 

@@ -15,7 +15,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
     - name: "lab-040-01-02-fault"
-      description: "Applies the starting state: jason flies to scout v2, navcom is delayed 3s by a fault, and the 1s timeout sits uselessly on the same navcom route as the fault"
+      description: "Applies the starting state: jason's requests go to scout v2, navcom is delayed 3s by a fault, and the 1s timeout sits uselessly on the same navcom route as the fault"
       type: "file"
       source: "bootstrap/03-seed-fault.sh"
 
@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-abort-window-on-the-caller"
-      description: "Confirms navcom keeps its 3s delay drill with no timeout, jason's scout rule carries a timeout of at most 1s, jason's signals get a 504 within about 1s made by the shuttle's own sidecar (UT), and everyone else still gets a fast 200"
+      description: "Confirms navcom keeps its 3s delay fault with no timeout, jason's scout rule carries a timeout of at most 1s, jason's requests get a 504 within about 1s made by the shuttle's own sidecar (UT), and everyone else still gets a fast 200"
       type: "file"
       source: "validation/validate-completed.sh"
 

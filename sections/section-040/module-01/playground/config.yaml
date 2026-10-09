@@ -27,7 +27,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace starfleet, access logs, the Starfleet, shuttle, probe v1/v2, scout subsets and the jason → scout v2 flight plan"
+      description: "Namespace starfleet, access logs, the Starfleet, shuttle, probe v1/v2, scout subsets and the jason → scout v2 VirtualService"
       type: "file"
       source: "bootstrap/deploy.sh"
 

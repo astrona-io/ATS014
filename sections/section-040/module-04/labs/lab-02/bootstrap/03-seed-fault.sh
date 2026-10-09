@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # The starting state for lab ats-014-lab-040-04-02:
 #   - probe-zone-b loses its istio-locality label, so it falls back to the
-#     node's orbit (local/zone-a), the same orbit as probe-zone-a
+#     node's locality (local/zone-a), the same locality as probe-zone-a
 #   - a correct DestinationRule for the probe with outlierDetection and
-#     localityLbSetting, so the shuttle prefers its own orbit
-# Result: the shuttle sees two "nearby" ships and splits its signals between
-# them, although probe-zone-b is meant to fly in zone-b.
+#     localityLbSetting, so the shuttle prefers its own zone
+# Result: the shuttle sees two endpoints in its own zone and splits its requests
+# between them, although probe-zone-b is meant to be in zone-b.
 set -euo pipefail
 
 kubectl -n starfleet patch deployment probe-zone-b --type json \

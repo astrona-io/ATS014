@@ -100,7 +100,7 @@ astrona submit -c sections/section-040/module-01/labs/lab-03
 ```
 
 ```text
-PASS: the probe flight plan retries only 503 (attempts 2, perTryTimeout 1s, timeout 4s); at the probe a 503 arrived 3 times, a 500 and a 502 once each
+PASS: the probe VirtualService retries only 503 (attempts 2, perTryTimeout 1s, timeout 4s); at the probe a 503 arrived 3 times, a 500 and a 502 once each
 ```
 
 ---

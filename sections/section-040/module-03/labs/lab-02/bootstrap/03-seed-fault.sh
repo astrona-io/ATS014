@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The starting state: a third probe ship that answers every signal with 503,
+# The starting state: a third probe pod that answers every request with 503,
 # behind the same `probe` Service, and no DestinationRule at all.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.
 set -euo pipefail

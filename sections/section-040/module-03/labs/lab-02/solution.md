@@ -138,7 +138,7 @@ astrona submit -c sections/section-040/module-03/labs/lab-02
 
 ## Common mistakes
 
-- **Leaving out `maxEjectionPercent`.** The rule looks right and counts the failures, but the 10% default blocks every ejection with three endpoints. The grader says: `outlierDetection.maxEjectionPercent is 'unset (10%)'. With three probe ships, one ejection is 33% of the list, so the limit must be at least 34 or nothing is ever ejected`.
+- **Leaving out `maxEjectionPercent`.** The rule looks right and counts the failures, but the 10% default blocks every ejection with three endpoints. The grader says: `outlierDetection.maxEjectionPercent is 'unset (10%)'. With three probe pods, one ejection is 33% of the list, so the limit must be at least 34 or nothing is ever ejected`.
 - **Splitting the connection pool and outlier detection over two `DestinationRule` objects.** The grader wants exactly one rule for the `probe` host.
 - **Leaving out `http1MaxPendingRequests`.** Without a small queue, waiting requests pile up instead of being refused, and the `fortio` proxy shows no overflow.
 - **Deleting or scaling down `probe-broken`.** The requests then succeed, but Kubernetes removed the pod, not the proxy. The grader checks that all five Deployments still exist and that the Service still lists the broken pod.
