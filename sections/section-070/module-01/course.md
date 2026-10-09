@@ -59,10 +59,10 @@ Use it like this: `call_external https://httpbin.org/get`. A result of `000` wit
 
 ## The order of the parts
 
-The module has four parts, a lab after the third part, a lab after the fourth part, and a summary at the end.
+The module has five parts, a lab after the third part, a lab after the fifth part, and a summary at the end.
 
 The first part shows the outbound traffic policy: what `ALLOW_ANY` lets through, how `REGISTRY_ONLY` refuses unknown hosts, and how a refusal looks in `curl` and in the access log. The second part takes the `ServiceEntry` apart field by field, and adds `httpbin.org` and a wildcard domain to the service registry.
 
 The third part puts a `VirtualService` timeout and a `DestinationRule` connection pool on an external host, and shows why only a port declared as `HTTP` gets HTTP features. It also explains `exportTo`. Its lab asks you to allow exactly one external endpoint and give it a timeout.
 
-The fourth part shows why a correct `ServiceEntry` can still be refused: its `exportTo` or the caller's `Sidecar` resource hides it from the caller. Its lab asks you to find and fix a `ServiceEntry` that the caller cannot see and that declares the wrong protocol.
+The fourth part shows why a correct `ServiceEntry` can still be refused: the caller's `Sidecar` resource hides it from the caller, and only the caller's own sidecar proxy shows it. The fifth part shows the other setting that hides an entry, its own `exportTo`, and the clean fix: put the entry in the caller's namespace. Its lab asks you to find and fix a `ServiceEntry` that the caller cannot see and that declares the wrong protocol.

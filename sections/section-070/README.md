@@ -34,15 +34,16 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
 
 ### Control External Access With ServiceEntry
 
-4 parts and 2 labs:
+5 parts and 2 labs:
 
 1. Block Unknown Hosts With REGISTRY_ONLY
 2. Add An External Host With ServiceEntry
 3. Apply Timeouts And Connection Pools To An External Host
    - Lab: Allow One External Host Under REGISTRY_ONLY Lab
-4. Fix A ServiceEntry Hidden By exportTo Or A Sidecar
+4. Find A ServiceEntry Hidden By A Sidecar
+5. Limit A ServiceEntry With exportTo
    - Lab: Fix A Hidden ServiceEntry And Its Port Protocol Lab
-5. Summary
+6. Summary
 
 ### TLS Origination For External Services
 

@@ -1399,8 +1399,11 @@ modules:
           - name: "Request timeouts"
             url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
       - type: reading
-        title: "Fix A ServiceEntry Hidden By exportTo Or A Sidecar"
-        path: sections/section-070/module-01/course-04-fix-a-serviceentry-hidden-by-exportto-or-a-sidecar.md
+        title: "Find A ServiceEntry Hidden By A Sidecar"
+        path: sections/section-070/module-01/course-04-find-a-serviceentry-hidden-by-a-sidecar.md
+      - type: reading
+        title: "Limit A ServiceEntry With exportTo"
+        path: sections/section-070/module-01/course-05-limit-a-serviceentry-with-exportto.md
       - type: reading
         title: Question
         path: sections/section-070/module-01/labs/lab-02/question.md
@@ -1425,7 +1428,7 @@ modules:
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
         title: "Summary"
-        path: sections/section-070/module-01/course-05-summary.md
+        path: sections/section-070/module-01/course-06-summary.md
 
       - type: reading
         title: "TLS Origination For External Services"
