@@ -123,32 +123,3 @@ You now know how `iptables` rules send a pod's traffic through its proxy, why a 
 > - **Reading the access log too fast.** Envoy writes the line a moment after the request. Wait a second.
 > - **Assuming access logs are always on.** Many installations switch them off. A missing line says nothing about traffic.
 > - **Treating the connection of the application and the connection of the proxy as one.** They are two connections. That is what makes retries and encryption possible.
-
-## Your mission: Bring Workloads Into The Mesh With Sidecar Injection Lab
-
-You can now tell a pod with a sidecar proxy from one without, and you know why it matters. The lab gives you workloads that look healthy but run without a sidecar proxy, and you must bring them into the mesh. The lab uses its own small app (`api`, `reports` and `billing` in the `mesh-demo` and `legacy-app` namespaces), not the Starfleet.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-000-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-000/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-000/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-000-01
-astrona start ats-014-playground-000-01
-```
