@@ -185,32 +185,3 @@ You now have a fixed order of checks, from `kubectl get` to the access log, and 
 > - **Jumping straight to the access log.** If the object is in the wrong namespace, the log shows nothing unusual.
 > - **Ignoring the response flag.** A bare `404` or `503` tells you little. `NR` (404) points at your routing, `NC` and `UH` (503) at the destination.
 > - **Building scripts on `istioctl x describe`.** The `x` means experimental: its output can change between versions.
-
-## Your mission: Fix A Service Selector That Matches No Pod Lab
-
-You can now walk the checks from `kubectl get` to the access log and read a response flag. In the lab, the `bridge` page can no longer reach `cargo`, nothing reports an error, and you must find the cause and fix it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-000-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-000/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-000/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-000-01-02
-astrona start ats-014-playground-000-01
-```
