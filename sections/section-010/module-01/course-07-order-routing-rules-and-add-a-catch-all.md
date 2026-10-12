@@ -227,32 +227,3 @@ The proxy reads the `http` rules from the top and uses the first rule that match
 > - **No catch-all at all.** Requests that match no rule get `404 NR`, and `analyze` gives no warning.
 > - **Expecting the most specific rule to win.** Only the order of the list counts.
 > - **Two `VirtualService` objects for one host.** There is no fixed order between them. Keep one per host.
-
-## Your mission: Route Requests By Header, URI And Query Parameter
-
-You can now write `VirtualService` rules that match headers, paths and query parameters, and put them in an order where every rule can match. The graded lab asks you to send three kinds of requests to v2 and every other request to v1, with every rule reachable.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-010-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-010-01
-astrona start ats-014-playground-010-01
-```
