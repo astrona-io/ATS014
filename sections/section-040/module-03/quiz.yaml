@@ -1,0 +1,286 @@
+# Knowledge check for section 040, module 03. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-040-03
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-040/module-03
+  title: Outlier Detection And Endpoint Ejection
+questions:
+  - id: ats014-040-03-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain what passive health checking is and how it differs from a readiness probe.
+    source_readings:
+      - sections/section-040/module-03/course-01-eject-a-failing-endpoint-with-outlier-detection.md
+    prompt: >-
+      A `probe` pod is `Running`, passes its readiness probe, and returns `503` to every request. What does each check do about it?
+    options:
+      - id: a
+        text: >-
+          The readiness probe keeps it in the Service; outlier detection in each client's proxy ejects it after real requests fail
+        explanation: >-
+          Correct. Outlier detection is passive and learns from real responses.
+      - id: b
+        text: >-
+          The readiness probe removes the pod from the Service
+        explanation: >-
+          The readiness probe asks the pod about itself, and the pod says it is ready.
+      - id: c
+        text: >-
+          Outlier detection ejects it before any request fails
+        explanation: >-
+          It is passive, so some requests must fail first.
+      - id: d
+        text: >-
+          Both remove it from the EndpointSlice
+        explanation: >-
+          Kubernetes never sees an ejection.
+    correct_option: a
+    explanation: >-
+      A readiness probe is an active check. Outlier detection is a passive check by each client's sidecar proxy.
+
+  - id: ats014-040-03-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict when consecutive counting catches a failing endpoint.
+    source_readings:
+      - sections/section-040/module-03/course-01-eject-a-failing-endpoint-with-outlier-detection.md
+    prompt: >-
+      An endpoint fails every second request. `consecutive5xxErrors` is 5. What happens?
+    options:
+      - id: a
+        text: >-
+          It is ejected after 5 failures
+        explanation: >-
+          The 5 failures are never in a row.
+      - id: b
+        text: >-
+          It is ejected after 10 requests
+        explanation: >-
+          Each success resets the count.
+      - id: c
+        text: >-
+          It may never be ejected, because each success resets its count
+        explanation: >-
+          Correct. Consecutive counting catches an endpoint that fails every request.
+      - id: d
+        text: >-
+          It is ejected at once, because 50% is above the default
+        explanation: >-
+          There is no percentage threshold in consecutive counting.
+    correct_option: c
+    explanation: >-
+      `consecutive5xxErrors` counts errors in a row from one endpoint. One success from that endpoint resets the count.
+
+  - id: ats014-040-03-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Choose between consecutive5xxErrors and consecutiveGatewayErrors.
+    source_readings:
+      - sections/section-040/module-03/course-02-control-ejection-time-and-which-errors-count.md
+    prompt: >-
+      You want to eject only on `502`, `503` and `504`. You write `outlierDetection` with only `consecutiveGatewayErrors: 3`. A pod returns `500` six times in a row. What happens?
+    options:
+      - id: a
+        text: >-
+          Nothing, `500` is not a gateway error
+        explanation: >-
+          `consecutive5xxErrors` is still active.
+      - id: b
+        text: >-
+          The object is rejected
+        explanation: >-
+          The object is valid.
+      - id: c
+        text: >-
+          It is ejected after 3 errors
+        explanation: >-
+          The gateway count does not count `500`.
+      - id: d
+        text: >-
+          It is ejected after 5 errors, because `consecutive5xxErrors` is 5 as soon as an `outlierDetection` block exists
+        explanation: >-
+          Correct. Set `consecutive5xxErrors: 0` too.
+    correct_option: d
+    explanation: >-
+      `consecutive5xxErrors` is 5 inside an `outlierDetection` block. To count only gateway errors, also set `consecutive5xxErrors: 0`.
+
+  - id: ats014-040-03-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict how long an endpoint stays ejected.
+    source_readings:
+      - sections/section-040/module-03/course-02-control-ejection-time-and-which-errors-count.md
+    prompt: >-
+      `baseEjectionTime` is `30s`. An endpoint is ejected for the third time. About how long does this ejection last?
+    options:
+      - id: a
+        text: >-
+          30 seconds
+        explanation: >-
+          `baseEjectionTime` is only the starting length.
+      - id: b
+        text: >-
+          About 90 seconds, then it returns at the next `interval` check
+        explanation: >-
+          Correct. `baseEjectionTime` × the ejection count.
+      - id: c
+        text: >-
+          10 seconds, the default `interval`
+        explanation: >-
+          `interval` is the check period, not the ejection time.
+      - id: d
+        text: >-
+          Forever, until the pod is restarted
+        explanation: >-
+          An ejection always ends.
+    correct_option: b
+    explanation: >-
+      Ejection time is `baseEjectionTime` × the ejection count, capped by Envoy, and the endpoint returns at the next `interval` check.
+
+  - id: ats014-040-03-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why maxEjectionPercent at its 10% default blocks every ejection on a small Service.
+    source_readings:
+      - sections/section-040/module-03/course-03-limit-ejections-with-maxejectionpercent-and-minhealthpercent.md
+    prompt: >-
+      A Service has two endpoints. One fails every request, and `outlierDetection` sets `consecutive5xxErrors: 3` and nothing else. Why is nothing ejected?
+    options:
+      - id: a
+        text: >-
+          Three errors are too few
+        explanation: >-
+          Three in a row reaches the limit.
+      - id: b
+        text: >-
+          `minHealthPercent` is 100% by default
+        explanation: >-
+          Its default is `0%`.
+      - id: c
+        text: >-
+          `maxEjectionPercent` defaults to 10%, and one of two endpoints is 50%
+        explanation: >-
+          Correct. Raise it to at least 50 on a two-endpoint Service.
+      - id: d
+        text: >-
+          Outlier detection only works with three or more endpoints
+        explanation: >-
+          It works, if `maxEjectionPercent` allows it.
+    correct_option: c
+    explanation: >-
+      `maxEjectionPercent` defaults to 10%, which blocks every ejection on a Service with two or three endpoints.
+
+  - id: ats014-040-03-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Prove a blocked ejection with the counters.
+    source_readings:
+      - sections/section-040/module-03/course-03-limit-ejections-with-maxejectionpercent-and-minhealthpercent.md
+    prompt: >-
+      Which counter shows that the proxy found a failing endpoint but was not allowed to eject it?
+    options:
+      - id: a
+        text: >-
+          `ejections_enforced_consecutive_5xx`
+        explanation: >-
+          That counts ejections that really happened.
+      - id: b
+        text: >-
+          `ejections_overflow`
+        explanation: >-
+          Correct. It counts each attempt that `maxEjectionPercent` blocked.
+      - id: c
+        text: >-
+          `upstream_rq_pending_overflow`
+        explanation: >-
+          That is the connection pool queue.
+      - id: d
+        text: >-
+          `ejections_active`
+        explanation: >-
+          That counts endpoints ejected right now.
+    correct_option: b
+    explanation: >-
+      `ejections_overflow` counts blocked attempts. `ejections_detected_consecutive_5xx` alone does not prove an ejection.
+
+  - id: ats014-040-03-q07
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Show an ejection and explain why Kubernetes still lists the pod.
+    source_readings:
+      - sections/section-040/module-03/course-04-verify-ejections-and-add-a-connection-pool.md
+    prompt: >-
+      The `shuttle` proxy ejected a `probe` endpoint. Where do you see it?
+    options:
+      - id: a
+        text: >-
+          The `OUTLIER CHECK` column of `istioctl proxy-config endpoints deploy/shuttle`, which shows `FAILED`
+        explanation: >-
+          Correct. The proxy's counters show it too.
+      - id: b
+        text: >-
+          `kubectl get pods`, where the pod is `NotReady`
+        explanation: >-
+          The pod stays ready.
+      - id: c
+        text: >-
+          `kubectl get endpointslices`, where the pod is gone
+        explanation: >-
+          Kubernetes never changes. The pod stays in the EndpointSlice.
+      - id: d
+        text: >-
+          The proxy of every client in the mesh
+        explanation: >-
+          Each proxy decides on its own, from its own responses.
+    correct_option: a
+    explanation: >-
+      An ejection removes an endpoint from one proxy's pool. Only that proxy's endpoints and counters show it.
+
+  - id: ats014-040-03-q08
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Put a connection pool and outlier detection in one DestinationRule.
+    source_readings:
+      - sections/section-040/module-03/course-04-verify-ejections-and-add-a-connection-pool.md
+    prompt: >-
+      You need both connection pool limits and outlier detection for `probe`. How do you write them?
+    options:
+      - id: a
+        text: >-
+          They cannot be combined
+        explanation: >-
+          They work together.
+      - id: b
+        text: >-
+          In two `DestinationRule` objects, one per feature
+        explanation: >-
+          Two objects for one host have no defined order. Keep both in one rule.
+      - id: c
+        text: >-
+          The connection pool in a `DestinationRule`, outlier detection in a `VirtualService`
+        explanation: >-
+          Both belong in a `DestinationRule`.
+      - id: d
+        text: >-
+          In one `DestinationRule` for `probe`, both under `trafficPolicy`
+        explanation: >-
+          Correct. Together they form a circuit breaker.
+    correct_option: d
+    explanation: >-
+      Keep the connection pool and outlier detection for one host in one `DestinationRule`.

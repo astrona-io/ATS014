@@ -1,0 +1,320 @@
+# Knowledge check for section 080, module 02. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-080-02
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-080/module-02
+  title: TLS Origination At The Egress Gateway
+questions:
+  - id: ats014-080-02-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain why the egress gateway listens on port 80 but sends to port 443.
+    source_readings:
+      - sections/section-080/module-02/course-01-route-plain-http-through-the-egress-gateway.md
+    prompt: >-
+      With TLS origination at the egress gateway, the egress gateway listens on port `80` and sends to port `443`. Is this a mistake?
+    options:
+      - id: a
+        text: >-
+          Yes, both should be `443`
+        explanation: >-
+          The application sends plain HTTP, so the gateway listens on `80`.
+      - id: b
+        text: >-
+          Yes, both should be `80`
+        explanation: >-
+          The external host needs TLS on `443`.
+      - id: c
+        text: >-
+          No, but only because the `ServiceEntry` lists one port
+        explanation: >-
+          The `ServiceEntry` lists both ports.
+      - id: d
+        text: >-
+          No: `80` is where the egress gateway listens, `443` is where it sends with TLS
+        explanation: >-
+          Correct. The two numbers describe two directions.
+    correct_option: d
+    explanation: >-
+      The application sends plain `http://`, the egress gateway listens on `80` and sends to port `443` with TLS.
+
+  - id: ats014-080-02-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Name the five objects that route a request through the egress gateway with TLS origination.
+    source_readings:
+      - sections/section-080/module-02/course-01-route-plain-http-through-the-egress-gateway.md
+    prompt: >-
+      Which object turns on TLS in this setup?
+    options:
+      - id: a
+        text: >-
+          The `Gateway` on the egress gateway
+        explanation: >-
+          It opens port `80` for the host.
+      - id: b
+        text: >-
+          The `DestinationRule` on the egress gateway's own Service
+        explanation: >-
+          That one defines the empty subset.
+      - id: c
+        text: >-
+          A `DestinationRule` for the external host
+        explanation: >-
+          Correct. It is the fifth object.
+      - id: d
+        text: >-
+          The `VirtualService`
+        explanation: >-
+          It holds the two routing rules.
+    correct_option: c
+    explanation: >-
+      Five objects build the path. The `DestinationRule` for the external host turns on TLS.
+
+  - id: ats014-080-02-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Originate TLS with portLevelSettings and sni.
+    source_readings:
+      - sections/section-080/module-02/course-02-originate-tls-on-the-external-host.md
+    prompt: >-
+      Where do the TLS settings go in the `DestinationRule` for `httpbin.org`?
+    options:
+      - id: a
+        text: >-
+          Under `portLevelSettings` for port `443`, with `tls.mode: SIMPLE` and `sni`
+        explanation: >-
+          Correct.
+      - id: b
+        text: >-
+          At the top of `trafficPolicy`
+        explanation: >-
+          Then they cover every port, port `80` included.
+      - id: c
+        text: >-
+          Under `portLevelSettings` for port `80`
+        explanation: >-
+          Port `80` is where the gateway listens, not where it sends.
+      - id: d
+        text: >-
+          In the subset of the egress gateway's Service
+        explanation: >-
+          The TLS settings belong to the host being called.
+    correct_option: a
+    explanation: >-
+      Put `tls.mode: SIMPLE` and `sni` under `portLevelSettings` for port `443` of the external host.
+
+  - id: ats014-080-02-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Know what happens when the second rule uses the wrong port.
+    source_readings:
+      - sections/section-080/module-02/course-02-originate-tls-on-the-external-host.md
+    prompt: >-
+      Rule 2 sends the request to port `80` of `httpbin.org`. The server also speaks plain HTTP. What do you see?
+    options:
+      - id: a
+        text: >-
+          `503 UF`
+        explanation: >-
+          The connection works on port `80`.
+      - id: b
+        text: >-
+          `200`, without TLS, because the port `443` TLS settings are never used
+        explanation: >-
+          Correct. Check the upstream port in the egress gateway's access log.
+      - id: c
+        text: >-
+          `400 The plain HTTP request was sent to HTTPS port`
+        explanation: >-
+          That happens when plain text reaches port `443`.
+      - id: d
+        text: >-
+          `000`
+        explanation: >-
+          The server answers.
+    correct_option: b
+    explanation: >-
+      A `200` alone proves little. Check the `url` the server reports and the upstream port in the egress gateway's log.
+
+  - id: ats014-080-02-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Prove which proxy holds the TLS settings.
+    source_readings:
+      - sections/section-080/module-02/course-03-prove-which-proxy-originates-tls.md
+    prompt: >-
+      The TLS `DestinationRule` is on the egress gateway's own Service instead of the external host. What happens?
+    options:
+      - id: a
+        text: >-
+          It works the same
+        explanation: >-
+          A `DestinationRule` is applied by the proxy that calls the host it names.
+      - id: b
+        text: >-
+          The egress gateway starts TLS twice
+        explanation: >-
+          The egress gateway does not call its own Service.
+      - id: c
+        text: >-
+          `istioctl analyze` rejects it
+        explanation: >-
+          It is valid configuration.
+      - id: d
+        text: >-
+          The sidecar proxy tries TLS with the egress gateway on a plain port and fails with `503 URX,UF` and `WRONG_VERSION_NUMBER`
+        explanation: >-
+          Correct. The rule must name the external host.
+    correct_option: d
+    explanation: >-
+      The TLS settings go in a `DestinationRule` for the host the egress gateway calls.
+
+  - id: ats014-080-02-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Keep the TLS settings off the sidecar proxies with exportTo.
+    source_readings:
+      - sections/section-080/module-02/course-03-prove-which-proxy-originates-tls.md
+    prompt: >-
+      The TLS `DestinationRule` has `exportTo` without the egress gateway's namespace. What does `httpbin.org` answer?
+    options:
+      - id: a
+        text: >-
+          `400 The plain HTTP request was sent to HTTPS port`
+        explanation: >-
+          Correct. Include the egress gateway's namespace in `exportTo`.
+      - id: b
+        text: >-
+          `503 NC`
+        explanation: >-
+          The cluster exists, without TLS.
+      - id: c
+        text: >-
+          `CERTIFICATE_VERIFY_FAILED`
+        explanation: >-
+          No TLS handshake happens.
+      - id: d
+        text: >-
+          `200` over TLS
+        explanation: >-
+          The egress gateway does not get the rule.
+    correct_option: a
+    explanation: >-
+      `exportTo` with the egress gateway's namespace keeps the TLS settings on the egress gateway alone.
+
+  - id: ats014-080-02-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Check the server certificate of a server signed by a private CA.
+    source_readings:
+      - sections/section-080/module-02/course-04-server-and-client-certificates-in-the-handshake.md
+    prompt: >-
+      The partner server has a certificate signed by a private CA. The `DestinationRule` uses `SIMPLE` with no CA. What happens?
+    options:
+      - id: a
+        text: >-
+          It works, because `SIMPLE` skips the check
+        explanation: >-
+          `SIMPLE` checks the server certificate.
+      - id: b
+        text: >-
+          The egress gateway fails with `CERTIFICATE_VERIFY_FAILED`; give it the partner's CA
+        explanation: >-
+          Correct. `SIMPLE` checks against public CAs by default.
+      - id: c
+        text: >-
+          The partner server answers `400`
+        explanation: >-
+          The handshake fails before any request.
+      - id: d
+        text: >-
+          Set `insecureSkipVerify: true` as the fix
+        explanation: >-
+          That switches the check off for good. Use it only to test one step.
+    correct_option: b
+    explanation: >-
+      `SIMPLE` checks the server certificate against public certificate authorities.
+
+  - id: ats014-080-02-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Name the namespace the certificate's Secret must live in.
+    source_readings:
+      - sections/section-080/module-02/course-05-present-a-client-certificate-with-credentialname.md
+    prompt: >-
+      `tls.mode: MUTUAL` with `credentialName: partner-client`. The `Secret` is in `starfleet`, the caller's namespace. What happens?
+    options:
+      - id: a
+        text: >-
+          It works, because the caller sends the request
+        explanation: >-
+          The egress gateway uses the certificate.
+      - id: b
+        text: >-
+          `kubectl apply` rejects the `DestinationRule`
+        explanation: >-
+          It accepts a `credentialName` that points at nothing.
+      - id: c
+        text: >-
+          The call fails with `503 URX,UF` and `Secret_is_not_supplied_by_SDS`, because the `Secret` must be in the egress gateway's namespace
+        explanation: >-
+          Correct.
+      - id: d
+        text: >-
+          `istioctl analyze` reports the missing `Secret`
+        explanation: >-
+          It stays quiet.
+    correct_option: c
+    explanation: >-
+      `credentialName` is read from the namespace of the proxy that uses it: the egress gateway's.
+
+  - id: ats014-080-02-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Find a missing Secret with istioctl proxy-config secret and the logs.
+    source_readings:
+      - sections/section-080/module-02/course-05-present-a-client-certificate-with-credentialname.md
+    prompt: >-
+      Which checks find a missing client certificate `Secret`?
+    options:
+      - id: a
+        text: >-
+          `kubectl get destinationrule`
+        explanation: >-
+          The object exists either way.
+      - id: b
+        text: >-
+          `istioctl proxy-config secret` on the egress gateway shows `WARMING`, and the `istiod` log says `not found`
+        explanation: >-
+          Correct.
+      - id: c
+        text: >-
+          `istioctl proxy-status`
+        explanation: >-
+          It shows sync state, not secrets.
+      - id: d
+        text: >-
+          The partner server's logs
+        explanation: >-
+          The handshake fails before the partner sees a certificate.
+    correct_option: b
+    explanation: >-
+      `WARMING` in `istioctl proxy-config secret` and the `istiod` log point at a missing `Secret` and name the namespace.

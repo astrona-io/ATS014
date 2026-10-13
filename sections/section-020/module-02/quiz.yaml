@@ -1,0 +1,286 @@
+# Knowledge check for section 020, module 02. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-020-02
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-020/module-02
+  title: Mirror Live Traffic To A Shadow Service
+questions:
+  - id: ats014-020-02-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Add a mirror destination to an HTTP rule and say which version sends the response.
+    source_readings:
+      - sections/section-020/module-02/course-01-add-a-mirror-destination-to-an-http-route.md
+    prompt: >-
+      A rule routes `scout` to `v1` and has `mirror: host: scout, subset: v2`. Which version's response does the client get?
+    options:
+      - id: a
+        text: >-
+          Both responses, joined into one
+        explanation: >-
+          The client never sees the shadow's response.
+      - id: b
+        text: >-
+          Whichever version answers first
+        explanation: >-
+          The proxy waits only for the route's response.
+      - id: c
+        text: >-
+          Only `v1`'s response; the proxy throws `v2`'s response away
+        explanation: >-
+          Correct. The route answers, the mirror only receives copies.
+      - id: d
+        text: >-
+          `v2`'s response, because the mirror is the newer version
+        explanation: >-
+          The mirror's response is thrown away.
+    correct_option: c
+    explanation: >-
+      The sidecar proxy of the client sends the copy and throws the shadow's response away. The client sees only the route's response.
+
+  - id: ats014-020-02-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Put the mirror field in the right place.
+    source_readings:
+      - sections/section-020/module-02/course-01-add-a-mirror-destination-to-an-http-route.md
+    prompt: >-
+      Where does `mirror` sit in a `VirtualService`?
+    options:
+      - id: a
+        text: >-
+          Inside the `route` list, as a destination with `weight: 0`
+        explanation: >-
+          That is a route destination, not a mirror.
+      - id: b
+        text: >-
+          On the `http` rule, next to `route`, as one destination with no `weight`
+        explanation: >-
+          Correct. `mirror` and `mirrorPercentage` are siblings of `route`.
+      - id: c
+        text: >-
+          In the `DestinationRule` for the shadow subset
+        explanation: >-
+          A `DestinationRule` has no mirror field.
+      - id: d
+        text: >-
+          Inside `destination`, next to `subset`
+        explanation: >-
+          `destination` has no mirror field.
+    correct_option: b
+    explanation: >-
+      `mirror` sits next to `route` on the same `http` rule. It is one destination with no `weight`.
+
+  - id: ats014-020-02-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict how many requests each version receives when a split and a mirror are combined.
+    source_readings:
+      - sections/section-020/module-02/course-04-diagnose-a-silent-mirror-and-plan-for-side-effects.md
+    prompt: >-
+      A rule splits 90 to `v1` and 10 to `v2`, and mirrors 100% to `v2`. You send 100 requests. About how many requests reach `v2`?
+    options:
+      - id: a
+        text: >-
+          About 110: 10 from the split plus 100 copies
+        explanation: >-
+          Correct. The mirror target gets its own share plus a copy of every request.
+      - id: b
+        text: >-
+          About 100
+        explanation: >-
+          The mirror sends 100 copies, and the split also sends about 10.
+      - id: c
+        text: >-
+          About 10
+        explanation: >-
+          The mirror adds a copy of every request on top of the split.
+      - id: d
+        text: >-
+          0, because a version cannot be both a route and a mirror
+        explanation: >-
+          Istio allows it, and the target then gets both.
+    correct_option: a
+    explanation: >-
+      The mirror is extra traffic on top of the split. Size the target for its share plus a copy of every request.
+
+  - id: ats014-020-02-q04
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      State the default of mirrorPercentage.
+    source_readings:
+      - sections/section-020/module-02/course-03-find-mirrored-requests-and-sample-them.md
+    prompt: >-
+      A rule has `mirror` set and no `mirrorPercentage`. What share of matched requests is copied?
+    options:
+      - id: a
+        text: >-
+          0%, so nothing is copied until you set the field
+        explanation: >-
+          The default is not 0%.
+      - id: b
+        text: >-
+          50%
+        explanation: >-
+          There is no 50% default.
+      - id: c
+        text: >-
+          10%
+        explanation: >-
+          There is no 10% default.
+      - id: d
+        text: >-
+          100%
+        explanation: >-
+          Correct. Leaving out `mirrorPercentage` copies every matched request.
+    correct_option: d
+    explanation: >-
+      The default `mirrorPercentage` is 100%.
+
+  - id: ats014-020-02-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Prove that a mirror works from the access log of the receiving pod.
+    source_readings:
+      - sections/section-020/module-02/course-03-find-mirrored-requests-and-sample-them.md
+    prompt: >-
+      On Istio 1.30, how do you prove that `v2` receives mirrored copies?
+    options:
+      - id: a
+        text: >-
+          Look for the host name `scout-shadow` in the `v2` access log
+        explanation: >-
+          Istio 1.30 does not add a `-shadow` suffix.
+      - id: b
+        text: >-
+          Check the client's output for a second response
+        explanation: >-
+          The client sees nothing different with or without a mirror.
+      - id: c
+        text: >-
+          Look for a mirror header that the shadow receives
+        explanation: >-
+          Istio 1.30 sends the copy unchanged.
+      - id: d
+        text: >-
+          Read the `v2` access log: when the route sends nothing to `v2`, every request there is a copy with the same request ID as in the client's log
+        explanation: >-
+          Correct. The proof is on the receiving side.
+    correct_option: d
+    explanation: >-
+      The logs of the receiving pod are the only place a copy shows up. Match the request ID with the client's access log.
+
+  - id: ats014-020-02-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Find out why a mirror sends nothing.
+    source_readings:
+      - sections/section-020/module-02/course-04-diagnose-a-silent-mirror-and-plan-for-side-effects.md
+    prompt: >-
+      The mirror policy is in the client's route table, but the shadow receives nothing. What should you check next?
+    options:
+      - id: a
+        text: >-
+          `istioctl analyze` for `IST0101` or `IST0173`, and the endpoints of the mirror cluster
+        explanation: >-
+          Correct. The subset may be undefined or may select no pods.
+      - id: b
+        text: >-
+          Restart the shadow pods
+        explanation: >-
+          A restart does not change the proxy configuration.
+      - id: c
+        text: >-
+          The client's output for errors
+        explanation: >-
+          The client is fine whether the mirror works or not.
+      - id: d
+        text: >-
+          The weights of the route
+        explanation: >-
+          The mirror is not part of the weighted split.
+    correct_option: a
+    explanation: >-
+      A quiet mirror has three causes: no mirror policy, a subset no `DestinationRule` defines, or a subset that selects no pods.
+
+  - id: ats014-020-02-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why a failing shadow is invisible to the client.
+    source_readings:
+      - sections/section-020/module-02/course-02-mirror-requests-to-a-failing-version.md
+    prompt: >-
+      The shadow `v2` returns `503` to every copy. What does the client see?
+    options:
+      - id: a
+        text: >-
+          A `503` for every request
+        explanation: >-
+          The client never gets the shadow's response.
+      - id: b
+        text: >-
+          A slower response while the proxy retries the shadow
+        explanation: >-
+          The proxy does not wait for the shadow.
+      - id: c
+        text: >-
+          Normal `200` responses from `v1`; only the shadow's own logs show the failures
+        explanation: >-
+          Correct. A failing shadow looks exactly like a healthy one from the client's side.
+      - id: d
+        text: >-
+          A warning header that the shadow failed
+        explanation: >-
+          Nothing in the client's response mentions the shadow.
+    correct_option: c
+    explanation: >-
+      The proxy throws away the shadow's response, so the client never sees the shadow's failures.
+
+  - id: ats014-020-02-q08
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Judge when mirroring is safe and name the side effects that make it unsafe.
+    source_readings:
+      - sections/section-020/module-02/course-04-diagnose-a-silent-mirror-and-plan-for-side-effects.md
+    prompt: >-
+      You plan to mirror the checkout Service, which writes orders to a database. What is the risk?
+    options:
+      - id: a
+        text: >-
+          None, because the shadow's response is thrown away
+        explanation: >-
+          Only the response is thrown away. The work is done.
+      - id: b
+        text: >-
+          Every copy writes a real order, because the shadow does real work and cannot tell that a request is a copy
+        explanation: >-
+          Correct. Give the shadow its own datastore and its own Service first.
+      - id: c
+        text: >-
+          The client may get the shadow's response
+        explanation: >-
+          The client never gets it.
+      - id: d
+        text: >-
+          The proxy blocks database writes from mirrored requests
+        explanation: >-
+          The proxy does not know what the application does.
+    correct_option: b
+    explanation: >-
+      The shadow does real work. Database writes, messages and payments really happen.

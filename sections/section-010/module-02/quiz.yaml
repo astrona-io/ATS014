@@ -1,0 +1,286 @@
+# Knowledge check for section 010, module 02. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-010-02
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-010/module-02
+  title: Scope Proxy Configuration With The Sidecar Resource
+questions:
+  - id: ats014-010-02-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Describe what a proxy receives when no Sidecar exists.
+    source_readings:
+      - sections/section-010/module-02/course-01-what-every-proxy-receives-by-default.md
+    prompt: >-
+      No `Sidecar` resource exists in the mesh. The `shuttle` application only ever calls `probe`. Which clusters does the `shuttle` proxy hold?
+    options:
+      - id: a
+        text: >-
+          A cluster for every host in the service registry, in every namespace
+        explanation: >-
+          Correct. That is the default, and the cluster count in `istioctl proxy-config cluster` proves it.
+      - id: b
+        text: >-
+          Only a cluster for `probe`, because `istiod` watches which hosts the application calls
+        explanation: >-
+          `istiod` cannot know which hosts an application calls, so it does not try.
+      - id: c
+        text: >-
+          Only clusters for Services in the `starfleet` namespace
+        explanation: >-
+          By default the proxy gets every namespace, not only its own.
+      - id: d
+        text: >-
+          No clusters until the first request is sent
+        explanation: >-
+          `istiod` pushes the configuration before any request.
+    correct_option: a
+    explanation: >-
+      By default every proxy holds configuration for every host in the service registry. The `Sidecar` resource limits it.
+
+  - id: ats014-010-02-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain how a configuration change reaches a running proxy.
+    source_readings:
+      - sections/section-010/module-02/course-01-what-every-proxy-receives-by-default.md
+    prompt: >-
+      You apply a new `Sidecar` to `starfleet`. What must happen before the proxies in that namespace use it?
+    options:
+      - id: a
+        text: >-
+          Every pod in the namespace must be restarted
+        explanation: >-
+          No restart is needed. `istiod` pushes the change to running proxies.
+      - id: b
+        text: >-
+          The `istiod` Deployment must be restarted
+        explanation: >-
+          `istiod` watches the Kubernetes API and reacts by itself.
+      - id: c
+        text: >-
+          You must run `istioctl proxy-status` to send the change
+        explanation: >-
+          `istioctl proxy-status` only reports. It does not push anything.
+      - id: d
+        text: >-
+          Nothing more: `istiod` pushes the new configuration over xDS to the running proxies
+        explanation: >-
+          Correct. If a change has not taken effect, a restart is not the fix.
+    correct_option: d
+    explanation: >-
+      Configuration reaches running proxies over xDS, without a pod restart.
+
+  - id: ats014-010-02-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Write a namespace-wide Sidecar that limits egress.hosts with the namespace/host syntax.
+    source_readings:
+      - sections/section-010/module-02/course-02-limit-egress-hosts-with-a-namespace-wide-sidecar.md
+    prompt: >-
+      A namespace-wide `Sidecar` in `starfleet` has `egress.hosts` set to `["./*", "istio-system/*"]`. What does the namespace half of each entry name?
+    options:
+      - id: a
+        text: >-
+          The namespace of the client pods the entry applies to
+        explanation: >-
+          The `workloadSelector` and the `Sidecar`'s own namespace decide which pods it applies to.
+      - id: b
+        text: >-
+          The namespace where the `Sidecar` object is stored
+        explanation: >-
+          This is a common misreading. It names where the target host lives.
+      - id: c
+        text: >-
+          The namespace where the target host lives; `./*` means the pod's own namespace
+        explanation: >-
+          Correct. `./*` here selects every host in `starfleet`.
+      - id: d
+        text: >-
+          The namespace that may call the proxy
+        explanation: >-
+          `egress` is about outgoing traffic, not callers.
+    correct_option: c
+    explanation: >-
+      Hosts are written as `<namespace>/<host>`. The namespace half names where the target host lives.
+
+  - id: ats014-010-02-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why istio-system/* belongs in almost every list.
+    source_readings:
+      - sections/section-010/module-02/course-02-limit-egress-hosts-with-a-namespace-wide-sidecar.md
+    prompt: >-
+      A `Sidecar` lists only `./*`. Some requests fail in a way that seems to have nothing to do with the `Sidecar`. What is the likely cause?
+    options:
+      - id: a
+        text: >-
+          `./*` is not valid syntax and the whole `Sidecar` is ignored
+        explanation: >-
+          `./*` is valid and means the pod's own namespace.
+      - id: b
+        text: >-
+          `istio-system/*` is missing, so the proxy loses destinations it needs for its own work
+        explanation: >-
+          Correct. `./*` plus `istio-system/*` is the minimum of every namespace-wide `Sidecar`.
+      - id: c
+        text: >-
+          The pods need a restart to load the `Sidecar`
+        explanation: >-
+          No restart is needed.
+      - id: d
+        text: >-
+          The `Sidecar` blocks all incoming traffic
+        explanation: >-
+          A `Sidecar`'s `egress` field never limits incoming traffic.
+    correct_option: b
+    explanation: >-
+      Leave out `istio-system/*` and the proxy loses destinations it needs. The failure is partial and points nowhere near the `Sidecar`.
+
+  - id: ats014-010-02-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict what happens to a request for a host that is not in the proxy's configuration.
+    source_readings:
+      - sections/section-010/module-02/course-02-limit-egress-hosts-with-a-namespace-wide-sidecar.md
+    prompt: >-
+      A `Sidecar` removed `cargo` from the `shuttle` proxy. The mesh uses the default `outboundTrafficPolicy`. What happens to a request from `shuttle` to `cargo`?
+    options:
+      - id: a
+        text: >-
+          It fails with `404 NR`
+        explanation: >-
+          Without a listener and route for the host, the request is not handled as an HTTP route.
+      - id: b
+        text: >-
+          It goes to the `BlackHoleCluster` and `curl` reports `000`
+        explanation: >-
+          That happens only with `REGISTRY_ONLY`.
+      - id: c
+        text: >-
+          It still leaves the pod through `PassthroughCluster` as raw TCP bytes
+        explanation: >-
+          Correct. With `ALLOW_ANY`, removing a host does not make it unreachable.
+      - id: d
+        text: >-
+          It is sent to the `istio-system` namespace
+        explanation: >-
+          Nothing redirects unknown hosts to `istio-system`.
+    correct_option: c
+    explanation: >-
+      Under `ALLOW_ANY` a request for an unknown host goes through `PassthroughCluster`. Under `REGISTRY_ONLY` it goes to the `BlackHoleCluster`.
+
+  - id: ats014-010-02-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict which Sidecar applies to a given pod.
+    source_readings:
+      - sections/section-010/module-02/course-03-which-sidecar-applies-to-a-workload.md
+    prompt: >-
+      `starfleet` has a namespace-wide `Sidecar` named `default` that lists `./*` and `istio-system/*`. A second `Sidecar` selects `app: bridge` and lists only `./cargo.starfleet.svc.cluster.local`. Which hosts does the `bridge` proxy get?
+    options:
+      - id: a
+        text: >-
+          Only `cargo`, because the selector `Sidecar` replaces the default completely
+        explanation: >-
+          Correct. It must list `istio-system/*` and every other host again.
+      - id: b
+        text: >-
+          The hosts of the namespace-wide `default`, because it was there first
+        explanation: >-
+          A selector `Sidecar` wins over the namespace-wide one.
+      - id: c
+        text: >-
+          Every host from both `Sidecar` objects, merged
+        explanation: >-
+          Only one `Sidecar` applies to a pod. They are never merged.
+      - id: d
+        text: >-
+          No hosts, because two `Sidecar` objects conflict
+        explanation: >-
+          One default plus non-overlapping selectors is the supported layout.
+    correct_option: a
+    explanation: >-
+      `istiod` uses a selector `Sidecar` first, then the namespace-wide one, then a root `Sidecar` in `istio-system`. The winner replaces the others.
+
+  - id: ats014-010-02-q07
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Prove that a Sidecar took effect without sending any request.
+    source_readings:
+      - sections/section-010/module-02/course-02-limit-egress-hosts-with-a-namespace-wide-sidecar.md
+    prompt: >-
+      How do you prove a new `Sidecar` removed a host from the `shuttle` proxy without sending traffic?
+    options:
+      - id: a
+        text: >-
+          Run `kubectl get sidecar -n starfleet`
+        explanation: >-
+          That proves the object exists, not that the proxy changed.
+      - id: b
+        text: >-
+          Check that the host and its listener are gone from `istioctl proxy-config` for `deploy/shuttle`
+        explanation: >-
+          Correct. The configuration the proxy holds is the proof.
+      - id: c
+        text: >-
+          Read the access log of the `shuttle` proxy
+        explanation: >-
+          The access log only records requests that were sent.
+      - id: d
+        text: >-
+          Run `istioctl analyze -n starfleet`
+        explanation: >-
+          It checks links between objects, not what the proxy holds.
+    correct_option: b
+    explanation: >-
+      You prove a `Sidecar` without traffic: the host and its listener disappear from `istioctl proxy-config`.
+
+  - id: ats014-010-02-q08
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain why a Sidecar is not a security boundary.
+    source_readings:
+      - sections/section-010/module-02/course-04-what-a-sidecar-resource-cannot-enforce.md
+    prompt: >-
+      A team wants to stop the `drifter` pod in `outpost`, which has no sidecar proxy, from calling `cargo`. Why does a `Sidecar` not do this?
+    options:
+      - id: a
+        text: >-
+          A `Sidecar` can do it, but only with a `workloadSelector`
+        explanation: >-
+          No selector gives a `Sidecar` control over a pod without a proxy.
+      - id: b
+        text: >-
+          A `Sidecar` only works in the `istio-system` namespace
+        explanation: >-
+          A `Sidecar` works in any namespace.
+      - id: c
+        text: >-
+          A `Sidecar` needs `ALLOW_ANY` to block hosts
+        explanation: >-
+          `ALLOW_ANY` lets unknown hosts through. It blocks nothing.
+      - id: d
+        text: >-
+          A `Sidecar` shapes the configuration of sidecar proxies only; it has no effect on pods without one and does not limit incoming traffic
+        explanation: >-
+          Correct. Use an `AuthorizationPolicy` and a Kubernetes `NetworkPolicy` for enforcement.
+    correct_option: d
+    explanation: >-
+      A `Sidecar` decides what a proxy knows, not what a workload accepts. Combine it with `REGISTRY_ONLY`, an `AuthorizationPolicy` and a `NetworkPolicy`.

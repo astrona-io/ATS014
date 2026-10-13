@@ -116,10 +116,12 @@ Strict guidelines:
   diagram for a flow, an order or a state change, keep it under about 12
   boxes, and follow it with one sentence that says what it shows.
 - **Labs come right after the part they practise.** Do not collect all
-  graded labs at the end of a module. In `astrona.yaml`, put each lab (its
-  `question.md` reading and the `lab` entry) right after the reading part it
-  tests. If a part teaches a gradeable skill and no lab covers it, create a
-  new lab. That part then ends with a `## Your mission: <lab title>` section:
+  graded labs at the end of a module. In `astrona.yaml`, put each lab's
+  `type: lab` entry right after the reading part it tests. Never add a
+  separate `Question` reading for `question.md`: the platform already shows
+  the task inside the lab, so a reading entry only shows it twice. If a
+  part teaches a gradeable skill and no lab covers it, create a new lab.
+  That part then ends with a `## Your mission: <lab title>` section:
   one sentence on what the reader can now do, one on what the mission asks,
   then pause the playground (`astrona stop <playground name>`), the
   `astrona run` and `astrona submit` commands, and finally
@@ -370,6 +372,7 @@ one sentence that the lab uses a different app.
 | Overview, sections table, how to run things | `README.md` |
 | Introduction (see "Every course starts with an Introduction") | `sections/intro/` |
 | Section overview and its modules | `sections/section-0N0/README.md` |
+| Module knowledge check (question bank) and its contract | `sections/section-0N0/module-0M/quiz.yaml`, `schemas/question-bank.schema.json` |
 | Module reading: landing page, deep-dive parts, summary | `sections/section-0N0/module-0M/course.md`, `course-0N-*.md` |
 | Graded lab: task, walkthrough, setup, grader | `.../labs/lab-0N/` (`question.md`, `solution.md`, `bootstrap/`, `solution/apply.sh`, `validation/`) |
 | Ungraded sandbox for a module | `.../playground/` (`docs/overview.md` is the only learner page: what is in the box, helpers, and a final `## Practice tasks` section; `examples/` holds the authors' reference YAML) |
@@ -396,9 +399,10 @@ solution. Never rename `question.md` or `solution.md`, even if a local
 `astrona.yaml` has one entry per section under `modules:` (`module-intro`,
 `module-000`, `module-010` and so on up to `module-080`). Each section's
 `content` lists, in order: the section `README.md`, then for each module its
-landing page, its parts, and right after the part a lab tests, a `Question`
-reading (`labs/lab-0N/question.md`) followed by the `type: lab` entry; the
-module's summary page comes last. The section capstone closes the section.
+landing page, its parts, and right after the part a lab tests, the
+`type: lab` entry (no `question.md` reading: the lab shows its own task);
+then the module's summary page, and after it the module's `type: quiz` entry
+when the module has one. The section capstone closes the section.
 Playgrounds are not listed: the landing page's `<!-- astrona:playground -->`
 marker shows them.
 
@@ -406,9 +410,6 @@ Every `type: lab` entry (module labs and capstones) carries these fields, in
 this order:
 
 ```yaml
-      - type: reading
-        title: Question
-        path: sections/section-030/module-01/labs/lab-03/question.md
       - type: lab
         title: "Fix A Load Balancing Policy Lab"
         path: sections/section-030/module-01/labs/lab-03
@@ -464,6 +465,34 @@ this order:
 - Failure signatures: `404-nr`, `503-nc`, `503-uh`, `503-uo`, `504-ut`,
   `ist0101`, `ist0130`, `ist0173`
 - Tools: `proxy-config`, `proxy-status`, `istioctl-analyze`, `access-log`
+
+### Module quizzes
+
+A module can end with a short knowledge check: 5 to 10 single-choice
+questions that confirm the reader understood the module. It is a YAML
+question bank at `sections/section-0N0/module-0M/quiz.yaml`, and it must
+validate against `schemas/question-bank.schema.json`. In `astrona.yaml` it
+comes right after the module's summary page:
+
+```yaml
+      - type: quiz
+        title: "Knowledge Check: How A Request Moves Through The Mesh"
+        path: sections/section-000/module-01/quiz.yaml
+        question_count: 9
+```
+
+- Each question has a stable `id` (`ats014-<section>-<module>-qNN`), a
+  `difficulty`, one `learning_objective` taken from the module's landing
+  page, the `source_readings` that teach the answer, 3 or 4 options, one
+  `correct_option` and an `explanation` for every option.
+- Ask only what the module's pages teach. Prefer short scenarios with the
+  Starfleet names and real values from the pages (a port, a flag, a cluster
+  name) over definitions to recall.
+- Spread the correct answers over `a` to `d`, and make every wrong option a
+  real mistake a learner makes, not a joke answer.
+- The writing rules for course pages apply to prompts, options and
+  explanations. The questions are practice material, not official exam
+  questions.
 
 ### Running things
 

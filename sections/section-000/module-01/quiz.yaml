@@ -1,0 +1,332 @@
+# Knowledge check for section 000, module 01. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-000-01
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-000/module-01
+  title: How A Request Moves Through The Mesh
+questions:
+  - id: ats014-000-01-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain why a namespace label alone does not change running pods.
+    source_readings:
+      - sections/section-000/module-01/course-01-what-sidecar-injection-adds-to-a-pod.md
+    prompt: >
+      You add the label `istio-injection: enabled` to a namespace where three
+      pods are already running. What happens to those three pods?
+    options:
+      - id: a
+        text: >-
+          Istio adds a sidecar proxy to each running pod within a few seconds.
+        explanation: >-
+          Injection is done by a mutating admission webhook, which only sees pods when they are created. It never changes a running pod.
+      - id: b
+        text: >-
+          Nothing. They keep running without a sidecar proxy until they are created again, for example with `kubectl rollout restart`.
+        explanation: >-
+          Correct. The webhook changes new pods only, so existing pods must be recreated to get the proxy.
+      - id: c
+        text: >-
+          Kubernetes restarts the pods at once so that the webhook can add the proxy.
+        explanation: >-
+          The label does not restart anything. You have to restart the Deployment yourself.
+      - id: d
+        text: >-
+          The Deployment spec is changed to include the `istio-proxy` container.
+        explanation: >-
+          The webhook changes the pod spec that the Deployment creates, not the Deployment itself.
+    correct_option: b
+    explanation: >-
+      Sidecar injection happens when a pod is created. Label the namespace first, then recreate the pods.
+
+  - id: ats014-000-01-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Tell an injected pod from an uninjected one and find the native sidecar.
+    source_readings:
+      - sections/section-000/module-01/course-01-what-sidecar-injection-adds-to-a-pod.md
+    prompt: >
+      A pod with one application container shows `2/2` in the `READY` column.
+      You list `spec.containers` and do not find `istio-proxy`. Where is it?
+    options:
+      - id: a
+        text: >-
+          Nowhere. The pod has no sidecar proxy, and `2/2` counts a second application container.
+        explanation: >-
+          The pod has only one application container, so the second ready container must be the proxy.
+      - id: b
+        text: >-
+          In a separate pod on the same node that the application pod shares a network with.
+        explanation: >-
+          The sidecar proxy runs inside the same pod as the application.
+      - id: c
+        text: >-
+          Under `spec.initContainers`, with `restartPolicy: Always`, which makes it a native sidecar.
+        explanation: >-
+          Correct. A native sidecar is listed with the init containers but keeps running, and Kubernetes counts it in `READY`.
+      - id: d
+        text: >-
+          Under `spec.initContainers`, where it runs once and exits before the application starts.
+        explanation: >-
+          That describes `istio-init`. The `istio-proxy` container has `restartPolicy: Always` and keeps running.
+    correct_option: c
+    explanation: >-
+      On Kubernetes 1.28 and later, Istio adds `istio-proxy` as a native sidecar, an init container with `restartPolicy: Always`.
+
+  - id: ats014-000-01-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Describe how outgoing traffic reaches the proxy without the application knowing.
+    source_readings:
+      - sections/section-000/module-01/course-02-follow-a-request-through-two-proxies.md
+    prompt: >
+      The application in the `shuttle` pod runs `curl http://cargo:9080/`. It
+      has no proxy setting. How does the connection reach the sidecar proxy?
+    options:
+      - id: a
+        text: >-
+          The `iptables` rules that `istio-init` wrote redirect the outgoing connection to port `15001` of the proxy.
+        explanation: >-
+          Correct. The redirect happens in the kernel of the pod, below the application.
+      - id: b
+        text: >-
+          Istio sets the `HTTP_PROXY` environment variable in every container.
+        explanation: >-
+          Istio does not change the application's environment. The redirect is done with `iptables` rules.
+      - id: c
+        text: >-
+          kube-proxy sends every connection from a meshed pod to port `15006` of the proxy.
+        explanation: >-
+          kube-proxy is not involved, and port `15006` is the inbound port, used for connections arriving at the pod.
+      - id: d
+        text: >-
+          DNS returns the address of the proxy instead of the address of the `cargo` Service.
+        explanation: >-
+          DNS still returns the Service address. The `iptables` rules catch the connection after that.
+    correct_option: a
+    explanation: >-
+      `istio-init` writes `iptables` rules: outgoing connections go to port `15001`, incoming connections to port `15006`.
+
+  - id: ats014-000-01-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Say which side of a call decides routing, and what a client without a proxy loses.
+    source_readings:
+      - sections/section-000/module-01/course-02-follow-a-request-through-two-proxies.md
+    prompt: >
+      The `drifter` pod in `outpost` has no sidecar proxy. It sends a request
+      to `cargo.starfleet:9080`, and the `cargo` pod has a sidecar proxy. A
+      routing rule with retries exists for `cargo`. What is true?
+    options:
+      - id: a
+        text: >-
+          The request fails, because a pod without a proxy cannot reach a meshed pod.
+        explanation: >-
+          The request arrives. The default mTLS mode `PERMISSIVE` lets the `cargo` proxy accept plain text.
+      - id: b
+        text: >-
+          The retries apply, because the `cargo` proxy handles the request on the way in.
+        explanation: >-
+          The server's proxy does not decide routing or retries. Those happen in the client's proxy.
+      - id: c
+        text: >-
+          Two access log lines appear, one `outbound` and one `inbound`.
+        explanation: >-
+          Only the `cargo` proxy exists, so there is only one `inbound` line.
+      - id: d
+        text: >-
+          The request arrives, but the retries do not apply, because routing and retries need a proxy in the client pod.
+        explanation: >-
+          Correct. A rule takes effect only where a proxy exists, and routing rules live in the client's proxy.
+    correct_option: d
+    explanation: >-
+      The client's proxy decides routing, retries and timeouts. A client without a proxy reaches the mesh but gets none of these rules.
+
+  - id: ats014-000-01-q05
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Expand LDS, RDS, CDS and EDS, and say which one carries a given kind of configuration.
+    source_readings:
+      - sections/section-000/module-01/course-03-how-istiod-sends-configuration-over-xds.md
+    prompt: >
+      A `probe` pod is deleted and a new one starts with a new IP address.
+      Which xDS API does `istiod` use to send the new pod address to the proxies?
+    options:
+      - id: a
+        text: >-
+          LDS, the Listener Discovery Service
+        explanation: >-
+          LDS carries the ports and addresses the proxy accepts connections on, not the pods behind a destination.
+      - id: b
+        text: >-
+          CDS, the Cluster Discovery Service
+        explanation: >-
+          CDS carries the named destinations. The cluster stays the same when pods change.
+      - id: c
+        text: >-
+          EDS, the Endpoint Discovery Service
+        explanation: >-
+          Correct. EDS carries the pod addresses behind each cluster.
+      - id: d
+        text: >-
+          RDS, the Route Discovery Service
+        explanation: >-
+          RDS carries the rules that choose a destination, not the pod addresses.
+    correct_option: c
+    explanation: >-
+      The cluster has `TYPE: EDS`, so its endpoint list arrives separately over EDS and changes without changing the cluster.
+
+  - id: ats014-000-01-q06
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Pick the right diagnostic command for a symptom, and say what each one cannot see.
+    source_readings:
+      - sections/section-000/module-01/course-03-how-istiod-sends-configuration-over-xds.md
+      - sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
+    prompt: >
+      `kubectl apply` returned without an error. Which command shows whether
+      the proxies have received the new configuration from `istiod`?
+    options:
+      - id: a
+        text: >-
+          `kubectl get` on the object you applied
+        explanation: >-
+          It only shows that the Kubernetes API server stored the object.
+      - id: b
+        text: >-
+          `istioctl proxy-status`
+        explanation: >-
+          Correct. It shows which proxies are connected to `istiod` and whether each one holds what `istiod` sent.
+      - id: c
+        text: >-
+          `istioctl analyze`
+        explanation: >-
+          It checks links between objects, not whether a push reached the proxies.
+      - id: d
+        text: >-
+          `kubectl rollout status`
+        explanation: >-
+          It shows the progress of a Deployment rollout. It knows nothing about proxy configuration.
+    correct_option: b
+    explanation: >-
+      `kubectl apply` stores the object. `istiod` then pushes it to the proxies, and `istioctl proxy-status` shows that second step.
+
+  - id: ats014-000-01-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Read an Envoy cluster name and its endpoints.
+    source_readings:
+      - sections/section-000/module-01/course-04-read-listeners-routes-clusters-and-endpoints.md
+    prompt: >
+      The `shuttle` proxy has the cluster `outbound|8000||probe.starfleet.svc.cluster.local`,
+      and its endpoints are `10.244.0.13:8080` and `10.244.0.14:8080`. Why do
+      the ports differ?
+    options:
+      - id: a
+        text: >-
+          The cluster name carries the Service port, and the endpoint carries the container port of the pod.
+        explanation: >-
+          Correct. This is normal and is the same for every Service whose port differs from its target port.
+      - id: b
+        text: >-
+          A `DestinationRule` changed the port, and the empty field between `||` is where it is named.
+        explanation: >-
+          There is no `DestinationRule`. The empty field is the subset name.
+      - id: c
+        text: >-
+          The configuration is out of sync, and `istioctl proxy-status` would show it as not matching.
+        explanation: >-
+          Nothing is wrong. The two ports differ by design.
+      - id: d
+        text: >-
+          Port `8080` is the inbound port of the `probe` sidecar proxy.
+        explanation: >-
+          The inbound port of a sidecar proxy is `15006`. `8080` is the container port of the `probe` application.
+    correct_option: a
+    explanation: >-
+      A cluster name reads direction | Service port | subset | host. The endpoint uses the container port.
+
+  - id: ats014-000-01-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Read a response flag such as NR, NC or UH, and say which half of the setup to look at.
+    source_readings:
+      - sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
+    prompt: >
+      A request from `shuttle` to `cargo` returns `503`, and the access log of
+      the `shuttle` proxy shows the response flag `UH`. What does this tell you?
+    options:
+      - id: a
+        text: >-
+          No route matched the host, so look at the routing rules.
+        explanation: >-
+          That is `NR`, and it comes back as `404`, not `503`.
+      - id: b
+        text: >-
+          A rule points at a subset that the proxy has no cluster for.
+        explanation: >-
+          That is `NC`. With `UH`, the cluster exists.
+      - id: c
+        text: >-
+          A circuit breaker limit was hit.
+        explanation: >-
+          That is `UO`, Upstream Overflow.
+      - id: d
+        text: >-
+          The cluster exists but has no usable pods, so check its endpoints and the Service selector.
+        explanation: >-
+          Correct. `UH` means no healthy upstream. `istioctl proxy-config endpoints` shows an empty or unhealthy endpoint list.
+    correct_option: d
+    explanation: >-
+      `NR` (404) points at routing. `NC` and `UH` (503) point at the destination: missing (`NC`) or without usable pods (`UH`).
+
+  - id: ats014-000-01-q09
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Say what each diagnostic command cannot see.
+    source_readings:
+      - sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
+    prompt: >
+      `istioctl analyze -n starfleet` reports no validation issues. Which of
+      these is still NOT proven?
+    options:
+      - id: a
+        text: >-
+          That the Istio objects in the namespace point at each other correctly
+        explanation: >-
+          This is exactly what `istioctl analyze` checks.
+      - id: b
+        text: >-
+          That the labels in your rules select real pods
+        explanation: >-
+          Correct. `istioctl analyze` checks links between objects, not that a label selects any pod.
+      - id: c
+        text: >-
+          That no object refers to a resource that does not exist, such as a missing gateway
+        explanation: >-
+          A reference to a missing resource is a link between objects, and `istioctl analyze` reports it with a code such as `IST0101`.
+      - id: d
+        text: >-
+          That no `VirtualService` names a subset missing from its `DestinationRule`
+        explanation: >-
+          This is a link between two objects, and `istioctl analyze` checks it.
+    correct_option: b
+    explanation: >-
+      A clean `istioctl analyze` is a good start, not a proof. It does not check that labels select pods or that rules are in a sensible order.

@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ATS014 reusable question bank v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "id",
+    "course_id",
+    "exam_code",
+    "status",
+    "provenance",
+    "scope",
+    "questions"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "question_bank"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "course_id": {
+      "const": "ATS014"
+    },
+    "exam_code": {
+      "const": "ICA"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "reviewed"
+      ]
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "id",
+        "title"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "module",
+            "section",
+            "domain"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "difficulty",
+          "learning_objective",
+          "source_readings",
+          "prompt",
+          "options",
+          "correct_option",
+          "explanation"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "const": "single_choice"
+          },
+          "difficulty": {
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced"
+            ]
+          },
+          "learning_objective": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_readings": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1
+          },
+          "options": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "text",
+                "explanation"
+              ],
+              "properties": {
+                "id": {
+                  "enum": [
+                    "a",
+                    "b",
+                    "c",
+                    "d"
+                  ]
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "explanation": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "correct_option": {
+            "enum": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ]
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

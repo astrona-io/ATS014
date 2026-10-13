@@ -1,0 +1,320 @@
+# Knowledge check for section 070, module 01. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-070-01
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-070/module-01
+  title: Control External Access With ServiceEntry
+questions:
+  - id: ats014-070-01-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain the difference between ALLOW_ANY and REGISTRY_ONLY.
+    source_readings:
+      - sections/section-070/module-01/course-01-block-unknown-hosts-with-registry-only.md
+    prompt: >-
+      The mesh uses the install default for `outboundTrafficPolicy`. The `shuttle` pod calls `https://httpbin.org`, which is not in the registry. What happens?
+    options:
+      - id: a
+        text: >-
+          The request leaves through `PassthroughCluster`, with no rules and no record of the host
+        explanation: >-
+          Correct. `ALLOW_ANY` is the install default.
+      - id: b
+        text: >-
+          The request is refused through `BlackHoleCluster`
+        explanation: >-
+          That is `REGISTRY_ONLY`.
+      - id: c
+        text: >-
+          The request is sent through the egress gateway
+        explanation: >-
+          Nothing routes it to a gateway by default.
+      - id: d
+        text: >-
+          The request fails with a DNS error
+        explanation: >-
+          The name resolves. The policy decides what the proxy does.
+    correct_option: a
+    explanation: >-
+      Under `ALLOW_ANY` the proxy lets unknown hosts through as `PassthroughCluster`. Under `REGISTRY_ONLY` it refuses them as `BlackHoleCluster`.
+
+  - id: ats014-070-01-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Block unknown hosts in one namespace.
+    source_readings:
+      - sections/section-070/module-01/course-01-block-unknown-hosts-with-registry-only.md
+    prompt: >-
+      Only the `starfleet` namespace must refuse unknown outside hosts. Where do you set `REGISTRY_ONLY`?
+    options:
+      - id: a
+        text: >-
+          `meshConfig.outboundTrafficPolicy.mode`
+        explanation: >-
+          That changes the whole mesh.
+      - id: b
+        text: >-
+          A `DestinationRule` for `*`
+        explanation: >-
+          A `DestinationRule` has no outbound policy.
+      - id: c
+        text: >-
+          A `ServiceEntry` with `location: MESH_EXTERNAL`
+        explanation: >-
+          A `ServiceEntry` adds hosts. It does not set the policy.
+      - id: d
+        text: >-
+          `outboundTrafficPolicy` on a `Sidecar` resource in `starfleet`
+        explanation: >-
+          Correct. A `Sidecar` carries its own policy for one namespace.
+    correct_option: d
+    explanation: >-
+      Set the policy for the whole mesh at install time, or for one namespace with `outboundTrafficPolicy` on a `Sidecar`.
+
+  - id: ats014-070-01-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Recognise the response a blocked destination produces.
+    source_readings:
+      - sections/section-070/module-01/course-01-block-unknown-hosts-with-registry-only.md
+    prompt: >-
+      Under `REGISTRY_ONLY`, `curl https://example.com` from `shuttle` gives `000` with exit code `35`. How do you tell a refusal from a network failure?
+    options:
+      - id: a
+        text: >-
+          A refusal always returns `403`
+        explanation: >-
+          A refusal never names the policy.
+      - id: b
+        text: >-
+          The `curl` exit code alone proves it
+        explanation: >-
+          The same code can come from a network failure.
+      - id: c
+        text: >-
+          Read the client's access log for `BlackHoleCluster`
+        explanation: >-
+          Correct. The access log tells a refusal apart from a DNS or network failure.
+      - id: d
+        text: >-
+          Check `istioctl analyze`
+        explanation: >-
+          A refusal is not a configuration error.
+    correct_option: c
+    explanation: >-
+      A refusal shows as `000` or a `502` from `block_all`. The access log shows `BlackHoleCluster` or `block_all`.
+
+  - id: ats014-070-01-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Write a ServiceEntry with the right location and resolution.
+    source_readings:
+      - sections/section-070/module-01/course-02-add-an-external-host-with-serviceentry.md
+    prompt: >-
+      You add `*.example.com` as a wildcard host. Which `resolution` do you use?
+    options:
+      - id: a
+        text: >-
+          `DNS`
+        explanation: >-
+          There is no single name to look up.
+      - id: b
+        text: >-
+          `NONE`
+        explanation: >-
+          Correct. The proxy forwards to the address the caller used.
+      - id: c
+        text: >-
+          `DNS_ROUND_ROBIN` with one address per subdomain
+        explanation: >-
+          A wildcard has no list of names.
+      - id: d
+        text: >-
+          `STATIC`
+        explanation: >-
+          `STATIC` needs `endpoints` with addresses.
+    correct_option: b
+    explanation: >-
+      A wildcard host needs `resolution: NONE`.
+
+  - id: ats014-070-01-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why the declared protocol decides whether HTTP features are available.
+    source_readings:
+      - sections/section-070/module-01/course-02-add-an-external-host-with-serviceentry.md
+    prompt: >-
+      A `ServiceEntry` declares `api.partner.com` port `80` as `TCP`. A `VirtualService` adds a timeout for it. What happens?
+    options:
+      - id: a
+        text: >-
+          The timeout never applies, because the proxy only moves bytes on a `TCP` port
+        explanation: >-
+          Correct. Declare the port as `HTTP`.
+      - id: b
+        text: >-
+          The timeout applies, because the host is in the registry
+        explanation: >-
+          HTTP features need an HTTP port.
+      - id: c
+        text: >-
+          The `VirtualService` is rejected
+        explanation: >-
+          It is valid. It just has no effect.
+      - id: d
+        text: >-
+          Requests fail with `503`
+        explanation: >-
+          The connection works, without HTTP features.
+    correct_option: a
+    explanation: >-
+      Only `HTTP` lets the proxy read requests. `HTTPS` and `TLS` give the SNI name only, and `TCP` only moves bytes.
+
+  - id: ats014-070-01-q06
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Know what a ServiceEntry with only port 443 covers.
+    source_readings:
+      - sections/section-070/module-01/course-02-add-an-external-host-with-serviceentry.md
+    prompt: >-
+      A `ServiceEntry` adds `httpbin.org` with only port `443`. Under `REGISTRY_ONLY`, the application calls `http://httpbin.org`. What happens?
+    options:
+      - id: a
+        text: >-
+          It works, because the host is in the registry
+        explanation: >-
+          The entry covers only the ports it lists.
+      - id: b
+        text: >-
+          It is upgraded to HTTPS by the proxy
+        explanation: >-
+          Nothing upgrades it.
+      - id: c
+        text: >-
+          It is refused, because port `80` is not in the entry
+        explanation: >-
+          Correct. List every port the application uses.
+      - id: d
+        text: >-
+          It is sent to port `443`
+        explanation: >-
+          The proxy does not change the port by itself.
+    correct_option: c
+    explanation: >-
+      A `ServiceEntry` with only port `443` does nothing for `http://` on port `80`.
+
+  - id: ats014-070-01-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Apply a VirtualService timeout and a DestinationRule connection pool to an external host.
+    source_readings:
+      - sections/section-070/module-01/course-03-apply-timeouts-and-connection-pools-to-an-external-host.md
+    prompt: >-
+      An external host has port `80` declared as `HTTP`, a 1-second route timeout, and a connection pool limit. Which flags can its requests show?
+    options:
+      - id: a
+        text: >-
+          Only `PassthroughCluster`
+        explanation: >-
+          The host is in the registry, so rules apply.
+      - id: b
+        text: >-
+          `504 UT` for a slow request and `503 UO` for a request over the pool limit
+        explanation: >-
+          Correct. Rules work on an external host as on any Service.
+      - id: c
+        text: >-
+          `FI` and `DI`
+        explanation: >-
+          Those are fault injection flags.
+      - id: d
+        text: >-
+          `NR` and `NC` only
+        explanation: >-
+          Timeouts and pool limits give other flags.
+    correct_option: b
+    explanation: >-
+      Once a host is in the registry, a `VirtualService` and a `DestinationRule` work on it as on any Service.
+
+  - id: ats014-070-01-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Find the cause when a Sidecar hides a ServiceEntry.
+    source_readings:
+      - sections/section-070/module-01/course-04-find-a-serviceentry-hidden-by-a-sidecar.md
+    prompt: >-
+      A `ServiceEntry` in `partners` works from `starfleet` but not from `outpost-app`. `istioctl analyze` is clean. What do you check?
+    options:
+      - id: a
+        text: >-
+          Switch the `Sidecar` in `outpost-app` to `ALLOW_ANY`
+        explanation: >-
+          That removes the refusal and the control.
+      - id: b
+        text: >-
+          The `ServiceEntry` YAML again
+        explanation: >-
+          It works from another namespace, so the entry is fine.
+      - id: c
+        text: >-
+          The DNS of the outside host
+        explanation: >-
+          DNS is the same from every namespace.
+      - id: d
+        text: >-
+          The `Sidecar` `egress.hosts` in `outpost-app`, and `istioctl proxy-config cluster` on the calling pod
+        explanation: >-
+          Correct. A hidden entry is valid configuration.
+    correct_option: d
+    explanation: >-
+      When an entry works from one namespace and not another, look for a `Sidecar` in the failing namespace.
+
+  - id: ats014-070-01-q09
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Limit a ServiceEntry with exportTo.
+    source_readings:
+      - sections/section-070/module-01/course-05-limit-a-serviceentry-with-exportto.md
+    prompt: >-
+      A `ServiceEntry` has no `exportTo` field. Which namespaces can use it?
+    options:
+      - id: a
+        text: >-
+          Only its own namespace
+        explanation: >-
+          Without `exportTo`, it is exported everywhere.
+      - id: b
+        text: >-
+          Every namespace
+        explanation: >-
+          Correct. Use `exportTo: ["."]` to keep it in its own namespace.
+      - id: c
+        text: >-
+          No namespace until `exportTo` is set
+        explanation: >-
+          It is exported by default.
+      - id: d
+        text: >-
+          Only `istio-system`
+        explanation: >-
+          There is no such rule.
+    correct_option: b
+    explanation: >-
+      A `ServiceEntry` is exported to every namespace unless `exportTo` says otherwise.

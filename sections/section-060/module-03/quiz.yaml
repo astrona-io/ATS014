@@ -1,0 +1,354 @@
+# Knowledge check for section 060, module 03. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-060-03
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-060/module-03
+  title: Ingress With The Kubernetes Gateway API
+questions:
+  - id: ats014-060-03-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain why no matches for kind Gateway means the Gateway API is missing.
+    source_readings:
+      - sections/section-060/module-03/course-01-the-gateway-api-objects-and-their-owners.md
+    prompt: >-
+      `kubectl apply` of a Gateway API `Gateway` fails with `no matches for kind "Gateway"`. What does it mean?
+    options:
+      - id: a
+        text: >-
+          Istio is not installed
+        explanation: >-
+          The error comes from the Kubernetes API server, not from Istio.
+      - id: b
+        text: >-
+          The `Gateway` has a YAML error
+        explanation: >-
+          A YAML error gives a different message.
+      - id: c
+        text: >-
+          The Gateway API CRDs are not installed in the cluster
+        explanation: >-
+          Correct. They are installed separately from Kubernetes and from Istio.
+      - id: d
+        text: >-
+          `istiod` is down
+        explanation: >-
+          `istiod` is not involved in this error.
+    correct_option: c
+    explanation: >-
+      The Gateway API comes as CRDs installed separately. The error means they are missing.
+
+  - id: ats014-060-03-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Name the three Gateway API objects and their scope.
+    source_readings:
+      - sections/section-060/module-03/course-01-the-gateway-api-objects-and-their-owners.md
+    prompt: >-
+      Which Gateway API object is cluster-wide?
+    options:
+      - id: a
+        text: >-
+          `Gateway`
+        explanation: >-
+          `Gateway` lives in a namespace.
+      - id: b
+        text: >-
+          `GatewayClass`
+        explanation: >-
+          Correct. It names the controller that builds gateways.
+      - id: c
+        text: >-
+          `HTTPRoute`
+        explanation: >-
+          `HTTPRoute` lives in a namespace.
+      - id: d
+        text: >-
+          All three
+        explanation: >-
+          Only `GatewayClass` is cluster-wide.
+    correct_option: b
+    explanation: >-
+      `GatewayClass` is cluster-wide. `Gateway` and `HTTPRoute` live in a namespace.
+
+  - id: ats014-060-03-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Tell the two Gateway kinds apart.
+    source_readings:
+      - sections/section-060/module-03/course-01-the-gateway-api-objects-and-their-owners.md
+    prompt: >-
+      Two objects are both `kind: Gateway`. How do you tell Istio's own from the Gateway API one?
+    options:
+      - id: a
+        text: >-
+          By the namespace
+        explanation: >-
+          Both can live in any namespace.
+      - id: b
+        text: >-
+          By the `selector` field
+        explanation: >-
+          Only Istio's has a selector, but the reliable check is the API group.
+      - id: c
+        text: >-
+          They are the same object
+        explanation: >-
+          They share only the kind name.
+      - id: d
+        text: >-
+          By the `apiVersion`: `networking.istio.io` or `gateway.networking.k8s.io`
+        explanation: >-
+          Correct. Always check the `apiVersion`.
+    correct_option: d
+    explanation: >-
+      Istio's `Gateway` and the Gateway API `Gateway` share only the kind name. Check the `apiVersion`.
+
+  - id: ats014-060-03-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Find the proxy that Istio deploys for a Gateway API Gateway.
+    source_readings:
+      - sections/section-060/module-03/course-02-a-gateway-that-creates-its-own-data-plane.md
+    prompt: >-
+      You create a Gateway API `Gateway` named `web` in `starfleet` with `gatewayClassName: istio`. Where is its proxy?
+    options:
+      - id: a
+        text: >-
+          A Deployment and Service named `web-istio` in `starfleet`
+        explanation: >-
+          Correct. Delete the `Gateway`, and Istio deletes them too.
+      - id: b
+        text: >-
+          Inside the `bridge` pod
+        explanation: >-
+          It is a separate Deployment.
+      - id: c
+        text: >-
+          The existing ingress gateway in `istio-system`
+        explanation: >-
+          Istio deploys a new proxy instead of configuring an existing one.
+      - id: d
+        text: >-
+          Nowhere until an `HTTPRoute` attaches
+        explanation: >-
+          Istio deploys it when the `Gateway` is created.
+    correct_option: a
+    explanation: >-
+      Istio deploys a proxy named `<gateway name>-istio` in the `Gateway`'s own namespace.
+
+  - id: ats014-060-03-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Read the Gateway status conditions.
+    source_readings:
+      - sections/section-060/module-03/course-02-a-gateway-that-creates-its-own-data-plane.md
+    prompt: >-
+      On `kind`, a Gateway API `Gateway` stays `Programmed=False`. What is the likely cause?
+    options:
+      - id: a
+        text: >-
+          The `GatewayClass` is missing
+        explanation: >-
+          Then the `Gateway` would not be `Accepted`.
+      - id: b
+        text: >-
+          The Service gets no address without a load balancer; the `networking.istio.io/service-type: ClusterIP` annotation fixes it
+        explanation: >-
+          Correct. `Programmed` means the gateway has an address.
+      - id: c
+        text: >-
+          No `HTTPRoute` is attached
+        explanation: >-
+          Routes do not decide `Programmed`.
+      - id: d
+        text: >-
+          The `Host` header is wrong
+        explanation: >-
+          Requests do not change the object's status.
+    correct_option: b
+    explanation: >-
+      On a `Gateway`, `Accepted` means the controller took it, and `Programmed` means the gateway has an address.
+
+  - id: ats014-060-03-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Read the HTTPRoute conditions and tell which object to fix.
+    source_readings:
+      - sections/section-060/module-03/course-03-attach-an-httproute-and-read-its-status.md
+    prompt: >-
+      An `HTTPRoute` shows `Accepted=True` and `ResolvedRefs=False BackendNotFound`. Requests get `500 NC`. What do you fix?
+    options:
+      - id: a
+        text: >-
+          The Service name or port in `backendRefs`
+        explanation: >-
+          Correct. `ResolvedRefs` is about the backend side.
+      - id: b
+        text: >-
+          The `parentRefs`
+        explanation: >-
+          A wrong `parentRefs` gives no status at all.
+      - id: c
+        text: >-
+          The `GatewayClass`
+        explanation: >-
+          The route was accepted by a gateway.
+      - id: d
+        text: >-
+          The `allowedRoutes` on the `Gateway`
+        explanation: >-
+          That gives `Accepted=False NotAllowedByListeners`.
+    correct_option: a
+    explanation: >-
+      `Accepted` is about the gateway side, and `ResolvedRefs` is about the backend side.
+
+  - id: ats014-060-03-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Recognise an empty status.parents.
+    source_readings:
+      - sections/section-060/module-03/course-03-attach-an-httproute-and-read-its-status.md
+    prompt: >-
+      An `HTTPRoute` has an empty `status.parents`. What does it point at?
+    options:
+      - id: a
+        text: >-
+          A typo in `backendRefs`
+        explanation: >-
+          That gives `ResolvedRefs=False BackendNotFound`.
+      - id: b
+        text: >-
+          A missing `DestinationRule`
+        explanation: >-
+          The Gateway API does not need one to route.
+      - id: c
+        text: >-
+          A wrong name or namespace in `parentRefs`, so no gateway writes a status for the route
+        explanation: >-
+          Correct.
+      - id: d
+        text: >-
+          A route that works
+        explanation: >-
+          A working route has a status entry per parent.
+    correct_option: c
+    explanation: >-
+      Empty `status.parents` means no gateway answered for the route: check `parentRefs`.
+
+  - id: ats014-060-03-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Control which namespaces may attach routes with allowedRoutes.
+    source_readings:
+      - sections/section-060/module-03/course-04-control-route-attachment-with-allowedroutes.md
+    prompt: >-
+      The `Gateway` in `edge` has the default `allowedRoutes`. An `HTTPRoute` in `starfleet` names it with the right namespace. What status does the route get?
+    options:
+      - id: a
+        text: >-
+          `Accepted=True`
+        explanation: >-
+          The default allows only the `Gateway`'s own namespace.
+      - id: b
+        text: >-
+          No status at all
+        explanation: >-
+          The gateway answers, and refuses.
+      - id: c
+        text: >-
+          `ResolvedRefs=False BackendNotFound`
+        explanation: >-
+          The backend is not the problem.
+      - id: d
+        text: >-
+          `Accepted=False NotAllowedByListeners`
+        explanation: >-
+          Correct. The default is `from: Same`.
+    correct_option: d
+    explanation: >-
+      `allowedRoutes.namespaces.from` defaults to `Same`. Use `Selector` or `All` to allow other namespaces.
+
+  - id: ats014-060-03-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Use a Selector in allowedRoutes correctly.
+    source_readings:
+      - sections/section-060/module-03/course-04-control-route-attachment-with-allowedroutes.md
+    prompt: >-
+      A `Gateway` in `edge` uses `from: Selector` with the label `gateway-access: web`. Only `starfleet` has that label. What happens to an `HTTPRoute` in `edge`?
+    options:
+      - id: a
+        text: >-
+          It is refused, because `edge` does not have the label
+        explanation: >-
+          Correct. Label the `Gateway`'s namespace too.
+      - id: b
+        text: >-
+          It is accepted, because the `Gateway`'s own namespace is always allowed
+        explanation: >-
+          With `Selector`, the own namespace is not included for free.
+      - id: c
+        text: >-
+          It is accepted, because `Selector` adds to `Same`
+        explanation: >-
+          `Selector` replaces `Same`.
+      - id: d
+        text: >-
+          The `Gateway` is rejected
+        explanation: >-
+          The `Gateway` is valid.
+    correct_option: a
+    explanation: >-
+      A `Selector` allows only namespaces with the chosen label, and that includes the `Gateway`'s own namespace.
+
+  - id: ats014-060-03-q10
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Say which Istio objects you still need with the Gateway API.
+    source_readings:
+      - sections/section-060/module-03/course-03-attach-an-httproute-and-read-its-status.md
+    prompt: >-
+      You route with an `HTTPRoute`. Where do subsets and outlier detection for the backend go?
+    options:
+      - id: a
+        text: >-
+          In `backendRefs`
+        explanation: >-
+          A backend is a Service. It has no subset field.
+      - id: b
+        text: >-
+          In the `Gateway`
+        explanation: >-
+          The `Gateway` describes listeners.
+      - id: c
+        text: >-
+          In the `GatewayClass`
+        explanation: >-
+          It names the controller.
+      - id: d
+        text: >-
+          In a `DestinationRule` for the Service
+        explanation: >-
+          Correct. It applies whichever object routed the request.
+    correct_option: d
+    explanation: >-
+      Subsets, load balancing, connection pools and outlier detection stay in a `DestinationRule`.

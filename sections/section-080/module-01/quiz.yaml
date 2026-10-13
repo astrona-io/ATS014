@@ -1,0 +1,354 @@
+# Knowledge check for section 080, module 01. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-080-01
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-080/module-01
+  title: Route External Traffic Through An Egress Gateway
+questions:
+  - id: ats014-080-01-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain why a running egress gateway carries no traffic until routing sends traffic to it.
+    source_readings:
+      - sections/section-080/module-01/course-01-why-an-egress-gateway-carries-no-traffic.md
+    prompt: >-
+      An egress gateway runs, and a `ServiceEntry` adds `httpbin.org`. No `VirtualService` exists. Where do requests from `shuttle` to `httpbin.org` go?
+    options:
+      - id: a
+        text: >-
+          Through the egress gateway, because it catches outbound requests
+        explanation: >-
+          It catches nothing. Routing must choose it.
+      - id: b
+        text: >-
+          Straight from the `shuttle` sidecar proxy to `httpbin.org`; the egress gateway's access log stays empty
+        explanation: >-
+          Correct. A running gateway is not a used gateway.
+      - id: c
+        text: >-
+          Nowhere, because the egress gateway blocks them
+        explanation: >-
+          The egress gateway is not involved at all.
+      - id: d
+        text: >-
+          Through the ingress gateway
+        explanation: >-
+          The ingress gateway handles traffic from outside.
+    correct_option: b
+    explanation: >-
+      Without routing, every sidecar proxy sends outbound requests straight to the outside host.
+
+  - id: ats014-080-01-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Write a Gateway for the egress gateway with the outside host name.
+    source_readings:
+      - sections/section-080/module-01/course-02-write-the-egress-gateway-and-destinationrule.md
+    prompt: >-
+      What goes in `servers[].hosts` of the egress `Gateway`?
+    options:
+      - id: a
+        text: >-
+          The egress gateway's own Service name
+        explanation: >-
+          `istioctl analyze` warns with `IST0132`.
+      - id: b
+        text: >-
+          `mesh`
+        explanation: >-
+          `mesh` is a gateway name for `VirtualService` rules.
+      - id: c
+        text: >-
+          The `shuttle` Service
+        explanation: >-
+          The gateway accepts requests for the outside host.
+      - id: d
+        text: >-
+          The outside host, here `httpbin.org`
+        explanation: >-
+          Correct. Read the object from the gateway's point of view.
+    correct_option: d
+    explanation: >-
+      The `Gateway` names the host the egress gateway accepts: the outside host.
+
+  - id: ats014-080-01-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain the subset with no labels in the DestinationRule for the egress gateway's Service.
+    source_readings:
+      - sections/section-080/module-01/course-02-write-the-egress-gateway-and-destinationrule.md
+    prompt: >-
+      The `DestinationRule` for the egress gateway's Service has a subset with no labels. Why must it exist?
+    options:
+      - id: a
+        text: >-
+          It selects only healthy egress gateway pods
+        explanation: >-
+          With no labels, it narrows nothing.
+      - id: b
+        text: >-
+          It turns on TLS to the outside host
+        explanation: >-
+          TLS is a separate setting.
+      - id: c
+        text: >-
+          Hop 1 names the subset, so without it the sidecar has no cluster to send to
+        explanation: >-
+          Correct. `istioctl analyze` reports `IST0101` when it is missing.
+      - id: d
+        text: >-
+          It is optional and can be deleted
+        explanation: >-
+          Without it, the sidecar has no cluster for hop 1, and requests get `NC`.
+    correct_option: c
+    explanation: >-
+      The subset narrows nothing, but hop 1 names it, so it must exist.
+
+  - id: ats014-080-01-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Write the two-stage VirtualService and say which proxy runs each stage.
+    source_readings:
+      - sections/section-080/module-01/course-03-write-the-two-stage-virtualservice.md
+    prompt: >-
+      In the egress `VirtualService`, which proxy runs the rule with `match.gateways: [mesh]`?
+    options:
+      - id: a
+        text: >-
+          Every sidecar proxy, including the one in `shuttle`; it sends the request to the egress gateway
+        explanation: >-
+          Correct. That is hop 1.
+      - id: b
+        text: >-
+          The egress gateway; it sends the request to `httpbin.org`
+        explanation: >-
+          That is the rule for the egress gateway, hop 2.
+      - id: c
+        text: >-
+          The ingress gateway
+        explanation: >-
+          `mesh` means sidecar proxies.
+      - id: d
+        text: >-
+          `istiod`
+        explanation: >-
+          `istiod` only sends configuration.
+    correct_option: a
+    explanation: >-
+      Hop 1 is the rule for `mesh` and runs in every sidecar. Hop 2 is the rule for the egress gateway.
+
+  - id: ats014-080-01-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why the top-level gateways list must name mesh.
+    source_readings:
+      - sections/section-080/module-01/course-03-write-the-two-stage-virtualservice.md
+    prompt: >-
+      The top-level `gateways` list names only the egress gateway. What happens to requests from `shuttle`?
+    options:
+      - id: a
+        text: >-
+          They fail with `503 NC`
+        explanation: >-
+          The sidecar never gets hop 1, so it sends direct.
+      - id: b
+        text: >-
+          They are refused by the egress gateway
+        explanation: >-
+          They never reach it.
+      - id: c
+        text: >-
+          They return `200` and go straight out, skipping the egress gateway, and `istioctl analyze` reports nothing
+        explanation: >-
+          Correct. Naming a gateway replaces the implicit `mesh`.
+      - id: d
+        text: >-
+          They loop between the sidecar and the gateway
+        explanation: >-
+          That happens when `match.gateways` values are swapped.
+    correct_option: c
+    explanation: >-
+      The top-level `gateways` list must name both `mesh` and the egress gateway.
+
+  - id: ats014-080-01-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Send HTTPS through the gateway without decrypting it.
+    source_readings:
+      - sections/section-080/module-01/course-03-write-the-two-stage-virtualservice.md
+    prompt: >-
+      The application calls `https://httpbin.org` through the egress gateway with `tls.mode: PASSTHROUGH`. Which rules route it?
+    options:
+      - id: a
+        text: >-
+          `http` rules that match on the path
+        explanation: >-
+          The proxies cannot read inside the encrypted stream.
+      - id: b
+        text: >-
+          `tcp` rules that match on the source IP
+        explanation: >-
+          The host name is available from the handshake.
+      - id: c
+        text: >-
+          `http` rules that match on the `Host` header
+        explanation: >-
+          The header is encrypted.
+      - id: d
+        text: >-
+          `tls` rules that match on `sniHosts`
+        explanation: >-
+          Correct. SNI is the host name from the TLS handshake.
+    correct_option: d
+    explanation: >-
+      HTTPS passed through needs `tls` rules that match on `sniHosts`.
+
+  - id: ats014-080-01-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Prove that a request passed through the egress gateway.
+    source_readings:
+      - sections/section-080/module-01/course-04-prove-the-egress-hop-and-find-broken-virtualservice-rules.md
+    prompt: >-
+      A request from `shuttle` to `httpbin.org` returns `200`. How do you prove it went through the egress gateway?
+    options:
+      - id: a
+        text: >-
+          The `200` proves it
+        explanation: >-
+          A request that skips the egress gateway also succeeds.
+      - id: b
+        text: >-
+          Check where hop 1 went in the `shuttle` sidecar's log, and look for the request in the egress gateway's log
+        explanation: >-
+          Correct.
+      - id: c
+        text: >-
+          Run `istioctl analyze`
+        explanation: >-
+          It reports nothing for a missing `mesh` or a missing hop 2.
+      - id: d
+        text: >-
+          Check that the egress gateway pod is `Running`
+        explanation: >-
+          A running gateway can be idle.
+    correct_option: b
+    explanation: >-
+      The client's sidecar log shows where hop 1 went, and the egress gateway's log shows whether hop 2 happened.
+
+  - id: ats014-080-01-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Diagnose a broken egress Gateway.
+    source_readings:
+      - sections/section-080/module-01/course-05-diagnose-a-broken-egress-gateway-or-destinationrule.md
+    prompt: >-
+      Hop 2 is missing. What does the `shuttle` sidecar log show?
+    options:
+      - id: a
+        text: >-
+          `UF,URX` with `Connection_refused`, because the egress gateway has no listener
+        explanation: >-
+          Correct. The egress gateway writes nothing.
+      - id: b
+        text: >-
+          `NC`
+        explanation: >-
+          `NC` means the `DestinationRule` subset is missing.
+      - id: c
+        text: >-
+          `200` and a line in the egress gateway log
+        explanation: >-
+          Without hop 2, the egress gateway has no listener.
+      - id: d
+        text: >-
+          `NR` from the egress gateway
+        explanation: >-
+          The connection is refused before any routing.
+    correct_option: a
+    explanation: >-
+      Hop 2 missing, or a `Gateway` that does not serve the host: the egress gateway has no listener, and the client's sidecar logs `UF,URX`.
+
+  - id: ats014-080-01-q09
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Limit which workloads use the egress gateway with sourceLabels.
+    source_readings:
+      - sections/section-080/module-01/course-06-limit-the-egress-route-with-sourcelabels.md
+    prompt: >-
+      Hop 1 has `sourceLabels: egress: "true"`. A pod without that label calls `httpbin.org`. What happens?
+    options:
+      - id: a
+        text: >-
+          It goes direct to `httpbin.org` and still gets `200`
+        explanation: >-
+          Correct. A narrower route is not a block.
+      - id: b
+        text: >-
+          It is refused
+        explanation: >-
+          `sourceLabels` limits the route, not the permission.
+      - id: c
+        text: >-
+          It is sent through the egress gateway anyway
+        explanation: >-
+          Only pods with the label match hop 1.
+      - id: d
+        text: >-
+          It gets `404 NR`
+        explanation: >-
+          It goes out on its own path.
+    correct_option: a
+    explanation: >-
+      `sourceLabels` sends only labelled pods through the egress gateway. Other pods still reach the outside host directly.
+
+  - id: ats014-080-01-q10
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      State what the egress gateway gives and what it costs.
+    source_readings:
+      - sections/section-080/module-01/course-06-limit-the-egress-route-with-sourcelabels.md
+    prompt: >-
+      Which is real egress control, not only a route?
+    options:
+      - id: a
+        text: >-
+          A `VirtualService` that routes through the egress gateway
+        explanation: >-
+          That is a route. Pods can still leave directly.
+      - id: b
+        text: >-
+          `sourceLabels` on hop 1
+        explanation: >-
+          That limits the route, not the permission.
+      - id: c
+        text: >-
+          The route plus `REGISTRY_ONLY`, an `AuthorizationPolicy` on the egress gateway and a Kubernetes `NetworkPolicy`
+        explanation: >-
+          Correct.
+      - id: d
+        text: >-
+          One egress gateway replica
+        explanation: >-
+          A single replica is a risk, not a control.
+    correct_option: c
+    explanation: >-
+      The egress gateway gives one log, one source address and one place for policy. Enforcement needs more objects.

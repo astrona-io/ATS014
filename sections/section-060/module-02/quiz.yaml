@@ -1,0 +1,252 @@
+# Knowledge check for section 060, module 02. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-060-02
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-060/module-02
+  title: Expose A Service With A Kubernetes Ingress
+questions:
+  - id: ats014-060-02-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Make Istio's ingress gateway serve a Kubernetes Ingress with ingressClassName.
+    source_readings:
+      - sections/section-060/module-02/course-01-assign-an-ingress-to-istio-with-an-ingressclass.md
+    prompt: >-
+      What must the `IngressClass` named in `spec.ingressClassName` contain for Istio to serve the `Ingress`?
+    options:
+      - id: a
+        text: >-
+          A reference to an Istio `Gateway` object
+        explanation: >-
+          `istiod` builds the gateway configuration from the `Ingress` itself.
+      - id: b
+        text: >-
+          `spec.controller: istio`
+        explanation: >-
+          The string must be exactly `istio.io/ingress-controller`.
+      - id: c
+        text: >-
+          A `selector` with `istio: ingressgateway`
+        explanation: >-
+          An `IngressClass` has no selector.
+      - id: d
+        text: >-
+          `spec.controller: istio.io/ingress-controller`, exactly
+        explanation: >-
+          Correct. Any other string means `istiod` serves nothing.
+    correct_option: d
+    explanation: >-
+      For Istio, the `IngressClass` must have `spec.controller: istio.io/ingress-controller`.
+
+  - id: ats014-060-02-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Recognise an Ingress that no controller serves.
+    source_readings:
+      - sections/section-060/module-02/course-01-assign-an-ingress-to-istio-with-an-ingressclass.md
+    prompt: >-
+      An `Ingress` has no `ingressClassName` and no class annotation. What happens?
+    options:
+      - id: a
+        text: >-
+          Nothing serves it, there is no error, and requests from outside get `000`
+        explanation: >-
+          Correct. The `CLASS` column of `kubectl get ingress` shows the cause.
+      - id: b
+        text: >-
+          Istio serves it, because Istio is the only controller
+        explanation: >-
+          No controller takes an `Ingress` without a class.
+      - id: c
+        text: >-
+          Kubernetes rejects it
+        explanation: >-
+          Kubernetes accepts it.
+      - id: d
+        text: >-
+          Istio serves it with HTTPS only
+        explanation: >-
+          No controller serves it at all.
+    correct_option: a
+    explanation: >-
+      An `Ingress` does nothing until a controller takes it, and Kubernetes reports no error.
+
+  - id: ats014-060-02-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Fix a wrong spec.controller on an IngressClass.
+    source_readings:
+      - sections/section-060/module-02/course-01-assign-an-ingress-to-istio-with-an-ingressclass.md
+    prompt: >-
+      The `IngressClass` `istio` has a typo in `spec.controller`. How do you fix it?
+    options:
+      - id: a
+        text: >-
+          `kubectl edit ingressclass istio` and correct the string
+        explanation: >-
+          Kubernetes refuses the change. The field cannot be edited.
+      - id: b
+        text: >-
+          Patch the `Ingress` to name the right controller
+        explanation: >-
+          The controller is set on the `IngressClass`.
+      - id: c
+        text: >-
+          Delete the `IngressClass` and create it again with the right string
+        explanation: >-
+          Correct. `spec.controller` cannot be changed after creation.
+      - id: d
+        text: >-
+          Restart `istiod`
+        explanation: >-
+          The string is still wrong after a restart.
+    correct_option: c
+    explanation: >-
+      You cannot edit `spec.controller` on an existing `IngressClass`. Delete the class and create it again.
+
+  - id: ats014-060-02-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain how pathType Prefix differs from Istio's uri.prefix.
+    source_readings:
+      - sections/section-060/module-02/course-02-match-paths-with-pathtype-and-read-the-generated-routes.md
+    prompt: >-
+      An `Ingress` path is `/anything/dock` with `pathType: Prefix`. Which request does it match?
+    options:
+      - id: a
+        text: >-
+          `/anything/docking`
+        explanation: >-
+          `Prefix` compares whole elements between `/` signs.
+      - id: b
+        text: >-
+          `/anything/dock/7`
+        explanation: >-
+          Correct. `dock` is a whole element, followed by more elements.
+      - id: c
+        text: >-
+          `/anything/do`
+        explanation: >-
+          That path is shorter than the rule.
+      - id: d
+        text: >-
+          Every path that starts with the characters `/anything/dock`
+        explanation: >-
+          That is how Istio's `uri.prefix` works, not `pathType: Prefix`.
+    correct_option: b
+    explanation: >-
+      `pathType: Prefix` compares whole path elements. Istio's `uri.prefix` compares characters.
+
+  - id: ats014-060-02-q05
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Find the object istiod builds from an Ingress.
+    source_readings:
+      - sections/section-060/module-02/course-02-match-paths-with-pathtype-and-read-the-generated-routes.md
+    prompt: >-
+      The gateway's route table names an object ending in `-autogenerated-k8s-ingress`. Where is it?
+    options:
+      - id: a
+        text: >-
+          In `istio-system`, as a `Gateway`
+        explanation: >-
+          There is no `Gateway` object to inspect.
+      - id: b
+        text: >-
+          In the `Ingress`'s namespace, as a `VirtualService`
+        explanation: >-
+          No such object is stored in Kubernetes.
+      - id: c
+        text: >-
+          Only inside `istiod`; `kubectl get virtualservice` finds nothing
+        explanation: >-
+          Correct. `istiod` translates each `Ingress` into gateway routes.
+      - id: d
+        text: >-
+          In the `IngressClass`
+        explanation: >-
+          The class only names a controller.
+    correct_option: c
+    explanation: >-
+      `istiod` builds the routes from the `Ingress` itself. The generated object exists only inside `istiod`.
+
+  - id: ats014-060-02-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Configure TLS on an Ingress with the secret in the right namespace.
+    source_readings:
+      - sections/section-060/module-02/course-03-add-tls-to-an-ingress.md
+    prompt: >-
+      You create the TLS secret in the same namespace as the `Ingress`. HTTP works, HTTPS fails. Why?
+    options:
+      - id: a
+        text: >-
+          The secret must be type `Opaque`
+        explanation: >-
+          It must be type `kubernetes.io/tls`.
+      - id: b
+        text: >-
+          The gateway loads the certificate and reads secrets from `istio-system`, so the secret is not found
+        explanation: >-
+          Correct. Move the secret to `istio-system`.
+      - id: c
+        text: >-
+          The `Ingress` needs a second `tls` block
+        explanation: >-
+          One block is enough when the secret is found.
+      - id: d
+        text: >-
+          HTTPS needs an `EXTERNAL-IP`
+        explanation: >-
+          The `ADDRESS` column says nothing about HTTPS.
+    correct_option: b
+    explanation: >-
+      The TLS secret for an `Ingress` must be in `istio-system`, because the gateway loads the certificate.
+
+  - id: ats014-060-02-q07
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      List the Istio features the Ingress API cannot express.
+    source_readings:
+      - sections/section-060/module-02/course-04-know-what-the-ingress-api-cannot-express.md
+    prompt: >-
+      A task needs a 90/10 split between two versions behind the edge. Which choice can do it?
+    options:
+      - id: a
+        text: >-
+          A Kubernetes `Ingress` with two paths
+        explanation: >-
+          An `Ingress` handles host, path and TLS only.
+      - id: b
+        text: >-
+          An `Ingress` with nginx weight annotations
+        explanation: >-
+          Annotations for other controllers do nothing in Istio.
+      - id: c
+        text: >-
+          An `Ingress` with two `IngressClass` objects
+        explanation: >-
+          Classes pick a controller, not a split.
+      - id: d
+        text: >-
+          Istio's `Gateway` with a `VirtualService`, or the Gateway API
+        explanation: >-
+          Correct. They support weights.
+    correct_option: d
+    explanation: >-
+      An `Ingress` has no weights, header matching, retries, timeouts or faults. Use a `VirtualService` or the Gateway API.

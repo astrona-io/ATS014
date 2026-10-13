@@ -1,0 +1,354 @@
+# Knowledge check for section 020, module 01. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-020-01
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-020/module-01
+  title: Shift Traffic With Weighted Routing
+questions:
+  - id: ats014-020-01-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Write a VirtualService route with several weighted destinations and put weight on the correct field.
+    source_readings:
+      - sections/section-020/module-01/course-01-split-traffic-with-weighted-destinations.md
+    prompt: >-
+      Where does the `weight` field go in a weighted `VirtualService` route?
+    options:
+      - id: a
+        text: >-
+          Inside `destination`, next to `host` and `subset`
+        explanation: >-
+          Kubernetes rejects the object, because `destination` has no `weight` field.
+      - id: b
+        text: >-
+          Next to `destination`, in the same item of the `route` list
+        explanation: >-
+          Correct. Each `route` item has a `destination` and a `weight`.
+      - id: c
+        text: >-
+          In the `DestinationRule` subset
+        explanation: >-
+          A `DestinationRule` defines subsets. It never splits traffic.
+      - id: d
+        text: >-
+          At the top of the `http` rule, as a list of numbers
+        explanation: >-
+          Each weight belongs to one destination in the `route` list.
+    correct_option: b
+    explanation: >-
+      The `weight` field sits next to `destination`, not inside it.
+
+  - id: ats014-020-01-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Say when weight may be left out.
+    source_readings:
+      - sections/section-020/module-01/course-01-split-traffic-with-weighted-destinations.md
+    prompt: >-
+      When may a `route` item leave out `weight`?
+    options:
+      - id: a
+        text: >-
+          Never, every destination needs a weight
+        explanation: >-
+          A single destination may leave it out.
+      - id: b
+        text: >-
+          When the other destinations already add up to 100
+        explanation: >-
+          With two or more destinations, every one needs a weight.
+      - id: c
+        text: >-
+          When the route has only one destination, which then counts as 100
+        explanation: >-
+          Correct. With two or more destinations, give each one a weight.
+      - id: d
+        text: >-
+          When the destination is the last item in the list
+        explanation: >-
+          The position does not matter.
+    correct_option: c
+    explanation: >-
+      With one destination you can leave out `weight`, and it counts as 100.
+
+  - id: ats014-020-01-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain how the proxy applies a weight.
+    source_readings:
+      - sections/section-020/module-01/course-01-split-traffic-with-weighted-destinations.md
+    prompt: >-
+      A route sends 80% to `v1` and 20% to `v3`. You send 10 requests from `shuttle` and all 10 land on `v1`. What does this tell you?
+    options:
+      - id: a
+        text: >-
+          The weights are broken, because 2 of 10 should reach `v3`
+        explanation: >-
+          The split is not a fixed rotation. 10 of 10 on v1 happens about one time in ten.
+      - id: b
+        text: >-
+          `v3` has fewer pods, so it gets fewer requests
+        explanation: >-
+          The number of pods does not change a subset's share.
+      - id: c
+        text: >-
+          The proxy rotates in blocks of 10, so the next 10 go to `v3`
+        explanation: >-
+          There is no rotation. Each request is a new random pick.
+      - id: d
+        text: >-
+          Little: the proxy makes one random pick per request, so count at least 100 requests before you judge
+        explanation: >-
+          Correct. A split only shows up over many requests.
+    correct_option: d
+    explanation: >-
+      The sidecar proxy makes one random pick for each request, with the weights as the odds. Count at least 100 requests.
+
+  - id: ats014-020-01-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict the split when weights do not add up to 100.
+    source_readings:
+      - sections/section-020/module-01/course-02-weight-totals-three-way-splits-and-missing-subsets.md
+    prompt: >-
+      On Istio 1.30.5, a route has `v1` with weight 50 and `v3` with weight 30. What happens?
+    options:
+      - id: a
+        text: >-
+          About 62% go to v1 and 38% to v3
+        explanation: >-
+          Correct. 50 and 30 are used as a ratio of 80.
+      - id: b
+        text: >-
+          v1 gets 50%, v3 gets 30%, and 20% of requests fail
+        explanation: >-
+          The weights are used as a ratio. No requests are dropped.
+      - id: c
+        text: >-
+          Kubernetes rejects the object
+        explanation: >-
+          Istio 1.30.5 accepts weights that do not add up to 100.
+      - id: d
+        text: >-
+          The rest of the requests go to the subset that no destination names
+        explanation: >-
+          A subset that no destination names gets no requests at all.
+    correct_option: a
+    explanation: >-
+      Istio 1.30.5 uses weights that do not add up to 100 as a ratio, so 50 and 30 give about 62/38.
+
+  - id: ats014-020-01-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict what happens with weight 0 and with a weight on a missing subset.
+    source_readings:
+      - sections/section-020/module-01/course-02-weight-totals-three-way-splits-and-missing-subsets.md
+    prompt: >-
+      A route gives 90 to subset `v1` and 10 to subset `v4`, which no `DestinationRule` defines. What happens?
+    options:
+      - id: a
+        text: >-
+          The object is rejected because `v4` does not exist
+        explanation: >-
+          Nothing rejects it.
+      - id: b
+        text: >-
+          The 10% go to `v1` instead
+        explanation: >-
+          The proxy does not reroute them.
+      - id: c
+        text: >-
+          The proxy waits until `v4` is defined
+        explanation: >-
+          The proxy answers at once.
+      - id: d
+        text: >-
+          About 10% of requests fail with `503`, and only `istioctl analyze` reports it, with `IST0101`
+        explanation: >-
+          Correct. Run `istioctl analyze` after every weight change.
+    correct_option: d
+    explanation: >-
+      A weight on a subset that no `DestinationRule` defines is accepted, and the requests sent there fail with `503`.
+
+  - id: ats014-020-01-q06
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Run a canary rollout as a series of weight changes, and roll it back in one apply.
+    source_readings:
+      - sections/section-020/module-01/course-03-run-a-canary-rollout-and-roll-it-back.md
+    prompt: >-
+      A canary is at 80/20. Clients see errors from `v3`. How do you roll back?
+    options:
+      - id: a
+        text: >-
+          Delete the `VirtualService` and the `v3` Deployment
+        explanation: >-
+          Deleting the `VirtualService` sends requests to a mix of all versions.
+      - id: b
+        text: >-
+          Scale `v3` to zero replicas
+        explanation: >-
+          Requests that still pick `v3` then fail with `503 UH`.
+      - id: c
+        text: >-
+          Apply the same `VirtualService` again with the old weights, 100 to `v1` and 0 to `v3`
+        explanation: >-
+          Correct. A rollback is the old numbers, applied again.
+      - id: d
+        text: >-
+          Restart the `shuttle` pods so their proxies forget the new weights
+        explanation: >-
+          Nothing restarts. `istiod` pushes the new weights within seconds.
+    correct_option: c
+    explanation: >-
+      A canary rollout and its rollback are the same `VirtualService` applied again with other numbers.
+
+  - id: ats014-020-01-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why a merge patch on spec.http must restate the whole route list.
+    source_readings:
+      - sections/section-020/module-01/course-04-change-weights-with-a-patch-and-a-header-rule.md
+    prompt: >-
+      You run a `kubectl patch --type merge` on `spec.http` with only the weighted rule. The `VirtualService` had a header rule above it. What happens to the header rule?
+    options:
+      - id: a
+        text: >-
+          It is gone, because a merge patch replaces the whole `http` list
+        explanation: >-
+          Correct. Restate every rule, or apply the complete object.
+      - id: b
+        text: >-
+          It stays, because a merge patch only changes the fields you name
+        explanation: >-
+          A merge patch replaces a list as a whole.
+      - id: c
+        text: >-
+          The patch fails because the lists have different lengths
+        explanation: >-
+          The patch succeeds and replaces the list.
+      - id: d
+        text: >-
+          The two rules are merged into one
+        explanation: >-
+          List items are not merged.
+    correct_option: a
+    explanation: >-
+      A merge patch on `spec.http` replaces the whole list, so it must restate every rule.
+
+  - id: ats014-020-01-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Combine a header match with a weighted split and predict which requests the weights apply to.
+    source_readings:
+      - sections/section-020/module-01/course-04-change-weights-with-a-patch-and-a-header-rule.md
+    prompt: >-
+      A `VirtualService` has two rules: first `end-user: jason` routes to `v3`, then a catch-all splits 90 to `v1` and 10 to `v3`. Which requests are counted in the 90/10 split?
+    options:
+      - id: a
+        text: >-
+          All requests, including jason's, because weights apply to the whole host
+        explanation: >-
+          Jason's requests match the first rule and never reach the split.
+      - id: b
+        text: >-
+          Only requests without `end-user: jason`, because the first rule takes jason's requests out of the split
+        explanation: >-
+          Correct. The first rule that matches wins.
+      - id: c
+        text: >-
+          Jason's requests are split 90/10 as well, then sent to `v3`
+        explanation: >-
+          One rule is chosen per request.
+      - id: d
+        text: >-
+          The weights of both rules add up to one shared total
+        explanation: >-
+          Weights add up inside one route list. There is no shared total.
+    correct_option: b
+    explanation: >-
+      A header match placed above the weighted rule takes its requests out of the split.
+
+  - id: ats014-020-01-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why traffic share and replica count are independent.
+    source_readings:
+      - sections/section-020/module-01/course-05-traffic-share-replica-count-and-the-route-table.md
+    prompt: >-
+      The weights are 50/50 between `v1` and `v3`. `v1` has four pods and `v3` has one. What split do you see?
+    options:
+      - id: a
+        text: >-
+          About 50/50, because the proxy picks the subset by weight first, then a pod inside it
+        explanation: >-
+          Correct. Weights control share, replicas control capacity.
+      - id: b
+        text: >-
+          About 20/80, because each `v1` pod gets less traffic
+        explanation: >-
+          The proxy picks the subset first, then a pod.
+      - id: c
+        text: >-
+          About 80/20, because there are four times more `v1` pods
+        explanation: >-
+          Without Istio the split follows the pods. With weights, it does not.
+      - id: d
+        text: >-
+          All traffic goes to `v1` until `v3` has the same number of pods
+        explanation: >-
+          Pod count has no effect on the share.
+    correct_option: a
+    explanation: >-
+      The proxy picks the subset first and only then a pod. Pod count is capacity, not share.
+
+  - id: ats014-020-01-q10
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Read weightedClusters from istioctl proxy-config routes.
+    source_readings:
+      - sections/section-020/module-01/course-05-traffic-share-replica-count-and-the-route-table.md
+    prompt: >-
+      Where do you check the weights that the `shuttle` proxy really uses?
+    options:
+      - id: a
+        text: >-
+          `kubectl get virtualservice scout -o yaml`
+        explanation: >-
+          That shows what you wrote, not what the proxy uses.
+      - id: b
+        text: >-
+          The `weightedClusters` block in `istioctl proxy-config routes deploy/shuttle -o json`
+        explanation: >-
+          Correct. Each entry names a subset cluster and its weight.
+      - id: c
+        text: >-
+          The `DestinationRule` for `scout`
+        explanation: >-
+          A `DestinationRule` holds no weights.
+      - id: d
+        text: >-
+          `istioctl proxy-config endpoints deploy/shuttle`
+        explanation: >-
+          The endpoints show pod addresses, not route weights.
+    correct_option: b
+    explanation: >-
+      `istioctl proxy-config routes` shows the weights the proxy uses in its `weightedClusters` block.
