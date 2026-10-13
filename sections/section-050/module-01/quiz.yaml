@@ -1,0 +1,354 @@
+# Knowledge check for section 050, module 01. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-050-01
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-050/module-01
+  title: Fault Injection With Delays And Aborts
+questions:
+  - id: ats014-050-01-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Name the VirtualService a fault belongs on and the proxy that applies it.
+    source_readings:
+      - sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
+    prompt: >-
+      You want `navcom` to look slow to `scout`. Which `VirtualService` gets the `fault.delay`, and which proxy applies it?
+    options:
+      - id: a
+        text: >-
+          The `navcom` `VirtualService`; the `navcom` proxy applies it
+        explanation: >-
+          The client's proxy applies the fault.
+      - id: b
+        text: >-
+          The `scout` `VirtualService`; the `navcom` proxy applies it
+        explanation: >-
+          Put it on the service that should look slow.
+      - id: c
+        text: >-
+          The `navcom` `VirtualService`; the `scout` pod's sidecar proxy applies it
+        explanation: >-
+          Correct. The fault belongs to the service that should look slow, and the client's proxy applies it.
+      - id: d
+        text: >-
+          The `bridge` `VirtualService`; `istiod` applies it
+        explanation: >-
+          `istiod` only sends configuration.
+    correct_option: c
+    explanation: >-
+      The fault goes on the `VirtualService` of the service that should look slow or broken. The client's sidecar proxy applies it.
+
+  - id: ats014-050-01-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Say what the client gets for a delay.
+    source_readings:
+      - sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
+    prompt: >-
+      A rule has `fault.delay.fixedDelay: 3s` and no `percentage`. What does the client get?
+    options:
+      - id: a
+        text: >-
+          The normal response, 3 seconds late, for every matching request
+        explanation: >-
+          Correct. Without `percentage`, every matching request gets the fault.
+      - id: b
+        text: >-
+          A `504` after 3 seconds
+        explanation: >-
+          A delay gives a correct response, late.
+      - id: c
+        text: >-
+          The normal response, 3 seconds late, for 0% of requests until you set `percentage`
+        explanation: >-
+          The default is 100%.
+      - id: d
+        text: >-
+          A `503` at once
+        explanation: >-
+          That is an abort.
+    correct_option: a
+    explanation: >-
+      `fault.delay` holds a request, then sends it on. Without a `percentage` block, every matching request is delayed.
+
+  - id: ats014-050-01-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Read percentage.value correctly.
+    source_readings:
+      - sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
+    prompt: >-
+      A fault has `percentage: value: 0.1`. How many requests get the fault?
+    options:
+      - id: a
+        text: >-
+          10%
+        explanation: >-
+          `value` is a percent, not a fraction.
+      - id: b
+        text: >-
+          None
+        explanation: >-
+          0.1 is more than zero.
+      - id: c
+        text: >-
+          All of them
+        explanation: >-
+          That is the default without a `percentage` block.
+      - id: d
+        text: >-
+          About one request in a thousand
+        explanation: >-
+          Correct. `0.1` means 0.1%.
+    correct_option: d
+    explanation: >-
+      `percentage.value` is a percent: `0.1` is one request in a thousand.
+
+  - id: ats014-050-01-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why an aborted request leaves no trace at the destination and recognise the FI flag.
+    source_readings:
+      - sections/section-050/module-01/course-02-abort-requests-in-the-client-proxy.md
+    prompt: >-
+      A rule aborts 50% of requests to `cargo` with `503`. Where is the evidence, and what does it show?
+    options:
+      - id: a
+        text: >-
+          The `cargo` access log, with `503` and `FI`
+        explanation: >-
+          `cargo` never sees an aborted request.
+      - id: b
+        text: >-
+          The client's access log, with `503` and the `FI` flag; the `cargo` log has no line for those requests
+        explanation: >-
+          Correct. The request never left the client's pod.
+      - id: c
+        text: >-
+          The `cargo` application logs, with an error
+        explanation: >-
+          The application never receives the request.
+      - id: d
+        text: >-
+          The client's access log, with `503` and `UH`
+        explanation: >-
+          `UH` means no healthy endpoints. An injected abort shows `FI`.
+    correct_option: b
+    explanation: >-
+      An abort answers at once in the client's proxy. The client's access log shows `FI` with `fault_filter_abort`.
+
+  - id: ats014-050-01-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Combine a delay and an abort on one rule.
+    source_readings:
+      - sections/section-050/module-01/course-02-abort-requests-in-the-client-proxy.md
+    prompt: >-
+      One rule has a delay at 50% and an abort at 50%. What is true?
+    options:
+      - id: a
+        text: >-
+          The proxy decides each one on its own, so a request can be delayed and then aborted
+        explanation: >-
+          Correct. The percentages do not add up.
+      - id: b
+        text: >-
+          Every request is either delayed or aborted, never both
+        explanation: >-
+          The two are separate random choices.
+      - id: c
+        text: >-
+          The abort always wins, so no request is delayed
+        explanation: >-
+          Both are decided per request.
+      - id: d
+        text: >-
+          Istio rejects a rule with both
+        explanation: >-
+          Both can sit on one rule.
+    correct_option: a
+    explanation: >-
+      The proxy decides the delay and the abort separately for each request.
+
+  - id: ats014-050-01-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Apply a fault only to test requests with a header match.
+    source_readings:
+      - sections/section-050/module-01/course-03-scope-fault-injection-with-match-rules.md
+    prompt: >-
+      You want the abort only for requests with `end-user: tester`. You write a plain route rule first, then the fault rule matching the header. What happens?
+    options:
+      - id: a
+        text: >-
+          Only tester's requests fail
+        explanation: >-
+          The plain rule matches every request first.
+      - id: b
+        text: >-
+          Every request fails
+        explanation: >-
+          The fault rule is never reached.
+      - id: c
+        text: >-
+          Istio rejects the order
+        explanation: >-
+          Istio accepts it. The order only decides which rule matches first.
+      - id: d
+        text: >-
+          No request gets the fault, because the plain rule matches every request first
+        explanation: >-
+          Correct. Put the fault rule first and the plain rule below it.
+    correct_option: d
+    explanation: >-
+      Put the fault on a first rule that only test requests match, and keep a plain rule below it for everyone else.
+
+  - id: ats014-050-01-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Tell headers apart from sourceLabels.
+    source_readings:
+      - sections/section-050/module-01/course-03-scope-fault-injection-with-match-rules.md
+    prompt: >-
+      You want a fault only for requests sent by pods with the label `app: shuttle`. Which match do you use?
+    options:
+      - id: a
+        text: >-
+          `headers` with `app: shuttle`
+        explanation: >-
+          `headers` matches what the request carries, not the sender's labels.
+      - id: b
+        text: >-
+          `uri` with `prefix: /shuttle`
+        explanation: >-
+          The path has nothing to do with the sender.
+      - id: c
+        text: >-
+          `sourceLabels` with `app: shuttle`
+        explanation: >-
+          Correct. It matches the labels of the pod that sends the request.
+      - id: d
+        text: >-
+          `queryParams` with `app: shuttle`
+        explanation: >-
+          That matches the query string.
+    correct_option: c
+    explanation: >-
+      `headers` matches what a request carries. `sourceLabels` matches the labels of the pod that sends it.
+
+  - id: ats014-050-01-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Use a delay to make a timeout fire and explain why a fault rule ignores its own timeout.
+    source_readings:
+      - sections/section-050/module-01/course-04-test-timeouts-and-retries-with-fault-injection.md
+    prompt: >-
+      Where do you put the timeout to test it with a 3-second delay on `navcom`?
+    options:
+      - id: a
+        text: >-
+          On the same `navcom` rule as the delay
+        explanation: >-
+          A rule with a `fault` ignores its own `timeout` and `retries`.
+      - id: b
+        text: >-
+          On the `scout` route, the client one hop away from the fault
+        explanation: >-
+          Correct. The client gets `504 UT`, and `DI` shows one hop further.
+      - id: c
+        text: >-
+          On the `bridge` route, two hops away
+        explanation: >-
+          The timeout belongs on the direct client's route.
+      - id: d
+        text: >-
+          On the `navcom` `DestinationRule`
+        explanation: >-
+          A route timeout belongs on a `VirtualService` rule.
+    correct_option: b
+    explanation: >-
+      The fault filter runs before the router, so a fault rule ignores its own `timeout` and `retries`. Put them on the client's route.
+
+  - id: ats014-050-01-q09
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Know why an abort cannot test outlier detection.
+    source_readings:
+      - sections/section-050/module-01/course-04-test-timeouts-and-retries-with-fault-injection.md
+    prompt: >-
+      Why can an abort fault not test outlier detection?
+    options:
+      - id: a
+        text: >-
+          Outlier detection ignores `503`
+        explanation: >-
+          It counts `503`.
+      - id: b
+        text: >-
+          An abort is too fast for outlier detection
+        explanation: >-
+          Speed is not the reason.
+      - id: c
+        text: >-
+          The abort never reaches a pod, so no pod is ever ejected
+        explanation: >-
+          Correct. Use a pod that really fails.
+      - id: d
+        text: >-
+          Outlier detection needs a delay
+        explanation: >-
+          It reacts to errors from real endpoints.
+    correct_option: c
+    explanation: >-
+      An abort is answered by the client's proxy. No endpoint ever returned an error.
+
+  - id: ats014-050-01-q10
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Find a forgotten fault in the route configuration of a proxy.
+    source_readings:
+      - sections/section-050/module-01/course-04-test-timeouts-and-retries-with-fault-injection.md
+    prompt: >-
+      Users see random `503` responses. You suspect a forgotten fault. What do you look for?
+    options:
+      - id: a
+        text: >-
+          `FI` in the client's access log, and `envoy.filters.http.fault` in the proxy's route configuration
+        explanation: >-
+          Correct. `kubectl get virtualservice -A` helps too.
+      - id: b
+        text: >-
+          The word `fault` in `istioctl proxy-config cluster`
+        explanation: >-
+          The fault is in the route configuration, under `envoy.filters.http.fault`.
+      - id: c
+        text: >-
+          `UO` in the server's access log
+        explanation: >-
+          `UO` is a circuit breaker refusal.
+      - id: d
+        text: >-
+          A restart count on the pods
+        explanation: >-
+          A fault does not restart pods.
+    correct_option: a
+    explanation: >-
+      A forgotten fault looks like a real outage. Find it in the access log flags and in the route configuration.

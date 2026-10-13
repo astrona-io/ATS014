@@ -1,0 +1,286 @@
+# Knowledge check for section 040, module 02. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-040-02
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-040/module-02
+  title: Circuit Breaking With Connection Pool Limits
+questions:
+  - id: ats014-040-02-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Configure trafficPolicy.connectionPool in a DestinationRule.
+    source_readings:
+      - sections/section-040/module-02/course-01-limit-concurrent-requests-with-a-connection-pool.md
+    prompt: >-
+      Where do you set circuit breaker limits in Istio?
+    options:
+      - id: a
+        text: >-
+          In the Kubernetes Service, under `spec.ports`
+        explanation: >-
+          A Service has no connection limits.
+      - id: b
+        text: >-
+          In a `VirtualService`, under `retries`
+        explanation: >-
+          Retries are not limits on open work.
+      - id: c
+        text: >-
+          In the `Sidecar` resource, under `egress`
+        explanation: >-
+          `egress` limits which hosts a proxy knows.
+      - id: d
+        text: >-
+          In a `DestinationRule`, under `trafficPolicy.connectionPool`
+        explanation: >-
+          Correct. The sidecar proxy uses these limits to refuse requests early.
+    correct_option: d
+    explanation: >-
+      A circuit breaker in Istio is a set of connection pool limits in a `DestinationRule`.
+
+  - id: ats014-040-02-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why http1MaxPendingRequests decides whether an HTTP/1 circuit breaker trips.
+    source_readings:
+      - sections/section-040/module-02/course-01-limit-concurrent-requests-with-a-connection-pool.md
+    prompt: >-
+      You set only `tcp.maxConnections: 1` and send 20 HTTP/1 requests at the same time. Most requests are slow but none fail. Why?
+    options:
+      - id: a
+        text: >-
+          The waiting queue keeps its near-unlimited default, so extra requests wait instead of failing
+        explanation: >-
+          Correct. Set `http.http1MaxPendingRequests` too.
+      - id: b
+        text: >-
+          The limit needs a pod restart
+        explanation: >-
+          `istiod` pushes the limit to running proxies.
+      - id: c
+        text: >-
+          `maxConnections` only works for HTTP/2
+        explanation: >-
+          It caps connections for HTTP/1 too.
+      - id: d
+        text: >-
+          20 requests are too few to trip any limit
+        explanation: >-
+          20 parallel requests are far more than 1 connection.
+    correct_option: a
+    explanation: >-
+      The proxy refuses a request only when the connections and the queue are full. Set `http1MaxPendingRequests` with `maxConnections`.
+
+  - id: ats014-040-02-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain why a limit on requests at the same time is not a limit on requests in total.
+    source_readings:
+      - sections/section-040/module-02/course-01-limit-concurrent-requests-with-a-connection-pool.md
+    prompt: >-
+      With `maxConnections: 1` and `http1MaxPendingRequests: 1`, you send 1000 requests one after another from `shuttle`. How many are refused?
+    options:
+      - id: a
+        text: >-
+          999
+        explanation: >-
+          Requests sent one by one never overflow anything.
+      - id: b
+        text: >-
+          998
+        explanation: >-
+          The limits count requests at the same time, not in total.
+      - id: c
+        text: >-
+          None, because one request at a time never fills the pool
+        explanation: >-
+          Correct. Use a load generator with more parallel connections than the limit.
+      - id: d
+        text: >-
+          About half
+        explanation: >-
+          Nothing overflows at one request at a time.
+    correct_option: c
+    explanation: >-
+      A connection pool caps open work at the same time. It is not rate limiting.
+
+  - id: ats014-040-02-q04
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Identify a circuit-breaker refusal by the UO response flag.
+    source_readings:
+      - sections/section-040/module-02/course-02-identify-overflow-with-the-uo-flag-and-counters.md
+    prompt: >-
+      Which access log line shows a request refused by the circuit breaker?
+    options:
+      - id: a
+        text: >-
+          `503 UH` with an upstream host address
+        explanation: >-
+          `UH` means no healthy endpoints.
+      - id: b
+        text: >-
+          `503 UO` with `"-"` as the upstream host
+        explanation: >-
+          Correct. The request never reached a pod.
+      - id: c
+        text: >-
+          `504 UT`
+        explanation: >-
+          That is a timeout.
+      - id: d
+        text: >-
+          `503` with no flag and an upstream host address
+        explanation: >-
+          A `503` without `UO` has another cause, such as an application error.
+    correct_option: b
+    explanation: >-
+      A circuit-breaker refusal shows `503` with the `UO` flag and `"-"` as the upstream host.
+
+  - id: ats014-040-02-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Use the overflow counters to find the setting that was hit.
+    source_readings:
+      - sections/section-040/module-02/course-02-identify-overflow-with-the-uo-flag-and-counters.md
+    prompt: >-
+      The counter `upstream_rq_pending_overflow` goes up for the `probe` cluster. Which setting was hit?
+    options:
+      - id: a
+        text: >-
+          `http1MaxPendingRequests`, the waiting queue
+        explanation: >-
+          Correct. The two counters point at different settings.
+      - id: b
+        text: >-
+          `maxConnections`, the connection limit
+        explanation: >-
+          That is `upstream_cx_overflow`.
+      - id: c
+        text: >-
+          `outlierDetection`
+        explanation: >-
+          Ejection has its own counters.
+      - id: d
+        text: >-
+          `perTryTimeout`
+        explanation: >-
+          A timeout is not an overflow.
+    correct_option: a
+    explanation: >-
+      `upstream_cx_overflow` points at the connection limit; `upstream_rq_pending_overflow` points at the waiting queue.
+
+  - id: ats014-040-02-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Know what the per-cluster counters need.
+    source_readings:
+      - sections/section-040/module-02/course-02-identify-overflow-with-the-uo-flag-and-counters.md
+    prompt: >-
+      You look for `upstream_rq_pending_overflow` in the `fortio` proxy's stats and the per-cluster counter is not there. What is missing?
+    options:
+      - id: a
+        text: >-
+          A `VirtualService` for `probe`
+        explanation: >-
+          Counters do not depend on a `VirtualService`.
+      - id: b
+        text: >-
+          `REGISTRY_ONLY` mode
+        explanation: >-
+          It has nothing to do with stats.
+      - id: c
+        text: >-
+          Access logging
+        explanation: >-
+          Access logs and counters are separate.
+      - id: d
+        text: >-
+          The `sidecar.istio.io/statsInclusionPrefixes` annotation on the client pod
+        explanation: >-
+          Correct. Without it, the per-cluster counters are not there.
+    correct_option: d
+    explanation: >-
+      Per-cluster counters need the `sidecar.istio.io/statsInclusionPrefixes` annotation on the client pod.
+
+  - id: ats014-040-02-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Read the live limits on the client side and the server side.
+    source_readings:
+      - sections/section-040/module-02/course-03-verify-limits-on-both-proxies-and-control-retries.md
+    prompt: >-
+      `istioctl proxy-config cluster` shows `circuitBreakers` with `maxRequests: 4294967295`. What does that mean?
+    options:
+      - id: a
+        text: >-
+          The limit is 4294967295 requests, as configured
+        explanation: >-
+          You did not set it. The number means no limit.
+      - id: b
+        text: >-
+          That limit was not set, so there is no limit
+        explanation: >-
+          Correct. Unset fields mean no limit at all.
+      - id: c
+        text: >-
+          The proxy failed to load the limit
+        explanation: >-
+          It loaded the default.
+      - id: d
+        text: >-
+          The value overflowed and the queue is full
+        explanation: >-
+          Nothing overflowed.
+    correct_option: b
+    explanation: >-
+      Any limit you did not set shows `4294967295`, which means no limit.
+
+  - id: ats014-040-02-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why a client proxy's own refusals are never retried and how retries multiply load.
+    source_readings:
+      - sections/section-040/module-02/course-03-verify-limits-on-both-proxies-and-control-retries.md
+    prompt: >-
+      A route has `attempts: 5`, `retryOn: 5xx`, and the `DestinationRule` has tight connection pool limits. What is true?
+    options:
+      - id: a
+        text: >-
+          The client's proxy retries its own `UO` refusals 5 times
+        explanation: >-
+          A client proxy never retries its own `UO` refusals.
+      - id: b
+        text: >-
+          Retries turn off when a circuit breaker exists
+        explanation: >-
+          They still retry real failures from the server.
+      - id: c
+        text: >-
+          The proxy does not retry its own `UO` refusals, but it retries every real `5xx` from the server, multiplying the load on a failing service
+        explanation: >-
+          Correct. Keep `attempts` small.
+      - id: d
+        text: >-
+          Retries and connection pools cannot be set on the same host
+        explanation: >-
+          Both can be set.
+    correct_option: c
+    explanation: >-
+      Use `connect-failure,refused-stream` to retry only requests that never reached the service.

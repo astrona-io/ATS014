@@ -1,0 +1,286 @@
+# Knowledge check for section 060, module 01. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-060-01
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-060/module-01
+  title: Expose A Service With An Istio Ingress Gateway
+questions:
+  - id: ats014-060-01-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain what the ingress gateway pod is and how it differs from a sidecar proxy.
+    source_readings:
+      - sections/section-060/module-01/course-01-open-a-listener-with-a-gateway.md
+    prompt: >-
+      What is the ingress gateway pod?
+    options:
+      - id: a
+        text: >-
+          A Kubernetes `Ingress` object
+        explanation: >-
+          The gateway is a pod running Envoy, not an object.
+      - id: b
+        text: >-
+          A sidecar proxy inside the `bridge` pod
+        explanation: >-
+          The gateway runs in its own pod, in its own namespace.
+      - id: c
+        text: >-
+          A part of `istiod` that accepts outside requests
+        explanation: >-
+          `istiod` only sends configuration.
+      - id: d
+        text: >-
+          The same Envoy proxy as a sidecar proxy, running alone in its own pod (`1/1`) behind a Kubernetes Service
+        explanation: >-
+          Correct. It has no application container next to it.
+    correct_option: d
+    explanation: >-
+      The ingress gateway is an Envoy proxy without an application, at the edge of the mesh.
+
+  - id: ats014-060-01-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Find the right selector labels for your install.
+    source_readings:
+      - sections/section-060/module-01/course-01-open-a-listener-with-a-gateway.md
+    prompt: >-
+      Istio was installed with the Helm `gateway` chart as `istio-ingress`. Your `Gateway` has `selector: istio: ingressgateway`. What does curl get?
+    options:
+      - id: a
+        text: >-
+          `404 NR`
+        explanation: >-
+          No pod got the listener, so there is no route table to miss.
+      - id: b
+        text: >-
+          `000`, because no gateway pod has that label, so no listener opens
+        explanation: >-
+          Correct. Use `istio: ingress` for this Helm install. `istioctl analyze` reports `IST0101`.
+      - id: c
+        text: >-
+          `200`
+        explanation: >-
+          No gateway pod matches the selector.
+      - id: d
+        text: >-
+          `503 NC`
+        explanation: >-
+          A `503` means a route matched.
+    correct_option: b
+    explanation: >-
+      The selector label depends on the install: `istio: ingress` for the Helm chart as `istio-ingress`, `istio: ingressgateway` for `istioctl`.
+
+  - id: ats014-060-01-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Write a Gateway that opens an HTTP listener.
+    source_readings:
+      - sections/section-060/module-01/course-01-open-a-listener-with-a-gateway.md
+    prompt: >-
+      A correct `Gateway` exists, and no `VirtualService` is bound to it. What does a request to the gateway get?
+    options:
+      - id: a
+        text: >-
+          `404 NR`, because the listener has an empty route table
+        explanation: >-
+          Correct. A `Gateway` opens a listener and routes nothing.
+      - id: b
+        text: >-
+          `000`
+        explanation: >-
+          The listener is open.
+      - id: c
+        text: >-
+          `200` from the first Service in the namespace
+        explanation: >-
+          A `Gateway` has no `destination`.
+      - id: d
+        text: >-
+          `503 UH`
+        explanation: >-
+          No route matched, so there is no destination to be unhealthy.
+    correct_option: a
+    explanation: >-
+      A `Gateway` opens a listener for a port, a protocol and hosts. It holds no destination.
+
+  - id: ats014-060-01-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Bind a VirtualService with gateways: and explain what mesh means.
+    source_readings:
+      - sections/section-060/module-01/course-02-bind-a-virtualservice-to-a-gateway.md
+    prompt: >-
+      A `VirtualService` for `bridge` has no `gateways:` field. Requests from outside through the gateway get `404 NR`. Why?
+    options:
+      - id: a
+        text: >-
+          The `VirtualService` must be in `istio-ingress`
+        explanation: >-
+          The namespace is not the problem here.
+      - id: b
+        text: >-
+          `istioctl analyze` would have reported it, so the cause is elsewhere
+        explanation: >-
+          `analyze` does not report it, because a `VirtualService` for `mesh` is valid.
+      - id: c
+        text: >-
+          Without `gateways:`, the value is `mesh`, so the routes go to the sidecar proxies, not the gateway
+        explanation: >-
+          Correct. Name the `Gateway` in `gateways:`.
+      - id: d
+        text: >-
+          The gateway needs a restart to load the routes
+        explanation: >-
+          `istiod` pushes routes to running proxies.
+    correct_option: c
+    explanation: >-
+      The default value of `gateways:` is `mesh`. Naming a gateway replaces `mesh`, so list both if sidecar proxies need the same routes.
+
+  - id: ats014-060-01-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Know that naming a gateway replaces mesh.
+    source_readings:
+      - sections/section-060/module-01/course-02-bind-a-virtualservice-to-a-gateway.md
+    prompt: >-
+      You set `gateways: [starfleet-gateway]` on the `bridge` `VirtualService`. What happens to requests from `shuttle` to `bridge` inside the mesh?
+    options:
+      - id: a
+        text: >-
+          They still use the same routes
+        explanation: >-
+          Naming a gateway replaces the default `mesh`.
+      - id: b
+        text: >-
+          They no longer get these routes, unless you also list `mesh`
+        explanation: >-
+          Correct. List `mesh` as well if you want both.
+      - id: c
+        text: >-
+          They are sent through the ingress gateway
+        explanation: >-
+          In-mesh requests do not go through the gateway.
+      - id: d
+        text: >-
+          They fail with `000`
+        explanation: >-
+          They reach `bridge` without these rules.
+    correct_option: b
+    explanation: >-
+      Naming a gateway replaces `mesh`. List both when sidecar proxies need the same routes.
+
+  - id: ats014-060-01-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict what a host mismatch between the two objects does.
+    source_readings:
+      - sections/section-060/module-01/course-03-match-hosts-and-reference-gateways-across-namespaces.md
+    prompt: >-
+      The `Gateway` serves `bridge.example.com`. The bound `VirtualService` has `hosts: [web.example.com]`. What does a request for `bridge.example.com` get?
+    options:
+      - id: a
+        text: >-
+          `200`
+        explanation: >-
+          Only the overlap of the two host lists counts.
+      - id: b
+        text: >-
+          `000`
+        explanation: >-
+          The listener exists.
+      - id: c
+        text: >-
+          `503 NC`
+        explanation: >-
+          No route matched, so there is no destination.
+      - id: d
+        text: >-
+          `404`, and `istioctl analyze` warns with `IST0132`
+        explanation: >-
+          Correct. The two host lists must overlap.
+    correct_option: d
+    explanation: >-
+      The gateway uses a `VirtualService` only for hosts where both host lists overlap.
+
+  - id: ats014-060-01-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Refer to a Gateway in another namespace correctly.
+    source_readings:
+      - sections/section-060/module-01/course-03-match-hosts-and-reference-gateways-across-namespaces.md
+    prompt: >-
+      The `Gateway` object `web-gateway` is in the `edge` namespace. The `VirtualService` is in `starfleet`. How do you name the gateway in `gateways:`?
+    options:
+      - id: a
+        text: >-
+          `web-gateway`
+        explanation: >-
+          A bare name is looked up in the `VirtualService`'s own namespace.
+      - id: b
+        text: >-
+          `istio-ingress/web-gateway`
+        explanation: >-
+          Use the `Gateway` object's namespace, not the gateway pods' namespace.
+      - id: c
+        text: >-
+          `edge/web-gateway`
+        explanation: >-
+          Correct. Use `<namespace>/<name>` of the `Gateway` object.
+      - id: d
+        text: >-
+          `web-gateway.edge.svc.cluster.local`
+        explanation: >-
+          That is a Service name format, not a `Gateway` reference.
+    correct_option: c
+    explanation: >-
+      A `Gateway` in another namespace needs `<namespace>/<name>`, with the namespace of the object.
+
+  - id: ats014-060-01-q08
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Tell 000, 404 NR and 503 NC apart and know which object each one points at.
+    source_readings:
+      - sections/section-060/module-01/course-04-diagnose-000-404-and-503-at-the-ingress-gateway.md
+    prompt: >-
+      A request through the gateway returns `503` with `NC cluster_not_found`. Which part do you check?
+    options:
+      - id: a
+        text: >-
+          The route's destination host, because a route matched but the cluster does not exist
+        explanation: >-
+          Correct. `istioctl analyze` reports `IST0101 Referenced host not found`.
+      - id: b
+        text: >-
+          The `gateways:` field
+        explanation: >-
+          A missing binding gives `404 NR`.
+      - id: c
+        text: >-
+          The `Host` header in your curl command
+        explanation: >-
+          A wrong host gives `404`.
+      - id: d
+        text: >-
+          The `Gateway` selector
+        explanation: >-
+          A wrong selector gives `000`.
+    correct_option: a
+    explanation: >-
+      `000` means no listener, `404 NR` means no matching route, and `503` with `NC` or `UH` means the destination is missing or unhealthy.

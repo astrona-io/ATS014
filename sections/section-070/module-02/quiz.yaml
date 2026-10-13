@@ -1,0 +1,286 @@
+# Knowledge check for section 070, module 02. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-070-02
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-070/module-02
+  title: TLS Origination For External Services
+questions:
+  - id: ats014-070-02-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain why the sidecar proxy cannot read an application's own HTTPS calls.
+    source_readings:
+      - sections/section-070/module-02/course-01-why-the-proxy-cannot-read-https-calls.md
+    prompt: >-
+      The `shuttle` application calls `https://httpbin.org` itself. What can its sidecar proxy read?
+    options:
+      - id: a
+        text: >-
+          The path, headers and status code
+        explanation: >-
+          The request is encrypted before it reaches the proxy.
+      - id: b
+        text: >-
+          Nothing at all, the connection bypasses the proxy
+        explanation: >-
+          The connection still passes the proxy.
+      - id: c
+        text: >-
+          The destination address and the SNI name, but not the request
+        explanation: >-
+          Correct. The access log shows `"- - -"` and status `0`.
+      - id: d
+        text: >-
+          Everything, because the proxy holds the certificate
+        explanation: >-
+          The application holds the TLS session.
+    correct_option: c
+    explanation: >-
+      On an encrypted stream, the proxy sees only the address, the SNI name, byte counts and whether the connection worked.
+
+  - id: ats014-070-02-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Know what the application must change.
+    source_readings:
+      - sections/section-070/module-02/course-01-why-the-proxy-cannot-read-https-calls.md
+    prompt: >-
+      What must the application do for TLS origination to work?
+    options:
+      - id: a
+        text: >-
+          Keep calling `https://` and add a client certificate
+        explanation: >-
+          The proxy would encrypt it a second time.
+      - id: b
+        text: >-
+          Call `http://` and let its sidecar proxy add TLS
+        explanation: >-
+          Correct. The plain hop stays inside the pod.
+      - id: c
+        text: >-
+          Nothing, the proxy decrypts and encrypts again
+        explanation: >-
+          The proxy cannot decrypt the application's TLS.
+      - id: d
+        text: >-
+          Call the egress gateway by IP address
+        explanation: >-
+          That is not needed for TLS origination.
+    correct_option: b
+    explanation: >-
+      The application must call `http://`. Only the hop inside the pod is plain.
+
+  - id: ats014-070-02-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Build the three objects TLS origination needs.
+    source_readings:
+      - sections/section-070/module-02/course-02-originate-tls-with-three-istio-objects.md
+    prompt: >-
+      Which set of objects does TLS origination need?
+    options:
+      - id: a
+        text: >-
+          A `ServiceEntry` with ports `80` (`HTTP`) and `443` (`HTTPS`), a `VirtualService` from port `80` to `443`, and a `DestinationRule` with `tls.mode: SIMPLE` for port `443`
+        explanation: >-
+          Correct.
+      - id: b
+        text: >-
+          Only a `DestinationRule` with `tls.mode: SIMPLE`
+        explanation: >-
+          Without the `ServiceEntry` and the `VirtualService`, the request stays on port `80`.
+      - id: c
+        text: >-
+          A `ServiceEntry` with only port `443` and a `DestinationRule`
+        explanation: >-
+          Plain requests on port `80` pass through as raw bytes.
+      - id: d
+        text: >-
+          A `Gateway` and a `VirtualService`
+        explanation: >-
+          TLS origination at the sidecar needs no `Gateway`.
+    correct_option: a
+    explanation: >-
+      The `ServiceEntry` declares both ports, the `VirtualService` moves the request to port `443`, and the `DestinationRule` turns on TLS there.
+
+  - id: ats014-070-02-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Recognise the symptom of a missing DestinationRule.
+    source_readings:
+      - sections/section-070/module-02/course-02-originate-tls-with-three-istio-objects.md
+    prompt: >-
+      The `ServiceEntry` and the `VirtualService` exist, but there is no `DestinationRule`. What does the server answer?
+    options:
+      - id: a
+        text: >-
+          `200` over plain HTTP on port `80`
+        explanation: >-
+          The `VirtualService` moved the request to port `443`.
+      - id: b
+        text: >-
+          `503 UH`
+        explanation: >-
+          The host has an endpoint.
+      - id: c
+        text: >-
+          `000` with exit code `35`
+        explanation: >-
+          That is double encryption.
+      - id: d
+        text: >-
+          `400`, because plain HTTP reaches the TLS port `443`
+        explanation: >-
+          Correct. The `DestinationRule` turns on TLS.
+    correct_option: d
+    explanation: >-
+      Each missing object has its own symptom. No `DestinationRule` means plain HTTP reaches port `443`, and the server answers `400`.
+
+  - id: ats014-070-02-q05
+    type: single_choice
+    difficulty: advanced
+    learning_objective: >-
+      Put tls.mode SIMPLE under portLevelSettings for the right port.
+    source_readings:
+      - sections/section-070/module-02/course-03-troubleshoot-top-level-tls-and-double-encryption.md
+    prompt: >-
+      You put `tls.mode: SIMPLE` at the top of `trafficPolicy` instead of under `portLevelSettings` for port `443`. What breaks?
+    options:
+      - id: a
+        text: >-
+          Nothing, the redirect makes every request use port `443`
+        explanation: >-
+          Any request that stays on port `80` fails.
+      - id: b
+        text: >-
+          Port `443` stops using TLS
+        explanation: >-
+          Port `443` still uses TLS.
+      - id: c
+        text: >-
+          `kubectl apply` rejects the object
+        explanation: >-
+          It passes without a warning.
+      - id: d
+        text: >-
+          TLS turns on for every port, so a request that stays on port `80` fails with `503 UF` and `WRONG_VERSION_NUMBER`
+        explanation: >-
+          Correct. Check each port with `istioctl proxy-config cluster ... --port`.
+    correct_option: d
+    explanation: >-
+      Only the port that leaves the pod encrypted should have `envoy.transport_sockets.tls`.
+
+  - id: ats014-070-02-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Recognise double encryption.
+    source_readings:
+      - sections/section-070/module-02/course-03-troubleshoot-top-level-tls-and-double-encryption.md
+    prompt: >-
+      TLS origination is set up correctly, but the application still calls `https://httpbin.org`. What happens?
+    options:
+      - id: a
+        text: >-
+          It works, because the proxy sees the request is already encrypted
+        explanation: >-
+          The proxy cannot tell.
+      - id: b
+        text: >-
+          The request is encrypted twice, and `curl` fails with exit code `35`
+        explanation: >-
+          Correct. Change the application to call `http://`.
+      - id: c
+        text: >-
+          The proxy downgrades it to HTTP
+        explanation: >-
+          The proxy does not remove TLS.
+      - id: d
+        text: >-
+          It returns `400`
+        explanation: >-
+          That is plain HTTP on the TLS port.
+    correct_option: b
+    explanation: >-
+      An application that still calls `https://` gets its request encrypted twice.
+
+  - id: ats014-070-02-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Prove that TLS origination happened.
+    source_readings:
+      - sections/section-070/module-02/course-04-verify-tls-origination-and-configure-mutual-tls.md
+    prompt: >-
+      Which evidence proves TLS origination, beyond a `200`?
+    options:
+      - id: a
+        text: >-
+          A `200` from the external service
+        explanation: >-
+          A `200` alone does not prove it.
+      - id: b
+        text: >-
+          An `outbound|443` line in `istioctl proxy-status`
+        explanation: >-
+          `proxy-status` shows sync state, not TLS.
+      - id: c
+        text: >-
+          The destination reports the `https` scheme, and the port `443` cluster has `envoy.transport_sockets.tls` with the `sni` name
+        explanation: >-
+          Correct. Proof comes from both ends.
+      - id: d
+        text: >-
+          The `Host` header in the response
+        explanation: >-
+          The host does not change.
+    correct_option: c
+    explanation: >-
+      Check the destination's view and the proxy's cluster for port `443`.
+
+  - id: ats014-070-02-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain what sni is and describe MUTUAL TLS.
+    source_readings:
+      - sections/section-070/module-02/course-04-verify-tls-origination-and-configure-mutual-tls.md
+    prompt: >-
+      You leave out `sni` and the application calls the external service by IP address. What name does the server receive?
+    options:
+      - id: a
+        text: >-
+          The IP address, because Istio sets `autoSni` from the `Host` header
+        explanation: >-
+          Correct. Set `sni` to the server's name.
+      - id: b
+        text: >-
+          The name in the `ServiceEntry` `hosts`
+        explanation: >-
+          Without `sni`, Istio takes the name from the `Host` header.
+      - id: c
+        text: >-
+          No name, and the handshake fails at once
+        explanation: >-
+          The handshake uses the address as the name.
+      - id: d
+        text: >-
+          `httpbin.org`, always
+        explanation: >-
+          The name comes from the request, not from a fixed value.
+    correct_option: a
+    explanation: >-
+      Without `sni`, Istio sets `autoSni` and takes the server name from the `Host` header.

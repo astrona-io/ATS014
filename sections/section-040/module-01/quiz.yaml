@@ -1,0 +1,354 @@
+# Knowledge check for section 040, module 01. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-040-01
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-040/module-01
+  title: Timeouts And Retries
+questions:
+  - id: ats014-040-01-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Set a route timeout, say which proxy measures it, and name the status code the client receives.
+    source_readings:
+      - sections/section-040/module-01/course-01-set-a-route-timeout.md
+    prompt: >-
+      A `scout` route has `timeout: 0.5s`, and `navcom` takes 2 seconds. What does the `bridge` client get, and who creates that response?
+    options:
+      - id: a
+        text: >-
+          A `504` with the `UT` flag, created by the client's own sidecar proxy
+        explanation: >-
+          Correct. The client's proxy cancels the request when the time runs out.
+      - id: b
+        text: >-
+          A `504` created by the `scout` application
+        explanation: >-
+          The application did not answer in time. The proxy answered for it.
+      - id: c
+        text: >-
+          A `503` with the `UH` flag
+        explanation: >-
+          `UH` means no healthy endpoints, not a timeout.
+      - id: d
+        text: >-
+          A `200` after 2 seconds, because timeouts only log a warning
+        explanation: >-
+          The proxy cancels the request.
+    correct_option: a
+    explanation: >-
+      The client's sidecar proxy measures the timeout and returns `504` itself, with `UT` in its access log.
+
+  - id: ats014-040-01-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      State that Istio has no default route timeout.
+    source_readings:
+      - sections/section-040/module-01/course-01-set-a-route-timeout.md
+    prompt: >-
+      No `timeout` is set on any route. A backend takes 60 seconds to answer. How long does the client wait?
+    options:
+      - id: a
+        text: >-
+          15 seconds, Istio's default timeout
+        explanation: >-
+          Istio sets no HTTP route timeout unless you write one.
+      - id: b
+        text: >-
+          1 second, the default `perTryTimeout`
+        explanation: >-
+          There is no default per-try timeout either.
+      - id: c
+        text: >-
+          The full 60 seconds, unless the application has its own limit
+        explanation: >-
+          Correct. There is no route timeout by default.
+      - id: d
+        text: >-
+          30 seconds, the Kubernetes default
+        explanation: >-
+          Kubernetes has no such default for requests.
+    correct_option: c
+    explanation: >-
+      Istio sets no HTTP route timeout unless you write one.
+
+  - id: ats014-040-01-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Test a timeout with a delay fault and explain why the two cannot share one rule.
+    source_readings:
+      - sections/section-040/module-01/course-02-test-a-timeout-with-a-delay-fault.md
+    prompt: >-
+      You put a 2-second delay fault and a 0.5-second timeout on the same `navcom` rule. Requests take 2 seconds and return `200`. Why is there no `504`?
+    options:
+      - id: a
+        text: >-
+          The timeout must be longer than the delay to work
+        explanation: >-
+          A shorter timeout is what should cause the `504`.
+      - id: b
+        text: >-
+          A rule with a `fault` ignores its own `timeout` and `retries`
+        explanation: >-
+          Correct. Put the delay on the service being called and the timeout on the caller's route.
+      - id: c
+        text: >-
+          Timeouts only work on the `bridge` route
+        explanation: >-
+          A timeout works on any route, but not on a rule with a fault.
+      - id: d
+        text: >-
+          The delay fault is applied after the timeout
+        explanation: >-
+          The problem is that one rule cannot hold both.
+    correct_option: b
+    explanation: >-
+      Put the delay fault on the service being called and the timeout on the route of the caller.
+
+  - id: ats014-040-01-q04
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain why a timeout protects the client but does not stop the receiver's work.
+    source_readings:
+      - sections/section-040/module-01/course-02-test-a-timeout-with-a-delay-fault.md
+    prompt: >-
+      The client's proxy returned `504` after 0.5 seconds. What happens to the slow backend's work?
+    options:
+      - id: a
+        text: >-
+          It is cancelled at once by the client's proxy
+        explanation: >-
+          The client's proxy only stops waiting.
+      - id: b
+        text: >-
+          It is moved to the backend's queue
+        explanation: >-
+          The proxy has no such queue.
+      - id: c
+        text: >-
+          It is retried on another pod
+        explanation: >-
+          A timeout does not cause a retry without a retry policy.
+      - id: d
+        text: >-
+          It continues; the backend finishes and answers on a connection the client has already closed
+        explanation: >-
+          Correct. A timeout frees only the client.
+    correct_option: d
+    explanation: >-
+      A timeout stops the client waiting. It does not take load off the slow service.
+
+  - id: ats014-040-01-q05
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Read attempts correctly as the number of retries after the first try.
+    source_readings:
+      - sections/section-040/module-01/course-03-configure-retries.md
+    prompt: >-
+      A route has `retries: attempts: 3`, `retryOn: 5xx`. The backend always returns `503`. How many requests does the backend receive for one client request?
+    options:
+      - id: a
+        text: >-
+          3
+        explanation: >-
+          `attempts` counts retries after the first try.
+      - id: b
+        text: >-
+          4
+        explanation: >-
+          Correct. One first try plus 3 retries.
+      - id: c
+        text: >-
+          6
+        explanation: >-
+          There is no doubling.
+      - id: d
+        text: >-
+          1
+        explanation: >-
+          The retries are sent too.
+    correct_option: b
+    explanation: >-
+      `attempts` counts retries, not requests. `attempts: 3` sends up to four requests.
+
+  - id: ats014-040-01-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      State Istio's default retry policy and how to switch retries off.
+    source_readings:
+      - sections/section-040/module-01/course-03-configure-retries.md
+    prompt: >-
+      You remove the `retries` block from a route. What retry policy does the route have now?
+    options:
+      - id: a
+        text: >-
+          The default: 2 retries on connection problems only
+        explanation: >-
+          Correct. Only `attempts: 0` switches retries off.
+      - id: b
+        text: >-
+          None, retries are off
+        explanation: >-
+          The default policy still applies.
+      - id: c
+        text: >-
+          3 retries on every `5xx`
+        explanation: >-
+          The default does not cover `5xx` answers from the application.
+      - id: d
+        text: >-
+          Unlimited retries until the timeout
+        explanation: >-
+          The default is 2 retries.
+    correct_option: a
+    explanation: >-
+      A rule with no `retries` block still retries twice on connection problems. Only `attempts: 0` turns retries off.
+
+  - id: ats014-040-01-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Choose between 5xx, gateway-error and an exact status code.
+    source_readings:
+      - sections/section-040/module-01/course-04-choose-which-failures-to-retry.md
+    prompt: >-
+      A backend sometimes returns `503` while it restarts, and returns `500` for a bug that fails the same way every time. Which `retryOn` retries the `503` but not the `500`?
+    options:
+      - id: a
+        text: >-
+          `5xx`
+        explanation: >-
+          `5xx` retries the `500` too.
+      - id: b
+        text: >-
+          `connect-failure`
+        explanation: >-
+          That retries only connection problems, not a `503` answer.
+      - id: c
+        text: >-
+          `4xx`
+        explanation: >-
+          There is no reason to retry the client's own mistakes.
+      - id: d
+        text: >-
+          `gateway-error` or `"503"`
+        explanation: >-
+          Correct. Both skip a `500`.
+    correct_option: d
+    explanation: >-
+      `5xx` retries every server error. `gateway-error` or an exact code such as `"503"` skips a `500`.
+
+  - id: ats014-040-01-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: >-
+      Calculate the timeout a retry policy needs.
+    source_readings:
+      - sections/section-040/module-01/course-05-fit-retries-inside-the-timeout.md
+    prompt: >-
+      A route has `attempts: 2` and `perTryTimeout: 1s`. What is the shortest route `timeout` that does not cut the retries short?
+    options:
+      - id: a
+        text: >-
+          1s
+        explanation: >-
+          That covers only the first try.
+      - id: b
+        text: >-
+          2s
+        explanation: >-
+          `attempts` counts retries after the first try, so add one.
+      - id: c
+        text: >-
+          3s
+        explanation: >-
+          Correct. `(attempts + 1) × perTryTimeout` is `(2 + 1) × 1s`.
+      - id: d
+        text: >-
+          4s
+        explanation: >-
+          That is more than needed.
+    correct_option: c
+    explanation: >-
+      The route timeout covers the first try and every retry: `timeout` ≥ `(attempts + 1) × perTryTimeout`.
+
+  - id: ats014-040-01-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Recognise cut-off retries and used-up retries from the response flags.
+    source_readings:
+      - sections/section-040/module-01/course-05-fit-retries-inside-the-timeout.md
+    prompt: >-
+      The client's access log shows `504` with the flags `URX,UT`. What happened?
+    options:
+      - id: a
+        text: >-
+          Tries ran past `perTryTimeout`, were retried, and the retries were used up
+        explanation: >-
+          Correct. With `retryOn: 5xx`, a per-try timeout is retried.
+      - id: b
+        text: >-
+          A circuit breaker refused the request
+        explanation: >-
+          That is `UO`.
+      - id: c
+        text: >-
+          The backend returned `504` on its own
+        explanation: >-
+          `UT` and `URX` are set by the client's proxy.
+      - id: d
+        text: >-
+          No route matched the request
+        explanation: >-
+          That is `NR` with a `404`.
+    correct_option: a
+    explanation: >-
+      `URX` means the retries were used up. `URX,UT` means retries plus a timeout that fired.
+
+  - id: ats014-040-01-q10
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Keep retries away from requests that are not safe to send twice.
+    source_readings:
+      - sections/section-040/module-01/course-06-retry-only-idempotent-requests.md
+    prompt: >-
+      A route retries `5xx` for every method. Why is this a problem for `POST /orders`?
+    options:
+      - id: a
+        text: >-
+          A `POST` cannot be retried by Envoy
+        explanation: >-
+          Istio retries any request it is told to, including a `POST`.
+      - id: b
+        text: >-
+          A `POST` has no response code
+        explanation: >-
+          A `POST` gets a response code like any request.
+      - id: c
+        text: >-
+          A retried `POST` repeats its effect, for example a second order
+        explanation: >-
+          Correct. Retry only idempotent requests such as `GET`.
+      - id: d
+        text: >-
+          Retries make a `POST` slower but have no other effect
+        explanation: >-
+          The effect is repeated.
+    correct_option: c
+    explanation: >-
+      Split the route with a `method` match: give `GET` retries and everything else `attempts: 0`.

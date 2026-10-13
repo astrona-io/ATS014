@@ -1,0 +1,286 @@
+# Knowledge check for section 040, module 04. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-040-04
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-040/module-04
+  title: Locality Load Balancing And Failover
+questions:
+  - id: ats014-040-04-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Name the labels Istio reads an endpoint's locality from.
+    source_readings:
+      - sections/section-040/module-04/course-01-read-endpoint-locality-from-node-and-pod-labels.md
+    prompt: >-
+      Where does an endpoint's locality normally come from?
+    options:
+      - id: a
+        text: >-
+          The `topology.kubernetes.io/region` and `topology.kubernetes.io/zone` labels of the node that runs the pod
+        explanation: >-
+          Correct. The optional `topology.istio.io/subzone` adds a third level.
+      - id: b
+        text: >-
+          The `version` label of the pod
+        explanation: >-
+          `version` selects subsets, not localities.
+      - id: c
+        text: >-
+          The namespace the pod runs in
+        explanation: >-
+          Namespaces have no locality.
+      - id: d
+        text: >-
+          The `DestinationRule` of the host
+        explanation: >-
+          A `DestinationRule` uses localities. It does not set them.
+    correct_option: a
+    explanation: >-
+      Locality comes from the node's labels, in the order region, zone, subzone.
+
+  - id: ats014-040-04-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Use the istio-locality pod label.
+    source_readings:
+      - sections/section-040/module-04/course-01-read-endpoint-locality-from-node-and-pod-labels.md
+    prompt: >-
+      The `kind` node has no zone labels. How do you give a `probe` pod the locality region `local`, zone `zone-b`?
+    options:
+      - id: a
+        text: >-
+          Add `istio-locality: local/zone-b` to the Deployment's `metadata`
+        explanation: >-
+          Only labels on the pod template count, and the value uses dots.
+      - id: b
+        text: >-
+          Add `topology.kubernetes.io/zone: zone-b` to the pod
+        explanation: >-
+          The `topology.kubernetes.io` labels are read from the node.
+      - id: c
+        text: >-
+          Add `istio-locality: local.zone-b` to the running pod with `kubectl label`
+        explanation: >-
+          Running pods do not change. Istio reads it at start.
+      - id: d
+        text: >-
+          Add `istio-locality: local.zone-b` to the pod template, then roll out the Deployment
+        explanation: >-
+          Correct. Istio reads it when the pod starts.
+    correct_option: d
+    explanation: >-
+      The `istio-locality` label goes on the pod template. Its value uses dots because a label value cannot contain a slash.
+
+  - id: ats014-040-04-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Check from a live proxy that every endpoint and the client have a locality.
+    source_readings:
+      - sections/section-040/module-04/course-01-read-endpoint-locality-from-node-and-pod-labels.md
+    prompt: >-
+      You configure locality preference and nothing changes. No error appears anywhere. What should you check first?
+    options:
+      - id: a
+        text: >-
+          The Kubernetes events of the `probe` pods
+        explanation: >-
+          Kubernetes does not report missing locality.
+      - id: b
+        text: >-
+          The localities in `istioctl proxy-config endpoints ... -o json` from the client's proxy, for every endpoint and for the client
+        explanation: >-
+          Correct. A missing locality makes every locality setting do nothing, silently.
+      - id: c
+        text: >-
+          `istioctl analyze`
+        explanation: >-
+          It does not report a missing locality.
+      - id: d
+        text: >-
+          The access log of the server's proxy
+        explanation: >-
+          The client's locality and the endpoints' localities decide the preference.
+    correct_option: b
+    explanation: >-
+      Read the localities from the client's sidecar proxy before you configure anything.
+
+  - id: ats014-040-04-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why locality preference needs outlierDetection.
+    source_readings:
+      - sections/section-040/module-04/course-02-configure-locality-preference-distribute-and-failover.md
+    prompt: >-
+      A `DestinationRule` has `localityLbSetting: enabled: true` and no `outlierDetection`. Where do requests from `shuttle` go?
+    options:
+      - id: a
+        text: >-
+          Only to the endpoints in the client's own zone
+        explanation: >-
+          Istio only applies the preference to a host with outlier detection.
+      - id: b
+        text: >-
+          Only to endpoints in other zones
+        explanation: >-
+          There is no preference at all.
+      - id: c
+        text: >-
+          To every endpoint, as if no locality setting existed
+        explanation: >-
+          Correct. Add `outlierDetection` to switch the preference on.
+      - id: d
+        text: >-
+          They fail, because the rule is incomplete
+        explanation: >-
+          The rule is valid. It just changes nothing.
+    correct_option: c
+    explanation: >-
+      The locality preference only acts on a host whose `DestinationRule` has `outlierDetection`.
+
+  - id: ats014-040-04-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Configure distribute for exact weights between zones.
+    source_readings:
+      - sections/section-040/module-04/course-02-configure-locality-preference-distribute-and-failover.md
+    prompt: >-
+      You write `distribute` with `from: local/zone-a/*` and `to: {local/zone-a/*: 70, local/zone-b/*: 20}`. What happens?
+    options:
+      - id: a
+        text: >-
+          Requests are split 70/20 and 10% fail
+        explanation: >-
+          The object never gets that far.
+      - id: b
+        text: >-
+          Istio rejects it, because the weights must add up to 100
+        explanation: >-
+          Correct. The error is `total locality weight 90 != 100`.
+      - id: c
+        text: >-
+          The weights are used as a ratio, about 78/22
+        explanation: >-
+          That is how `VirtualService` weights behave, not `distribute`.
+      - id: d
+        text: >-
+          The rest goes to the client's own zone
+        explanation: >-
+          The object is rejected.
+    correct_option: b
+    explanation: >-
+      `distribute` weights must add up to exactly 100.
+
+  - id: ats014-040-04-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Say why distribute and failover cannot be combined, and where failover works.
+    source_readings:
+      - sections/section-040/module-04/course-02-configure-locality-preference-distribute-and-failover.md
+    prompt: >-
+      Which statement about `failover` is true?
+    options:
+      - id: a
+        text: >-
+          It moves requests between zones inside one region
+        explanation: >-
+          Moving between zones is the preference itself.
+      - id: b
+        text: >-
+          It can be combined with `distribute` for the same host
+        explanation: >-
+          Istio rejects the combination.
+      - id: c
+        text: >-
+          It works without outlier detection
+        explanation: >-
+          Nothing is ever marked unhealthy without it.
+      - id: d
+        text: >-
+          It names the next region to use, needs outlier detection, and cannot be combined with `distribute`
+        explanation: >-
+          Correct.
+    correct_option: d
+    explanation: >-
+      `failover` works between regions and needs outlier detection. `distribute` and `failover` are alternatives.
+
+  - id: ats014-040-04-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Tell endpoint removal apart from endpoint failure.
+    source_readings:
+      - sections/section-040/module-04/course-03-fail-over-a-zone-with-outlier-detection.md
+    prompt: >-
+      You scale the `probe` pod in the client's zone to zero, and requests move to the other zone without errors. What did this test prove?
+    options:
+      - id: a
+        text: >-
+          That `failover` is configured correctly
+        explanation: >-
+          Removal moves requests even without any locality setting.
+      - id: b
+        text: >-
+          That outlier detection works
+        explanation: >-
+          Kubernetes removed the endpoint. The proxy ejected nothing.
+      - id: c
+        text: >-
+          Endpoint removal only; it does not prove the failure path that needs outlier detection
+        explanation: >-
+          Correct. Use a pod that fails every request to test failover.
+      - id: d
+        text: >-
+          That `maxEjectionPercent` is high enough
+        explanation: >-
+          Nothing was ejected.
+    correct_option: c
+    explanation: >-
+      When a pod is removed, Kubernetes takes it out of the endpoint list. When a pod fails but stays ready, only outlier detection notices.
+
+  - id: ats014-040-04-q08
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Know the maxEjectionPercent trap in a failover test.
+    source_readings:
+      - sections/section-040/module-04/course-03-fail-over-a-zone-with-outlier-detection.md
+    prompt: >-
+      Each zone has one `probe` pod. Outlier detection uses the default `maxEjectionPercent`. The pod in the client's zone fails every request. Why is there no failover?
+    options:
+      - id: a
+        text: >-
+          The 10% default cannot eject one of two endpoints
+        explanation: >-
+          Correct. Raise it, for example to `100`.
+      - id: b
+        text: >-
+          The failing pod is `NotReady`
+        explanation: >-
+          A failing pod can stay ready.
+      - id: c
+        text: >-
+          `failover` only works between regions
+        explanation: >-
+          Here the preference between zones should act.
+      - id: d
+        text: >-
+          Failover needs three zones
+        explanation: >-
+          Two zones are enough.
+    correct_option: a
+    explanation: >-
+      `maxEjectionPercent` defaults to 10%, which cannot eject one of two or three endpoints.

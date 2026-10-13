@@ -1,0 +1,286 @@
+# Knowledge check for section 070, module 03. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-070-03
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-070/module-03
+  title: Add External Workloads With WorkloadEntry
+questions:
+  - id: ats014-070-03-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Describe a machine outside Kubernetes with a WorkloadEntry.
+    source_readings:
+      - sections/section-070/module-03/course-01-describe-a-machine-with-workloadentry.md
+    prompt: >-
+      You create a `WorkloadEntry` for `freighter-vm-1` and nothing else. Can `shuttle` call it by a host name now?
+    options:
+      - id: a
+        text: >-
+          Yes, by the entry's name
+        explanation: >-
+          A `WorkloadEntry` has no host name and no port.
+      - id: b
+        text: >-
+          Yes, by its address through a new cluster
+        explanation: >-
+          The proxy builds no cluster for an entry alone.
+      - id: c
+        text: >-
+          No, a `WorkloadEntry` needs a restart of `istiod`
+        explanation: >-
+          `istiod` picks it up by itself.
+      - id: d
+        text: >-
+          No, the proxy has no cluster for it until a `ServiceEntry` selects it
+        explanation: >-
+          Correct.
+    correct_option: d
+    explanation: >-
+      A `WorkloadEntry` describes one machine. A `ServiceEntry` gives it a host name and port.
+
+  - id: ats014-070-03-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain the identity a serviceAccount gives the machine.
+    source_readings:
+      - sections/section-070/module-03/course-01-describe-a-machine-with-workloadentry.md
+    prompt: >-
+      Why does a `WorkloadEntry` need a `serviceAccount`?
+    options:
+      - id: a
+        text: >-
+          To reach `istiod` on port `15012`
+        explanation: >-
+          That needs a network path, not the field.
+      - id: b
+        text: >-
+          To set the machine's address
+        explanation: >-
+          `address` sets that.
+      - id: c
+        text: >-
+          It gives the machine an identity, so an `AuthorizationPolicy` or `PeerAuthentication` can name it
+        explanation: >-
+          Correct. The ServiceAccount must exist in the entry's namespace.
+      - id: d
+        text: >-
+          To select it from a `ServiceEntry`
+        explanation: >-
+          `labels` do that.
+    correct_option: c
+    explanation: >-
+      The `serviceAccount` gives the identity `spiffe://<trust-domain>/ns/<namespace>/sa/<service-account>`.
+
+  - id: ats014-070-03-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Group entries into one host with a MESH_INTERNAL ServiceEntry.
+    source_readings:
+      - sections/section-070/module-03/course-02-name-the-machines-with-a-mesh-internal-serviceentry.md
+    prompt: >-
+      Which `ServiceEntry` settings group `WorkloadEntry` objects into one host?
+    options:
+      - id: a
+        text: >-
+          `location: MESH_INTERNAL`, `resolution: STATIC` and a `workloadSelector`
+        explanation: >-
+          Correct. `istiod` sends the selected entries as endpoints.
+      - id: b
+        text: >-
+          `MESH_INTERNAL`, `resolution: DNS` and a `workloadSelector`
+        explanation: >-
+          The entries already hold the addresses, so `DNS` is wrong.
+      - id: c
+        text: >-
+          `MESH_INTERNAL` with both `endpoints` and a `workloadSelector`
+        explanation: >-
+          Istio rejects both together.
+      - id: d
+        text: >-
+          `MESH_EXTERNAL`, `resolution: DNS` and `endpoints`
+        explanation: >-
+          That is for an outside API, not your own machines.
+    correct_option: a
+    explanation: >-
+      Use `MESH_INTERNAL`, `STATIC` and a `workloadSelector`. A second entry with the same labels becomes a second endpoint.
+
+  - id: ats014-070-03-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Recognise the failed mTLS handshake MESH_INTERNAL causes.
+    source_readings:
+      - sections/section-070/module-03/course-02-name-the-machines-with-a-mesh-internal-serviceentry.md
+    prompt: >-
+      A `MESH_INTERNAL` host points at a machine with no sidecar proxy. Requests fail with `503 UF` and `WRONG_VERSION_NUMBER`. Why?
+    options:
+      - id: a
+        text: >-
+          The selector matches no entry
+        explanation: >-
+          That gives `503 UH`.
+      - id: b
+        text: >-
+          The caller's proxy uses mTLS, and the machine only speaks plain HTTP
+        explanation: >-
+          Correct. A real machine with `istio-agent` would accept mTLS.
+      - id: c
+        text: >-
+          The machine's address is wrong
+        explanation: >-
+          A wrong address gives a connection failure without a TLS error.
+      - id: d
+        text: >-
+          The `ServiceEntry` uses `resolution: STATIC`
+        explanation: >-
+          `STATIC` is right here.
+    correct_option: b
+    explanation: >-
+      `503 UF` with `WRONG_VERSION_NUMBER` on a `MESH_INTERNAL` host means the caller uses mTLS and the machine does not.
+
+  - id: ats014-070-03-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Choose the right fix for a stand-in that cannot accept mTLS.
+    source_readings:
+      - sections/section-070/module-03/course-02-name-the-machines-with-a-mesh-internal-serviceentry.md
+    prompt: >-
+      A stand-in pod without a sidecar cannot accept mTLS. What is the right fix?
+    options:
+      - id: a
+        text: >-
+          Change the `ServiceEntry` to `MESH_EXTERNAL`
+        explanation: >-
+          Requests work, but the machine gets no identity.
+      - id: b
+        text: >-
+          A `DestinationRule` for the host with `tls` mode `DISABLE`
+        explanation: >-
+          Correct. Remove it when the real machine runs `istio-agent`.
+      - id: c
+        text: >-
+          Remove the `serviceAccount` from the entry
+        explanation: >-
+          That removes the identity, not the mTLS.
+      - id: d
+        text: >-
+          Set `REGISTRY_ONLY`
+        explanation: >-
+          That has nothing to do with mTLS.
+    correct_option: b
+    explanation: >-
+      For a stand-in that can never accept mTLS, a `DestinationRule` with `tls` mode `DISABLE` lets callers send plain HTTP.
+
+  - id: ats014-070-03-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Find a workloadSelector that matches no entry.
+    source_readings:
+      - sections/section-070/module-03/course-03-put-several-machines-behind-one-host.md
+    prompt: >-
+      A `ServiceEntry` selects `app: freighter`. The entries have `app: freigther`. Requests get `503 UH`. What does `istioctl analyze` say?
+    options:
+      - id: a
+        text: >-
+          `IST0173`
+        explanation: >-
+          That code is for a `DestinationRule` subset.
+      - id: b
+        text: >-
+          `IST0101`
+        explanation: >-
+          It does not report a selector that matches no entry.
+      - id: c
+        text: >-
+          Nothing; check the empty endpoint list with `istioctl proxy-config endpoints`
+        explanation: >-
+          Correct. The objects are valid on their own.
+      - id: d
+        text: >-
+          `IST0132`
+        explanation: >-
+          That code is for gateway hosts.
+    correct_option: c
+    explanation: >-
+      `503 UH` with an empty endpoint list means the selector and the entry labels do not match.
+
+  - id: ats014-070-03-q07
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Add a second machine to an existing host.
+    source_readings:
+      - sections/section-070/module-03/course-03-put-several-machines-behind-one-host.md
+    prompt: >-
+      A second machine, `freighter-vm-2`, must join the existing `freighter` host. What do you add?
+    options:
+      - id: a
+        text: >-
+          A second `ServiceEntry` for the same host
+        explanation: >-
+          Two objects for one host is the wrong pattern.
+      - id: b
+        text: >-
+          The address to the `ServiceEntry` `endpoints`
+        explanation: >-
+          `endpoints` cannot be combined with a `workloadSelector`.
+      - id: c
+        text: >-
+          A `WorkloadGroup`
+        explanation: >-
+          A group needs a machine with `istio-agent` to register.
+      - id: d
+        text: >-
+          A second `WorkloadEntry` with the same labels
+        explanation: >-
+          Correct. It joins the existing host as a second endpoint.
+    correct_option: d
+    explanation: >-
+      A second `WorkloadEntry` with the same labels becomes a second endpoint, with no change to the `ServiceEntry`.
+
+  - id: ats014-070-03-q08
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Say what a WorkloadGroup is for.
+    source_readings:
+      - sections/section-070/module-03/course-04-register-virtual-machines-with-workloadgroup.md
+    prompt: >-
+      How does a `WorkloadGroup` relate to `WorkloadEntry` objects?
+    options:
+      - id: a
+        text: >-
+          Like a Deployment to Pods: one template, and `istiod` creates the entries when machines register
+        explanation: >-
+          Correct.
+      - id: b
+        text: >-
+          It is another name for a `WorkloadEntry`
+        explanation: >-
+          The group is a template; the entry is one machine.
+      - id: c
+        text: >-
+          It creates endpoints by itself
+        explanation: >-
+          Nothing appears until a machine with `istio-agent` registers.
+      - id: d
+        text: >-
+          It replaces the `ServiceEntry`
+        explanation: >-
+          A `ServiceEntry` still names the host.
+    correct_option: a
+    explanation: >-
+      A `WorkloadGroup` is a template with labels, a ServiceAccount and ports, but no address.

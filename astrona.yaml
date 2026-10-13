@@ -65,9 +65,6 @@ modules:
       - type: reading
         title: "Follow A Request Through Two Proxies"
         path: sections/section-000/module-01/course-02-follow-a-request-through-two-proxies.md
-      - type: reading
-        title: Question
-        path: sections/section-000/module-01/labs/lab-01/question.md
       - type: lab
         title: "Bring Workloads Into The Mesh With Sidecar Injection Lab"
         path: sections/section-000/module-01/labs/lab-01
@@ -94,9 +91,6 @@ modules:
       - type: reading
         title: "Diagnose The Mesh With istioctl And Access Logs"
         path: sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
-      - type: reading
-        title: Question
-        path: sections/section-000/module-01/labs/lab-02/question.md
       - type: lab
         title: "Fix A Service Selector That Matches No Pod Lab"
         path: sections/section-000/module-01/labs/lab-02
@@ -118,6 +112,10 @@ modules:
       - type: reading
         title: Summary
         path: sections/section-000/module-01/course-06-summary.md
+      - type: quiz
+        title: "Knowledge Check: How A Request Moves Through The Mesh"
+        path: sections/section-000/module-01/quiz.yaml
+        pass_score: 70
 
   - id: module-010
     title: "Configuring Routing Within A Service Mesh"
@@ -142,9 +140,6 @@ modules:
       - type: reading
         title: "Define Subsets With A DestinationRule"
         path: sections/section-010/module-01/course-02-define-subsets-with-a-destinationrule.md
-      - type: reading
-        title: Question
-        path: sections/section-010/module-01/labs/lab-03/question.md
       - type: lab
         title: "Fix A DestinationRule Subset That Selects No Pods Lab"
         path: sections/section-010/module-01/labs/lab-03
@@ -178,9 +173,6 @@ modules:
       - type: reading
         title: "Order Routing Rules And Add A Catch-All"
         path: sections/section-010/module-01/course-07-order-routing-rules-and-add-a-catch-all.md
-      - type: reading
-        title: Question
-        path: sections/section-010/module-01/labs/lab-01/question.md
       - type: lab
         title: "Route Requests By Header, URI And Query Parameter Lab"
         path: sections/section-010/module-01/labs/lab-01
@@ -205,9 +197,6 @@ modules:
       - type: reading
         title: "Debug Routing With The Access Log And proxy-config"
         path: sections/section-010/module-01/course-09-debug-routing-with-the-access-log-and-proxy-config.md
-      - type: reading
-        title: Question
-        path: sections/section-010/module-01/labs/lab-04/question.md
       - type: lab
         title: "Fix A VirtualService That Does Not Apply Lab"
         path: sections/section-010/module-01/labs/lab-04
@@ -233,9 +222,6 @@ modules:
       - type: reading
         title: "Change Headers And Answer CORS Preflight Requests"
         path: sections/section-010/module-01/course-11-change-headers-and-answer-cors-preflight-requests.md
-      - type: reading
-        title: Question
-        path: sections/section-010/module-01/labs/lab-02/question.md
       - type: lab
         title: "Redirect, Rewrite And Change Headers Of A Request Lab"
         path: sections/section-010/module-01/labs/lab-02
@@ -253,9 +239,6 @@ modules:
       - type: reading
         title: "Protocol Selection And Non-HTTP Routing"
         path: sections/section-010/module-01/course-12-protocol-selection-and-non-http-routing.md
-      - type: reading
-        title: Question
-        path: sections/section-010/module-01/labs/lab-05/question.md
       - type: lab
         title: "Declare A Service Port As HTTP Lab"
         path: sections/section-010/module-01/labs/lab-05
@@ -277,6 +260,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-010/module-01/course-13-summary.md
+      - type: quiz
+        title: "Knowledge Check: Route Requests Within The Mesh"
+        path: sections/section-010/module-01/quiz.yaml
+        question_count: 10
 
       - type: reading
         title: "Scope Proxy Configuration With The Sidecar Resource"
@@ -287,9 +274,6 @@ modules:
       - type: reading
         title: "Limit Egress Hosts With A Namespace-Wide Sidecar"
         path: sections/section-010/module-02/course-02-limit-egress-hosts-with-a-namespace-wide-sidecar.md
-      - type: reading
-        title: Question
-        path: sections/section-010/module-02/labs/lab-01/question.md
       - type: lab
         title: "Limit A Namespace's Proxy Configuration With A Sidecar Lab"
         path: sections/section-010/module-02/labs/lab-01
@@ -311,9 +295,6 @@ modules:
       - type: reading
         title: "Which Sidecar Applies To A Workload"
         path: sections/section-010/module-02/course-03-which-sidecar-applies-to-a-workload.md
-      - type: reading
-        title: Question
-        path: sections/section-010/module-02/labs/lab-02/question.md
       - type: lab
         title: "Repair A Workload-Selected Sidecar Lab"
         path: sections/section-010/module-02/labs/lab-02
@@ -338,6 +319,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-010/module-02/course-05-summary.md
+      - type: quiz
+        title: "Knowledge Check: Scope Proxy Configuration With The Sidecar Resource"
+        path: sections/section-010/module-02/quiz.yaml
+        question_count: 8
 
       - type: reading
         title: "Apply And Remove Traffic Rules Safely"
@@ -345,9 +330,6 @@ modules:
       - type: reading
         title: "Apply And Remove Objects In Dependency Order"
         path: sections/section-010/module-03/course-01-apply-and-remove-objects-in-dependency-order.md
-      - type: reading
-        title: Question
-        path: sections/section-010/module-03/labs/lab-01/question.md
       - type: lab
         title: "Retire A Subset Without Failed Requests Lab"
         path: sections/section-010/module-03/labs/lab-01
@@ -373,10 +355,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-010/module-03/course-03-summary.md
+      - type: quiz
+        title: "Knowledge Check: Apply And Remove Traffic Rules Safely"
+        path: sections/section-010/module-03/quiz.yaml
+        question_count: 6
 
-      - type: reading
-        title: Question
-        path: sections/section-010/capstone/labs/lab-01/question.md
       - type: lab
         title: "Route With Subsets And Scope Proxies With A Sidecar Capstone Lab"
         path: sections/section-010/capstone/labs/lab-01
@@ -419,9 +402,6 @@ modules:
       - type: reading
         title: "Weight Totals, Three-Way Splits And Missing Subsets"
         path: sections/section-020/module-01/course-02-weight-totals-three-way-splits-and-missing-subsets.md
-      - type: reading
-        title: Question
-        path: sections/section-020/module-01/labs/lab-02/question.md
       - type: lab
         title: "Split Traffic Three Ways With Weights Lab"
         path: sections/section-020/module-01/labs/lab-02
@@ -449,9 +429,6 @@ modules:
       - type: reading
         title: "Traffic Share, Replica Count And The Route Table"
         path: sections/section-020/module-01/course-05-traffic-share-replica-count-and-the-route-table.md
-      - type: reading
-        title: Question
-        path: sections/section-020/module-01/labs/lab-01/question.md
       - type: lab
         title: "Run A Canary With A Header Rule Above The Split Lab"
         path: sections/section-020/module-01/labs/lab-01
@@ -472,6 +449,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-020/module-01/course-06-summary.md
+      - type: quiz
+        title: "Knowledge Check: Shift Traffic With Weighted Routing"
+        path: sections/section-020/module-01/quiz.yaml
+        question_count: 10
 
       - type: reading
         title: "Mirror Live Traffic To A Shadow Service"
@@ -485,9 +466,6 @@ modules:
       - type: reading
         title: "Find Mirrored Requests And Sample Them"
         path: sections/section-020/module-02/course-03-find-mirrored-requests-and-sample-them.md
-      - type: reading
-        title: Question
-        path: sections/section-020/module-02/labs/lab-01/question.md
       - type: lab
         title: "Route To v1 And Mirror Every Request To v2 Lab"
         path: sections/section-020/module-02/labs/lab-01
@@ -507,9 +485,6 @@ modules:
       - type: reading
         title: "Diagnose A Silent Mirror And Plan For Side Effects"
         path: sections/section-020/module-02/course-04-diagnose-a-silent-mirror-and-plan-for-side-effects.md
-      - type: reading
-        title: Question
-        path: sections/section-020/module-02/labs/lab-02/question.md
       - type: lab
         title: "Troubleshoot A Mirror That Sends No Copies Lab"
         path: sections/section-020/module-02/labs/lab-02
@@ -531,10 +506,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-020/module-02/course-05-summary.md
+      - type: quiz
+        title: "Knowledge Check: Mirror Live Traffic To A Shadow Service"
+        path: sections/section-020/module-02/quiz.yaml
+        question_count: 8
 
-      - type: reading
-        title: Question
-        path: sections/section-020/capstone/labs/lab-01/question.md
       - type: lab
         title: "Combine A Header Rule, A Weighted Canary And A Mirror Capstone Lab"
         path: sections/section-020/capstone/labs/lab-01
@@ -573,9 +549,6 @@ modules:
       - type: reading
         title: "Choose A Simple Load Balancing Algorithm"
         path: sections/section-030/module-01/course-01-choose-a-simple-load-balancing-algorithm.md
-      - type: reading
-        title: Question
-        path: sections/section-030/module-01/labs/lab-03/question.md
       - type: lab
         title: "Spread Requests Evenly With ROUND_ROBIN Lab"
         path: sections/section-030/module-01/labs/lab-03
@@ -601,9 +574,6 @@ modules:
       - type: reading
         title: "Set A Load Balancer Per Subset"
         path: sections/section-030/module-01/course-04-set-a-load-balancer-per-subset.md
-      - type: reading
-        title: Question
-        path: sections/section-030/module-01/labs/lab-01/question.md
       - type: lab
         title: "Pin A Subset By Header And Override Another Subset Lab"
         path: sections/section-030/module-01/labs/lab-01
@@ -626,9 +596,6 @@ modules:
       - type: reading
         title: "Set A Load Balancer Per Port"
         path: sections/section-030/module-01/course-05-set-a-load-balancer-per-port.md
-      - type: reading
-        title: Question
-        path: sections/section-030/module-01/labs/lab-02/question.md
       - type: lab
         title: "Issue A Sticky Cookie On One Port Lab"
         path: sections/section-030/module-01/labs/lab-02
@@ -649,10 +616,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-030/module-01/course-06-summary.md
+      - type: quiz
+        title: "Knowledge Check: Load Balancer Policy And Session Affinity"
+        path: sections/section-030/module-01/quiz.yaml
+        question_count: 10
 
-      - type: reading
-        title: Question
-        path: sections/section-030/capstone/labs/lab-01/question.md
       - type: lab
         title: "Combine Session Affinity With Traffic Mirroring Capstone Lab"
         path: sections/section-030/capstone/labs/lab-01
@@ -693,9 +661,6 @@ modules:
       - type: reading
         title: "Test A Timeout With A Delay Fault"
         path: sections/section-040/module-01/course-02-test-a-timeout-with-a-delay-fault.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-01/labs/lab-02/question.md
       - type: lab
         title: "Move A Timeout Off A Fault Rule Lab"
         path: sections/section-040/module-01/labs/lab-02
@@ -722,9 +687,6 @@ modules:
       - type: reading
         title: "Choose Which Failures To Retry"
         path: sections/section-040/module-01/course-04-choose-which-failures-to-retry.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-01/labs/lab-03/question.md
       - type: lab
         title: "Retry Only One Status Code Lab"
         path: sections/section-040/module-01/labs/lab-03
@@ -750,9 +712,6 @@ modules:
       - type: reading
         title: "Retry Only Idempotent Requests"
         path: sections/section-040/module-01/course-06-retry-only-idempotent-requests.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-01/labs/lab-01/question.md
       - type: lab
         title: "Set Timeouts And Retries Per HTTP Method Lab"
         path: sections/section-040/module-01/labs/lab-01
@@ -772,6 +731,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-040/module-01/course-07-summary.md
+      - type: quiz
+        title: "Knowledge Check: Timeouts And Retries"
+        path: sections/section-040/module-01/quiz.yaml
+        question_count: 10
 
       - type: reading
         title: "Circuit Breaking With Connection Pool Limits"
@@ -782,9 +745,6 @@ modules:
       - type: reading
         title: "Identify Overflow With The UO Flag And Counters"
         path: sections/section-040/module-02/course-02-identify-overflow-with-the-uo-flag-and-counters.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-02/labs/lab-01/question.md
       - type: lab
         title: "Configure And Prove A Connection Pool Circuit Breaker Lab"
         path: sections/section-040/module-02/labs/lab-01
@@ -806,9 +766,6 @@ modules:
       - type: reading
         title: "Verify Limits On Both Proxies And Control Retries"
         path: sections/section-040/module-02/course-03-verify-limits-on-both-proxies-and-control-retries.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-02/labs/lab-02/question.md
       - type: lab
         title: "Limit Retries To Connection Failures Lab"
         path: sections/section-040/module-02/labs/lab-02
@@ -833,6 +790,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-040/module-02/course-04-summary.md
+      - type: quiz
+        title: "Knowledge Check: Circuit Breaking With Connection Pool Limits"
+        path: sections/section-040/module-02/quiz.yaml
+        question_count: 8
 
       - type: reading
         title: "Outlier Detection And Endpoint Ejection"
@@ -846,9 +807,6 @@ modules:
       - type: reading
         title: "Limit Ejections With maxEjectionPercent And minHealthPercent"
         path: sections/section-040/module-03/course-03-limit-ejections-with-maxejectionpercent-and-minhealthpercent.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-03/labs/lab-01/question.md
       - type: lab
         title: "Eject A Failing Endpoint On A Two-Endpoint Service Lab"
         path: sections/section-040/module-03/labs/lab-01
@@ -869,9 +827,6 @@ modules:
       - type: reading
         title: "Verify Ejections And Combine Them With A Connection Pool"
         path: sections/section-040/module-03/course-04-verify-ejections-and-add-a-connection-pool.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-03/labs/lab-02/question.md
       - type: lab
         title: "Combine A Connection Pool And Outlier Detection Lab"
         path: sections/section-040/module-03/labs/lab-02
@@ -896,6 +851,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-040/module-03/course-05-summary.md
+      - type: quiz
+        title: "Knowledge Check: Outlier Detection And Endpoint Ejection"
+        path: sections/section-040/module-03/quiz.yaml
+        question_count: 8
 
       - type: reading
         title: "Locality Load Balancing And Failover"
@@ -903,9 +862,6 @@ modules:
       - type: reading
         title: "Read Endpoint Locality From Node And Pod Labels"
         path: sections/section-040/module-04/course-01-read-endpoint-locality-from-node-and-pod-labels.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-04/labs/lab-02/question.md
       - type: lab
         title: "Fix An Endpoint In The Wrong Locality Lab"
         path: sections/section-040/module-04/labs/lab-02
@@ -928,9 +884,6 @@ modules:
       - type: reading
         title: "Configure Locality Preference, Distribute And Failover"
         path: sections/section-040/module-04/course-02-configure-locality-preference-distribute-and-failover.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-04/labs/lab-03/question.md
       - type: lab
         title: "Split Traffic Between Two Zones With Distribute Lab"
         path: sections/section-040/module-04/labs/lab-03
@@ -951,9 +904,6 @@ modules:
       - type: reading
         title: "Fail Over A Zone With Outlier Detection"
         path: sections/section-040/module-04/course-03-fail-over-a-zone-with-outlier-detection.md
-      - type: reading
-        title: Question
-        path: sections/section-040/module-04/labs/lab-01/question.md
       - type: lab
         title: "Fail Over From A Failing Zone With Outlier Detection Lab"
         path: sections/section-040/module-04/labs/lab-01
@@ -976,10 +926,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-040/module-04/course-04-summary.md
+      - type: quiz
+        title: "Knowledge Check: Locality Load Balancing And Failover"
+        path: sections/section-040/module-04/quiz.yaml
+        question_count: 8
 
-      - type: reading
-        title: Question
-        path: sections/section-040/capstone/labs/lab-01/question.md
       - type: lab
         title: "Combine Timeouts, Retries, Circuit Breaking And Outlier Detection Capstone Lab"
         path: sections/section-040/capstone/labs/lab-01
@@ -1022,9 +973,6 @@ modules:
       - type: reading
         title: "Abort Requests In The Client Proxy"
         path: sections/section-050/module-01/course-02-abort-requests-in-the-client-proxy.md
-      - type: reading
-        title: Question
-        path: sections/section-050/module-01/labs/lab-02/question.md
       - type: lab
         title: "Inject A Delay And An Abort Lab"
         path: sections/section-050/module-01/labs/lab-02
@@ -1046,9 +994,6 @@ modules:
       - type: reading
         title: "Scope Fault Injection With Match Rules"
         path: sections/section-050/module-01/course-03-scope-fault-injection-with-match-rules.md
-      - type: reading
-        title: Question
-        path: sections/section-050/module-01/labs/lab-03/question.md
       - type: lab
         title: "Scope A Forgotten Abort To One Test User Lab"
         path: sections/section-050/module-01/labs/lab-03
@@ -1068,9 +1013,6 @@ modules:
       - type: reading
         title: "Test Timeouts And Retries With Fault Injection"
         path: sections/section-050/module-01/course-04-test-timeouts-and-retries-with-fault-injection.md
-      - type: reading
-        title: Question
-        path: sections/section-050/module-01/labs/lab-01/question.md
       - type: lab
         title: "Trigger A Route Timeout With A Scoped Delay Lab"
         path: sections/section-050/module-01/labs/lab-01
@@ -1091,10 +1033,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-050/module-01/course-05-summary.md
+      - type: quiz
+        title: "Knowledge Check: Fault Injection With Delays And Aborts"
+        path: sections/section-050/module-01/quiz.yaml
+        question_count: 10
 
-      - type: reading
-        title: Question
-        path: sections/section-050/capstone/labs/lab-01/question.md
       - type: lab
         title: "Test Retries And Timeouts With Scoped Faults Capstone Lab"
         path: sections/section-050/capstone/labs/lab-01
@@ -1133,9 +1076,6 @@ modules:
       - type: reading
         title: "Open A Listener With A Gateway"
         path: sections/section-060/module-01/course-01-open-a-listener-with-a-gateway.md
-      - type: reading
-        title: Question
-        path: sections/section-060/module-01/labs/lab-02/question.md
       - type: lab
         title: "Fix A Gateway Selector That Matches No Pod Lab"
         path: sections/section-060/module-01/labs/lab-02
@@ -1160,9 +1100,6 @@ modules:
       - type: reading
         title: "Match Hosts And Reference Gateways Across Namespaces"
         path: sections/section-060/module-01/course-03-match-hosts-and-reference-gateways-across-namespaces.md
-      - type: reading
-        title: Question
-        path: sections/section-060/module-01/labs/lab-01/question.md
       - type: lab
         title: "Expose Two Hosts Through One Ingress Gateway Lab"
         path: sections/section-060/module-01/labs/lab-01
@@ -1184,9 +1121,6 @@ modules:
       - type: reading
         title: "Diagnose 000, 404 And 503 At The Ingress Gateway"
         path: sections/section-060/module-01/course-04-diagnose-000-404-and-503-at-the-ingress-gateway.md
-      - type: reading
-        title: Question
-        path: sections/section-060/module-01/labs/lab-03/question.md
       - type: lab
         title: "Repair A Broken Ingress Gateway Configuration Lab"
         path: sections/section-060/module-01/labs/lab-03
@@ -1208,6 +1142,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-060/module-01/course-05-summary.md
+      - type: quiz
+        title: "Knowledge Check: Expose A Service With An Istio Ingress Gateway"
+        path: sections/section-060/module-01/quiz.yaml
+        question_count: 8
 
       - type: reading
         title: "Expose A Service With A Kubernetes Ingress"
@@ -1215,9 +1153,6 @@ modules:
       - type: reading
         title: "Assign An Ingress To Istio With An IngressClass"
         path: sections/section-060/module-02/course-01-assign-an-ingress-to-istio-with-an-ingressclass.md
-      - type: reading
-        title: Question
-        path: sections/section-060/module-02/labs/lab-02/question.md
       - type: lab
         title: "Fix An IngressClass That No Controller Serves Lab"
         path: sections/section-060/module-02/labs/lab-02
@@ -1246,9 +1181,6 @@ modules:
       - type: reading
         title: "Know What The Ingress API Cannot Express"
         path: sections/section-060/module-02/course-04-know-what-the-ingress-api-cannot-express.md
-      - type: reading
-        title: Question
-        path: sections/section-060/module-02/labs/lab-01/question.md
       - type: lab
         title: "Expose A Service With A Kubernetes Ingress Lab"
         path: sections/section-060/module-02/labs/lab-01
@@ -1271,6 +1203,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-060/module-02/course-05-summary.md
+      - type: quiz
+        title: "Knowledge Check: Expose A Service With A Kubernetes Ingress"
+        path: sections/section-060/module-02/quiz.yaml
+        question_count: 7
 
       - type: reading
         title: "Ingress With The Kubernetes Gateway API"
@@ -1281,9 +1217,6 @@ modules:
       - type: reading
         title: "A Gateway That Creates Its Own Data Plane"
         path: sections/section-060/module-03/course-02-a-gateway-that-creates-its-own-data-plane.md
-      - type: reading
-        title: Question
-        path: sections/section-060/module-03/labs/lab-02/question.md
       - type: lab
         title: "Create A Gateway API Gateway For A Waiting HTTPRoute Lab"
         path: sections/section-060/module-03/labs/lab-02
@@ -1304,9 +1237,6 @@ modules:
       - type: reading
         title: "Attach An HTTPRoute And Read Its Status"
         path: sections/section-060/module-03/course-03-attach-an-httproute-and-read-its-status.md
-      - type: reading
-        title: Question
-        path: sections/section-060/module-03/labs/lab-03/question.md
       - type: lab
         title: "Fix Two Broken HTTPRoutes From Their Status Conditions Lab"
         path: sections/section-060/module-03/labs/lab-03
@@ -1329,9 +1259,6 @@ modules:
       - type: reading
         title: "Control Route Attachment With allowedRoutes"
         path: sections/section-060/module-03/course-04-control-route-attachment-with-allowedroutes.md
-      - type: reading
-        title: Question
-        path: sections/section-060/module-03/labs/lab-01/question.md
       - type: lab
         title: "Share One Gateway API Gateway Across Two Namespaces Lab"
         path: sections/section-060/module-03/labs/lab-01
@@ -1351,10 +1278,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-060/module-03/course-05-summary.md
+      - type: quiz
+        title: "Knowledge Check: Ingress With The Kubernetes Gateway API"
+        path: sections/section-060/module-03/quiz.yaml
+        question_count: 10
 
-      - type: reading
-        title: Question
-        path: sections/section-060/capstone/labs/lab-01/question.md
       - type: lab
         title: "Expose Three Services Through Three Ingress APIs Capstone Lab"
         path: sections/section-060/capstone/labs/lab-01
@@ -1398,9 +1326,6 @@ modules:
       - type: reading
         title: "Apply Timeouts And Connection Pools To An External Host"
         path: sections/section-070/module-01/course-03-apply-timeouts-and-connection-pools-to-an-external-host.md
-      - type: reading
-        title: Question
-        path: sections/section-070/module-01/labs/lab-01/question.md
       - type: lab
         title: "Allow One External Host Under REGISTRY_ONLY Lab"
         path: sections/section-070/module-01/labs/lab-01
@@ -1425,9 +1350,6 @@ modules:
       - type: reading
         title: "Limit A ServiceEntry With exportTo"
         path: sections/section-070/module-01/course-05-limit-a-serviceentry-with-exportto.md
-      - type: reading
-        title: Question
-        path: sections/section-070/module-01/labs/lab-02/question.md
       - type: lab
         title: "Fix A Hidden ServiceEntry And Its Port Protocol Lab"
         path: sections/section-070/module-01/labs/lab-02
@@ -1450,6 +1372,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-070/module-01/course-06-summary.md
+      - type: quiz
+        title: "Knowledge Check: Control External Access With ServiceEntry"
+        path: sections/section-070/module-01/quiz.yaml
+        question_count: 9
 
       - type: reading
         title: "TLS Origination For External Services"
@@ -1463,9 +1389,6 @@ modules:
       - type: reading
         title: "Troubleshoot Top-Level TLS And Double Encryption"
         path: sections/section-070/module-02/course-03-troubleshoot-top-level-tls-and-double-encryption.md
-      - type: reading
-        title: Question
-        path: sections/section-070/module-02/labs/lab-02/question.md
       - type: lab
         title: "Fix A Broken TLS Origination Lab"
         path: sections/section-070/module-02/labs/lab-02
@@ -1488,9 +1411,6 @@ modules:
       - type: reading
         title: "Verify TLS Origination And Configure Mutual TLS"
         path: sections/section-070/module-02/course-04-verify-tls-origination-and-configure-mutual-tls.md
-      - type: reading
-        title: Question
-        path: sections/section-070/module-02/labs/lab-01/question.md
       - type: lab
         title: "Originate TLS To A TLS-Only External Service Lab"
         path: sections/section-070/module-02/labs/lab-01
@@ -1512,6 +1432,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-070/module-02/course-05-summary.md
+      - type: quiz
+        title: "Knowledge Check: TLS Origination For External Services"
+        path: sections/section-070/module-02/quiz.yaml
+        question_count: 8
 
       - type: reading
         title: "Add External Workloads With WorkloadEntry"
@@ -1525,9 +1449,6 @@ modules:
       - type: reading
         title: "Put Several Machines Behind One Host With workloadSelector"
         path: sections/section-070/module-03/course-03-put-several-machines-behind-one-host.md
-      - type: reading
-        title: Question
-        path: sections/section-070/module-03/labs/lab-02/question.md
       - type: lab
         title: "Fix A ServiceEntry Selector And WorkloadEntry Labels Lab"
         path: sections/section-070/module-03/labs/lab-02
@@ -1549,9 +1470,6 @@ modules:
       - type: reading
         title: "Register Virtual Machines With WorkloadGroup"
         path: sections/section-070/module-03/course-04-register-virtual-machines-with-workloadgroup.md
-      - type: reading
-        title: Question
-        path: sections/section-070/module-03/labs/lab-01/question.md
       - type: lab
         title: "Add Two Virtual Machines To The Mesh With WorkloadEntry Lab"
         path: sections/section-070/module-03/labs/lab-01
@@ -1576,10 +1494,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-070/module-03/course-05-summary.md
+      - type: quiz
+        title: "Knowledge Check: Add External Workloads With WorkloadEntry"
+        path: sections/section-070/module-03/quiz.yaml
+        question_count: 8
 
-      - type: reading
-        title: Question
-        path: sections/section-070/capstone/labs/lab-01/question.md
       - type: lab
         title: "Register An External API And A Virtual Machine In A REGISTRY_ONLY Mesh Capstone Lab"
         path: sections/section-070/capstone/labs/lab-01
@@ -1630,9 +1549,6 @@ modules:
       - type: reading
         title: "Diagnose A Broken Egress `Gateway` Or `DestinationRule`"
         path: sections/section-080/module-01/course-05-diagnose-a-broken-egress-gateway-or-destinationrule.md
-      - type: reading
-        title: Question
-        path: sections/section-080/module-01/labs/lab-02/question.md
       - type: lab
         title: "Fix An Egress Route That Skips The Gateway Lab"
         path: sections/section-080/module-01/labs/lab-02
@@ -1655,9 +1571,6 @@ modules:
       - type: reading
         title: "Limit The Egress Route With `sourceLabels`"
         path: sections/section-080/module-01/course-06-limit-the-egress-route-with-sourcelabels.md
-      - type: reading
-        title: Question
-        path: sections/section-080/module-01/labs/lab-01/question.md
       - type: lab
         title: "Route One Workload Through The Egress Gateway Lab"
         path: sections/section-080/module-01/labs/lab-01
@@ -1680,6 +1593,10 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-080/module-01/course-07-summary.md
+      - type: quiz
+        title: "Knowledge Check: Route External Traffic Through An Egress Gateway"
+        path: sections/section-080/module-01/quiz.yaml
+        question_count: 10
 
       - type: reading
         title: "TLS Origination At The Egress Gateway"
@@ -1693,9 +1610,6 @@ modules:
       - type: reading
         title: "Prove Which Proxy Originates TLS"
         path: sections/section-080/module-02/course-03-prove-which-proxy-originates-tls.md
-      - type: reading
-        title: Question
-        path: sections/section-080/module-02/labs/lab-01/question.md
       - type: lab
         title: "Originate TLS At The Egress Gateway Lab"
         path: sections/section-080/module-02/labs/lab-01
@@ -1720,9 +1634,6 @@ modules:
       - type: reading
         title: "Present A Client Certificate With MUTUAL And credentialName"
         path: sections/section-080/module-02/course-05-present-a-client-certificate-with-credentialname.md
-      - type: reading
-        title: Question
-        path: sections/section-080/module-02/labs/lab-02/question.md
       - type: lab
         title: "Fix Mutual TLS Origination At The Egress Gateway Lab"
         path: sections/section-080/module-02/labs/lab-02
@@ -1744,10 +1655,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-080/module-02/course-06-summary.md
+      - type: quiz
+        title: "Knowledge Check: TLS Origination At The Egress Gateway"
+        path: sections/section-080/module-02/quiz.yaml
+        question_count: 9
 
-      - type: reading
-        title: Question
-        path: sections/section-080/capstone/labs/lab-01/question.md
       - type: lab
         title: "Route Two External Hosts Through One Egress Gateway Capstone Lab"
         path: sections/section-080/capstone/labs/lab-01

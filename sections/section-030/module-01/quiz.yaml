@@ -1,0 +1,354 @@
+# Knowledge check for section 030, module 01. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-030-01
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-030/module-01
+  title: Load Balancer Policy And Session Affinity
+questions:
+  - id: ats014-030-01-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain where picking a pod happens, compared with matching a rule and picking a subset.
+    source_readings:
+      - sections/section-030/module-01/course-01-choose-a-simple-load-balancing-algorithm.md
+    prompt: >-
+      In which order does the sending pod's proxy make its three decisions?
+    options:
+      - id: a
+        text: >-
+          The receiving pod's proxy picks the endpoint
+        explanation: >-
+          The sending pod's proxy picks the endpoint.
+      - id: b
+        text: >-
+          Pick an endpoint, then a subset, then match a rule
+        explanation: >-
+          The endpoint is picked last, inside the chosen subset.
+      - id: c
+        text: >-
+          Pick a subset, match a rule, then pick an endpoint
+        explanation: >-
+          The rule decides the subset, so the rule comes first.
+      - id: d
+        text: >-
+          Match a `VirtualService` rule, pick a subset, then pick one endpoint in that subset
+        explanation: >-
+          Correct. The endpoint comes last.
+    correct_option: d
+    explanation: >-
+      The proxy matches a rule, picks a subset, and then picks one endpoint in that subset.
+
+  - id: ats014-030-01-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Say what each simple algorithm does.
+    source_readings:
+      - sections/section-030/module-01/course-01-choose-a-simple-load-balancing-algorithm.md
+    prompt: >-
+      Which `simple` load balancing algorithm is Istio's default?
+    options:
+      - id: a
+        text: >-
+          `ROUND_ROBIN`
+        explanation: >-
+          Round robin is Envoy's default, not Istio's.
+      - id: b
+        text: >-
+          `RANDOM`
+        explanation: >-
+          `RANDOM` is not the default.
+      - id: c
+        text: >-
+          `LEAST_REQUEST`, which picks two random pods and uses the less busy one
+        explanation: >-
+          Correct. That is why its spread looks a little uneven.
+      - id: d
+        text: >-
+          `PASSTHROUGH`
+        explanation: >-
+          `PASSTHROUGH` switches endpoint selection off.
+    correct_option: c
+    explanation: >-
+      `LEAST_REQUEST` is Istio's default. It picks two random pods and uses the less busy one.
+
+  - id: ats014-030-01-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Read lbPolicy from a live proxy.
+    source_readings:
+      - sections/section-030/module-01/course-01-choose-a-simple-load-balancing-algorithm.md
+    prompt: >-
+      You set `simple: ROUND_ROBIN`. `istioctl proxy-config cluster ... -o json` shows no `lbPolicy` line for the cluster. What does this mean?
+    options:
+      - id: a
+        text: >-
+          The policy did not arrive at the proxy
+        explanation: >-
+          A missing line is what round robin looks like.
+      - id: b
+        text: >-
+          The cluster uses `ROUND_ROBIN`, Envoy's default, which is not printed
+        explanation: >-
+          Correct. A missing `lbPolicy` line means `ROUND_ROBIN`.
+      - id: c
+        text: >-
+          The cluster has no load balancing
+        explanation: >-
+          Every cluster has a load balancing policy.
+      - id: d
+        text: >-
+          The cluster uses `LEAST_REQUEST`
+        explanation: >-
+          `LEAST_REQUEST` shows as an `lbPolicy` line.
+    correct_option: b
+    explanation: >-
+      Round robin is Envoy's own default, so the cluster dump shows no `lbPolicy` line for it.
+
+  - id: ats014-030-01-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Configure session affinity with consistentHash.
+    source_readings:
+      - sections/section-030/module-01/course-02-pin-requests-to-a-pod-with-consistent-hash.md
+    prompt: >-
+      You write a `loadBalancer` with both `simple: ROUND_ROBIN` and `consistentHash` on a header. What happens?
+    options:
+      - id: a
+        text: >-
+          Istio rejects the object, because `simple` and `consistentHash` cannot be set together
+        explanation: >-
+          Correct. Choose one form.
+      - id: b
+        text: >-
+          The proxy uses the hash and ignores `simple`
+        explanation: >-
+          Istio does not silently choose one.
+      - id: c
+        text: >-
+          The proxy uses round robin until the header appears
+        explanation: >-
+          You can only use one of the two.
+      - id: d
+        text: >-
+          The proxy alternates between the two
+        explanation: >-
+          There is no such mode.
+    correct_option: a
+    explanation: >-
+      `simple` and `consistentHash` cannot be set together in one `loadBalancer`.
+
+  - id: ats014-030-01-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict what happens to sticky sessions when pods change and to a request with nothing to hash.
+    source_readings:
+      - sections/section-030/module-01/course-02-pin-requests-to-a-pod-with-consistent-hash.md
+    prompt: >-
+      A `consistentHash` policy hashes the header `x-user`. A request arrives without that header. What happens?
+    options:
+      - id: a
+        text: >-
+          The proxy returns `400`
+        explanation: >-
+          There is no error.
+      - id: b
+        text: >-
+          The request always goes to the first pod
+        explanation: >-
+          It is not pinned to a fixed pod.
+      - id: c
+        text: >-
+          The proxy makes up a value and creates the header
+        explanation: >-
+          The proxy creates a cookie only for `httpCookie` with a `ttl`, never a header.
+      - id: d
+        text: >-
+          It falls back to normal load balancing, silently, for that request
+        explanation: >-
+          Correct. Hash a value the client always sends.
+    correct_option: d
+    explanation: >-
+      A request without the hashed value falls back to normal load balancing, with no error.
+
+  - id: ats014-030-01-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why stickiness is best effort.
+    source_readings:
+      - sections/section-030/module-01/course-02-pin-requests-to-a-pod-with-consistent-hash.md
+    prompt: >-
+      A `consistentHash` policy pins users to `scout` pods. You scale `scout-v1` from three pods to four. What happens to the users?
+    options:
+      - id: a
+        text: >-
+          Nothing, every user stays on the same pod
+        explanation: >-
+          Envoy rebuilds the ring when pods change.
+      - id: b
+        text: >-
+          Some users move to another pod, because Envoy rebuilds the ring
+        explanation: >-
+          Correct. An application that breaks when a session moves needs shared session storage.
+      - id: c
+        text: >-
+          Every user moves to the new pod
+        explanation: >-
+          Only some users move.
+      - id: d
+        text: >-
+          All requests fail until the ring is rebuilt
+        explanation: >-
+          Requests keep working.
+    correct_option: b
+    explanation: >-
+      Stickiness is best effort. When a pod joins or leaves, some users move.
+
+  - id: ats014-030-01-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain why stickiness does not keep a user on one version in a weighted split.
+    source_readings:
+      - sections/section-030/module-01/course-03-hash-a-cookie-source-ip-or-query-parameter.md
+    prompt: >-
+      A route splits 90/10 between `v1` and `v3`, and a `consistentHash` policy hashes `end-user`. Does jason always reach the same version?
+    options:
+      - id: a
+        text: >-
+          No: the proxy picks the subset by weight for every request, and the hash only chooses among that subset's pods
+        explanation: >-
+          Correct. Route by header to keep a user on one version.
+      - id: b
+        text: >-
+          Yes, if the hash is set on both subsets
+        explanation: >-
+          The subset is still picked per request by weight.
+      - id: c
+        text: >-
+          Yes, the hash pins jason to one pod, so to one version
+        explanation: >-
+          The subset is picked before the hash is used.
+      - id: d
+        text: >-
+          No, because `consistentHash` does not work with subsets
+        explanation: >-
+          It works, but only inside the subset.
+    correct_option: a
+    explanation: >-
+      The endpoint comes last, so stickiness never keeps a user on one version in a weighted split.
+
+  - id: ats014-030-01-q08
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Hash a cookie and know when the proxy creates it.
+    source_readings:
+      - sections/section-030/module-01/course-03-hash-a-cookie-source-ip-or-query-parameter.md
+    prompt: >-
+      You set `consistentHash.httpCookie` with a `name` and no `ttl`. A first-time visitor has no cookie. What does the proxy do?
+    options:
+      - id: a
+        text: >-
+          It returns an error asking for the cookie
+        explanation: >-
+          There is no error.
+      - id: b
+        text: >-
+          It creates a session cookie that ends when the browser closes
+        explanation: >-
+          A cookie is created only when `ttl` is set.
+      - id: c
+        text: >-
+          It does not create a cookie, so the request falls back to normal load balancing
+        explanation: >-
+          Correct. Without `ttl`, the proxy only hashes a cookie the client already has.
+      - id: d
+        text: >-
+          It hashes the source IP instead
+        explanation: >-
+          It does not switch to the source IP.
+    correct_option: c
+    explanation: >-
+      `httpCookie` needs a `ttl` for the proxy to create the cookie.
+
+  - id: ats014-030-01-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Say which settings a subset inherits from the host and which it loses.
+    source_readings:
+      - sections/section-030/module-01/course-04-set-a-load-balancer-per-subset.md
+    prompt: >-
+      The host-level policy sets `connectionPool.tcp` and `connectionPool.http`. Subset `v2` sets only `connectionPool.http`. What does `v2` get?
+    options:
+      - id: a
+        text: >-
+          Both `tcp` and `http`, merged from the two levels
+        explanation: >-
+          A field the subset sets replaces the host's whole field.
+      - id: b
+        text: >-
+          Nothing, because a subset policy replaces the whole host policy
+        explanation: >-
+          Fields the subset does not set are inherited.
+      - id: c
+        text: >-
+          The host's `http` and the host's `tcp`
+        explanation: >-
+          The subset's own `connectionPool` replaces the host's.
+      - id: d
+        text: >-
+          Only its own `connectionPool.http`; the host's `connectionPool.tcp` is lost
+        explanation: >-
+          Correct. Nothing is merged inside a field the subset sets.
+    correct_option: d
+    explanation: >-
+      A subset inherits every top-level field it does not set. A field it sets replaces the host's whole field.
+
+  - id: ats014-030-01-q10
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Set a trafficPolicy at port level.
+    source_readings:
+      - sections/section-030/module-01/course-05-set-a-load-balancer-per-port.md
+    prompt: >-
+      You want a policy only for the `probe` Service port. The Service maps port `8000` to container port `8080`. Which number goes in `portLevelSettings`?
+    options:
+      - id: a
+        text: >-
+          `8000`, the Service port
+        explanation: >-
+          Correct. A port-level policy beats both the subset and the host level for that port.
+      - id: b
+        text: >-
+          `8080`, the container port
+        explanation: >-
+          `portLevelSettings` takes the Service port.
+      - id: c
+        text: >-
+          Both, as two entries
+        explanation: >-
+          Only the Service port is used.
+      - id: d
+        text: >-
+          `15001`, the outbound port of the proxy
+        explanation: >-
+          That is the proxy's own port.
+    correct_option: a
+    explanation: >-
+      A port-level policy names the Service port, not the container port. Port beats subset, and subset beats host.

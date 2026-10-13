@@ -1,0 +1,354 @@
+# Knowledge check for section 010, module 01. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-010-01
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-010/module-01
+  title: Route Requests Within The Mesh
+questions:
+  - id: ats014-010-01-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Say which proxy decides where a request goes.
+    source_readings:
+      - sections/section-010/module-01/course-01-see-where-requests-go-without-routing-rules.md
+    prompt: >-
+      Requests from the `shuttle` pod to `scout` reach the wrong version. Which sidecar proxy made the routing choice, and where should you point `istioctl proxy-config`?
+    options:
+      - id: a
+        text: >-
+          The proxy in the `shuttle` pod that sent the request, so use `deploy/shuttle`
+        explanation: >-
+          Correct. The client's proxy picks the destination before the request leaves the pod.
+      - id: b
+        text: >-
+          The proxy in the `scout` pod that answered, so use `deploy/scout-v1`
+        explanation: >-
+          The server's proxy only accepts the request. It did not choose the version.
+      - id: c
+        text: >-
+          `istiod`, so read the `istiod` logs
+        explanation: >-
+          `istiod` sends configuration to the proxies. It does not handle requests.
+      - id: d
+        text: >-
+          kube-proxy on the node, so read the node's iptables rules
+        explanation: >-
+          In the mesh, the client's sidecar proxy picks the endpoint, not kube-proxy.
+    correct_option: a
+    explanation: >-
+      The sidecar proxy of the pod that sends the request makes the routing choice. Debug the client first.
+
+  - id: ats014-010-01-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain the split of work between VirtualService and DestinationRule.
+    source_readings:
+      - sections/section-010/module-01/course-02-define-subsets-with-a-destinationrule.md
+    prompt: >-
+      You apply a `DestinationRule` for `scout` with subsets `v1`, `v2` and `v3`, and no `VirtualService`. What changes for requests from `shuttle`?
+    options:
+      - id: a
+        text: >-
+          All requests now go to `v1`, the first subset in the list
+        explanation: >-
+          A `DestinationRule` does not choose a destination. Only a `VirtualService` uses the subsets.
+      - id: b
+        text: >-
+          Requests fail with `503 NC` until a `VirtualService` exists
+        explanation: >-
+          Nothing points at the subsets yet, so nothing fails.
+      - id: c
+        text: >-
+          The `scout` Service starts to read the `version` label
+        explanation: >-
+          The Service only reads its selector, `app=scout`. Subsets live in the proxy.
+      - id: d
+        text: >-
+          Nothing in the split: the proxy gets new clusters per subset, but requests still go to a mix of all versions
+        explanation: >-
+          Correct. A `DestinationRule` only defines names. A `VirtualService` must use them.
+    correct_option: d
+    explanation: >-
+      A `DestinationRule` creates subsets, and `istiod` turns each one into a cluster. It moves no traffic by itself.
+
+  - id: ats014-010-01-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict what happens when a subset's labels match no pod.
+    source_readings:
+      - sections/section-010/module-01/course-02-define-subsets-with-a-destinationrule.md
+    prompt: >-
+      A `VirtualService` sends all `scout` traffic to subset `v2`. The `DestinationRule` defines `v2` with the label `version: v-2`, which no pod carries. What do requests get?
+    options:
+      - id: a
+        text: >-
+          `404 NR`
+        explanation: >-
+          A route matched. `NR` means no route matched the request.
+      - id: b
+        text: >-
+          `503 UH`, because the subset's cluster has no endpoints
+        explanation: >-
+          Correct. A subset that selects no pod is valid configuration, but its cluster is empty.
+      - id: c
+        text: >-
+          `200`, because Istio falls back to all `scout` pods
+        explanation: >-
+          Istio does not fall back. The subset cluster is empty.
+      - id: d
+        text: >-
+          `503 NC`
+        explanation: >-
+          The subset is defined, so the cluster exists. `NC` means the cluster is missing.
+    correct_option: b
+    explanation: >-
+      The subset exists as a cluster but holds no endpoints, so the client's proxy returns `503 UH`. `istioctl analyze` reports `IST0173`.
+
+  - id: ats014-010-01-q04
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Write header match rules and know how case is compared.
+    source_readings:
+      - sections/section-010/module-01/course-03-route-requests-with-a-virtualservice.md
+    prompt: >-
+      A rule matches `headers: end-user: exact: jason`. Which request matches it?
+    options:
+      - id: a
+        text: >-
+          A request with the header `end-user: jasonx`
+        explanation: >-
+          `exact` compares the whole value character for character.
+      - id: b
+        text: >-
+          A request with the header `end-user: Jason`
+        explanation: >-
+          Header values are compared exactly. `Jason` is not `jason`.
+      - id: c
+        text: >-
+          A request with the header `End-User: jason`
+        explanation: >-
+          Correct. Header names ignore case, so `End-User` is the same header as `end-user`.
+      - id: d
+        text: >-
+          A request to `/reviews/0?end-user=jason`
+        explanation: >-
+          That is a query parameter, not a header. It needs `queryParams`.
+    correct_option: c
+    explanation: >-
+      Header names ignore case. Header values do not.
+
+  - id: ats014-010-01-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Choose correctly between exact, prefix and regex.
+    source_readings:
+      - sections/section-010/module-01/course-04-match-text-with-exact-prefix-and-regex.md
+    prompt: >-
+      A rule matches `uri: prefix: "/reviews"`. Which path does it also match?
+    options:
+      - id: a
+        text: >-
+          Only `/reviews` and paths below `/reviews/`
+        explanation: >-
+          `prefix` does not treat `/` as special. It compares the start of the text.
+      - id: b
+        text: >-
+          `/api/reviews`
+        explanation: >-
+          The path must start with `/reviews`.
+      - id: c
+        text: >-
+          `/reviewsXYZ`
+        explanation: >-
+          Correct. `prefix` matches any path that starts with the text `/reviews`, with or without a `/` after it.
+      - id: d
+        text: >-
+          `/Reviews`
+        explanation: >-
+          The comparison keeps the case of each letter, so `/Reviews` is a different path.
+    correct_option: c
+    explanation: >-
+      `prefix` compares the start of the text and ignores `/`, so `/reviews` also matches `/reviewsXYZ`.
+
+  - id: ats014-010-01-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Write regex matches that fit the whole value.
+    source_readings:
+      - sections/section-010/module-01/course-04-match-text-with-exact-prefix-and-regex.md
+    prompt: >-
+      You want a header match for every value that contains `jason`. You write `regex: "jason"`. Which request misses?
+    options:
+      - id: a
+        text: >-
+          A request with `end-user: jasonx`
+        explanation: >-
+          Correct. RE2 regex in Istio must cover the whole value. Write `.*jason.*` for "contains".
+      - id: b
+        text: >-
+          None. A regex finds the text anywhere in the value
+        explanation: >-
+          In Istio, a regex must fit the whole value.
+      - id: c
+        text: >-
+          A request with `End-User: jason`
+        explanation: >-
+          Header names ignore case, so this request matches.
+      - id: d
+        text: >-
+          A request with `end-user: jason`
+        explanation: >-
+          The regex fits this value completely, so it matches.
+    correct_option: a
+    explanation: >-
+      A `regex` match must fit the whole value. Use `.*jason.*` to match a value that contains `jason`.
+
+  - id: ats014-010-01-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      State whether two match conditions are combined with AND or OR.
+    source_readings:
+      - sections/section-010/module-01/course-05-combine-match-conditions-with-and-or-or.md
+    prompt: >-
+      A rule has `match:` with two `-` items: one with `headers: end-user: exact: jason`, and one with `uri: prefix: /api`. Which requests does the rule match?
+    options:
+      - id: a
+        text: >-
+          Only requests that have the header and the path together
+        explanation: >-
+          Conditions inside one `-` item are combined with AND. Separate items are not.
+      - id: b
+        text: >-
+          Only the first item is used, the second is ignored
+        explanation: >-
+          Every item is checked. The first one that fits is enough.
+      - id: c
+        text: >-
+          No request, because a rule can hold only one `-` item
+        explanation: >-
+          A `match` list can hold many items.
+      - id: d
+        text: >-
+          Requests that have the header, and also requests whose path starts with `/api`
+        explanation: >-
+          Correct. Separate `-` items are alternatives, combined with OR.
+    correct_option: d
+    explanation: >-
+      Conditions in one `-` item are combined with AND. Separate `-` items are combined with OR.
+
+  - id: ats014-010-01-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Predict which http rule wins and place a catch-all route correctly.
+    source_readings:
+      - sections/section-010/module-01/course-07-order-routing-rules-and-add-a-catch-all.md
+    prompt: >-
+      A `VirtualService` lists two `http` rules: first a rule with no `match` that routes to `v1`, then a rule matching `end-user: jason` that routes to `v2`. Where do requests from `jason` go?
+    options:
+      - id: a
+        text: >-
+          To `v2`, because the most specific rule wins
+        explanation: >-
+          Istio does not compare how specific rules are. Only the order counts.
+      - id: b
+        text: >-
+          To `v1`, because the rule with no `match` comes first and matches every request
+        explanation: >-
+          Correct. The second rule is never used, and `istioctl analyze` warns with `IST0130`.
+      - id: c
+        text: >-
+          To `v1` and `v2` in turn
+        explanation: >-
+          One rule is chosen per request: the first that matches.
+      - id: d
+        text: >-
+          The object is rejected because the catch-all is not last
+        explanation: >-
+          Istio accepts it. `istioctl analyze` only warns.
+    correct_option: b
+    explanation: >-
+      The proxy uses the first rule that matches. Put the most specific rules first and the catch-all last.
+
+  - id: ats014-010-01-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Fill in a short host name to the namespace Istio will use.
+    source_readings:
+      - sections/section-010/module-01/course-08-resolve-short-host-names-to-the-right-namespace.md
+    prompt: >-
+      A `VirtualService` in the `default` namespace has `hosts: [scout]`. The `scout` Service runs in `starfleet`. What does the rule do for requests from `shuttle` to `scout`?
+    options:
+      - id: a
+        text: >-
+          It works, because Istio searches every namespace for a Service named `scout`
+        explanation: >-
+          Istio fills in the short name from the object's own namespace only.
+      - id: b
+        text: >-
+          It is rejected by the Kubernetes API server
+        explanation: >-
+          The object is valid, so the API server stores it.
+      - id: c
+        text: >-
+          It moves the `scout` Service into `default`
+        explanation: >-
+          Istio objects never move Services.
+      - id: d
+        text: >-
+          Nothing. Istio reads the host as `scout.default.svc.cluster.local`, a Service that does not exist
+        explanation: >-
+          Correct. Use the full name, or put the object next to its Service.
+    correct_option: d
+    explanation: >-
+      A short host name is filled in from the namespace of the object that holds it. A full name (FQDN) works from any namespace.
+
+  - id: ats014-010-01-q10
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain how a Service port's name or appProtocol decides the protocol.
+    source_readings:
+      - sections/section-010/module-01/course-12-protocol-selection-and-non-http-routing.md
+    prompt: >-
+      The `probe` Service port is renamed to `tcp`. The `http` rules of its `VirtualService` stop working, and `istioctl analyze` is clean. Why?
+    options:
+      - id: a
+        text: >-
+          Istio cannot route a Service that has only one port
+        explanation: >-
+          The number of ports has nothing to do with it.
+      - id: b
+        text: >-
+          Istio believes the declaration, treats the port as TCP and never reads the `http` rules for it
+        explanation: >-
+          Correct. Name the port `http`, or set `appProtocol: http`.
+      - id: c
+        text: >-
+          The `VirtualService` must be applied again after a port change
+        explanation: >-
+          `istiod` sends the change by itself. The problem is the declared protocol.
+      - id: d
+        text: >-
+          `istioctl analyze` would report it, so the rename cannot be the cause
+        explanation: >-
+          A wrongly declared port is valid. The route table and the listener show it.
+    correct_option: b
+    explanation: >-
+      Istio decides the protocol from `appProtocol`, then from the port name, then by sniffing. A port declared as `tcp` turns off every HTTP feature.

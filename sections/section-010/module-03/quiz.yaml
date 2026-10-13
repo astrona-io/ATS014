@@ -1,0 +1,218 @@
+# Knowledge check for section 010, module 03. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-010-03
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: module
+  id: section-010/module-03
+  title: Apply And Remove Traffic Rules Safely
+questions:
+  - id: ats014-010-03-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Name the order to create ServiceEntry, DestinationRule, Gateway and VirtualService.
+    source_readings:
+      - sections/section-010/module-03/course-01-apply-and-remove-objects-in-dependency-order.md
+    prompt: >-
+      In which order do you create these objects so that no request fails?
+    options:
+      - id: a
+        text: >-
+          `ServiceEntry`, `DestinationRule`, `Gateway`, `VirtualService`
+        explanation: >-
+          Correct. Create the object that is pointed at first.
+      - id: b
+        text: >-
+          `VirtualService`, `Gateway`, `DestinationRule`, `ServiceEntry`
+        explanation: >-
+          This is the removal order. Creating the pointer first leaves it pointing at nothing.
+      - id: c
+        text: >-
+          `Gateway`, `VirtualService`, `ServiceEntry`, `DestinationRule`
+        explanation: >-
+          The `VirtualService` would arrive before the subsets it names.
+      - id: d
+        text: >-
+          The order does not matter, because `istiod` sends everything at once
+        explanation: >-
+          Proxies receive changes one push at a time, so the order matters.
+    correct_option: a
+    explanation: >-
+      The safe order follows the pointers: create what is pointed at first, and remove in the reverse order.
+
+  - id: ats014-010-03-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      Explain make before break and reproduce the 503 NC that the wrong order causes.
+    source_readings:
+      - sections/section-010/module-03/course-01-apply-and-remove-objects-in-dependency-order.md
+    prompt: >-
+      You apply a `VirtualService` that routes to subset `v2` before the `DestinationRule` that defines `v2`. What do requests get in the gap?
+    options:
+      - id: a
+        text: >-
+          `404 NR`
+        explanation: >-
+          A route matched. The destination is the problem.
+      - id: b
+        text: >-
+          `503 UH`
+        explanation: >-
+          `UH` means the cluster exists but has no endpoints. Here the cluster does not exist yet.
+      - id: c
+        text: >-
+          `503 NC`, because the route names a subset the proxy has no cluster for
+        explanation: >-
+          Correct. `istioctl analyze` reports `IST0101` while the gap lasts.
+      - id: d
+        text: >-
+          `200`, because the proxy waits for the `DestinationRule`
+        explanation: >-
+          The proxy does not wait. It answers `503 NC` by itself.
+    correct_option: c
+    explanation: >-
+      If a route reaches a proxy before the subset it names, the proxy answers `503 NC`. Apply the `DestinationRule` first.
+
+  - id: ats014-010-03-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Name the reverse order to remove objects.
+    source_readings:
+      - sections/section-010/module-03/course-01-apply-and-remove-objects-in-dependency-order.md
+    prompt: >-
+      You retire subset `v1` of `scout`. Which object do you change or remove first?
+    options:
+      - id: a
+        text: >-
+          The `DestinationRule` that defines `v1`
+        explanation: >-
+          The route would still name `v1`, and requests would get `503 NC`.
+      - id: b
+        text: >-
+          The `VirtualService` route that sends traffic to `v1`
+        explanation: >-
+          Correct. Remove the pointer first, then what it points at.
+      - id: c
+        text: >-
+          The `scout-v1` Deployment
+        explanation: >-
+          The route would still send requests to an empty subset.
+      - id: d
+        text: >-
+          Both at once with one `kubectl apply`
+        explanation: >-
+          The proxies can still receive them in either order.
+    correct_option: b
+    explanation: >-
+      Remove in the reverse order of creation: the route first, then the `DestinationRule`.
+
+  - id: ats014-010-03-q04
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Check with istioctl proxy-config clusters that the client's proxy has a new subset before you test.
+    source_readings:
+      - sections/section-010/module-03/course-01-apply-and-remove-objects-in-dependency-order.md
+    prompt: >-
+      `kubectl apply -f destinationrule-scout.yaml` printed `created`. What do you check before you apply the `VirtualService` that uses its subsets?
+    options:
+      - id: a
+        text: >-
+          Nothing, `created` means every proxy has the subsets
+        explanation: >-
+          `kubectl apply` returns when Kubernetes has stored the object, not when the proxies have it.
+      - id: b
+        text: >-
+          That `kubectl get destinationrule` lists the object
+        explanation: >-
+          That proves only that Kubernetes stored it.
+      - id: c
+        text: >-
+          That the `scout` pods have restarted
+        explanation: >-
+          Pods do not restart for a new `DestinationRule`.
+      - id: d
+        text: >-
+          That `istioctl proxy-config clusters` on the client shows the new subset clusters
+        explanation: >-
+          Correct. Check the client's proxy, because it reads the route.
+    correct_option: d
+    explanation: >-
+      `kubectl apply` stores the object. Check the client's proxy for the new subset before you use it.
+
+  - id: ats014-010-03-q05
+    type: single_choice
+    difficulty: beginner
+    learning_objective: >-
+      Explain why two files with the same metadata.name describe one object.
+    source_readings:
+      - sections/section-010/module-03/course-02-one-object-per-host-and-istios-defaults.md
+    prompt: >-
+      Two files both define `kind: VirtualService`, `name: scout` in `starfleet`, with different rules. You apply the first, then the second. What is the result?
+    options:
+      - id: a
+        text: >-
+          One object with only the rules of the second file
+        explanation: >-
+          Correct. `kubectl apply` prints `configured` and replaces the object.
+      - id: b
+        text: >-
+          Two objects for the same host, in an undefined order
+        explanation: >-
+          Same kind, name and namespace means one object.
+      - id: c
+        text: >-
+          One object with the rules of both files
+        explanation: >-
+          A second apply does not add rules. It replaces the object.
+      - id: d
+        text: >-
+          Kubernetes rejects the second file because the name is taken
+        explanation: >-
+          `kubectl apply` updates an existing object instead of rejecting it.
+    correct_option: a
+    explanation: >-
+      Same kind, same name, same namespace: it is one object, and the last apply replaces it.
+
+  - id: ats014-010-03-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: >-
+      State Istio's defaults for HTTP timeout and retries.
+    source_readings:
+      - sections/section-010/module-03/course-02-one-object-per-host-and-istios-defaults.md
+    prompt: >-
+      No `VirtualService` exists for `cargo`. The `cargo` application answers one request with its own `503`, and another takes 60 seconds. What happens by default?
+    options:
+      - id: a
+        text: >-
+          The proxy retries the `503` twice, and times out the slow request after 15 seconds
+        explanation: >-
+          The default retry never covers an application's own `503`, and there is no default HTTP timeout.
+      - id: b
+        text: >-
+          The proxy retries the `503` until it succeeds, and the slow request waits
+        explanation: >-
+          The default retry covers connection failures only.
+      - id: c
+        text: >-
+          The `503` reaches the client without a retry, and the client waits the full 60 seconds
+        explanation: >-
+          Correct. Istio has no default HTTP timeout and retries only connection failures.
+      - id: d
+        text: >-
+          Both requests fail with `504 UT`
+        explanation: >-
+          `UT` needs a timeout, and there is none by default.
+    correct_option: c
+    explanation: >-
+      With no rules, Istio has no HTTP timeout. The default retry policy retries connection failures 2 times, never the application's own `503`.
