@@ -130,32 +130,3 @@ You can now name the broken object from the two access logs and from `istioctl a
 > - **Deleting the `DestinationRule` because its subset has no labels.** Hop 1 names the subset, so without it the `shuttle` sidecar has no cluster (`NC`, `IST0101`).
 > - **Expecting `istioctl analyze` to catch every break.** It warns about a `Gateway` that does not serve the host (`IST0132`) and a missing subset (`IST0101`). It reports nothing for a missing `mesh` or a missing hop 2.
 > - **Looking for a refused request in the egress gateway's log.** When the egress gateway has no listener, it refuses the connection and writes nothing. The `shuttle` sidecar's log shows what happened.
-
-## Your mission: Fix An Egress Route That Skips The Gateway Lab
-
-You can now prove a request passed through the egress gateway, and tell each broken route by its access log. In the lab, a route through the egress gateway is written and the outside endpoint answers, but the egress gateway's access log stays empty. You must find every fault and fix it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-080-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-080/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-080/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-080-01-02
-astrona start ats-014-playground-080-01
-```

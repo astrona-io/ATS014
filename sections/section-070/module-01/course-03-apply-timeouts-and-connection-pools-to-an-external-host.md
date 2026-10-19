@@ -221,32 +221,3 @@ You can now put a timeout and a connection pool on an external host, and you kno
 > - **Leaving the port out of a route when the host has several ports.** `istioctl analyze` reports `IST0112`. Name the port in `destination.port.number`.
 > - **Reading `502` as a broken partner API.** With `block_all` in the access log, the sidecar proxy refused the host because it is not in the registry.
 > - **Assuming a `ServiceEntry` is private to its namespace.** It is exported to every namespace unless `exportTo` says otherwise.
-
-## Your mission: Allow One External Host Under REGISTRY_ONLY Lab
-
-You can now add an external host to the registry, give its port the right protocol, and put a timeout on it. The lab asks you to open exactly one outside endpoint in a mesh that refuses everything, keep a second endpoint blocked, and give the open one a 2 second timeout. The lab uses a different small app: a `tester` client in the `egress-demo` namespace and two pods in `outside-mesh`, on a mesh that has `REGISTRY_ONLY` set for the whole mesh.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-070-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-070/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-070-01
-astrona start ats-014-playground-070-01
-```

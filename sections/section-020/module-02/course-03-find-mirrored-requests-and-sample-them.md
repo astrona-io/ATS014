@@ -126,32 +126,3 @@ You now know how to prove that copies arrive: in the access log of the receiving
 > - **Assuming that a missing `mirrorPercentage` means no mirroring.** The default is 100%.
 > - **Looking for the proof on the client.** The client sees nothing. The logs of the receiving pod are the only place a copy shows up.
 > - **Judging a percentage from a few requests.** Count at least 100.
-
-## Your mission: Route To v1 And Mirror Every Request To v2 Lab
-
-You can now add a mirror, prove from the receiving side that copies arrive, and control the copied share. The lab asks you to route every request to a stable version and mirror every request to a release candidate, so that no client ever gets a response from the release candidate. The lab uses its own small app (`notification-service` and a `tester` client in the `mirror-demo` namespace), not the `probe` and `shuttle` from this module.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-020-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-020/module-02/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-020-02
-astrona start ats-014-playground-020-02
-```

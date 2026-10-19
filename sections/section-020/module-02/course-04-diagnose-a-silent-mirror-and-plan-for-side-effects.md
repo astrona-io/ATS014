@@ -182,32 +182,3 @@ You now know that a shadow does real work, how to read the mirror policy from th
 > - **Assuming the shadow can tell that a request is a copy.** Istio 1.30 sends the copy unchanged.
 > - **Sizing the mirror target for its route share only.** With a split plus a mirror, the target gets its own share **plus** a copy of everything.
 > - **Reading the mirror policy alone.** A policy can be present and still send nothing, when its subset is undefined or selects no pods. Check the endpoints and `istioctl analyze` too.
-
-## Your mission: Troubleshoot A Mirror That Sends No Copies Lab
-
-You can now read a mirror policy, check the endpoints of the mirror cluster, and tell the three quiet mirrors apart. The lab gives you a mirror that looks correct but sends nothing, and asks you to find out why and fix it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-020-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-020/module-02/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-020-02-02
-astrona start ats-014-playground-020-02
-```

@@ -277,32 +277,3 @@ Istio decides a port's protocol from `appProtocol`, then from the port name, and
 > - **Leaving `sniHosts` out of a `tls` match.** Istio requires it.
 > - **Expecting load balancing to act the same for TCP.** HTTP balances per request, TCP per connection.
 > - **Looking for this in `istioctl analyze`.** A wrongly declared port is valid. The route table and the listener show it.
-
-## Your mission: Declare A Service Port As HTTP
-
-You can now tell how Istio decides a port's protocol, and what that decision turns on or off. The graded lab gives you a Service whose port declaration has switched off a working `VirtualService`, and asks you to declare the port as HTTP again.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-010-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-05
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-01/labs/lab-05
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-010-01-05
-astrona start ats-014-playground-010-01
-```

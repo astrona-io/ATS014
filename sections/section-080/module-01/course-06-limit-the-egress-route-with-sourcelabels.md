@@ -191,32 +191,3 @@ You now know how to send only labelled workloads through the egress gateway, why
 > - **Labelling the Deployment instead of the pod.** `sourceLabels` reads the pod's labels. Set them in `spec.template.metadata.labels`.
 > - **Believing the egress gateway is enforced.** Without `REGISTRY_ONLY`, an `AuthorizationPolicy` and a `NetworkPolicy`, any pod can still leave directly.
 > - **A single egress gateway replica.** Every outbound request depends on it. Run more than one.
-
-## Your mission: Route One Workload Through The Egress Gateway Lab
-
-You can now build the two-stage route, prove the hop from the egress gateway's access log, and limit the route to the pods with one label. In the lab, you route a partner endpoint through the egress gateway for one client only, over plain HTTP, and show that another client still goes direct.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-080-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-080/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. The lab uses a different app and an older install, so the names differ from your playground: the egress gateway is `istio-egressgateway` in `istio-system`, with the label `istio: egressgateway`, and the clients run in the namespace `egwgw-demo`. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-080/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-080-01
-astrona start ats-014-playground-080-01
-```

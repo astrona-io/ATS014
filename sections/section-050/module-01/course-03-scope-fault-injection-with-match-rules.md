@@ -167,32 +167,3 @@ You now know how to limit a fault with a `match`: by a header with `headers`, or
 > - **Scoping on a header that the middle service does not copy.** The fault never fires through the chain, and the configuration looks wrong when the real problem is header propagation.
 > - **Mixing up `headers` and `sourceLabels`.** `headers` matches what the request carries. `sourceLabels` matches the labels of the pod that sends it.
 > - **Forgetting the plain rule below the fault rule.** Without it, a request that does not match the fault rule has no route and gets a `404`.
-
-## Your mission: Scope A Forgotten Abort To One Test User Lab
-
-You can now limit a fault to your own test requests or to one calling workload, and keep every other client safe. In the lab, a fault that somebody left behind breaks every request to `navcom`, and you must limit it to test requests only.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-050-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-050/module-01/labs/lab-03
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-050/module-01/labs/lab-03
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-050-01-03
-astrona start ats-014-playground-050-01
-```

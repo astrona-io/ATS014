@@ -244,32 +244,3 @@ You now know what happens with weights that do not add up to 100, with three des
 > - **Expecting a `weight: 0` destination in the proxy's route.** `istiod` leaves it out; it only stays in your YAML.
 > - **Giving a weight to a subset that no `DestinationRule` defines.** Nothing rejects it, and those requests fail with `503`. Run `istioctl analyze`.
 > - **Reading a weight as a rate limit.** It divides the requests that arrive. It does not cap them.
-
-## Your mission: Split Traffic Three Ways With Weights Lab
-
-You can now write a weighted route, predict the split, and measure it over enough requests. The lab asks you to change an existing `VirtualService` so that `scout` requests split between three versions in exact shares, and to prove the split with live requests.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-020-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-020/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-020-01-02
-astrona start ats-014-playground-020-01
-```

@@ -170,32 +170,3 @@ You can now create a Gateway API `Gateway`, find the proxy that Istio deploys fo
 > - **Leaving out the service type annotation on `kind`.** Without a load balancer, the Service gets no address, and the `Gateway` stays `Programmed=False`.
 > - **Sending requests without the right `Host` header.** The listener only accepts the host name it names. Any other host gets `404`.
 > - **Forgetting that the proxy belongs to the object.** Delete the `Gateway`, and Istio deletes its Deployment and Service too.
-
-## Your mission: Create A Gateway API Gateway For A Waiting HTTPRoute Lab
-
-You can now create a Gateway API `Gateway` and check that Istio deployed its proxy. The mission gives you an `HTTPRoute` for the `bridge` Service that names a `Gateway` that does not exist yet, and asks you to create that `Gateway`.
-
-The lab runs on its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-060-03
-```
-
-Then start the lab. The task is on the next page; solve it on your own first:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-03/labs/lab-02
-```
-
-When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-03/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-060-03-02
-astrona start ats-014-playground-060-03
-```

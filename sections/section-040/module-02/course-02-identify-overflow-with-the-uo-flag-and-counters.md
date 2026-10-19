@@ -130,32 +130,3 @@ You can now prove a circuit-breaker refusal in two ways: the `UO` flag with `"-"
 > - **Relying on access logs after the fact.** They roll over. `upstream_rq_pending_overflow` keeps adding up.
 > - **Mixing up `upstream_cx_overflow` and `upstream_rq_pending_overflow`.** The first is the connection limit, the second the waiting queue. They point at different settings.
 > - **Forgetting the stats annotation.** Without `sidecar.istio.io/statsInclusionPrefixes` on the client pod, the per-cluster counters are not there.
-
-## Your mission: Configure And Prove A Connection Pool Circuit Breaker Lab
-
-You can now set connection pool limits, trip them on purpose, and prove a refusal with the `UO` flag and the overflow counters. The lab asks you to limit how much work a client may have open to a backend, and to prove that the limit refuses requests sent at the same time but never requests sent one by one. The lab uses its own small app (`notification-service` and `fortio` in the `circuit-demo` namespace), not the Starfleet.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-02/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-02
-astrona start ats-014-playground-040-02
-```

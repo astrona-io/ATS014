@@ -209,32 +209,3 @@ You now know that locality failover depends on outlier detection, because nothin
 > - **`maxEjectionPercent` at its default.** With one pod per zone, the 10% default can eject nothing.
 > - **Testing failover by scaling to zero.** That is endpoint removal. It does not prove the failure path.
 > - **Trusting `kubectl get pods`.** A failing pod can be `Running` and ready. Only the `OUTLIER CHECK` column shows that the proxy ejected it.
-
-## Your mission: Fail Over From A Failing Zone With Outlier Detection Lab
-
-You can now move requests away from a failing zone, and prove that outlier detection, not endpoint removal, did it. In the lab, the endpoint in the client's zone returns `503` to every request while it stays ready, and your `DestinationRule` must move the requests to the other zone.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-04
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-04/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-04/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-04
-astrona start ats-014-playground-040-04
-```

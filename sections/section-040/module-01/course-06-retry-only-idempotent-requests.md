@@ -140,32 +140,3 @@ You now know that the sidecar proxy retries a `POST` like any other request, and
 > - **Retrying requests that are not idempotent.** A retried `POST` repeats its effect. Split the route with a `method` match and set `attempts: 0` for the rest.
 > - **Leaving the fall-through rule without `attempts: 0`.** A rule with no `retries` block still gets Istio's default policy of 2 retries on connection problems.
 > - **Adding retries everywhere.** Under heavy load, retries multiply the load into a retry storm. Keep `attempts` small.
-
-## Your mission: Set Timeouts And Retries Per HTTP Method Lab
-
-You can now keep retries away from requests that are not safe to repeat, and give the retries you keep a timeout with room for every try. In the lab, you give one service a write path with no retries and a read path with retries that fit inside their timeout. The lab uses its own small app (`httpbin` and a `tester` client in the `resilience-demo` namespace), not the Starfleet.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-01
-astrona start ats-014-playground-040-01
-```

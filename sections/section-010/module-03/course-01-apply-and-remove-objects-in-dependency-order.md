@@ -259,32 +259,3 @@ You now know that the client's sidecar proxy reads both routing objects, that ob
 > - **Testing straight after `kubectl apply`.** `apply` returns when the object is stored, not when the proxies have it. Check `istioctl proxy-config clusters` first.
 > - **Trusting one quiet test.** The wrong order often looks fine once, because the gap is short. It still fails under real traffic.
 > - **Forgetting the `Sidecar` host list.** You can apply a `Sidecar` at any time, but afterwards every host your applications call must still be in `egress.hosts`.
-
-## Your mission: Retire A Subset Without Failed Requests Lab
-
-You can now apply and remove objects in an order that never leaves a route pointing at nothing. The lab asks you to move all traffic off the `v1` subset of `scout` and remove that subset, while a client sends requests the whole time and not one of them may fail.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-010-03
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-03/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-03/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-010-03-01
-astrona start ats-014-playground-010-03
-```

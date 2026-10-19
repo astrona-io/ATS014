@@ -266,32 +266,3 @@ You now know that the locality preference only acts when `outlierDetection` is p
 > - **`distribute` weights that do not add up to 100.** Istio rejects the object: `total locality weight 90 != 100`.
 > - **`distribute` and `failover` together.** They are alternatives, and Istio rejects the combination.
 > - **Expecting `failover` to work between zones.** It works between regions. Moving between zones inside a region is the preference itself.
-
-## Your mission: Split Traffic Between Two Zones With Distribute Lab
-
-You can now switch on the locality preference, and replace it with exact weights between zones. In the lab, you keep most requests in the client's zone but send a fixed share to the other zone on purpose.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-04
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-04/labs/lab-03
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-04/labs/lab-03
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-04-03
-astrona start ats-014-playground-040-04
-```

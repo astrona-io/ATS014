@@ -159,32 +159,3 @@ You now know the whole set of objects for machines outside Kubernetes. A `Worklo
 > - **Forgetting the ServiceAccount.** The template's `serviceAccount` must exist in the group's namespace, and the token is made for it.
 > - **Forgetting the network path.** The machine must reach `istiod` on port `15012`, and the pods must reach the machine.
 > - **Leaving the onboarding files on disk.** `istio-token` is a working credential. Treat it like a password.
-
-## Your mission: Add Two Virtual Machines To The Mesh With WorkloadEntry Lab
-
-You can now describe machines with `WorkloadEntry`, give them a host name with a `MESH_INTERNAL` `ServiceEntry`, and write the `WorkloadGroup` that real machines register against. The lab asks you to add two stand-in machines to the mesh as one service, starting from nothing. The lab uses its own small app (`tester`, `legacy-vm-1` and `legacy-vm-2` in the `vm-demo` namespace), not the Starfleet.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-070-03
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-03/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-070/module-03/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-070-03
-astrona start ats-014-playground-070-03
-```

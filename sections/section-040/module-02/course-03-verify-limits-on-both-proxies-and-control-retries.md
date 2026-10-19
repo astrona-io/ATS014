@@ -215,32 +215,3 @@ You now know how to read the live limits on both ends, who each limit protects, 
 > - **Expecting retries to rescue refused requests.** A client proxy's own `UO` refusals are never retried.
 > - **Combining large `attempts` with `retryOn: 5xx` for a struggling service.** The proxy sends every real failure again, multiplying the load at the worst moment.
 > - **Treating a connection pool as rate limiting.** It caps open work at the same time, not requests per second.
-
-## Your mission: Limit Retries To Connection Failures Lab
-
-You can now read the limits on both ends, and tell a refusal that is never retried from a failure that is. The lab gives you a retry policy that sends every failing request back to a struggling `probe` Service, and you must fix it without losing the retries that help.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-02/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-02-02
-astrona start ats-014-playground-040-02
-```

@@ -224,32 +224,3 @@ You now know that the ingress gateway is an Envoy proxy in its own pod, and that
 > - **Declaring the wrong `protocol`.** `TCP` for HTTP traffic gives a working connection with no routing by host or path.
 > - **Forgetting that `hosts` filters the `Host` header.** A request whose `Host` is not in the list is not served by that listener.
 > - **Looking for the gateway pod in your own namespace.** The `Gateway` object is in your namespace; the pod is the shared one in the gateway's namespace (`istio-ingress` here).
-
-## Your mission: Fix A Gateway Selector That Matches No Pod Lab
-
-You can now find the gateway pod, read its labels, and open a listener with the right `selector`. In the lab, a gateway gives no response to any request, and you must fix the `Gateway` without changing the `VirtualService` behind it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-060-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-060-01-02
-astrona start ats-014-playground-060-01
-```

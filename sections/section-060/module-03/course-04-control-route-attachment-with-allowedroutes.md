@@ -177,32 +177,3 @@ You can now let routes from chosen namespaces attach to a `Gateway`, and read fr
 > - **Leaving `namespace` out of a cross-namespace `parentRefs`.** The route looks for the `Gateway` in its own namespace, and gets no status at all.
 > - **Choosing `All` by default.** It works, but it lets every namespace attach. A `Selector` is a deliberate grant.
 > - **Host names that do not match the listener.** The controller refuses the route with `Accepted=False NoMatchingListenerHostname`, whatever `allowedRoutes` says.
-
-## Your mission: Share One Gateway API Gateway Across Two Namespaces Lab
-
-You can now control which namespaces may attach routes to a `Gateway` with a label selector. The mission asks you to build one shared `Gateway` from scratch, allow namespaces by label, and attach routes from two different namespaces to it.
-
-The lab runs on its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-060-03
-```
-
-Then start the lab. The task is on the next page; solve it on your own first:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-03/labs/lab-01
-```
-
-When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-03/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-060-03
-astrona start ats-014-playground-060-03
-```

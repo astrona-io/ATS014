@@ -251,32 +251,3 @@ You can now attach an `HTTPRoute`, send requests through it, and use its `Accept
 > - **Ignoring the status.** The condition that reads `False` names the problem. Read it before you read the YAML again.
 > - **Reading `PathPrefix` as a text prefix.** It matches whole path segments, unlike Istio's `uri.prefix`.
 > - **Looking for subsets in `backendRefs`.** A backend is a Service. Subsets and traffic policy stay in a `DestinationRule`.
-
-## Your mission: Fix Two Broken HTTPRoutes From Their Status Conditions Lab
-
-You can now read an `HTTPRoute`'s status conditions and tell from them what is wrong. The mission gives you a working `Gateway` and two `HTTPRoute` objects that are broken in two different ways, and asks you to fix both without changing the `Gateway`.
-
-The lab runs on its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-060-03
-```
-
-Then start the lab. The task is on the next page; solve it on your own first:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-03/labs/lab-03
-```
-
-When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-03/labs/lab-03
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-060-03-03
-astrona start ats-014-playground-060-03
-```

@@ -231,32 +231,3 @@ You can now build a timeout test across two services, and you know that a timeou
 > - **Putting the delay and the timeout on the same rule.** A rule with a `fault` ignores its own `timeout` and `retries`. Put the delay on the service being called and the timeout on the caller's route.
 > - **Expecting a timeout to take load off a slow service.** It stops the client waiting. The receiver finishes the work anyway.
 > - **Testing only the failure.** Also check that a timeout longer than the delay still succeeds.
-
-## Your mission: Move A Timeout Off A Fault Rule Lab
-
-You can now test a timeout across two services and spot a timeout that can never fire. In the lab, someone put the timeout for the `jason` requests on the same rule as a delay fault, and you must move it to the route where it really fires.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-01-02
-astrona start ats-014-playground-040-01
-```

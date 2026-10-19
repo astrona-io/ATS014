@@ -191,32 +191,3 @@ You now know the three levels, the order in which `istiod` checks them, and that
 > - **Two namespace-wide `Sidecar` objects, or two overlapping selectors.** The result is not defined. One default plus selectors that do not overlap is the only supported layout.
 > - **Reading `./*` in the root default as `istio-system`.** It means each pod's own namespace.
 > - **Forgetting that the root default exists.** If a namespace without a `Sidecar` lost destinations, check `istio-system` for one.
-
-## Your mission: Repair A Workload-Selected Sidecar Lab
-
-You can now tell which `Sidecar` applies to a pod, and you know that a selector `Sidecar` replaces the namespace default instead of adding to it. In the lab, requests from the `shuttle` pod to the `probe` Service fail because its own `Sidecar` lists too few hosts, and you must repair that `Sidecar` without removing it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-010-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-02/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-010-02-02
-astrona start ats-014-playground-010-02
-```

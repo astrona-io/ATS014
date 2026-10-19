@@ -260,34 +260,3 @@ You now know the three names that must line up: the hosts on both objects, and t
 > - **Expecting `*` on the `Gateway` to accept requests with any host.** The `VirtualService` still needs a matching host. Use `*` on both objects, or real host names.
 > - **Using the gateway pods' namespace instead of the `Gateway` object's namespace.** The pods live in `istio-ingress`; the object can live in any namespace. `istioctl analyze` reports `IST0101 Referenced gateway not found`.
 > - **Referring to a `Gateway` in another namespace with a bare name.** A short name is looked up in the `VirtualService`'s own namespace. Use `<namespace>/<name>`.
-
-## Your mission: Expose Two Hosts Through One Ingress Gateway Lab
-
-You can now bind a `VirtualService` to a `Gateway` and line up their hosts. In the lab, you open one `Gateway` for two hosts and route each host to its own Service, so that each host carries only its own routes.
-
-The lab uses a different application from the Starfleet, and it installs Istio with the `istioctl` `demo` profile instead of Helm. So its gateway pods live in the `istio-system` namespace and carry the label `istio: ingressgateway`. The task gives you every name you need.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-060-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-060-01
-astrona start ats-014-playground-060-01
-```

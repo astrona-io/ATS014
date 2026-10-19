@@ -219,32 +219,3 @@ You now know which fault tests which setting, that a rule with a `fault` ignores
 > - **Reading an injected `5xx` as a broken service.** Check the access log for `FI` first.
 > - **Searching the proxy configuration for the word `fault`.** Search for `envoy.filters.http.fault`.
 > - **Leaving a fault behind.** Delete it as soon as the test is done. Otherwise somebody else will debug it as an outage.
-
-## Your mission: Trigger A Route Timeout With A Scoped Delay Lab
-
-You can now make a timeout fire with a delay, spot the rule that ignores its own retries and timeout, and find a fault in the proxy configuration. The lab asks you to add a delay and an abort for one test user only, and to put a timeout one hop above the delay so that it fires. The lab uses its own small app (`booking-service` calling `notification-service`, in the `fault-demo` namespace), not the Starfleet.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-050-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-050/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-050/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-050-01
-astrona start ats-014-playground-050-01
-```

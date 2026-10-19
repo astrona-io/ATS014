@@ -87,32 +87,3 @@ You now know how to set a policy for one port, that it names the Service port, a
 > - **Naming the container port in `portLevelSettings`.** It takes the Service port. For `probe`, that is `8000`, not `8080`.
 > - **Expecting the host-level `loadBalancer` to win.** A port-level policy beats both the subset and the host level for that port.
 > - **Checking only the YAML.** The cluster dump shows the policy each port really got.
-
-## Your mission: Issue A Sticky Cookie On One Port Lab
-
-You can now put a load balancer on one port and pick the right form for a task. The mission asks you to keep browsers, which send no identifying header, each on one pod: the proxy must create a session cookie, and the policy must sit at port level.
-
-The lab runs on its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-030-01
-```
-
-Then start the lab. The task is on the next page:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-030/module-01/labs/lab-02
-```
-
-Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-030/module-01/labs/lab-02
-```
-
-When you are finished, remove the lab and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-030-02
-astrona start ats-014-playground-030-01
-```

@@ -280,32 +280,3 @@ You now know how to give one subset its own load balancer, that a subset inherit
 > - **Thinking a subset field merges with the host's.** A field the subset sets replaces the host's whole field. Setting only `connectionPool.http` loses the host's `connectionPool.tcp`.
 > - **Testing a subset policy without a route to the subset.** Nothing uses a subset until a `VirtualService` sends requests to it.
 > - **Checking only the YAML.** The cluster dump shows the policy each subset really got.
-
-## Your mission: Pin A Subset By Header And Override Another Subset Lab
-
-You can now set a load balancer per subset and prove which policy each subset really got. The mission asks you to keep one subset sticky by header while a second subset spreads its requests evenly, and to route requests to each subset by header.
-
-The lab runs on its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-030-01
-```
-
-Then start the lab. The task is on the next page:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-030/module-01/labs/lab-01
-```
-
-Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-030/module-01/labs/lab-01
-```
-
-When you are finished, remove the lab and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-030-01
-astrona start ats-014-playground-030-01
-```

@@ -190,32 +190,3 @@ You now know that the sending proxy picks the endpoint last, after the rule and 
 > - **Reading a missing `lbPolicy` line as "no policy".** It means `ROUND_ROBIN`, Envoy's default.
 > - **Reading `PASSTHROUGH` as an algorithm.** It switches endpoint selection off and connects to the original address.
 > - **Looking for the decision in the receiving pod.** The endpoint is chosen by the **sending** pod's proxy.
-
-## Your mission: Spread Requests Evenly With ROUND_ROBIN Lab
-
-You can now pick a load balancing algorithm and read which one the proxy really uses. The mission gives you a `probe` Service where every request lands on the same pod, and asks you to spread the requests over all pods again, in turn.
-
-The lab runs on its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-030-01
-```
-
-Then start the lab. The task is on the next page:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-030/module-01/labs/lab-03
-```
-
-Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-030/module-01/labs/lab-03
-```
-
-When you are finished, remove the lab and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-030-01-03
-astrona start ats-014-playground-030-01
-```

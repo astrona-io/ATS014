@@ -201,32 +201,3 @@ You now know that an abort is answered by the client's own sidecar proxy, that t
 > - **Expecting `abort` to be a delay plus an error.** An abort is immediate. Add a `delay` on the same rule if you want a slow failure.
 > - **Expecting the two percentages to add up.** They are separate random choices.
 > - **Leaving `percentage` out while testing.** The default is 100%: every matching request fails.
-
-## Your mission: Inject A Delay And An Abort Lab
-
-You can now delay a request with `delay`, fail it with `abort`, and prove both from the access logs. The lab asks you to put a delay on one service and an abort on another, and to leave the evidence in the right access logs.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-050-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-050/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-050/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-050-01-02
-astrona start ats-014-playground-050-01
-```

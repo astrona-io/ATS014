@@ -229,32 +229,3 @@ A matched rule can do more than choose a destination. `headers` sets, adds or re
 > - **`allowOrigins: ["*"]`.** The field takes string matches. "Any origin" is `regex: ".*"`.
 > - **Testing CORS with a normal request.** The application may add its own CORS headers. Send a preflight (`OPTIONS`) and compare it with your `corsPolicy`.
 > - **Treating `corsPolicy` as access control.** It only controls what a browser is willing to do.
-
-## Your mission: Redirect, Rewrite And Change Headers Of A Request
-
-You can now redirect and rewrite requests, change their headers, and let the proxy answer browser preflight requests. The graded lab asks you to move a service to new paths without changing the application behind it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-010-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-010-01-02
-astrona start ats-014-playground-010-01
-```

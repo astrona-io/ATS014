@@ -187,32 +187,3 @@ You now know that the weighted pick happens before load balancing, so the replic
 > - **Scaling a Deployment to move traffic.** Pod count is capacity, not share. Only the weight moves requests.
 > - **Checking the YAML instead of the proxy.** `kubectl get` shows what you wrote. `istioctl proxy-config routes` shows what the proxy uses.
 > - **Reading endpoints for the wrong cluster name.** The name has four parts: direction, port, subset and host. For `scout`, the port is `9080`.
-
-## Your mission: Run A Canary With A Header Rule Above The Split Lab
-
-You can now run a canary as a series of weight changes, keep testers out of the split, and prove that the share does not follow the pod count. The lab asks you to define subsets, send requests with a tester header to the new version, split all other requests 70/30, and leave the replica counts unchanged. The lab uses its own small app (`notification-service` v1 and v2 and a `tester` client in the `shifting-demo` namespace), not the Starfleet.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-020-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-020/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-020/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-020-01
-astrona start ats-014-playground-020-01
-```

@@ -260,32 +260,3 @@ You can now write a namespace-wide `Sidecar`, prove its effect in the proxy's cl
 > - **Expecting a removed host to be unreachable.** With the default `ALLOW_ANY`, the request still leaves through `PassthroughCluster`. Set `outboundTrafficPolicy` to `REGISTRY_ONLY` to stop that.
 > - **Patching the `hosts` list and expecting it to add entries.** A merge patch replaces the whole list. Write every entry you want to keep.
 > - **Forgetting `exportTo`.** A host can be missing because its owner never made it visible to your namespace.
-
-## Your mission: Limit A Namespace's Proxy Configuration With A Sidecar Lab
-
-You can now limit the hosts that the proxies in a namespace know about and prove it from the proxy's own configuration. The lab asks you to limit one namespace to exactly the namespaces it calls, and to prove that a third namespace is out of reach. The lab uses its own small app (a `tester` client and `httpbin` Services in the `sidecar-demo`, `sidecar-other` and `sidecar-third` namespaces), not the Starfleet.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-010-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-02/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-010-02
-astrona start ats-014-playground-010-02
-```

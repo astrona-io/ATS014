@@ -170,32 +170,3 @@ You can now prove TLS origination from both ends: the destination reports `"url"
 > - **Thinking the request is now plain on the network.** Only the hop inside the pod, between the application and its own sidecar proxy, is plain.
 > - **`MUTUAL` with file paths the sidecar cannot read.** Mount the files into the proxy container, or use `credentialName`.
 > - **Leaving `insecureSkipVerify: true` in place.** It turns off the server certificate check. Use `caCertificates` instead.
-
-## Your mission: Originate TLS To A TLS-Only External Service Lab
-
-You can now build TLS origination, prove it from both ends, and explain what `MUTUAL` changes. The lab asks you to build all three objects from scratch for a server outside the mesh that only accepts TLS, while the client keeps sending plain HTTP.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-070-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-070/module-02/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-070-02
-astrona start ats-014-playground-070-02
-```

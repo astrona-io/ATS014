@@ -214,32 +214,3 @@ The access log of the client's proxy gives one line per request, and its respons
 > - **Reading the server's access log.** The client's proxy makes the routing choice. Read the client's log first.
 > - **A subset no `DestinationRule` defines.** `503 NC`, and `analyze` reports `IST0101`.
 > - **Trusting a clean `analyze`.** It checks objects against each other. It does not prove your rules are in a sensible order, or that requests take the path you expect.
-
-## Your mission: Fix A VirtualService That Does Not Apply
-
-You can now find a `VirtualService` in the wrong namespace, read an access log line, and check the configuration a proxy holds. The graded lab gives you a `VirtualService` that does nothing, with more than one fault in it, and asks you to repair it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-010-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-010/module-01/labs/lab-04
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-01/labs/lab-04
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-010-01-04
-astrona start ats-014-playground-010-01
-```

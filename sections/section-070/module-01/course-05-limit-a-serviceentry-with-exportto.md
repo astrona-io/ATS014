@@ -160,32 +160,3 @@ You can now tell a missing `ServiceEntry` from a hidden one, and you know the tw
 > - **Forgetting that `exportTo` belongs to the owner.** A caller's `Sidecar` cannot take in an entry that its owner did not export to the caller's namespace.
 > - **Trusting `istioctl analyze` here.** An entry hidden by `exportTo` is valid configuration, so `analyze` stays quiet. `istioctl proxy-config cluster` on the calling pod shows whether it can see the host.
 > - **Assuming a `ServiceEntry` is private to its namespace.** Without `exportTo`, it is exported to every namespace, so one namespace's allow-list becomes everyone's.
-
-## Your mission: Fix A Hidden ServiceEntry And Its Port Protocol Lab
-
-You can now find a `ServiceEntry` that a caller cannot see, and prove it from the caller's own sidecar proxy. In the lab, a `ServiceEntry` and a `VirtualService` for an external host called `relay` look correct, but every request from the `shuttle` pod is refused, and more than one fault stands in the way.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-070-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-070/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-070-01-02
-astrona start ats-014-playground-070-01
-```

@@ -216,32 +216,3 @@ You now know how to prove an ejection from the proxy's endpoint list and counter
 > - **Reading the ejection cycle as a fault.** A pod that stays broken produces repeating bursts of errors with growing gaps. That is how the feature works.
 > - **Reading counters from a pod without the stats annotation.** The `outlier_detection.*` counters for each destination are missing from its statistics.
 > - **Splitting the connection pool and outlier detection over two `DestinationRule` objects for one host.** Keep both in one rule.
-
-## Your mission: Combine A Connection Pool And Outlier Detection Lab
-
-You can now prove an ejection from the proxy's own endpoint list and counters, and combine a connection pool with outlier detection in one rule. In the lab, you protect the `probe` Service with both halves of a circuit breaker and show that each half works on live requests.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-03
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-03/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-03/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-03-02
-astrona start ats-014-playground-040-03
-```

@@ -117,32 +117,3 @@ You can now recognise both mistakes from their symptoms. A top-level `tls` hides
 > - **`tls` at the top of `trafficPolicy`.** It turns on TLS for every port of the host, including the plain port `80`. It hides behind the redirect, and any request that stays on port `80` fails with `503 UF` and `WRONG_VERSION_NUMBER`.
 > - **Trusting a `200` as proof that the placement is right.** Check each port's cluster with `istioctl proxy-config cluster ... --port`. Only the port that leaves the pod encrypted should have `envoy.transport_sockets.tls`.
 > - **An application that still calls `https://`.** The proxy encrypts a request that is already encrypted, and the handshake fails with `curl` exit code `35`.
-
-## Your mission: Fix A Broken TLS Origination Lab
-
-You can now build TLS origination one object at a time and tell from the symptom which object is wrong. The lab gives you TLS origination to a TLS-only server outside the mesh that fails, and asks you to find and fix the two objects that are wrong.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-070-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-070/module-02/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-070-02-02
-astrona start ats-014-playground-070-02
-```

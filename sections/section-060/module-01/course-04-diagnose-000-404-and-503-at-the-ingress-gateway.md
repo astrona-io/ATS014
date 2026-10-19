@@ -203,32 +203,3 @@ You can now tell `000`, `404` and `503` apart, read the response flag in the acc
 > - **Trusting a clean `istioctl analyze`.** It does not know that a `VirtualService` without `gateways:` was meant for the gateway.
 > - **Expecting an `EXTERNAL-IP` on a cluster with no load balancer.** A `kind` cluster has none. Use a port forward (the playground runs one for you) or a `NodePort`.
 > - **Declaring `protocol: TCP` for HTTP traffic.** You get a connection with no routing by host or path, which looks like a gateway that ignores your rules.
-
-## Your mission: Repair A Broken Ingress Gateway Configuration Lab
-
-You can now tell `000`, `404` and `503` apart and find the object behind each one. In the lab, the ingress gateway for the `starfleet` namespace is broken in more than one place, and you must find every fault and make `bridge` reachable from outside again.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-060-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-01/labs/lab-03
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-01/labs/lab-03
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-060-01-03
-astrona start ats-014-playground-060-01
-```

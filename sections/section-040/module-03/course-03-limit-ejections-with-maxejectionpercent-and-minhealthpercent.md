@@ -121,32 +121,3 @@ You can now eject a failing endpoint, choose which errors count, and get past th
 > - **Reading `ejections_detected_consecutive_5xx` as proof of an ejection.** It only means the proxy found a failing endpoint. `ejections_enforced_consecutive_5xx` counts the ejections that really happened.
 > - **Setting `minHealthPercent` high on a small Service.** One ejection can push the healthy share below it, and then detection switches off.
 > - **Testing with a proxy that has old ejection history.** Restart the client Deployment first, so its counters start at zero.
-
-## Your mission: Eject A Failing Endpoint On A Two-Endpoint Service Lab
-
-You can now write an outlier detection rule that really ejects on a small Service. In the lab, a Service has two endpoints and one of them answers every request with `503`, and you must make the client's proxy stop using it while Kubernetes keeps listing it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-03
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-03/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-03/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-03
-astrona start ats-014-playground-040-03
-```

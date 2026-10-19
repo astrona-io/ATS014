@@ -192,32 +192,3 @@ You now know how `MUTUAL` and `credentialName` give the egress gateway a client 
 > - **Expecting an error when you apply.** `kubectl apply` and `istioctl analyze` accept a `credentialName` that points at nothing. Check `istioctl proxy-config secret` (`WARMING`) and the `istiod` log (`not found`).
 > - **Testing right after the change.** The egress gateway keeps its old configuration for about 15 seconds while it waits for the certificate. Wait, then test.
 > - **Keeping `insecureSkipVerify: true` next to `MUTUAL`.** The egress gateway then sends its client certificate to any server that answers on that address.
-
-## Your mission: Fix Mutual TLS Origination At The Egress Gateway Lab
-
-You can now give the egress gateway a client certificate with `MUTUAL` and `credentialName`, and find out why a handshake fails from the access log, the egress gateway's certificates and the `istiod` log. In the lab, the partner route is in place, but every request fails, and more than one thing is wrong.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-080-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-080/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-080/module-02/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-080-02-02
-astrona start ats-014-playground-080-02
-```

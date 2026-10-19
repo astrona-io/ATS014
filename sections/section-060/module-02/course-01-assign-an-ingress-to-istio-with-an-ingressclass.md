@@ -204,32 +204,3 @@ You now know that an `Ingress` is served only when its class points at the contr
 > - **Trying to edit `spec.controller`.** Kubernetes refuses the change. Delete the `IngressClass` and create it again.
 > - **Expecting Istio to serve an `Ingress` that names another controller's class.** Every controller sees the object, but only the one its class names acts on it.
 > - **Looking for a `Gateway` object.** `istiod` builds the gateway's configuration from the `Ingress` itself. There is no `Gateway` in your namespace to inspect.
-
-## Your mission: Fix An IngressClass That No Controller Serves
-
-You can now create an ingress class, assign an `Ingress` to Istio with it, and spot an `Ingress` that no controller serves. The mission gives you an `Ingress` that points at a class that looks right, while no request gets through the gateway, and asks you to fix the class.
-
-The mission runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-060-02
-```
-
-Then start the mission:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-02/labs/lab-02
-```
-
-When you have finished, remove the mission and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-060-02-02
-astrona start ats-014-playground-060-02
-```

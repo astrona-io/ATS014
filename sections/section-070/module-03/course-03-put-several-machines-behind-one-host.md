@@ -162,32 +162,3 @@ You can now put several machines behind one host name and find a selector that m
 > - **Writing a new `ServiceEntry` for the second machine.** A second `WorkloadEntry` with the same labels joins the existing host.
 > - **Giving the pods the same label as the entries by accident.** The selector picks the pods too.
 > - **Setting `endpoints` and `workloadSelector` together.** Istio rejects the object.
-
-## Your mission: Fix A ServiceEntry Selector And WorkloadEntry Labels Lab
-
-You can now put several machines behind one host and find a selector that matches nothing. In the lab, every request to `freighter.starfleet.mesh` fails with `503`, more than one setting is wrong, and you must make both machines answer as members of the mesh.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-070-03
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-070/module-03/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-070/module-03/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-070-03-02
-astrona start ats-014-playground-070-03
-```

@@ -60,32 +60,3 @@ You now know that an `Ingress` handles host, path and TLS, and nothing else: no 
 > - **Adding another controller's annotations.** Annotations written for nginx or a cloud controller do nothing in Istio.
 > - **Looking for a field that picks the gateway.** Every `Ingress` goes through the mesh-wide default gateway, `istio-ingressgateway` with pods labelled `istio: ingressgateway`.
 > - **Choosing `Ingress` for new work that needs traffic shifting.** You would have to rewrite it later. Start with a `VirtualService` or the Gateway API.
-
-## Your mission: Expose A Service With A Kubernetes Ingress
-
-You can now assign an `Ingress` to Istio, route hosts and paths with the right `pathType`, and add TLS with the secret in the gateway's namespace. The mission asks you to build all three for a small application called `booking-service`, which is a different application from the one in the playground.
-
-The mission runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-060-02
-```
-
-Then start the mission:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-060/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-02/labs/lab-01
-```
-
-When you have finished, remove the mission and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-060-02
-astrona start ats-014-playground-060-02
-```

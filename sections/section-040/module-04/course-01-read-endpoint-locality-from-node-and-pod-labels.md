@@ -137,32 +137,3 @@ You now know where an endpoint's locality comes from, how `istio-locality` overr
 > - **Changing the label and expecting running pods to change.** Istio reads the locality when the pod starts. Roll out the Deployment again.
 > - **Writing the label value with slashes.** Use dots: `local.zone-b`.
 > - **Forgetting the client.** "Prefer the same zone" is measured from the locality of the pod that sends the request.
-
-## Your mission: Fix An Endpoint In The Wrong Locality Lab
-
-You can now read the locality of every endpoint from the node labels, the `istio-locality` label and the client's endpoint list. In the lab, one probe pod runs in the wrong zone, so the `DestinationRule` cannot keep requests in the client's zone, and you must find that pod and give it the correct locality.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-040-04
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-040/module-04/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-04/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-040-04-02
-astrona start ats-014-playground-040-04
-```

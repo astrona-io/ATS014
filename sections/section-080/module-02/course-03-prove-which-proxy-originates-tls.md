@@ -182,32 +182,3 @@ You can now prove from the configuration of both proxies that the egress gateway
 > - **No `exportTo`.** Every sidecar proxy also gets the TLS settings for the host. Nothing breaks, but you can no longer prove which proxy starts TLS.
 > - **`exportTo` without the egress gateway's namespace.** Then the egress gateway itself does not get the rule. It sends the request to port `443` as plain text, and `httpbin.org` answers `400 The plain HTTP request was sent to HTTPS port`.
 > - **Looking for TLS settings in the sidecar proxy.** With the route in place, the sidecar proxy only sends plain HTTP to the egress gateway. The egress gateway's cluster holds the TLS settings.
-
-## Your mission: Originate TLS At The Egress Gateway Lab
-
-You can now build the five objects, start TLS at the egress gateway, and prove it from the configuration of both proxies. The lab asks you to do the same for a partner server that only speaks TLS, with a client that only sends plain `http://` and an egress gateway in between that must start TLS for every request.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-014-playground-080-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS014.git -c sections/section-080/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. The lab uses its own small app and the `demo` install of Istio, so the names differ from your playground: the egress gateway is `istio-egressgateway` in `istio-system`, with the pod label `istio: egressgateway`. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-080/module-02/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-014-lab-080-02
-astrona start ats-014-playground-080-02
-```
