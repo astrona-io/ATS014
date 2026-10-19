@@ -4,6 +4,16 @@ metadata:
     solution: "solution.md"
     question: "question.md"
 
+runtime:
+  type: kind
+  kind:
+    # Loaded into the node from the host cache: Istio and the workloads start
+    # without a registry pull on every run.
+    preloadImages:
+      - "registry.istio.io/release/pilot:1.30.5"
+      - "registry.istio.io/release/proxyv2:1.30.5"
+      - "mccutchen/go-httpbin:v2.15.0"
+
 bootstrap:
   init:
     - name: "install-istio"
