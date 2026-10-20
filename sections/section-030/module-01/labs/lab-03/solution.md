@@ -20,6 +20,8 @@ done | sort | uniq -c
 
 All 8 requests landed on one pod, although the Service has four.
 
+The lab ships this loop as the resource `count-pods.sh`. `astrona res run count-pods.sh 8` runs it with the lab's kubeconfig, and the number is the count of requests.
+
 ## Step 2: Find the cause
 
 A `DestinationRule` is the Istio object that holds policies for traffic to one host, including the load balancer. Read the one for `probe`:
@@ -95,7 +97,7 @@ istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet
 0
 ```
 
-There is no `lbPolicy` line at all. Round robin is Envoy's own default, and the dump leaves default values out. `RING_HASH` is gone. Now send 8 requests again:
+There is no `lbPolicy` line at all. Round robin is Envoy's own default, and the dump leaves default values out. `RING_HASH` is gone. Now send 8 requests again. This is the same loop as in Step 1, so you can run `astrona res run count-pods.sh 8`:
 
 ```sh
 for i in $(seq 1 8); do
