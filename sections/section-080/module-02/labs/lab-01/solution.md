@@ -1,19 +1,21 @@
 # Solution Walkthrough
 
-You build five objects in order, then prove the result with three separate checks: the response of the partner server, the egress gateway's access log, and the TLS settings in each proxy.
+You build five objects, one for each of the first five items of the task. Items 6 to 11 are the checks the grader runs. The walkthrough proves items 6 to 11 with real requests after the objects exist. An egress gateway is an Envoy proxy at the edge of the mesh that outbound traffic passes through. In this lab it also starts the TLS (Transport Layer Security) connection to the partner server, so the `tester` pod only sends plain `http://`.
+
+The outputs below come from a real run. Your pod addresses, timestamps and UIDs differ.
 
 ---
 
-## Step 1: Check the starting state
+## Start: Look At The Starting State
 
-Before you write anything, confirm the two facts the task depends on. Read the partner's IP address, send a plain request and a TLS request straight to it, and count the egress gateway's access log lines for the partner:
+Read the address of the partner server. Then send two requests from `tester`: one with plain HTTP to port `8443`, and one with TLS to the same port. Count the lines for `partner.example.com` in the egress gateway access log, where the gateway writes one line per request:
 
 ```sh
-PARTNER=$(cat /tmp/partner-ip); echo "partner: $PARTNER"
-kubectl -n egwtls-demo exec deploy/tester -- \
-  curl -s -o /dev/null -w 'plain to 8443: %{http_code}\n' --max-time 10 "http://$PARTNER:8443/"
-kubectl -n egwtls-demo exec deploy/tester -- curl -sk --max-time 10 "https://$PARTNER:8443/"
-kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c partner
+PARTNER=$(cat /tmp/partner-ip)
+echo "partner: $PARTNER"
+kubectl -n egwtls-demo exec deploy/tester -- curl -s -o /dev/null -w "plain to 8443: %{http_code}\n" --max-time 10 http://$PARTNER:8443/
+kubectl -n egwtls-demo exec deploy/tester -- curl -sk --max-time 10 https://$PARTNER:8443/
+kubectl -n istio-system logs deploy/istio-egressgateway --tail=-1 | grep -c partner.example.com
 ```
 
 ```text
@@ -23,21 +25,33 @@ scheme=https
 0
 ```
 
-The partner server rejects plain text: nginx answers `400` to a plain request on its TLS port. It reports the scheme it was reached over. The egress gateway carries no traffic yet.
+The partner server rejects plain text with `400` and answers a TLS request with `scheme=https`. The egress gateway has no log line for the partner yet.
+
+Check that no Istio object exists, and save the state that item 11 says must stay the same:
+
+```sh
+kubectl -n egwtls-demo get serviceentry,gateway,destinationrule,virtualservice
+kubectl -n outside-mesh get svc
+kubectl -n egwtls-demo get deploy -o custom-columns=NAME:.metadata.name,READY:.status.readyReplicas,UID:.metadata.uid
+kubectl -n outside-mesh get pods -o custom-columns=NAME:.metadata.name,PHASE:.status.phase,UID:.metadata.uid
+```
+
+```text
+No resources found in egwtls-demo namespace.
+No resources found in outside-mesh namespace.
+NAME     READY   UID
+tester   1       1726d9ab-b9b5-45dc-836a-6739cbb176c0
+NAME          PHASE     UID
+partner-api   Running   58d1d6c3-3327-43c2-95bf-6cc85ec24ae2
+```
 
 ---
 
-## Step 2: Add the host with both ports
+## Item 1: Add The Partner To The Service Registry
 
-The `ServiceEntry` adds `partner.example.com` to Istio's service registry. It needs the partner's IP address, so read it into a variable first:
+> **Task item 1:** A `ServiceEntry` named `partner` for `partner.example.com`, with the partner's IP address in `spec.addresses`, `MESH_EXTERNAL`, `STATIC`, an `endpoints` entry, and two ports: `8080` `http` `HTTP` and `8443` `https` `HTTPS`.
 
-```sh
-PARTNER=$(cat /tmp/partner-ip)
-```
-
-Replace `<PARTNER>` in the YAML below with the real address. To see it, run `echo $PARTNER`.
-
-Save this as `serviceentry-partner.yaml`:
+A `ServiceEntry` adds a host to the service registry, the list of hosts and endpoints that `istiod` knows about. In the YAML, replace `<PARTNER>` in both places with the address that `echo $PARTNER` prints. Save this as `serviceentry-partner.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -69,13 +83,25 @@ Apply it:
 kubectl apply -f serviceentry-partner.yaml
 ```
 
-Port 8080 is where the plain request from the sidecar proxy arrives. Port 8443 is where rule 2 sends it on. Both are needed.
+Then check the result:
+
+```sh
+kubectl -n egwtls-demo get serviceentry partner -o jsonpath='{.spec}{"\n"}'
+```
+
+```text
+{"addresses":["10.244.0.8"],"endpoints":[{"address":"10.244.0.8"}],"hosts":["partner.example.com"],"location":"MESH_EXTERNAL","ports":[{"name":"http","number":8080,"protocol":"HTTP"},{"name":"https","number":8443,"protocol":"HTTPS"}],"resolution":"STATIC"}
+```
+
+The port `8080` is the port the client calls. The port `8443` is the port the egress gateway calls on the partner. Both ports must be in the `ServiceEntry`, or the mesh has no cluster for the second hop.
 
 ---
 
-## Step 3: Add the listener and its subset
+## Item 2: Open Port 8080 On The Egress Gateway
 
-The `Gateway` opens a listener on port 8080 of the egress gateway for the external host. Save this as `gateway-egress-gateway.yaml`:
+> **Task item 2:** A `Gateway` named `egress-gateway` that selects `istio: egressgateway` and opens port `8080` with protocol `HTTP` for `partner.example.com`.
+
+A `Gateway` configures the listener of a gateway proxy. This one selects the pods of the egress gateway by label. Save this as `gateway-egress-gateway.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -101,7 +127,25 @@ Apply it:
 kubectl apply -f gateway-egress-gateway.yaml
 ```
 
-Rule 1 of the `VirtualService` names a subset of the egress gateway's Service, so that subset must exist. Save this as `destinationrule-egressgateway-for-partner.yaml`:
+Then check the result:
+
+```sh
+kubectl -n egwtls-demo get gateway egress-gateway -o jsonpath='{.spec}{"\n"}'
+```
+
+```text
+{"selector":{"istio":"egressgateway"},"servers":[{"hosts":["partner.example.com"],"port":{"name":"http","number":8080,"protocol":"HTTP"}}]}
+```
+
+The listener stays plain HTTP. The TLS connection starts later, on the way from the gateway to the partner.
+
+---
+
+## Item 3: Add The Subset For The Egress Gateway
+
+> **Task item 3:** A `DestinationRule` named `egressgateway-for-partner` for `istio-egressgateway.istio-system.svc.cluster.local`, with one subset named `partner` and no labels.
+
+A `DestinationRule` sets what happens after routing picks a host. A subset is a named group of pods. Rule 1 of the `VirtualService` in the next item sends requests to this subset. Save this as `destinationrule-egressgateway-for-partner.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -121,13 +165,23 @@ Apply it:
 kubectl apply -f destinationrule-egressgateway-for-partner.yaml
 ```
 
-The listener is on **8080**, the port the egress gateway *receives* on. The egress gateway will *send* on 8443. These are two directions, so the two numbers do not have to match.
+Then check the result:
+
+```sh
+kubectl -n egwtls-demo get destinationrule egressgateway-for-partner -o jsonpath='{.spec}{"\n"}'
+```
+
+```text
+{"host":"istio-egressgateway.istio-system.svc.cluster.local","subsets":[{"name":"partner"}]}
+```
 
 ---
 
-## Step 4: Add the two routing rules
+## Item 4: Route Through The Egress Gateway
 
-Save this as `virtualservice-partner-through-egress.yaml`:
+> **Task item 4:** A `VirtualService` named `partner-through-egress` for `partner.example.com` with `mesh` and `egress-gateway` in `gateways`. Rule 1: `gateways: [mesh]`, port `8080`, to the egress gateway Service, subset `partner`, port `8080`. Rule 2: `gateways: [egress-gateway]`, port `8080`, to `partner.example.com` port `8443`.
+
+A `VirtualService` sets how requests to a host are routed. This one applies in two places. On the `mesh` gateway, it is read by the sidecar proxy of `tester`, and rule 1 sends the request to the egress gateway. On `egress-gateway`, it is read by the gateway proxy, and rule 2 sends the request on to the partner. Save this as `virtualservice-partner-through-egress.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -167,27 +221,40 @@ Apply it:
 kubectl apply -f virtualservice-partner-through-egress.yaml
 ```
 
-Rule 2's `port: 8443` is the important line. If it routes to 8080, the egress gateway sends plain text to a server that only speaks TLS. That failure looks like a TLS problem, but it is a routing problem.
-
-Test now, before you add the last object:
+Then check the result and run the analyzer:
 
 ```sh
-PARTNER=$(cat /tmp/partner-ip)
-kubectl -n egwtls-demo exec deploy/tester -- \
-  curl -s -o /dev/null -w 'without origination: %{http_code}\n' --max-time 20 "http://partner.example.com:8080/"
+kubectl -n egwtls-demo get virtualservice partner-through-egress -o jsonpath='gateways={.spec.gateways}{"\n"}{range .spec.http[*]}{.match}{" -> "}{.route[0].destination.host}{" "}{.route[0].destination.subset}{":"}{.route[0].destination.port.number}{"\n"}{end}'
+istioctl analyze -n egwtls-demo
+```
+
+```text
+gateways=["mesh","egress-gateway"]
+[{"gateways":["mesh"],"port":8080}] -> istio-egressgateway.istio-system.svc.cluster.local partner:8080
+[{"gateways":["egress-gateway"],"port":8080}] -> partner.example.com :8443
+
+✔ No validation issues found when analyzing namespace: egwtls-demo.
+```
+
+Now send one request. The route exists, but nothing starts TLS yet:
+
+```sh
+kubectl -n egwtls-demo exec deploy/tester -- curl -s -o /dev/null -w 'without origination: %{http_code}\n' --max-time 20 http://partner.example.com:8080/
 ```
 
 ```text
 without origination: 400
 ```
 
-The request reaches port 8443 as plain text, so the partner server answers `400`. This is the failure you get when the TLS `DestinationRule` is missing.
+This is the same `400` as in the starting state. The request now passes through the egress gateway, but the gateway sends plain text to port `8443`, and the partner rejects it. Item 5 fixes this.
 
 ---
 
-## Step 5: Originate TLS on the external host
+## Item 5: Start TLS At The Egress Gateway
 
-Save this as `destinationrule-originate-tls-for-partner.yaml`:
+> **Task item 5:** A `DestinationRule` named `originate-tls-for-partner` for `partner.example.com`, with `portLevelSettings` for port `8443`: `tls.mode: SIMPLE`, `tls.sni: partner.example.com`, `insecureSkipVerify: true`, and `exportTo: [istio-system]`.
+
+TLS origination means that a proxy opens the TLS connection for a client that sends plain text. A `DestinationRule` is applied by the proxy that calls the host. Here that is the egress gateway, which runs in `istio-system`. With `exportTo: [istio-system]`, only proxies in that namespace get the rule, so the sidecar proxy of `tester` keeps a plain cluster. Save this as `destinationrule-originate-tls-for-partner.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -196,10 +263,6 @@ metadata:
   name: originate-tls-for-partner
   namespace: egwtls-demo
 spec:
-  # Scope the rule to the egress gateway's namespace. A DestinationRule for an
-  # external host is visible mesh-wide by default, so every sidecar would also
-  # originate TLS for it - the opposite of the point here, which is that the
-  # sidecar speaks plain HTTP to the gateway and the gateway does the TLS.
   exportTo:
     - istio-system
   host: partner.example.com
@@ -222,44 +285,66 @@ kubectl apply -f destinationrule-originate-tls-for-partner.yaml
 Then check the result:
 
 ```sh
-sleep 4
-PARTNER=$(cat /tmp/partner-ip)
-kubectl -n egwtls-demo exec deploy/tester -- curl -s --max-time 20 "http://partner.example.com:8080/"
+kubectl -n egwtls-demo get destinationrule originate-tls-for-partner -o jsonpath='{.spec}{"\n"}'
+```
+
+```text
+{"exportTo":["istio-system"],"host":"partner.example.com","trafficPolicy":{"portLevelSettings":[{"port":{"number":8443},"tls":{"insecureSkipVerify":true,"mode":"SIMPLE","sni":"partner.example.com"}}]}}
+```
+
+`insecureSkipVerify: true` is needed because the partner uses a self-signed certificate. Without it, the gateway rejects the certificate.
+
+---
+
+## Item 6: Send A Plain Request And Get `scheme=https`
+
+> **Task item 6:** `GET http://partner.example.com:8080/` from `tester` returns `200`, and the body contains `scheme=https`.
+
+Send the request from `tester`:
+
+```sh
+kubectl -n egwtls-demo exec deploy/tester -- curl -s -w '\nstatus: %{http_code}\n' --max-time 20 http://partner.example.com:8080/
 ```
 
 ```text
 scheme=https
+
+status: 200
 ```
 
-The rule names **`host: partner.example.com`**, the external host, not the egress gateway Service. A `DestinationRule` is applied by whichever proxy *calls* the host it names, and here that is the egress gateway. If you name `istio-egressgateway...` instead, nothing starts TLS toward the partner: that rule would apply to the sidecar proxy's hop to the egress gateway, which is plain HTTP on purpose.
-
-If the sidecar proxies started TLS themselves, this object would look exactly the same. Only the proxy that applies it would change, because only the caller changes.
+The client sent `http://` to port `8080`, and the partner reports `scheme=https`. The egress gateway opened the TLS connection. If you still see `400`, wait a few seconds and send the request again. `istiod` needs a moment to push the new configuration to the proxies.
 
 ---
 
-## Step 6: Prove the result three ways
+## Item 7: Find The Request In The Egress Gateway Log
 
-First, prove that the egress gateway was in the path and sent the request on to port 8443. Read its newest log line for the partner:
+> **Task item 7:** The egress gateway's own access log gains a line for the request, with the upstream on port `8443`.
+
+Send one request, wait for the log, and print the last line for the partner (cut to 260 characters). In the starting state, the gateway had no line for the partner. In the real run, this request added exactly one:
 
 ```sh
-kubectl -n istio-system logs deploy/istio-egressgateway --tail=5 | grep partner.example.com | tail -1
+kubectl -n egwtls-demo exec deploy/tester -- curl -s -o /dev/null --max-time 20 http://partner.example.com:8080/
+sleep 4
+kubectl -n istio-system logs deploy/istio-egressgateway --tail=5 | grep partner.example.com | tail -1 | cut -c1-260
 ```
 
 ```text
-[2026-10-08T23:49:16.014Z] "GET / HTTP/1.1" 200 - via_upstream - "-" 0 13 3 2 "10.244.0.9" "curl/8.22.0" "e17944c4-90fb-9b55-adb0-e55bcf4824bf" "partner.example.com:8080" "10.244.0.8:8443" outbound|8443||partner.example.com 10.244.0.6:53522 10.244.0.6:8080 10.244.0.9:54788 - -
+[2026-10-20T22:27:48.562Z] "GET / HTTP/1.1" 200 - via_upstream - "-" 0 13 1 1 "10.244.0.9" "curl/8.23.0" "04a030b0-c78b-904d-98d5-a9c3f4dcfcbf" "partner.example.com:8080" "10.244.0.8:8443" outbound|8443||partner.example.com 10.244.0.6:37058 10.244.0.6:8080 10.
 ```
 
-The line shows a readable HTTP request, the upstream on **8443**, and the cluster `outbound|8443||partner.example.com`.
+The log has one new line for each request. The request line arrived on the gateway at `:8080`. The upstream is `10.244.0.8:8443`, and the cluster is `outbound|8443||partner.example.com`. The gateway logged the request, so the gateway handled it, not the sidecar proxy alone.
 
-Second, prove that the TLS settings are on the egress gateway and not on the sidecar proxy. Count the `transportSocket` entries, the TLS settings of a cluster, in each proxy:
+---
+
+## Item 8: Compare The TLS Settings Of Two Proxies
+
+> **Task item 8:** The egress gateway's cluster for `partner.example.com` has a TLS `transportSocket`, and the `tester` sidecar proxy's cluster does not.
+
+A `transportSocket` is the part of an Envoy cluster that holds the TLS settings for connections to its endpoints. Count it in the cluster of each proxy:
 
 ```sh
-echo -n "gateway: "
-istioctl proxy-config cluster deploy/istio-egressgateway -n istio-system \
-  --fqdn partner.example.com -o json | grep -c transportSocket
-echo -n "sidecar: "
-istioctl proxy-config cluster deploy/tester -n egwtls-demo \
-  --fqdn partner.example.com -o json | grep -c transportSocket
+echo -n "gateway: "; istioctl proxy-config cluster deploy/istio-egressgateway -n istio-system --fqdn partner.example.com -o json | grep -c transportSocket
+echo -n "sidecar: "; istioctl proxy-config cluster deploy/tester -n egwtls-demo --fqdn partner.example.com -o json | grep -c transportSocket
 ```
 
 ```text
@@ -267,19 +352,75 @@ gateway: 1
 sidecar: 0
 ```
 
-One and zero is the shortest proof that the egress gateway, the proxy that calls the host, applies the rule. If the sidecar proxy started TLS itself, these two commands would give the opposite result.
-
-Third, the server saw HTTPS: it answered `scheme=https` in step 5.
+Only the egress gateway has the TLS settings. This is the effect of `exportTo: [istio-system]`. Without it, the count for the sidecar proxy would be `1` too, and the client would try TLS toward a gateway that expects plain HTTP.
 
 ---
 
-## Common mistakes
+## Items 9 And 10: Read The Port And The Placement
 
-- **The TLS `DestinationRule` on the egress gateway Service.** Nothing starts TLS toward the partner, because that rule covers the sidecar proxy's hop, which is plain text on purpose.
-- **Rule 2 routes to port 8080.** The egress gateway sends plain text to a server that only speaks TLS.
-- **Only port 8443 in the `ServiceEntry`.** The task asks for both ports: 8080 for the plain request from the sidecar proxy, 8443 for the TLS hop from the egress gateway.
-- **`tls` at the top of `trafficPolicy`.** It would apply to port 8080 as well.
-- **No `sni` or no `insecureSkipVerify`.** The certificate names `partner.example.com` and is self-signed, so both are needed here.
-- **Mixing up the two `DestinationRule` objects.** One names the egress gateway Service and holds an empty subset. The other names the external host and holds the TLS settings.
-- **`mesh` missing from the top-level `gateways`.** Rule 1 never reaches the sidecar proxies, so the request goes straight to the partner and fails.
-- **Counting the egress gateway's log lines without a starting count.** The log keeps growing, so compare the count before and after your request.
+> **Task item 9:** Rule 2 routes to port `8443`, while the `Gateway` listener stays on `8080`.
+>
+> **Task item 10:** The TLS `DestinationRule` names `partner.example.com`, and its `tls` block is under `portLevelSettings`, not at the top level.
+
+Print the three fields:
+
+```sh
+kubectl -n egwtls-demo get gateway egress-gateway -o jsonpath='{.spec.servers[0].port.number} {.spec.servers[0].hosts}{"\n"}'
+kubectl -n egwtls-demo get virtualservice partner-through-egress -o jsonpath='rule2 -> {.spec.http[1].route[0].destination.port.number}{"\n"}'
+kubectl -n egwtls-demo get destinationrule originate-tls-for-partner -o jsonpath='host={.spec.host} top-level-tls=[{.spec.trafficPolicy.tls}] port-level={.spec.trafficPolicy.portLevelSettings[0].port.number} exportTo={.spec.exportTo}{"\n"}'
+```
+
+```text
+8080 ["partner.example.com"]
+rule2 -> 8443
+host=partner.example.com top-level-tls=[] port-level=8443 exportTo=["istio-system"]
+```
+
+The gateway listens on `8080`, rule 2 sends to `8443`, and the `tls` block sits under `portLevelSettings` for port `8443`. The top-level `tls` is empty, so port `8080` of the host stays plain.
+
+---
+
+## Item 11: Check That Nothing Else Changed
+
+> **Task item 11:** No Service exists in `outside-mesh`, and both the `tester` Deployment and the `partner-api` pod are running.
+
+Run the same commands as in the start state:
+
+```sh
+kubectl -n outside-mesh get svc
+kubectl -n egwtls-demo get deploy -o custom-columns=NAME:.metadata.name,READY:.status.readyReplicas,UID:.metadata.uid
+kubectl -n outside-mesh get pods -o custom-columns=NAME:.metadata.name,PHASE:.status.phase,UID:.metadata.uid
+```
+
+```text
+No resources found in outside-mesh namespace.
+NAME     READY   UID
+tester   1       1726d9ab-b9b5-45dc-836a-6739cbb176c0
+NAME          PHASE     UID
+partner-api   Running   58d1d6c3-3327-43c2-95bf-6cc85ec24ae2
+```
+
+The UIDs match the start state, so nothing was recreated. The partner is in the mesh only through the `ServiceEntry`.
+
+---
+
+## Submit
+
+Send the setup for grading:
+
+```sh
+astrona submit -c sections/section-080/module-02/labs/lab-01
+```
+
+---
+
+## Mistakes That Fail The Grader
+
+- **Putting `tls` at the top level of `trafficPolicy`.** The call still works, but the grader checks that the `tls` block is under `portLevelSettings` for port `8443`.
+- **Leaving out `exportTo: [istio-system]`.** The sidecar proxy of `tester` gets the TLS settings too, and the grader finds a `transportSocket` on it.
+- **Naming the egress gateway Service in the TLS `DestinationRule`.** The TLS settings belong to the external host `partner.example.com`, because the gateway calls that host.
+- **Sending rule 2 to port `8080`.** The partner only listens on `8443` with TLS, so the request gets `400` or a connection error.
+- **Changing the `Gateway` listener to `8443` or `HTTPS`.** The listener receives plain HTTP from the client on `8080`.
+- **Forgetting `insecureSkipVerify: true`.** The partner certificate is self-signed, and the gateway rejects it.
+- **Creating a Service in `outside-mesh`.** The partner must be in the registry only through the `ServiceEntry`.
+- **Testing too fast.** `kubectl apply` returns before `istiod` has pushed the configuration. If you still see the old status code, wait a few seconds and send the request again.
