@@ -20,3 +20,5 @@ Change the `probe` `DestinationRule` so that:
 5.  The workloads stay as they are: `probe-v1` keeps 3 replicas, `probe-v2` keeps 1, no Deployment is added or removed, and the `probe` Service keeps selecting `app: probe`.
 
 The grader reads the `DestinationRule`, reads the `shuttle` pod's proxy configuration, and sends live requests, so the spread has to really happen.
+
+The lab ships two files in its `resources` folder. `astrona res` lists them. `probe-destinationrule.yaml` is the starting `DestinationRule`, and `count-pods.sh` counts which probe pod answers each request.

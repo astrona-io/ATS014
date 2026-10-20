@@ -20,6 +20,8 @@ done | sort | uniq -c
 
 All 8 requests landed on one pod, although the Service has four.
 
+The lab ships this loop as the resource `count-pods.sh`. `astrona res run count-pods.sh 8` runs it with the lab's kubeconfig, and the number is the count of requests.
+
 ## Step 2: Find the cause
 
 A `DestinationRule` is the Istio object that holds policies for traffic to one host, including the load balancer. Read the one for `probe`:
