@@ -32,3 +32,5 @@ Change the `VirtualService` so that:
 Each `scout` response contains the name of the pod that sent it (`"podname": "scout-v2-..."`), so you can see which version answered.
 
 The grader sends live requests from the `shuttle` pod and reads the `shuttle` proxy's configuration, so the split has to work, not only exist as an object.
+
+The lab saves its starting state in the files `destinationrule-scout.yaml` and `virtualservice-scout.yaml` in its `resources` folder. `astrona res` lists them.

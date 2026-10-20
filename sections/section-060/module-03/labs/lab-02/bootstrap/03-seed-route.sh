@@ -4,25 +4,7 @@
 # but no such Gateway exists, so the route has no status and no gateway proxy runs.
 # Building the Gateway is the task - the HTTPRoute is correct.
 set -euo pipefail
+cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: bridge
-  namespace: starfleet
-spec:
-  parentRefs:
-  - name: starfleet-gateway
-  hostnames:
-  - starfleet.example.com
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /productpage
-    backendRefs:
-    - name: bridge
-      port: 9080
-YAML
+kubectl apply -f ../resources/httproute-bridge.yaml
 echo "==> Lab ats-014-lab-060-03-02 ready"

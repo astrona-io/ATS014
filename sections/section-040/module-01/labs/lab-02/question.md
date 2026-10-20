@@ -23,3 +23,5 @@ Fix it so that:
 7.  Leave the Deployments and Services unchanged.
 
 The grader sends real requests from `shuttle`, reads its access log, and checks both `VirtualService` objects.
+
+The lab saves its starting state in the file `starting-state.yaml` in its `resources` folder. `astrona res` lists it.

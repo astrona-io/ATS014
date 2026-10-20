@@ -32,3 +32,5 @@ Fix the problem so that:
 Each `scout` response contains the name of the pod that sent it (`"podname": "scout-v2-..."`), so you can see which version answered.
 
 The grader sends real requests from the `shuttle` pod and reads the endpoints in its proxy, so the fix has to work, not only exist.
+
+The lab saves its starting state in the files `destinationrule-scout.yaml` and `virtualservice-scout.yaml` in its `resources` folder. `astrona res` lists them.

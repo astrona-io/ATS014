@@ -26,3 +26,5 @@ The grader sends one request at a time from `shuttle` and counts, in the probe's
 8.  A request to `/status/502` reaches the probe exactly **once**.
 
 Leave the Deployments and Services unchanged.
+
+The lab saves its starting state in the file `virtualservice-probe.yaml` in its `resources` folder. `astrona res` lists it.

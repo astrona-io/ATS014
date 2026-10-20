@@ -8,42 +8,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: DestinationRule
-metadata:
-  name: scout
-  namespace: starfleet
-spec:
-  host: scout
-  subsets:
-  - name: v1
-    labels:
-      version: v1
-  - name: v2
-    labels:
-      version: v2
-  - name: v3
-    labels:
-      version: v3
-YAML
+kubectl apply -f ../resources/destinationrule-scout.yaml
 sleep 10
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: scout
-  namespace: starfleet
-spec:
-  hosts:
-  - scout
-  http:
-  - route:
-    - destination:
-        host: scout
-        subset: v1
-YAML
+kubectl apply -f ../resources/virtualservice-scout.yaml
 sleep 10
 
 echo "==> The patrol"

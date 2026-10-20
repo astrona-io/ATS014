@@ -27,3 +27,5 @@ Each `HTTPRoute` has one fault. Fix them so that:
 6.  The `Gateway` is **left unchanged**, and it stays the only `Gateway` in `starfleet`. Do not add, rename or remove Services or Deployments: fix the routes, not the app.
 
 The grader reads the status of both routes and sends real requests through the gateway from the `shuttle` pod, so the fix has to work, not only exist.
+
+The lab saves its starting state in the files `gateway-starfleet-gateway.yaml` and `httproute-bridge-and-httproute-scout.yaml` in its `resources` folder. `astrona res` lists them.

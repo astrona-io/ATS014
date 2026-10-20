@@ -34,3 +34,5 @@ Each `scout` response contains the name of the pod that sent it (`"podname": "sc
 If `patrol` logged failures while you were trying things, you can give it a clean access log by restarting it: `kubectl rollout restart deploy/patrol -n starfleet`. Wait at least 30 seconds before you submit, so it has sent enough requests to be judged.
 
 The grader sends live requests from the `shuttle` pod, runs `istioctl analyze`, and reads the access log of the `patrol` proxy. So the change has to be safe, not only finished.
+
+The lab saves its starting state in the files `destinationrule-scout.yaml` and `virtualservice-scout.yaml` in its `resources` folder. `astrona res` lists them.

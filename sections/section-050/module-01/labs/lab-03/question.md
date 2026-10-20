@@ -22,3 +22,5 @@ The test team still wants the fault, but only for their own requests. Fix the `n
 6.  The `scout` `VirtualService`, the Deployments and the Services stay unchanged.
 
 The grader sends real requests from `shuttle`, reads the access log of `shuttle`, and checks the `navcom` `VirtualService`.
+
+The lab saves its starting state in the file `starting-state.yaml` in its `resources` folder. `astrona res` lists it.

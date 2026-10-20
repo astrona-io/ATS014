@@ -37,3 +37,5 @@ for i in $(seq 1 100); do
   kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/hostname | grep -o 'probe-zone-[ab]'
 done | sort | uniq -c
 ```
+
+The lab saves its starting state in the file `destinationrule-probe.yaml` in its `resources` folder. `astrona res` lists it.

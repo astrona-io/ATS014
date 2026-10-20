@@ -8,36 +8,8 @@
 #   outpost and istio-system, and its call to the probe ends in the BlackHoleCluster.
 # Fixing shuttle-only is the task - the namespace default is correct.
 set -euo pipefail
+cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: Sidecar
-metadata:
-  name: default
-  namespace: starfleet
-spec:
-  outboundTrafficPolicy:
-    mode: REGISTRY_ONLY
-  egress:
-  - hosts:
-    - "./*"
-    - "istio-system/*"
-    - "outpost/*"
-YAML
+kubectl apply -f ../resources/sidecar-default.yaml
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: Sidecar
-metadata:
-  name: shuttle-only
-  namespace: starfleet
-spec:
-  workloadSelector:
-    labels:
-      app: shuttle
-  outboundTrafficPolicy:
-    mode: REGISTRY_ONLY
-  egress:
-  - hosts:
-    - "./*"
-YAML
+kubectl apply -f ../resources/sidecar-shuttle-only.yaml

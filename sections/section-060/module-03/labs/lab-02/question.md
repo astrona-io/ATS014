@@ -28,3 +28,5 @@ Create the `Gateway` so that:
 10. The `HTTPRoute` `bridge` is **left unchanged**. Leave the Deployments and Services of the app unchanged too.
 
 The grader reads the status of both objects and sends real requests through the gateway from the `shuttle` pod, so the gateway has to work, not only exist.
+
+The lab saves its starting state in the file `httproute-bridge.yaml` in its `resources` folder. `astrona res` lists it.

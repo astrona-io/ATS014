@@ -30,3 +30,5 @@ Fix the problem so that:
 6.  The Deployments, the Services and the ingress gateway stay unchanged.
 
 The grader sends live requests from the `shuttle` pod through the gateway, so the fix has to work, not only exist.
+
+The lab saves its starting state in the files `ingressclass-istio.yaml` and `ingress-starfleet.yaml` in its `resources` folder. `astrona res` lists them.

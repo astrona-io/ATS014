@@ -1,0 +1,36 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - match:
+    - headers:
+        x-mission:
+          exact: test
+    route:
+    - destination:
+        host: probe
+        subset: v2
+  - route:
+    - destination:
+        host: probe
+        subset: v1
