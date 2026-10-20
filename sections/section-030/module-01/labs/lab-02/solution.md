@@ -1,58 +1,71 @@
 # Solution Walkthrough
 
-You need one `DestinationRule`, the Istio object that holds policies for traffic to one host. Two of its fields decide this lab. `portLevelSettings` matters because the task asks for the policy there rather than on the host. `ttl` matters because without it the sidecar proxy never creates the cookie, and the policy silently does nothing.
+The task has six items. One `DestinationRule` solves items 1 to 3. Steps 4 to 8 then prove items 3 to 6 with real requests. A `DestinationRule` is the Istio object that holds policies for traffic to one host, including the load balancing policy.
+
+| Task item | What it asks | Where you solve or prove it |
+| --- | --- | --- |
+| 1 | Set the policy in `portLevelSettings` for port `8000` | Step 3 |
+| 2 | Hash an HTTP cookie named `session-id` | Step 3 |
+| 3 | Add a `ttl` so Istio issues the cookie | Step 3, proved in Step 5 |
+| 4 | A client that returns the cookie reaches one endpoint | Step 6 |
+| 5 | A client without the cookie is spread over endpoints | Step 7 |
+| 6 | Leave the Deployments and the Service unchanged | Step 8 |
 
 ---
 
 ## Step 1: Read The Starting State
 
+Look at what runs in the `lb-demo` namespace before you change anything:
+
 ```sh
-kubectl -n lb-demo get pods -o wide --show-labels | head
+kubectl -n lb-demo get deploy
 kubectl -n lb-demo get svc httpbin
 kubectl -n lb-demo get destinationrule
 ```
 
 ```text
-httpbin-stable-...   2/2   Running   10.244.0.11   app=httpbin,version=stable
-httpbin-stable-...   2/2   Running   10.244.0.12   app=httpbin,version=stable
-httpbin-stable-...   2/2   Running   10.244.0.13   app=httpbin,version=stable
-httpbin-canary-...   2/2   Running   10.244.0.14   app=httpbin,version=canary
-httpbin-canary-...   2/2   Running   10.244.0.15   app=httpbin,version=canary
-NAME      TYPE        PORT(S)
-httpbin   ClusterIP   8000/TCP
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+httpbin-canary   2/2     2            2           42s
+httpbin-stable   3/3     3            3           42s
+tester           1/1     1            1           42s
+NAME      TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+httpbin   ClusterIP   10.96.119.56   <none>        8000/TCP   42s
 No resources found in lb-demo namespace.
 ```
 
-The Service has five endpoints (pod addresses) and listens on port **8000**. Note that number: `portLevelSettings` takes the *Service* port, not the container port 8080 behind it.
+The Service `httpbin` has five endpoints (the pod addresses behind it): three stable pods and two canary pods. It listens on port `8000`. Remember that number. `portLevelSettings` takes the Service port, not the container port `8080` behind it.
+
+There is no `DestinationRule` yet, so Istio uses its default load balancer and spreads requests over all five endpoints.
 
 ---
 
-## Step 2: Confirm The Baseline Spreads
+## Step 2: Prove That There Is No Affinity Yet
 
-Before you configure session affinity, prove there is none. The `tester` pod's sidecar proxy writes an access log line for each request, and each line names the endpoint it chose. That log is the reliable proof:
+Session affinity means one client keeps reaching the same pod. Check that it does not exist yet. The `tester` pod has a sidecar proxy, an Envoy proxy that Istio adds to the pod. It writes one access log line for each request, and each line names the endpoint it chose.
+
+Send 12 requests, wait a few seconds, then count the endpoints in the log:
 
 ```sh
 kubectl -n lb-demo exec deploy/tester -- sh -c \
   'for i in $(seq 1 12); do curl -s -o /dev/null http://httpbin:8000/get; done'
+sleep 4
 kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 \
   | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:8080' | sort | uniq -c
 ```
 
 ```text
-   3 10.244.0.11:8080
-   2 10.244.0.12:8080
-   3 10.244.0.13:8080
-   2 10.244.0.14:8080
-   2 10.244.0.15:8080
+   3 10.244.0.10:8080
+   5 10.244.0.11:8080
+   1 10.244.0.12:8080
+   1 10.244.0.8:8080
+   2 10.244.0.9:8080
 ```
 
-All five endpoints answered. The policy will change that, but only for clients that send the cookie.
+All five endpoints answered. The `sleep 4` matters: the proxy writes the log line a moment after the request. Without the wait, you read old lines.
 
 ---
 
-## Step 3: Write The Policy At Port Level
-
-Write the manifest to a file and apply the file. In the exam, a file lets you read, edit and apply the configuration again.
+## Step 3: Write The Policy (Items 1, 2 And 3)
 
 Save this as `destinationrule-httpbin.yaml`:
 
@@ -81,14 +94,21 @@ Apply it:
 kubectl apply -f destinationrule-httpbin.yaml
 ```
 
-Two details matter here:
+```text
+destinationrule.networking.istio.io/httpbin created
+```
 
-* The policy is under **`portLevelSettings`**, not directly under `trafficPolicy.loadBalancer`. Both would work for this Service. The task asks for the port-level form, because you need it when a Service exposes several ports that behave differently.
-* **`ttl: 60s` is required here.** With it, the sidecar proxy adds a `Set-Cookie` header to the response for a client that arrives without the cookie. Without it, Istio only hashes a cookie the client already sends, and a browser that has never visited gets no session affinity at all, with no error.
+Each task item matches one part of the file:
+
+- **Item 1:** `portLevelSettings` with `port.number: 8000` sets the policy for one port of the Service. The `loadBalancer` field sits inside it, not directly under `trafficPolicy`. The number is the Service port `8000`.
+- **Item 2:** `consistentHash` with `httpCookie` and `name: session-id` makes the client's proxy calculate a hash from the `session-id` cookie. The same cookie value always gives the same endpoint.
+- **Item 3:** `ttl: 60s` makes Istio create the cookie. Without `ttl`, Istio only hashes a cookie that the client already sends. A browser that has never visited gets no cookie and no affinity, and nothing reports an error.
 
 ---
 
-## Step 4: Confirm It Reached The Proxy
+## Step 4: Check That The Proxy Received The Policy
+
+`istiod`, the Istio control plane, sends the new configuration to every sidecar proxy. Ask the `tester` proxy what it holds for the Service. Envoy keeps the endpoints of one destination in a cluster, and `lbPolicy` is the algorithm of that cluster:
 
 ```sh
 istioctl proxy-config cluster deploy/tester -n lb-demo \
@@ -96,14 +116,17 @@ istioctl proxy-config cluster deploy/tester -n lb-demo \
 ```
 
 ```text
-"lbPolicy": "RING_HASH",
+        "lbPolicy": "RING_HASH",
+            "minimumRingSize": "1024"
 ```
 
-Envoy stores the endpoints of one destination as a **cluster**, and `lbPolicy` is the algorithm of that cluster. `RING_HASH` is Envoy's name for `consistentHash`. If this still says `LEAST_REQUEST` (Istio's default), `istiod` has not yet sent the new configuration to the proxy. Wait a few seconds; editing the YAML again does not help.
+`RING_HASH` is Envoy's name for `consistentHash`. If the line still shows `LEAST_REQUEST`, which is Istio's default, `istiod` has not sent the configuration yet. Wait a few seconds and run the command again.
 
 ---
 
-## Step 5: Watch Istio Issue The Cookie
+## Step 5: Prove Item 3, Istio Issues The Cookie
+
+Send one request with no cookie and print the response headers:
 
 ```sh
 kubectl -n lb-demo exec deploy/tester -- \
@@ -111,47 +134,107 @@ kubectl -n lb-demo exec deploy/tester -- \
 ```
 
 ```text
-set-cookie: session-id="a3f1c9d84e2b7016"; Max-Age=60; Path=/
+set-cookie: session-id="4f4a4c5030b7b025"; Max-Age=60; HttpOnly
 ```
 
-The application did not send that header. The `httpbin` pod's sidecar proxy created it, because the policy sets `ttl`.
+The application did not send this header. The sidecar proxy added it, because the policy has a `ttl`. `Max-Age=60` is the `ttl` of 60 seconds. Your cookie value will differ.
 
 ---
 
-## Step 6: Prove The Pin, And The Fallback
+## Step 6: Prove Item 4, A Returning Client Reaches One Endpoint
 
-Capture the cookie, then send a dozen requests carrying it:
+First save the cookie that Istio issues in a shell variable:
 
 ```sh
 COOKIE=$(kubectl -n lb-demo exec deploy/tester -- sh -c \
   "curl -s -D - -o /dev/null http://httpbin:8000/get | tr -d '\r' | sed -n 's/^[Ss]et-[Cc]ookie: *\(session-id=[^;]*\).*/\1/p'" | head -1)
-
-kubectl -n lb-demo exec deploy/tester -- sh -c \
-  "for i in \$(seq 1 12); do curl -s -o /dev/null -H 'Cookie: $COOKIE' http://httpbin:8000/get; done"
-kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 \
-  | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:8080' | sort -u
+echo $COOKIE
 ```
 
 ```text
-10.244.0.13:8080
+session-id="8d51723576402411"
 ```
 
-All twelve requests reached one endpoint. Now repeat the loop with no cookie at all, and the spread from Step 2 comes back. The policy is the same, but the requests differ. Session affinity applies only to requests that carry the hashed value.
+Now send 12 requests that carry this cookie, and count the endpoints in the log:
+
+```sh
+kubectl -n lb-demo exec deploy/tester -- sh -c \
+  "for i in \$(seq 1 12); do curl -s -o /dev/null -H 'Cookie: $COOKIE' http://httpbin:8000/get; done"
+sleep 4
+kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 \
+  | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:8080' | sort | uniq -c
+```
+
+```text
+  12 10.244.0.10:8080
+```
+
+All 12 requests reached one endpoint. The proxy hashed the same cookie value each time and got the same endpoint each time.
 
 ---
 
-## Step 7: Submit
+## Step 7: Prove Item 5, A Client Without The Cookie Is Not Pinned
+
+Send 12 requests with no cookie:
+
+```sh
+kubectl -n lb-demo exec deploy/tester -- sh -c \
+  'for i in $(seq 1 12); do curl -s -o /dev/null http://httpbin:8000/get; done'
+sleep 4
+kubectl -n lb-demo logs deploy/tester -c istio-proxy --tail=12 \
+  | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:8080' | sort | uniq -c
+```
+
+```text
+   3 10.244.0.10:8080
+   3 10.244.0.11:8080
+   1 10.244.0.12:8080
+   3 10.244.0.8:8080
+   2 10.244.0.9:8080
+```
+
+The requests spread over all five endpoints again. The policy is the same as in Step 6. Only the requests differ. Every request in this step starts a new session, so the proxy has no cookie to hash and picks an endpoint with its normal load balancing.
+
+---
+
+## Step 8: Check Item 6, The Workloads Are Unchanged
+
+You did not edit a Deployment or the Service. Confirm it:
+
+```sh
+kubectl -n lb-demo get deploy
+kubectl -n lb-demo get svc httpbin -o jsonpath='{.spec.selector}{"\n"}'
+```
+
+```text
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+httpbin-canary   2/2     2            2           51s
+httpbin-stable   3/3     3            3           51s
+tester           1/1     1            1           51s
+{"app":"httpbin"}
+```
+
+`httpbin-stable` still has 3 replicas, `httpbin-canary` still has 2, and the Service still selects pods on `app` only.
+
+---
+
+## Step 9: Submit
+
+Send the lab for grading:
 
 ```sh
 astrona submit -c sections/section-030/module-01/labs/lab-02
 ```
 
+The grader reads the `DestinationRule`, asks the `tester` proxy for the `lbPolicy`, sends real requests, and counts the endpoints.
+
 ---
 
-## Common Mistakes
+## Mistakes That Fail The Grader
 
-* **Leaving out `ttl`.** Istio then only hashes a cookie that something else set. A first-time browser gets no session affinity, and nothing reports it.
-* **Putting the policy in `trafficPolicy.loadBalancer` instead of `portLevelSettings`.** The task asks for the port-level form explicitly, and the grader checks that the host-level field is empty.
-* **Naming port 8080.** `portLevelSettings` takes the **Service** port, 8000. Port 8080 is the container port of the endpoints.
-* **Testing session affinity without checking the fallback.** A policy that pins every request, with or without the cookie, is not what you configured. It usually means you hashed a value that every request carries.
-* **Reading session affinity from response bodies.** `go-httpbin` does not report which pod answered. The client proxy's access log does.
+- **Leaving out `ttl`.** Istio then never issues the cookie. The grader finds no `Set-Cookie` header on a request without a cookie.
+- **Putting the policy in `trafficPolicy.loadBalancer`.** The task asks for the port-level form. The grader checks that the host-level `loadBalancer` is empty.
+- **Using port `8080`.** `portLevelSettings` takes the Service port `8000`. Port `8080` is the container port of the endpoints.
+- **Naming the cookie something else.** The grader looks for `session-id`.
+- **Reading the access log too early.** The proxy writes the log line a moment after the request. Wait a few seconds before you count endpoints, or you count old requests.
+- **Submitting straight after `kubectl apply`.** `istiod` needs a moment to send the policy to the proxy. If the grader still sees a policy other than `RING_HASH`, wait a few seconds and submit again.
