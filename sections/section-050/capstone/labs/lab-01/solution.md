@@ -1,56 +1,51 @@
 # Solution Walkthrough
 
-The task needs one `VirtualService` with three rules for `notification-service`, one `VirtualService` with a timeout for `booking-service`, and two fault tests that run independently. The result of the first test is the lesson of the lab.
+The task needs one `VirtualService` with three rules for `notification-service`, a second `VirtualService` with a timeout for `booking-service`, and two fault tests that run independently. A `VirtualService` is the Istio object that sets how requests to a host are routed. A fault is a setting that makes the sidecar proxy return an error or add a delay. The result of the first test is the lesson of the lab: a retry policy that you configure and that never runs. Items 1 to 9 build the first object rule by rule. Item 10 builds the second object. Items 11 to 14 run the tests.
 
 ---
 
-## Step 1: Measure the Baseline
+## Start: Measure The Baseline
 
-List the `VirtualService` objects, then send one request from the `tester` pod and print the status code and the time:
+The task describes a call chain `tester → booking-service → notification-service`, used by other teams, and no `VirtualService`. Check that this is true, and send one request from `tester`. Print the status code and the time:
 
 ```sh
 kubectl -n orders get virtualservice
+kubectl -n orders get pods | awk '{print $1,$2,$3}'
 kubectl -n orders exec deploy/tester -- \
   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -X POST http://booking-service/book
+kubectl -n orders get deploy -o custom-columns=NAME:.metadata.name,REPLICAS:.spec.replicas,UID:.metadata.uid
 ```
 
 ```text
 No resources found in orders namespace.
-200 0.012958s
+NAME READY STATUS
+booking-service-v1-69fb4b998f-8pkdf 2/2 Running
+notification-service-v1-54dd46d4b6-kns9r 2/2 Running
+tester-69699fd775-gzw5t 2/2 Running
+200 0.012076s
+NAME                      REPLICAS   UID
+booking-service-v1        1          930d1763-dcc6-4620-b92e-5d975de3863a
+notification-service-v1   1          fb3d72d9-f32a-48c3-b97d-24b0ca64dbb7
+tester                    1          bee9d8d5-353a-4362-a60c-ef24ee96ca2d
 ```
 
-Other teams use this namespace. Every rule you add without a `match` block changes their requests too. That is why each test gets its own header value, and a clean plain rule goes last.
+Other teams use this namespace. Every rule that you add without a `match` changes their requests too. That is why each test gets its own header value, and a clean plain rule goes last.
 
 ---
 
-## Step 2: Predict the Result of the Abort Test
+## Items 1 To 5: Rule 1, The Abort With A Retry Policy
 
-The first rule aborts with `503` **and** has a retry policy with `retryOn: gateway-error`, which covers `503`. So how many attempts do you expect?
+> **Task item 1:** Matches the header **`x-chaos: abort`**.
+>
+> **Task item 2:** Injects an `abort` with `httpStatus` **`503`** at **100%**.
+>
+> **Task item 3:** Has a retry policy on the **same rule**: `attempts` **2**, `perTryTimeout` **`1s`**, `retryOn` **`gateway-error`**. The configuration is valid, and you will see it do nothing.
+>
+> **Task item 4:** Sets `timeout` to **`5s`**, well above the time the retries need, so the timeout does not cut the retries short.
+>
+> **Task item 5:** Routes to `notification-service`.
 
-Most people expect three: the first attempt plus two retries, each one aborted again. The real answer is **one**. The reason is the order of the filters inside the sidecar proxy (Envoy):
-
-```mermaid
-flowchart TB
-    R["request"] --> F["fault filter"]
-    F -->|"abort: 503, FI"| C["client"]
-    F -.->|"never reached"| X["router with retry policy"]
-```
-
-The diagram shows that the fault filter answers the request with `503` itself, so the request never reaches the router, where the retry policy lives.
-
-The **router** is the part of the proxy that sends the request to the destination, and it is also the part that retries it. An injected abort is a response that the fault filter makes on its own. The router never sends a request, so it has no failed attempt to retry. The retry policy is valid configuration, and it never runs.
-
-That is the point of the test. Retries recover from short failures of the destination. An injected abort never reaches the destination: it never leaves the client's proxy.
-
-Check the time budget as well, because the rule has both settings. Two retries plus the first attempt would be 3 attempts × `perTryTimeout: 1s` = 3 seconds, and `timeout: 5s` leaves room. So if the retries did run, nothing in this rule would cut them short.
-
----
-
-## Step 3: Write All Three Rules
-
-Write each object to a file and apply the file. In the exam, a file is easy to read again, edit and apply again.
-
-Save this as `virtualservice-notification.yaml`:
+The five items describe the first rule. Check the time budget of item 4: two retries plus the first try are 3 tries, and 3 tries × `perTryTimeout` `1s` are 3 seconds. A `timeout` of `5s` leaves room. The sidecar proxy is the Envoy container that Istio adds to each pod. It reads the rules from top to bottom and uses the first one that matches. Save this as `virtualservice-notification.yaml`. It holds only the first rule for now:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -79,21 +74,6 @@ spec:
       route:
         - destination:
             host: notification-service
-    - match:
-        - headers:
-            x-chaos:
-              exact: delay
-      fault:
-        delay:
-          fixedDelay: 7s
-          percentage:
-            value: 100
-      route:
-        - destination:
-            host: notification-service
-    - route:
-        - destination:
-            host: notification-service
 ```
 
 Apply it:
@@ -106,7 +86,113 @@ kubectl apply -f virtualservice-notification.yaml
 virtualservice.networking.istio.io/notification created
 ```
 
-Save this as `virtualservice-booking.yaml`:
+Check items 1 to 5. Print the first rule:
+
+```sh
+kubectl -n orders get virtualservice notification -o jsonpath='{.spec.http[0]}{"\n"}'
+```
+
+```text
+{"fault":{"abort":{"httpStatus":503,"percentage":{"value":100}}},"match":[{"headers":{"x-chaos":{"exact":"abort"}}}],"retries":{"attempts":2,"perTryTimeout":"1s","retryOn":"gateway-error"},"route":[{"destination":{"host":"notification-service"}}],"timeout":"5s"}
+```
+
+The rule matches `x-chaos: abort`, aborts with `503` at 100%, has the retry policy, has `timeout` `5s`, and routes to `notification-service`.
+
+---
+
+## Items 6 To 8: Rule 2, The Delay
+
+> **Task item 6:** Matches the header **`x-chaos: delay`**.
+>
+> **Task item 7:** Injects a `delay` with `fixedDelay` **`7s`** at **100%**.
+>
+> **Task item 8:** Routes to `notification-service`, with **no** timeout and **no** retries on this rule.
+
+Each test uses its own header value, because the first matching rule wins. Add the second rule to `virtualservice-notification.yaml`, below the first one:
+
+```yaml
+    - match:
+        - headers:
+            x-chaos:
+              exact: delay
+      fault:
+        delay:
+          fixedDelay: 7s
+          percentage:
+            value: 100
+      route:
+        - destination:
+            host: notification-service
+```
+
+Apply the file again:
+
+```sh
+kubectl apply -f virtualservice-notification.yaml
+```
+
+```text
+virtualservice.networking.istio.io/notification configured
+```
+
+Check items 6 to 8. Print the second rule:
+
+```sh
+kubectl -n orders get virtualservice notification -o jsonpath='{.spec.http[1]}{"\n"}'
+```
+
+```text
+{"fault":{"delay":{"fixedDelay":"7s","percentage":{"value":100}}},"match":[{"headers":{"x-chaos":{"exact":"delay"}}}],"route":[{"destination":{"host":"notification-service"}}]}
+```
+
+The rule matches `x-chaos: delay`, delays by `7s` at 100%, and routes to `notification-service`. It has no `timeout` and no `retries`.
+
+---
+
+## Item 9: Rule 3, Every Other Request
+
+> **Task item 9:** No `match` block, no fault, no timeout, no retries. Routes to `notification-service`.
+
+A rule without `match` matches every request, so it must be last. Add it to the end of `virtualservice-notification.yaml`:
+
+```yaml
+    - route:
+        - destination:
+            host: notification-service
+```
+
+Apply the file again:
+
+```sh
+kubectl apply -f virtualservice-notification.yaml
+```
+
+```text
+virtualservice.networking.istio.io/notification configured
+```
+
+Check item 9. Print the match, the fault, the retries and the timeout of every rule:
+
+```sh
+kubectl -n orders get virtualservice notification \
+  -o jsonpath='{range .spec.http[*]}{.match}{" fault=["}{.fault}{"] retries=["}{.retries}{"] timeout=["}{.timeout}{"]\n"}{end}'
+```
+
+```text
+[{"headers":{"x-chaos":{"exact":"abort"}}}] fault=[{"abort":{"httpStatus":503,"percentage":{"value":100}}}] retries=[{"attempts":2,"perTryTimeout":"1s","retryOn":"gateway-error"}] timeout=[5s]
+[{"headers":{"x-chaos":{"exact":"delay"}}}] fault=[{"delay":{"fixedDelay":"7s","percentage":{"value":100}}}] retries=[] timeout=[]
+ fault=[] retries=[] timeout=[]
+```
+
+There are exactly three rules, in the right order. The third rule has no match, no fault, no retries and no timeout.
+
+---
+
+## Item 10: The Timeout On `booking-service`
+
+> **Task item 10:** The timeout for the delay test goes **there**, one hop before the fault, and not next to it. In the sidecar proxy, the fault filter holds the request before the router starts the request to the destination. A `timeout` on the same rule belongs to the router, so it never sees the delay, and the request waits all seven seconds. Only a timeout that a different proxy enforces (the proxy of `tester`, on its call to `booking-service`) can stop an injected delay early.
+
+Create a second `VirtualService` named `booking` for the host `booking-service`, with one rule without a `match`, a `timeout` of `2s`, and the destination `booking-service`. Save this as `virtualservice-booking.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -130,23 +216,30 @@ Apply it:
 kubectl apply -f virtualservice-booking.yaml
 ```
 
-Then check the result:
+```text
+virtualservice.networking.istio.io/booking created
+```
+
+Check item 10. Print the host and the rule, and let Istio check the objects:
 
 ```sh
+kubectl -n orders get virtualservice booking -o jsonpath='{.spec.hosts} {.spec.http}{"\n"}'
 istioctl analyze -n orders
 ```
 
 ```text
+["booking-service"] [{"route":[{"destination":{"host":"booking-service"}}],"timeout":"2s"}]
+
 ✔ No validation issues found when analyzing namespace: orders.
 ```
 
-Both fault rules are above the plain rule, and each matches a different value of the same header. The third rule has no `fault`, no `timeout` and no `retries`. The grader checks that all three are missing.
-
 ---
 
-## Step 4: Check Other Requests First
+## Item 13: Other Requests Are Untouched
 
-Always check in this order. If the scoping is wrong, you want to know before you start to cause failures.
+> **Task item 13:** Five requests with **no** `x-chaos` header return **200**, fast.
+
+Always check this first, before you cause failures. If the scoping were wrong, you would see it here. `istiod`, the Istio control plane, sends the rules to the proxies, so wait a few seconds after the last apply:
 
 ```sh
 for i in 1 2 3 4 5; do
@@ -156,88 +249,130 @@ done
 ```
 
 ```text
-200 0.006104s
-200 0.007915s
-200 0.002709s
-200 0.003174s
-200 0.002417s
+200 0.013067s
+200 0.003050s
+200 0.003290s
+200 0.002283s
+200 0.002259s
 ```
+
+All five requests return `200` in a few milliseconds.
 
 ---
 
-## Step 5: Run the Abort Test and Count the Attempts
+## Item 11: The Abort Test, One Attempt
 
-The access log is where each sidecar proxy writes one line for every request. Count the `FI` lines in the log of the `booking-service` proxy before and after one request with `x-chaos: abort`:
+> **Task item 11:** A request with `x-chaos: abort` fails, and the access log of the `booking-service` proxy shows exactly **1** attempt to `notification-service`, with the response flag **`FI`** (fault injected), not three. The retry policy is configured and still never runs. An injected abort is a response that the fault filter makes itself, and the fault filter sits before the router. So the router never sees a failed attempt to retry. Retries recover from short failures of the destination; an injected abort never reaches the destination.
+
+Predict the result first. Most people expect three attempts: the first one plus two retries. The real answer is one. The fault filter answers the request with `503` itself, so the request never reaches the router, where the retry policy lives:
+
+```mermaid
+flowchart TB
+    R["request"] --> F["fault filter"]
+    F -->|"abort: 503, FI"| C["client"]
+    F -.->|"never reached"| X["router with retry policy"]
+```
+
+The diagram shows that the retry policy is valid, but the router never gets a failed attempt to retry. Count the `FI` lines in the access log of the `booking-service` proxy before and after one request. The access log has one line per request, and the proxy writes it a moment after the request:
 
 ```sh
 BEFORE=$(kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=-1 | grep -c ' FI ')
 kubectl -n orders exec deploy/tester -- \
   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -H "x-chaos: abort" -X POST http://booking-service/book
-sleep 3
+sleep 4
 AFTER=$(kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=-1 | grep -c ' FI ')
 echo "FI-flagged attempts: $((AFTER - BEFORE))"
-kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=5 | grep ' FI ' | head -1
+kubectl -n orders logs -l app=booking-service -c istio-proxy --tail=6 | grep ' FI ' | tail -1
+echo "503 lines at notification-service: $(kubectl -n orders logs -l app=notification-service -c istio-proxy --tail=-1 | grep -c ' 503 ')"
 ```
 
 ```text
-503 0.006800s
+503 0.006596s
 FI-flagged attempts: 1
-[2026-10-09T20:56:01.489Z] "POST /notify HTTP/1.1" 503 FI fault_filter_abort - "-" 0 18 0 - "-" "curl/8.22.0" "bb2766f3-615a-9b89-8de5-98bc2ca94722" "notification-service" "-" outbound|80||notification-service.orders.svc.cluster.local - 10.96.115.125:80 10.244.0.8:41832 - -
+[2026-10-20T21:35:17.791Z] "POST /notify HTTP/1.1" 503 FI fault_filter_abort - "-" 0 18 0 - "-" "curl/8.23.0" "1b9a21c0-58cd-9ee9-b6cd-552142aab89a" "notification-service" "-" outbound|80||notification-service.orders.svc.cluster.local - 10.96.180.98:80 10.244.0.8:45836 - -
+503 lines at notification-service: 0
 ```
 
-One client request produced one attempt, with the flag `FI`, in about 7 milliseconds. The upstream host in the line is `"-"`: the proxy of `booking-service` answered the request itself and never opened a connection to `notification-service`. If you expected three, read step 2 again: the retry policy is there and it is correct, but the router never had a chance to use it. Now confirm that nothing reached `notification-service`:
-
-```sh
-kubectl -n orders logs -l app=notification-service -c istio-proxy --tail=20 | grep -c ' 503 '
-```
-
-```text
-0
-```
-
-The access log of `notification-service` has no `503` at all. None of these requests reached it.
+One client request produced one attempt with the flag `FI`, in about 7 milliseconds. The upstream host in the line is `"-"`: the proxy of `booking-service` answered the request itself and never opened a connection to `notification-service`. The access log of `notification-service` has no `503` line at all.
 
 ---
 
-## Step 6: Run the Delay Test
+## Item 12: The Delay Test, A Timeout After Two Seconds
 
-Send one request with `x-chaos: delay`, then read the access log of the `tester` proxy:
+> **Task item 12:** A request with `x-chaos: delay` fails after about **2 seconds**, and the access log of the **`tester`** proxy shows the response flag **`UT`** (upstream request timeout) for `booking-service`.
 
 ```sh
 kubectl -n orders exec deploy/tester -- \
   curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' -H "x-chaos: delay" -X POST http://booking-service/book
-sleep 2
+sleep 3
 kubectl -n orders logs deploy/tester -c istio-proxy --tail=-1 | grep ' 504 UT ' | tail -1
 ```
 
 ```text
-504 2.008974s
-[2026-10-09T20:56:07.384Z] "POST /book HTTP/1.1" 504 UT response_timeout - "-" 0 24 2001 - "-" "curl/8.22.0" "dd38e4be-c545-9d66-ae38-ba2130e66a58" "booking-service" "10.244.0.8:8083" outbound|80||booking-service.orders.svc.cluster.local 10.244.0.10:42692 10.96.17.210:80 10.244.0.10:49752 - -
+504 2.004103s
+[2026-10-20T21:35:22.041Z] "POST /book HTTP/1.1" 504 UT response_timeout - "-" 0 24 2000 - "-" "curl/8.23.0" "514cd5c6-997e-929a-a50c-5a922115014c" "booking-service" "10.244.0.8:8083" outbound|80||booking-service.orders.svc.cluster.local 10.244.0.10:55108 10.96.127.247:80 10.244.0.10:52634 - -
 ```
 
-The request ended after two seconds, not seven: the timeout stopped the delay. Note which proxy logged it. `UT` (upstream request timeout) is in the log of the **client**, `tester`, on its request to `booking-service`, because that proxy enforces the 2-second timeout. The delay itself is applied one hop further, in the proxy of **`booking-service`** on its request to `notification-service`.
+The request ended after two seconds, not seven. The timeout stopped the delay. Note which proxy logged it. `UT` is in the log of the client, `tester`, on its request to `booking-service`, because that proxy enforces the 2-second timeout. The delay itself is applied one hop further, in the proxy of `booking-service`.
 
-The two flags of this lab are the key to reading such failures. `FI` means "the proxy made this response itself", and `UT` means "the proxy's timeout expired". In this lab they appear one hop apart, which is exactly why the timeout had to go on the other `VirtualService`.
+The two flags of this lab help you read failures. `FI` means "the proxy made this response itself", and `UT` means "the timeout of the proxy expired". In this lab they appear one hop apart, and that is why the timeout had to go on the other `VirtualService`.
 
 ---
 
-## Step 7: Clean Up
+## Item 14: The Right Host, And The Faults In The Client Proxy
+
+> **Task item 14:** The `VirtualService` is for host `notification-service`, and the faults appear in the route configuration of the `booking-service` proxy.
+
+```sh
+kubectl -n orders get virtualservice -o custom-columns=NAME:.metadata.name,HOSTS:.spec.hosts
+istioctl proxy-config routes deploy/booking-service-v1 -n orders -o json | grep -c 'envoy.filters.http.fault'
+istioctl proxy-config routes deploy/booking-service-v1 -n orders -o json | grep -E '"fixedDelay"|"httpStatus"'
+```
+
+```text
+NAME           HOSTS
+booking        [booking-service]
+notification   [notification-service]
+2
+                                    "httpStatus": 503,
+                                    "fixedDelay": "7s",
+```
+
+The `notification` object is for `notification-service`. The route table of the `booking-service` proxy holds two fault filters, one with `httpStatus` `503` and one with `fixedDelay` `7s`. The `VirtualService` names the destination host, but the proxy of the calling workload applies the fault.
+
+---
+
+## Clean Up
+
+A fault is configuration. The `x-chaos` rules do no harm if you leave them, because nobody else sends that header, but deleting faults is the habit that keeps an unscoped fault from becoming an outage:
 
 ```sh
 kubectl -n orders delete virtualservice notification
 ```
 
-A fault is configuration. The `x-chaos` rules do no harm if you leave them, because nobody else sends that header. But the habit of deleting faults is what stops an unscoped one from becoming an outage.
+The grader needs the objects, so apply `virtualservice-notification.yaml` again before you submit.
 
 ---
 
-## Common Mistakes
+## Submit
 
-- **Expecting the retry policy to produce three attempts.** It produces one. The fault filter answers before the router, so the retries never run, and exactly one `FI` line appears. Counting it is the proof.
-- **Putting the 2s timeout next to the delay on rule 2.** It does nothing there: the fault filter holds the request before the router starts timing it. The call takes the full seven seconds, and the proxy never logs `UT`.
-- **Adding retries to rule 2.** The task asks for none, and the grader checks it.
-- **Anything on the plain rule.** No fault, no timeout, no retries: requests without the header must not change.
-- **Both fault rules matching the same header value.** They need different values, because the first matching rule wins.
-- **The plain rule placed first.** It matches every request, so neither test ever runs.
-- **Putting the faults on `booking-service`.** That delays the request from `tester` and tests the wrong hop.
-- **Reading only the final status.** The `FI` evidence is in the proxy log of the middle service, and the `UT` evidence is in the log of the client.
+Send the lab for grading:
+
+```sh
+astrona submit -c sections/section-050/capstone/labs/lab-01
+```
+
+The grader sends marked and unmarked requests, reads the access logs, and checks both `VirtualService` objects.
+
+---
+
+## Mistakes That Fail The Grader
+
+- **Expecting the retry policy to produce three attempts (items 3 and 11).** It produces one. The fault filter answers before the router, so the retries never run.
+- **Putting the 2s timeout next to the delay on rule 2 (items 8 and 10).** It does nothing there. The fault filter holds the request before the router starts to time it, so the call takes the full seven seconds, and the proxy never logs `UT`.
+- **Adding retries to rule 2 (item 8).** The task asks for none.
+- **Anything on the plain rule (item 9).** No fault, no timeout and no retries: requests without the header must not change.
+- **Both fault rules matching the same header value (items 1 and 6).** They need different values, because the first matching rule wins.
+- **The plain rule placed first (items 9 and 13).** It matches every request, so neither test ever runs.
+- **Putting the faults on `booking-service` (item 14).** That delays the request from `tester` and tests the wrong hop.
+- **Reading only the final status (items 11 and 12).** The `FI` evidence is in the proxy log of the middle service, and the `UT` evidence is in the log of the client.
