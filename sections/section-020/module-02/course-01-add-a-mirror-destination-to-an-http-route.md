@@ -2,7 +2,7 @@
 
 You want a new version of a service to handle real requests before any user depends on it. Mirroring does that with one field in a `VirtualService`, the Istio object that sets how requests to a host are routed. This part shows where that field goes and what the sidecar proxy does with it. It also shows the fact that confuses people first: a mirror sits *next to* the route, not inside it.
 
-The commands below need the `mark_start`, `count_received` and `send_requests` shell helpers in your terminal. `send_requests` counts which version of `probe` sent each response, and `count_received` counts the requests each version received since `mark_start` ran.
+The commands below need the `mark_start` and `count_received` shell helpers in your terminal and the `send-requests.sh` playground script. `send-requests.sh` counts which version of `probe` sent each response, and `count_received` counts the requests each version received since `mark_start` ran.
 
 ## Responses versus received requests
 
@@ -64,7 +64,7 @@ kubectl apply -f virtualservice-probe.yaml
 Then send 5 requests from `shuttle` and count both sides:
 
 ```sh
-mark_start; send_requests 5; count_received
+mark_start; astrona res run send-requests.sh -- 5; count_received
 ```
 
 You should see:
@@ -157,7 +157,7 @@ kubectl apply -f virtualservice-probe.yaml
 Then count both sides again:
 
 ```sh
-mark_start; send_requests 5; count_received
+mark_start; astrona res run send-requests.sh -- 5; count_received
 ```
 
 You should see:

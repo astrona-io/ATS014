@@ -2,7 +2,7 @@
 
 A mirror is invisible to the client. That is on purpose, but it leaves a practical question: how do you know the mirror works at all? This part shows where the proof is: in the access log of the pod that receives the copies. Then it lowers the copied share with `mirrorPercentage`, for services where twice the load is too much.
 
-The commands below need a `DestinationRule` named `probe` in the `starfleet` namespace with the subsets `v1` and `v2`, and a `VirtualService` named `probe` that routes every request to `v1` and mirrors 100% to `v2`. They also need the `mark_start`, `count_received` and `send_requests` shell helpers in your terminal.
+The commands below need a `DestinationRule` named `probe` in the `starfleet` namespace with the subsets `v1` and `v2`, and a `VirtualService` named `probe` that routes every request to `v1` and mirrors 100% to `v2`. They also need the `mark_start` and `count_received` shell helpers in your terminal and the `send-requests.sh` playground script.
 
 ## Telling a copy from a normal request
 
@@ -21,12 +21,12 @@ The receiving pod has two logs, and both work as proof. The **application log** 
 Send a few requests, then read the last two lines of the access log of v2, and the last line of the access log of `shuttle`:
 
 ```sh
-send_requests 5
+astrona res run send-requests.sh -- 5
 kubectl logs -n starfleet deploy/probe-v2 -c istio-proxy --tail=2
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 ```
 
-You should see (the first line is the output of `send_requests`):
+You should see (the first line is the output of `send-requests.sh`):
 
 ```text
    5 probe-v1
@@ -91,8 +91,8 @@ kubectl apply -f virtualservice-probe.yaml
 Then send 30 requests, and after that 100:
 
 ```sh
-mark_start; send_requests 30; count_received
-mark_start; send_requests 100; count_received
+mark_start; astrona res run send-requests.sh -- 30; count_received
+mark_start; astrona res run send-requests.sh -- 100; count_received
 ```
 
 You should see something like:

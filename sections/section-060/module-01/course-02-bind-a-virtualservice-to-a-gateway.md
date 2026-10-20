@@ -4,13 +4,9 @@ A gateway with a listener and no routes answers every request with `404 NR`. Thi
 
 A `VirtualService` is the Istio object that sets how requests to a host are routed: match rules, read from top to bottom, and the destination for each. To reach the gateway, it needs one extra line of YAML, and that line is the one people forget most often when they expose a service.
 
-The commands below need the `starfleet-gateway` `Gateway` applied (selector `istio: ingress`, port `80`, host `starfleet.example.com`). They also use the `gateway_status` helper, which sends one request through the gateway on `localhost:8080` with a `Host` header and prints the status code:
+The commands below need the `starfleet-gateway` `Gateway` applied (selector `istio: ingress`, port `80`, host `starfleet.example.com`). They also use the `gateway-status.sh` helper, which sends one request through the gateway on `localhost:8080` with a `Host` header and prints the status code:
 
 <!-- astrona:playground:renew -->
-
-```sh
-gateway_status() { curl -s -o /dev/null -w "%{http_code}\n" -H "Host: ${2:-starfleet.example.com}" "http://localhost:8080$1"; }
-```
 
 ## The `gateways:` field binds routes to a gateway
 
@@ -63,9 +59,9 @@ virtualservice.networking.istio.io/bridge created
 Then check the result with three requests: the `bridge` page, a path that is not in the match list, and a host the `Gateway` does not serve:
 
 ```sh
-gateway_status /productpage
-gateway_status /admin
-gateway_status /productpage other.example.com
+astrona res run gateway-status.sh -- /productpage
+astrona res run gateway-status.sh -- /admin
+astrona res run gateway-status.sh -- /productpage other.example.com
 ```
 
 ```text
@@ -102,7 +98,7 @@ The route table `http.80`, which the port `80` listener uses, now holds your fiv
 Send one more request and read the gateway's access log:
 
 ```sh
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 kubectl logs -n istio-ingress deploy/istio-ingress --tail=1
 ```
 
@@ -190,7 +186,7 @@ virtualservice.networking.istio.io/bridge configured
 Then check the result with a request, the access log, the gateway's route table and `istioctl analyze`:
 
 ```sh
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 kubectl logs -n istio-ingress deploy/istio-ingress --tail=1
 istioctl proxy-config routes deploy/istio-ingress -n istio-ingress
 istioctl analyze -n starfleet
@@ -224,7 +220,7 @@ virtualservice.networking.istio.io/bridge configured
 Then check the result:
 
 ```sh
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 ```
 
 ```text
@@ -244,4 +240,4 @@ You now know that a `VirtualService` reaches a gateway only when its `gateways:`
 > - **Leaving out `gateways:` for requests from outside.** The default value is `mesh`, so the routes go to the sidecar proxies and the gateway answers `404 NR`. `istioctl analyze` does not report it.
 > - **Naming a gateway and expecting sidecar proxies to keep the same routes.** Naming a gateway *replaces* the default `mesh`. List `mesh` as well if you want both.
 > - **A match list that misses a path the page needs.** The `bridge` page loads `/static` files. Leave that path out and the page loads with no styling, because those requests get `404`.
-> - **Testing without the `Host` header.** Without it, curl sends `localhost:8080` as the host, which matches no host on the `Gateway`. The `gateway_status` helper adds the header for you.
+> - **Testing without the `Host` header.** Without it, curl sends `localhost:8080` as the host, which matches no host on the `Gateway`. The `gateway-status.sh` helper adds the header for you.

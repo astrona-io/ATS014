@@ -14,13 +14,7 @@ A patch changes an object that already exists, so the commands below need a `sco
 
 <!-- astrona:playground:renew -->
 
-The commands in this part use a small helper. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Extra `curl` options go after the number. Paste it into your terminal if it is not there yet:
-
-```sh
-count_versions() { n=${1:-20}; [ $# -gt 0 ] && shift; for i in $(seq 1 $n); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" http://scout:9080/reviews/0 | grep -o 'scout-v[0-9]'
-done | sort | uniq -c; }
-```
+The commands in this part use the playground helper `count-versions.sh`. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Extra `curl` options go after the number. Run it with `astrona res run count-versions.sh`; the number and the options go after `--`.
 
 If your playground has no `scout` `VirtualService` yet, create one that sends every request to v1. Save this as `virtualservice-scout-v1.yaml`:
 
@@ -70,7 +64,7 @@ virtualservice.networking.istio.io/scout patched
 Then check the result. Count 100 requests:
 
 ```sh
-count_versions 100
+astrona res run count-versions.sh -- 100
 ```
 
 You should see something like:
@@ -126,8 +120,8 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result. Send 5 requests with the header `end-user: jason`, and 100 without it:
 
 ```sh
-count_versions 5 -H "end-user: jason"
-count_versions 100
+astrona res run count-versions.sh -- 5 -H "end-user: jason"
+astrona res run count-versions.sh -- 100
 ```
 
 You should see something like:

@@ -31,12 +31,11 @@ Set `timeout: 1.5s` with that policy, and the request stops soon after the secon
 
 ### The timeout cuts the retries short
 
-You can see this happen. The commands below use two helpers. `status_and_time` sends one request from the `shuttle` test pod and prints the status code and the total time. `count_received` waits a moment, then counts the lines that match a text in the access logs of the `probe` pods, an HTTP echo server on port 8000. The access log is the log where each sidecar proxy writes one line per request. Paste both into your terminal:
+You can see this happen. The commands below use two helpers. `status-and-time.sh` sends one request from the `shuttle` test pod and prints the status code and the total time. `count_received` waits a moment, then counts the lines that match a text in the access logs of the `probe` pods, an HTTP echo server on port 8000. The access log is the log where each sidecar proxy writes one line per request. Paste `count_received` into your terminal. `status-and-time.sh` is a playground script that you run with `astrona res run status-and-time.sh --`:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
 count_received() { sleep 4; kubectl logs -n starfleet -l app=probe -c istio-proxy --since=${2:-8s} | grep -c "$1"; }
 ```
 
@@ -71,7 +70,7 @@ kubectl apply -f virtualservice-probe-short-budget.yaml
 Then check the result. Send one request to `/delay/3`, a path that waits 3 seconds before it answers, and count how often it reached the probe:
 
 ```sh
-status_and_time http://probe:8000/delay/3
+astrona res run status-and-time.sh -- http://probe:8000/delay/3
 count_received "delay/3" 10s
 ```
 
@@ -119,7 +118,7 @@ kubectl apply -f virtualservice-probe-per-try.yaml
 Then send one slow request, count it at the probe, and read the `shuttle` access log:
 
 ```sh
-status_and_time http://probe:8000/delay/3
+astrona res run status-and-time.sh -- http://probe:8000/delay/3
 count_received "delay/3" 12s
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 ```

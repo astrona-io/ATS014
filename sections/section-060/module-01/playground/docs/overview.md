@@ -34,13 +34,9 @@ Check them with `astrona port-forward list`. You do not need to start a `kubectl
 
 ## Helper
 
-Paste this into each new terminal. It sends one request through the gateway for a path, with a `Host` header (`starfleet.example.com` unless you name another host), and prints only the HTTP status code:
+The playground ships the helper script `gateway-status.sh`. It sends one request through the gateway for a path, with a `Host` header (`starfleet.example.com` unless you name another host), and prints only the HTTP status code.
 
-```sh
-gateway_status() { curl -s -o /dev/null -w "%{http_code}\n" -H "Host: ${2:-starfleet.example.com}" "http://localhost:8080$1"; }
-```
-
-Use it like this: `gateway_status /productpage`, or `gateway_status /get probe.example.com`.
+Use it like this: `astrona res run gateway-status.sh -- /productpage`, or `astrona res run gateway-status.sh -- /get probe.example.com`.
 
 ## Things to try
 
@@ -68,7 +64,7 @@ kubectl delete gateways.networking.istio.io,virtualservice --all -n starfleet
 - `astrona list` shows the running environments. "already exists" means an old one is still there: run `astrona destroy ats-014-playground-060-01`, then run it again.
 - The full log path is printed at the end of `astrona run` (`~/.astrona/logs/`).
 - If `kubectl` talks to another cluster, run `kubectl config use-context kind-astro-ats-014-playground-060-01`.
-- If `gateway_status` prints `000` even with a correct `Gateway`, check the port forward with `astrona port-forward list`.
+- If `gateway-status.sh` prints `000` even with a correct `Gateway`, check the port forward with `astrona port-forward list`.
 
 ## When you are done
 
@@ -80,7 +76,7 @@ astrona destroy ats-014-playground-060-01
 
 ## Practice tasks
 
-The task below is written like an exam task. Try it on your own first, then open the solution. The solution was run and checked on a real cluster, and it uses the `gateway_status` helper.
+The task below is written like an exam task. Try it on your own first, then open the solution. The solution was run and checked on a real cluster, and it uses the `gateway-status.sh` helper.
 
 ### Task: expose the probe at a second host
 
@@ -149,10 +145,10 @@ kubectl apply -f virtualservice-probe.yaml
 Then check the result with the two open paths, a closed path, and the `bridge` page:
 
 ```bash
-gateway_status /get probe.example.com
-gateway_status /headers probe.example.com
-gateway_status /status/200 probe.example.com
-gateway_status /productpage
+astrona res run gateway-status.sh -- /get probe.example.com
+astrona res run gateway-status.sh -- /headers probe.example.com
+astrona res run gateway-status.sh -- /status/200 probe.example.com
+astrona res run gateway-status.sh -- /productpage
 ```
 
 ```text

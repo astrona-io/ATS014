@@ -54,12 +54,11 @@ Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
-### Three helpers to paste first
+### Three helpers
 
-Paste these into each new terminal. `call_external` sends one request from `shuttle` (by default to `https://httpbin.org/get`) and prints the status code, the time and the exit code of `curl`. `log_shuttle` and `log_gate` print the newest line of the `shuttle` sidecar's access log and of the egress gateway's access log.
+`call-external.sh` is a script that ships with the playground. It sends one request from `shuttle` (by default to `https://httpbin.org/get`) and prints the status code, the time and the exit code of `curl`. Paste the shell functions `log_shuttle` and `log_gate` into each new terminal. They print the newest line of the `shuttle` sidecar's access log and of the egress gateway's access log.
 
 ```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "${1:-https://httpbin.org/get}"; echo "  exit=$?"; }
 log_shuttle() { sleep 2; kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1; }
 log_gate() { sleep 2; kubectl logs -n istio-egress deploy/istio-egress --tail=1; }
 ```

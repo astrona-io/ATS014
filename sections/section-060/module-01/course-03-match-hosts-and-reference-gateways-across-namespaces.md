@@ -2,13 +2,9 @@
 
 A `Gateway` and a `VirtualService` each carry a list of hosts, and the `VirtualService` names the `Gateway` it belongs to. If these names do not line up, the gateway answers `404` and the objects still look correct. This part shows how the names must match: which hosts overlap, what `*` really does, and how to name a `Gateway` in another namespace.
 
-You also see that the routes on the gateway can use subsets, just like routes inside the mesh. The commands below need the `starfleet-gateway` `Gateway` (selector `istio: ingress`, port `80`, host `starfleet.example.com`) and the `bridge` `VirtualService` applied. That `VirtualService` serves `starfleet.example.com`, has `gateways: [starfleet-gateway]`, and is saved as `virtualservice-bridge.yaml`. The commands also use the `gateway_status` helper, which sends one request through the gateway with a `Host` header and prints the status code:
+You also see that the routes on the gateway can use subsets, just like routes inside the mesh. The commands below need the `starfleet-gateway` `Gateway` (selector `istio: ingress`, port `80`, host `starfleet.example.com`) and the `bridge` `VirtualService` applied. That `VirtualService` serves `starfleet.example.com`, has `gateways: [starfleet-gateway]`, and is saved as `virtualservice-bridge.yaml`. The commands also use the `gateway-status.sh` helper, which sends one request through the gateway with a `Host` header and prints the status code:
 
 <!-- astrona:playground:renew -->
-
-```sh
-gateway_status() { curl -s -o /dev/null -w "%{http_code}\n" -H "Host: ${2:-starfleet.example.com}" "http://localhost:8080$1"; }
-```
 
 ## The two host lists must overlap
 
@@ -50,8 +46,8 @@ virtualservice.networking.istio.io/bridge configured
 Then check the result with both host names, and run `istioctl analyze`:
 
 ```sh
-gateway_status /productpage
-gateway_status /productpage shop.example.com
+astrona res run gateway-status.sh -- /productpage
+astrona res run gateway-status.sh -- /productpage shop.example.com
 istioctl analyze -n starfleet
 ```
 
@@ -142,7 +138,7 @@ Then check the result. Send five requests to `scout` through the gateway and cou
 
 ```sh
 for i in 1 2 3 4 5; do curl -s -H "Host: starfleet.example.com" http://localhost:8080/reviews/0 | grep -o 'scout-v[0-9]'; done | sort | uniq -c
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 ```
 
 ```text
@@ -210,7 +206,7 @@ virtualservice.networking.istio.io/bridge configured
 Then check the result:
 
 ```sh
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 istioctl analyze -n starfleet
 ```
 
@@ -239,7 +235,7 @@ virtualservice.networking.istio.io/bridge configured
 Then check the result:
 
 ```sh
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 ```
 
 ```text

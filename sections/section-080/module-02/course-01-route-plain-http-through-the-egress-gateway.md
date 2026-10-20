@@ -158,10 +158,10 @@ kubectl apply -f virtualservice-httpbin-org-via-gate.yaml
 
 ## Send a request through the egress gateway
 
-With four objects in place, send one plain request and read both access logs. The helper functions `call_httpbin`, `log_shuttle` and `log_gate` must be defined in your terminal:
+With four objects in place, send one plain request and read both access logs. The helper functions `call-httpbin.sh`, `log_shuttle` and `log_gate` must be defined in your terminal:
 
 ```sh
-call_httpbin
+astrona res run call-httpbin.sh
 log_shuttle
 log_gate
 ```

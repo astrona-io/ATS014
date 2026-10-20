@@ -70,7 +70,7 @@ kubectl apply -f destinationrule-probe-failover.yaml
 Then check that the preference is active:
 
 ```sh
-count_zones 20
+astrona res run count-zones.sh -- 20
 ```
 
 ```text
@@ -82,8 +82,8 @@ Now scale the `zone-a` probe to zero replicas and send requests again:
 ```sh
 kubectl -n starfleet scale deployment probe-zone-a --replicas=0
 kubectl -n starfleet rollout status deployment probe-zone-a
-status_codes
-count_zones 20
+astrona res run status-codes.sh
+astrona res run count-zones.sh -- 20
 ```
 
 You should see:
@@ -125,7 +125,7 @@ probe-zone-b-56b7474bd-k25md            2/2     Running   0          2m40s
 The `probe-zone-a-damaged` pod is `2/2` and `Running`, so Kubernetes sees nothing wrong. Send 20 requests while there is no `DestinationRule`:
 
 ```sh
-status_codes
+astrona res run status-codes.sh
 ```
 
 You should see a mix, for example:
@@ -145,8 +145,8 @@ kubectl apply -f destinationrule-probe-failover.yaml
 Then send 20 requests, twice:
 
 ```sh
-status_codes
-status_codes
+astrona res run status-codes.sh
+astrona res run status-codes.sh
 ```
 
 You should see:

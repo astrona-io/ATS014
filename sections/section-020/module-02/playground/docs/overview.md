@@ -18,23 +18,20 @@ Every pod shows `2/2`: the application container plus the `istio-proxy` sidecar 
 
 ## The helpers
 
-Paste this block once in each new terminal:
+`send-requests.sh` is a helper script in this playground. Paste the two shell functions below once in each new terminal:
 
 ```sh
 mark_start() { START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ); }
 count_received()  { sleep 3; for v in v1 v2; do
   echo "probe-$v received: $(kubectl logs -n starfleet deploy/probe-$v -c probe --since-time=$START_TIME | grep -c 'GET /hostname')"
 done; }
-send_requests() { for i in $(seq 1 ${1:-5}); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/hostname | grep -o 'probe-v[0-9]'
-done | sort | uniq -c; }
 ```
 
 The helpers do three jobs:
 
 - `mark_start` saves the current time in `START_TIME`. Run it before a test.
 - `count_received` counts the requests each version **received** since that time. It reads them from the application log of each version. Run it after a test.
-- `send_requests` sends N requests from `shuttle` (5 if you give no number) and shows which version **sent the response**.
+- `send-requests.sh` sends N requests from `shuttle` (5 if you give no number) and shows which version **sent the response**.
 
 ## Things to try
 
@@ -66,7 +63,7 @@ astrona destroy ats-014-playground-020-02
 
 ## Practice tasks
 
-This is an exam-style task. Paste the helpers first; the solution uses them. Try it on your own first, then open the solution. The solution was run and checked on a cluster like this one.
+This is an exam-style task. Paste the shell functions first; the solution uses them and the `send-requests.sh` script. Try it on your own first, then open the solution. The solution was run and checked on a cluster like this one.
 
 > Send all `probe` traffic to **v1** and mirror **50%** of it to **v2**.
 
@@ -117,7 +114,7 @@ kubectl apply -f virtualservice-probe.yaml
 Then send 40 requests and count both sides:
 
 ```bash
-mark_start; send_requests 40; count_received
+mark_start; astrona res run send-requests.sh -- 40; count_received
 ```
 
 You should see something like:

@@ -21,16 +21,9 @@ You need `kubectl` and `istioctl` 1.30.5 on your own machine. `astrona check` te
 
 ## Helper functions
 
-Paste these into your terminal once per new terminal window:
+The playground ships two helper scripts. `status-and-time.sh` sends one request from `shuttle` and prints the status code and the total time. `count-navcom-status.sh` sends 10 requests straight to `navcom` and counts the status codes.
 
-```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
-count_navcom_status() { for i in $(seq 1 10); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://navcom:9080/ratings/0
-done | sort | uniq -c; }
-```
-
-`status_and_time` sends one request from `shuttle` and prints the status code and the total time. `count_navcom_status` sends 10 requests straight to `navcom` and counts the status codes.
+`status-and-time.sh` sends one request from `shuttle` and prints the status code and the total time. `count-navcom-status.sh` sends 10 requests straight to `navcom` and counts the status codes.
 
 ## Start over without a new cluster
 
@@ -54,7 +47,7 @@ astrona destroy ats-014-playground-050-01
 
 Each idea below is a small change to a `VirtualService` with a fault. Write the YAML in a file, apply it with `kubectl apply -f`, and watch what happens. The results shown were measured on a playground like this one.
 
-- **Fail every request.** In a `navcom` `VirtualService` with an abort, set `httpStatus: 503` and `percentage.value: 100`. `status_and_time http://navcom:9080/ratings/0` answers at once: `503 0.003905s`.
+- **Fail every request.** In a `navcom` `VirtualService` with an abort, set `httpStatus: 503` and `percentage.value: 100`. `astrona res run status-and-time.sh -- http://navcom:9080/ratings/0` answers at once: `503 0.003905s`.
 - **Slow one request in ten.** In a `navcom` `VirtualService` with a delay, set `percentage.value: 10`. Out of 30 requests, about three are slow. One run gave 26 fast and 4 slow.
 - **Fail only the requests from `scout`.** Replace a `headers` match with `sourceLabels: app: scout`. The request from `shuttle` straight to `navcom` still gets `200`, while the response for `jason` through `scout` shows `"Ratings service is currently unavailable"`.
 - **Try to hide an abort behind retries.** Add `retries: attempts: 3, retryOn: 5xx` to the abort rule. About half the requests still fail, because a rule with a `fault` ignores its own retries.
@@ -106,9 +99,9 @@ kubectl apply -f virtualservice-cargo-delay-from-bridge.yaml
 Then check the result. Send one request from `shuttle` straight to `cargo`, and two to `bridge`, which calls `cargo`:
 
 ```sh
-status_and_time http://cargo:9080/details/0
-status_and_time http://bridge:9080/productpage
-status_and_time http://bridge:9080/productpage
+astrona res run status-and-time.sh -- http://cargo:9080/details/0
+astrona res run status-and-time.sh -- http://bridge:9080/productpage
+astrona res run status-and-time.sh -- http://bridge:9080/productpage
 ```
 
 You should see something like:
@@ -125,7 +118,7 @@ Delete the fault when you are done:
 
 ```sh
 kubectl delete virtualservice cargo -n starfleet
-status_and_time http://bridge:9080/productpage
+astrona res run status-and-time.sh -- http://bridge:9080/productpage
 ```
 
 ```text

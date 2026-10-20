@@ -46,11 +46,7 @@ virtualservice.networking.istio.io "httpbin-org" deleted from starfleet namespac
 destinationrule.networking.istio.io "httpbin-org" deleted from starfleet namespace
 ```
 
-If your terminal does not have the `call_external` helper yet, paste it now. It sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`:
-
-```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "$@"; echo "  exit=$?"; }
-```
+The playground helper `call-external.sh` sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`.
 
 ## A `Sidecar` that leaves the entry out
 
@@ -82,7 +78,7 @@ kubectl apply -f serviceentry-httpbin-org-in-default.yaml
 Then call the host, list the entries, look in the `shuttle` pod's sidecar proxy, and run `istioctl analyze`:
 
 ```sh
-call_external https://httpbin.org/get
+astrona res run call-external.sh -- https://httpbin.org/get
 kubectl get serviceentry -A
 istioctl proxy-config cluster deploy/shuttle -n starfleet | grep httpbin.org || echo "(no match)"
 istioctl analyze -n starfleet
@@ -129,7 +125,7 @@ kubectl apply -f sidecar-registry-only-with-default.yaml
 Then check the result:
 
 ```sh
-call_external https://httpbin.org/get
+astrona res run call-external.sh -- https://httpbin.org/get
 istioctl proxy-config cluster deploy/shuttle -n starfleet | grep httpbin.org || echo "(no match)"
 ```
 

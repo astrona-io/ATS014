@@ -50,10 +50,10 @@ Apply it:
 kubectl apply -f virtualservice-scout-jason-v2.yaml
 ```
 
-Then check the result. The `status_and_time` helper function sends one request from the `shuttle` pod and prints the status code and the time the request took. Send one request as `jason`:
+Then check the result. The `status-and-time.sh` helper function sends one request from the `shuttle` pod and prints the status code and the time the request took. Send one request as `jason`:
 
 ```sh
-status_and_time -H "end-user: jason" http://scout:9080/reviews/0
+astrona res run status-and-time.sh -- -H "end-user: jason" http://scout:9080/reviews/0
 ```
 
 You should see something like:
@@ -137,7 +137,7 @@ kubectl apply -f virtualservice-navcom-delay-2s.yaml
 Then check the result. Send the request as `jason` again, and read the last access log lines of `scout` v2, the pod that calls `navcom`:
 
 ```sh
-status_and_time -H "end-user: jason" http://scout:9080/reviews/0
+astrona res run status-and-time.sh -- -H "end-user: jason" http://scout:9080/reviews/0
 kubectl logs -n starfleet deploy/scout-v2 -c istio-proxy --tail=3 | grep ratings
 ```
 

@@ -4,7 +4,7 @@ Sometimes a `VirtualService` sits in the right namespace and still does not beha
 
 A **`VirtualService`** is the Istio object that sets where requests to a host go. A **`DestinationRule`** defines subsets for a host, which are named groups of pods picked by pod labels. The **sidecar proxy** (Envoy) is the proxy container Istio adds to each pod; all traffic in and out of the pod passes through it.
 
-The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. They also use the `count_versions` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`.
+The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. They also use the `count-versions.sh` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`.
 
 ## Start from a working VirtualService
 
@@ -39,7 +39,7 @@ kubectl apply -f virtualservice-scout-fqdn.yaml
 Then check the result. Send 10 requests:
 
 ```sh
-count_versions $SCOUT/0
+astrona res run count-versions.sh -- $SCOUT/0
 ```
 
 You should see:

@@ -138,10 +138,10 @@ Apply it:
 kubectl apply -f virtualservice-navcom-abort-from-scout.yaml
 ```
 
-Then check the result. The `status_and_time` helper function sends one request from `shuttle` and prints the status and the time. Send one request straight to `navcom`, and one through `scout`:
+Then check the result. The `status-and-time.sh` helper function sends one request from `shuttle` and prints the status and the time. Send one request straight to `navcom`, and one through `scout`:
 
 ```sh
-status_and_time http://navcom:9080/ratings/0
+astrona res run status-and-time.sh -- http://navcom:9080/ratings/0
 kubectl exec -n starfleet deploy/shuttle -- curl -s -H "end-user: jason" http://scout:9080/reviews/0 \
   | grep -o '"rating": {[^}]*}' | head -1
 ```

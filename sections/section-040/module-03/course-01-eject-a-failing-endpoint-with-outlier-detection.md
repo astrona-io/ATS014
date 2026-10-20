@@ -10,14 +10,7 @@ The next step creates exactly that pod. It gives the problem a concrete shape be
 
 <!-- astrona:playground:renew -->
 
-The commands in this part use one shell helper function, `count_status`. Paste it into your terminal first. It sends 15 requests from the `shuttle` pod to the `probe` Service and counts the responses by HTTP status code:
-
-```sh
-# 15 single requests from the shuttle to the probe, counted by status code
-count_status() { for i in $(seq 1 15); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://probe:8000/get
-done | sort | uniq -c; }
-```
+The commands in this part use the playground script `count-status.sh`. Run it with `astrona res run count-status.sh`. It sends 15 requests from the `shuttle` pod to the `probe` Service and counts the responses by HTTP status code.
 
 The new Deployment adds a third pod behind the `probe` Service. It carries the same `app: probe` label, so the Service sends it a share of the requests. Its container answers **every** request with HTTP status `503`, and it has no readiness probe that could fail. Save this as `deployment-probe-broken.yaml`:
 
@@ -61,7 +54,7 @@ Then wait for the rollout, list the probe pods, and send 15 requests:
 ```sh
 kubectl rollout status -n starfleet deploy/probe-broken
 kubectl get pods -n starfleet -l app=probe
-count_status
+astrona res run count-status.sh
 ```
 
 You should see this (the waiting lines of the rollout are left out):
@@ -145,8 +138,8 @@ kubectl apply -f destinationrule-probe-outlier-detection.yaml
 Then send two rounds of 15 requests:
 
 ```sh
-count_status
-count_status
+astrona res run count-status.sh
+astrona res run count-status.sh
 ```
 
 You should see:

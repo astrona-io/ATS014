@@ -19,11 +19,9 @@ The tasks for `httpbin.org` need outbound internet access. Without it you see ne
 
 ## Helpers
 
-Paste these once in each new terminal. `call_httpbin` and `call_partner` send one plain `http://` request from the shuttle; `log_shuttle` and `log_gate` print the newest access log line of the shuttle's sidecar proxy and of the egress gateway:
+The scripts `call-httpbin.sh` and `call-partner.sh` ship with this playground and send one plain `http://` request from the shuttle. Paste the shell functions `log_shuttle` and `log_gate` once in each new terminal. They print the newest access log line of the shuttle's sidecar proxy and of the egress gateway:
 
 ```sh
-call_httpbin() { kubectl exec -n starfleet deploy/shuttle -- curl -s --max-time 15 -w "\n%{http_code}\n" http://httpbin.org/get | grep -E '"url"|^[0-9]{3}$'; }
-call_partner() { kubectl exec -n starfleet deploy/shuttle -- curl -s --max-time 10 -w "%{http_code}\n" http://partner.outpost.example/; }
 log_shuttle() { sleep 2; kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1; }
 log_gate() { sleep 2; kubectl logs -n istio-egress deploy/istio-egress --tail=1; }
 ```

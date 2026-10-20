@@ -4,7 +4,7 @@ Sooner or later you will apply a `VirtualService`, see `kubectl` accept it, and 
 
 A **`VirtualService`** is the Istio object that sets where requests to a host go. This part shows the wrong-namespace mistake, how to find it, and the habit that prevents it.
 
-The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. A `DestinationRule` defines subsets, which are named groups of pods picked by a pod label such as `version: v1`. The commands also use the `count_versions` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`.
+The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. A `DestinationRule` defines subsets, which are named groups of pods picked by a pod label such as `version: v1`. The commands also use the `count-versions.sh` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`.
 
 ## Short names are filled in from the object's namespace
 
@@ -60,7 +60,7 @@ virtualservice.networking.istio.io/scout created
 `kubectl` accepts it with no warning. Then check the result. Send 10 requests:
 
 ```sh
-count_versions $SCOUT/0
+astrona res run count-versions.sh -- $SCOUT/0
 ```
 
 You should see a mix, for example:
@@ -134,7 +134,7 @@ kubectl apply -f virtualservice-scout-wrong-planet.yaml
 Then check the result. Send 10 requests again:
 
 ```sh
-count_versions $SCOUT/0
+astrona res run count-versions.sh -- $SCOUT/0
 ```
 
 You should see:

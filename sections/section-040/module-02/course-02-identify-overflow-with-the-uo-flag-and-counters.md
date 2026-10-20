@@ -10,14 +10,11 @@ Every sidecar proxy (Envoy) can write an **access log**: one line per request, w
 
 An application's own `503` has no such flag. So the first question for any unexplained `503` is not "what is wrong with the probe?". It is "does the access log of the **client** proxy say `UO`?".
 
-The commands below need two things in the playground. The first is the `probe` `DestinationRule` with `tcp.maxConnections`, `http.http1MaxPendingRequests` and `http.maxRequestsPerConnection` all set to `1`, saved and applied as `destinationrule-probe-connection-pool.yaml`. The second is two shell helpers: `load_test` sends 30 requests from `fortio` over a given number of parallel connections, and `overflow_stats` reads `fortio`'s circuit-breaker counters for the `probe` Service. Paste them into your terminal:
+The commands below need two things in the playground. The first is the `probe` `DestinationRule` with `tcp.maxConnections`, `http.http1MaxPendingRequests` and `http.maxRequestsPerConnection` all set to `1`, saved and applied as `destinationrule-probe-connection-pool.yaml`. The second is two helpers: `load-test.sh` sends 30 requests from `fortio` over a given number of parallel connections, and `overflow_stats` reads `fortio`'s circuit-breaker counters for the `probe` Service. `load-test.sh` is a playground script (`astrona res run load-test.sh -- 3`). Paste `overflow_stats` into your terminal:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-# 30 requests to the probe over N parallel connections, from fortio; prints the status-code summary
-load_test() { kubectl exec -n starfleet deploy/fortio -c fortio -- \
-  fortio load -c "$1" -qps 0 -n 30 -loglevel Warning http://probe:8000/get 2>&1 | grep -E "^Code"; }
 # fortio's own circuit-breaker counters for the probe
 overflow_stats() { kubectl exec -n starfleet deploy/fortio -c istio-proxy -- \
   pilot-agent request GET stats 2>/dev/null | grep 'probe.starfleet' | grep -E 'pending_overflow|cx_overflow|pending_active'; }
@@ -26,7 +23,7 @@ overflow_stats() { kubectl exec -n starfleet deploy/fortio -c istio-proxy -- \
 Now send 30 requests, 4 at a time, and keep only the access log lines of `fortio`'s proxy that say `UO`:
 
 ```sh
-load_test 4 >/dev/null
+astrona res run load-test.sh -- 4 >/dev/null
 kubectl logs -n starfleet deploy/fortio -c istio-proxy --tail=40 | grep ' UO ' | head -2
 ```
 
@@ -95,7 +92,7 @@ template:
 The `fortio` Deployment in the playground already has this annotation. Changing it restarts the pod, and the counters start again from zero. Send another 30 requests, 3 at a time, then read the counters:
 
 ```sh
-load_test 3 >/dev/null
+astrona res run load-test.sh -- 3 >/dev/null
 overflow_stats
 ```
 

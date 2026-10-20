@@ -28,4 +28,4 @@ astrona destroy ats-014-playground-020-01
 | `bootstrap/deploy.sh` | Namespace `starfleet`, access logs, the Starfleet (`bridge`, `cargo`, `scout` v1-v3, `navcom`), `shuttle`, `probe`, the `scout` DestinationRule |
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/` | The module's VirtualServices, numbered in the order you apply them, plus `cases/` |
-| `docs/overview.md` | The only learner page: what the environment contains, the `count_versions` helper, ideas to try, and a final `## Practice tasks` section with a checked solution |
+| `docs/overview.md` | The only learner page: what the environment contains, the `count-versions.sh` helper, ideas to try, and a final `## Practice tasks` section with a checked solution |

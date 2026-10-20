@@ -2,7 +2,7 @@
 
 A request from the `shuttle` pod can now reach `httpbin.org` through the egress gateway, but it leaves the cluster as plain text, and `httpbin.org` rejects it with `400`. In this part you add the fifth object, the `DestinationRule` that turns on TLS (Transport Layer Security) for that last hop. You also see why it names the external host and not the egress gateway, and why a wrong port can hide a missing TLS connection behind a `200`.
 
-The commands below need the `ServiceEntry` `httpbin-org`, the `Gateway` `departure-gate`, the `DestinationRule` `departure-gate` and the `VirtualService` `httpbin-org-via-gate` applied in your playground, and the helper functions `call_httpbin` and `log_gate` defined in your terminal.
+The commands below need the `ServiceEntry` `httpbin-org`, the `Gateway` `departure-gate`, the `DestinationRule` `departure-gate` and the `VirtualService` `httpbin-org-via-gate` applied in your playground, and the helper functions `call-httpbin.sh` and `log_gate` defined in your terminal.
 
 ## The TLS settings belong to the host being called
 
@@ -48,7 +48,7 @@ kubectl apply -f destinationrule-httpbin-org-tls.yaml
 Then send the same plain request again, and read the egress gateway's access log:
 
 ```sh
-call_httpbin
+astrona res run call-httpbin.sh
 log_gate
 ```
 
@@ -76,7 +76,7 @@ kubectl patch virtualservice httpbin-org-via-gate -n starfleet --type json \
 Then call again and read the egress gateway's access log:
 
 ```sh
-call_httpbin
+astrona res run call-httpbin.sh
 log_gate
 ```
 

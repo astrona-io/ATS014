@@ -29,7 +29,7 @@ Start with the playground as it is. Check that there is no `DestinationRule`, th
 
 ```sh
 kubectl -n starfleet get destinationrule
-count_zones 20
+astrona res run count-zones.sh -- 20
 ```
 
 You should see something like:
@@ -69,7 +69,7 @@ kubectl apply -f destinationrule-probe-locality.yaml
 Then send 20 requests again:
 
 ```sh
-count_zones 20
+astrona res run count-zones.sh -- 20
 ```
 
 You should see a mix again, for example:
@@ -113,7 +113,7 @@ kubectl apply -f destinationrule-probe-failover.yaml
 Then send 20 requests:
 
 ```sh
-count_zones 20
+astrona res run count-zones.sh -- 20
 ```
 
 You should see:
@@ -183,7 +183,7 @@ kubectl apply -f destinationrule-probe-distribute.yaml
 Then send 100 requests:
 
 ```sh
-count_zones 100
+astrona res run count-zones.sh -- 100
 ```
 
 You should see something like:

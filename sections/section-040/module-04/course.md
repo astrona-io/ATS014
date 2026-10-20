@@ -22,7 +22,7 @@ After this module you can:
 
 ## Before you start
 
-This module expects some knowledge, a running playground, and two small shell helpers in your terminal.
+This module expects some knowledge, a running playground, and two small helper scripts from the playground.
 
 ### What you should already know
 
@@ -51,19 +51,11 @@ Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
-### Two helpers to paste first
+### Two helper scripts
 
-Paste these into each new terminal before you start. The first sends requests to the probe and counts which zone answered. The second prints the HTTP status code of each request:
+The playground ships two helper scripts. `count-zones.sh` sends requests to the probe and counts which zone answered. `status-codes.sh` prints the HTTP status code of each request.
 
-```sh
-count_zones() { for i in $(seq 1 ${1:-20}); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/hostname | grep -o 'probe-zone-[ab]' || echo failed
-done | sort | uniq -c; }
-status_codes() { kubectl exec -n starfleet deploy/shuttle -- sh -c \
-  'for i in $(seq 1 20); do curl -s -o /dev/null -w "%{http_code} " http://probe:8000/hostname; done; echo'; }
-```
-
-`count_zones 20` sends 20 requests, `count_zones 100` sends 100, and `status_codes` sends 20 and prints their status codes.
+`astrona res run count-zones.sh -- 20` sends 20 requests, `astrona res run count-zones.sh -- 100` sends 100, and `status-codes.sh` sends 20 and prints their status codes.
 
 ## The order of the parts
 

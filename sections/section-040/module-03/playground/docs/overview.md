@@ -18,26 +18,19 @@ The playground is one Kubernetes cluster with Istio and a small sample app:
 
 ## Helpers
 
-Paste these once in each new terminal. Each comment says what the helper does:
+Two scripts ship with this playground: `count-status.sh` and `load-test.sh`. Run them with `astrona res run`. Paste the two shell functions below once in each new terminal. Each comment says what the helper does:
 
 ```sh
-# 15 single requests from the shuttle to the probe, counted by status code
-count_status() { for i in $(seq 1 15); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://probe:8000/get
-done | sort | uniq -c; }
 # the probe's endpoints as the shuttle's proxy sees them, with the OUTLIER CHECK column
 show_endpoints() { istioctl proxy-config endpoints deploy/shuttle -n starfleet --cluster "outbound|8000||probe.starfleet.svc.cluster.local"; }
 # the shuttle proxy's outlier-detection counters for the probe
 ejection_stats() { kubectl exec -n starfleet deploy/shuttle -c istio-proxy -- \
   pilot-agent request GET stats 2>/dev/null | grep -E 'probe.starfleet.*outlier_detection.ejections_(active|total|enforced_consecutive_5xx):'; }
-# 30 requests to the probe over N parallel connections, from fortio
-load_test() { kubectl exec -n starfleet deploy/fortio -c fortio -- \
-  fortio load -c "$1" -qps 0 -n 30 -loglevel Warning http://probe:8000/get 2>&1 | grep -E "^Code"; }
 ```
 
 ## Things to try
 
-- Add a pod with the label `app: probe` that answers every request with `503` (the image `hashicorp/http-echo:1.0` with the arguments `-listen=:8080` and `-status-code=503` does this). Run `count_status`, then add a `DestinationRule` with `outlierDetection` and run it twice.
+- Add a pod with the label `app: probe` that answers every request with `503` (the image `hashicorp/http-echo:1.0` with the arguments `-listen=:8080` and `-status-code=503` does this). Run `count-status.sh`, then add a `DestinationRule` with `outlierDetection` and run it twice.
 - Compare `kubectl get endpointslices -n starfleet -l kubernetes.io/service-name=probe` with `show_endpoints`. Kubernetes still lists the broken pod, while the `shuttle` proxy shows it with `OUTLIER CHECK: FAILED`.
 - Restart `deploy/shuttle` to clear its ejection history, set `maxEjectionPercent: 10`, and confirm that nothing is ever ejected with three endpoints. `ejections_overflow` in the proxy's statistics counts the blocked attempts.
 - Watch `ejections_active` change between `1` and `0` while `ejections_total` only goes up.
@@ -63,7 +56,7 @@ astrona destroy ats-014-playground-040-03
 
 ## Practice tasks
 
-This exam-style task combines both halves of a circuit breaker: a connection pool, which limits how many connections and waiting requests a client proxy may have open, and outlier detection, which ejects endpoints that keep failing. Paste the helpers first; the solution uses `load_test`.
+This exam-style task combines both halves of a circuit breaker: a connection pool, which limits how many connections and waiting requests a client proxy may have open, and outlier detection, which ejects endpoints that keep failing. Paste the shell functions first; the solution uses `load-test.sh`, which ships with the playground.
 
 Try it on your own first, then open the solution. The solution was run and checked on a real cluster set up like this playground.
 
@@ -103,8 +96,8 @@ kubectl apply -f destinationrule-probe-practice.yaml
 Then check the result:
 
 ```bash
-load_test 5
-load_test 1
+astrona res run load-test.sh -- 5
+astrona res run load-test.sh -- 1
 ```
 
 ```text

@@ -48,15 +48,11 @@ Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
-### One helper to paste first
+### One helper script
 
-Paste this into each new terminal. It sends one request through the gateway for a path, with a `Host` header (`starfleet.example.com` unless you name another host), and prints only the status code:
+The playground ships the helper script `gateway-status.sh`. It sends one request through the gateway for a path, with a `Host` header (`starfleet.example.com` unless you name another host), and prints only the HTTP status code.
 
-```sh
-gateway_status() { curl -s -o /dev/null -w "%{http_code}\n" -H "Host: ${2:-starfleet.example.com}" "http://localhost:8080$1"; }
-```
-
-Use it like this: `gateway_status /productpage`, or `gateway_status /productpage other.example.com`.
+Use it like this: `astrona res run gateway-status.sh -- /productpage`, or `astrona res run gateway-status.sh -- /productpage other.example.com`.
 
 ## The order of the parts
 

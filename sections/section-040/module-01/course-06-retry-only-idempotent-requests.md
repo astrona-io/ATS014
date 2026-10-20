@@ -21,12 +21,11 @@ The diagram shows the two questions to ask before you add retries to a route. A 
 
 **A retried `POST` is a second `POST`.** Say the first try reached the receiver, the receiver did the work, and then the *response* got lost. The retry does the work again, so an order could be created four times. Stopping duplicates is the application's job, for example with an idempotency key.
 
-The commands below use two helpers. `status_and_time` sends one request from the `shuttle` test pod and prints the status code and the total time; extra `curl` options, such as `-X POST`, go after it. `count_received` waits a moment, then counts the lines that match a text in the access logs of the `probe` pods, an HTTP echo server on port 8000 whose `/status/<code>` path answers with exactly that status code. The access log is the log where each sidecar proxy writes one line per request, so every try shows up there as its own line. Paste both into your terminal:
+The commands below use two helpers. `status-and-time.sh` sends one request from the `shuttle` test pod and prints the status code and the total time; extra `curl` options, such as `-X POST`, go after it. `count_received` waits a moment, then counts the lines that match a text in the access logs of the `probe` pods, an HTTP echo server on port 8000 whose `/status/<code>` path answers with exactly that status code. The access log is the log where each sidecar proxy writes one line per request, so every try shows up there as its own line. Paste `count_received` into your terminal. `status-and-time.sh` is a playground script that you run with `astrona res run status-and-time.sh --`:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
 count_received() { sleep 4; kubectl logs -n starfleet -l app=probe -c istio-proxy --since=${2:-8s} | grep -c "$1"; }
 ```
 
@@ -63,7 +62,7 @@ kubectl apply -f virtualservice-probe-retries.yaml
 Then send one `POST` and count it at the probe:
 
 ```sh
-status_and_time -X POST http://probe:8000/status/503
+astrona res run status-and-time.sh -- -X POST http://probe:8000/status/503
 count_received "POST /status/503"
 ```
 
@@ -115,8 +114,8 @@ kubectl apply -f virtualservice-probe-get-only.yaml
 Then send a `GET` and a `POST`, and count each at the probe:
 
 ```sh
-status_and_time http://probe:8000/status/503; count_received "GET /status/503"
-status_and_time -X POST http://probe:8000/status/503; count_received "POST /status/503"
+astrona res run status-and-time.sh -- http://probe:8000/status/503; count_received "GET /status/503"
+astrona res run status-and-time.sh -- -X POST http://probe:8000/status/503; count_received "POST /status/503"
 ```
 
 You should see:

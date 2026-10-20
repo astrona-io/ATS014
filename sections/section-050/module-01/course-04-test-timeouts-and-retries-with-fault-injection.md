@@ -54,11 +54,11 @@ Apply it:
 kubectl apply -f virtualservice-navcom-abort-with-retries.yaml
 ```
 
-Then check the result. Note the time, send 10 requests with the `count_navcom_status` helper function, and count how many requests `navcom` really received since that time. The short pause gives the proxy time to write its last access log lines:
+Then check the result. Note the time, send 10 requests with the `count-navcom-status.sh` helper function, and count how many requests `navcom` really received since that time. The short pause gives the proxy time to write its last access log lines:
 
 ```sh
 START=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-count_navcom_status
+astrona res run count-navcom-status.sh
 sleep 3
 kubectl logs -n starfleet deploy/navcom-v1 -c istio-proxy --since-time=$START | grep -c 'GET /ratings/0'
 ```
@@ -114,7 +114,7 @@ kubectl apply -f virtualservice-navcom-delay-2s.yaml
 Then check the result. Send one request to `scout`, wait for `scout` v2 to finish its own two-second wait, and read both access logs:
 
 ```sh
-status_and_time http://scout:9080/reviews/0
+astrona res run status-and-time.sh -- http://scout:9080/reviews/0
 sleep 3
 kubectl logs -n starfleet deploy/scout-v2 -c istio-proxy --tail=3 | grep ratings
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
@@ -164,7 +164,7 @@ kubectl delete virtualservice scout -n starfleet
 Then check the result. Send one request straight to `navcom`:
 
 ```sh
-status_and_time http://navcom:9080/ratings/0
+astrona res run status-and-time.sh -- http://navcom:9080/ratings/0
 ```
 
 You should see:

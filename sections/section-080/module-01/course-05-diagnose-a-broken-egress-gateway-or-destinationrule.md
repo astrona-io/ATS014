@@ -10,10 +10,9 @@ The commands below need four objects in `starfleet` applied: the `ServiceEntry` 
 
 <!-- astrona:playground:renew -->
 
-Paste the helpers into your terminal first, if this terminal does not have them yet. `call_external` sends one request from `shuttle` and prints the status code, the time and the exit code of `curl`. `log_shuttle` and `log_gate` print the newest line of the `shuttle` sidecar's access log and of the egress gateway's access log:
+`call-external.sh` is a playground script that sends one request from `shuttle` and prints the status code, the time and the exit code of `curl`. Run it with `astrona res run call-external.sh --`. Paste the shell functions `log_shuttle` and `log_gate` into your terminal first, if this terminal does not have them yet. They print the newest line of the `shuttle` sidecar's access log and of the egress gateway's access log:
 
 ```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "${1:-https://httpbin.org/get}"; echo "  exit=$?"; }
 log_shuttle() { sleep 2; kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1; }
 log_gate() { sleep 2; kubectl logs -n istio-egress deploy/istio-egress --tail=1; }
 ```
@@ -53,7 +52,7 @@ kubectl apply -f gateway-wrong-host.yaml
 Then send a request, read the `shuttle` sidecar's access log, and run `istioctl analyze`, the command that checks Istio objects for known mistakes:
 
 ```sh
-call_external
+astrona res run call-external.sh
 log_shuttle
 istioctl analyze -n starfleet
 ```
@@ -87,7 +86,7 @@ kubectl delete -f destinationrule-egress-gateway.yaml
 Then send a request, read the `shuttle` sidecar's access log, and run `istioctl analyze`:
 
 ```sh
-call_external
+astrona res run call-external.sh
 log_shuttle
 istioctl analyze -n starfleet
 ```

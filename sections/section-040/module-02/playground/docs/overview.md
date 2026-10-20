@@ -16,12 +16,9 @@ This is a **playground**, not a graded lab. The cluster starts, installs Istio, 
 
 ## Helpers
 
-Paste these once per terminal:
+`load-test.sh` is a script that ships with this playground. Paste `overflow_stats` once per terminal:
 
 ```sh
-# 30 requests to the probe over N connections at the same time, from fortio; prints the status-code summary
-load_test() { kubectl exec -n starfleet deploy/fortio -c fortio -- \
-  fortio load -c "$1" -qps 0 -n 30 -loglevel Warning http://probe:8000/get 2>&1 | grep -E "^Code"; }
 # fortio's own overflow counters for the probe
 overflow_stats() { kubectl exec -n starfleet deploy/fortio -c istio-proxy -- \
   pilot-agent request GET stats 2>/dev/null | grep 'probe.starfleet' | grep -E 'pending_overflow|cx_overflow|pending_active'; }
@@ -70,7 +67,7 @@ astrona destroy ats-014-playground-040-02
 
 ## Practice tasks
 
-- Run `load_test 1` and `load_test 3`, and compare the mix of `200` and `503`. Requests sent one at a time never trip a limit on requests at the same time.
+- Run `astrona res run load-test.sh -- 1` and `astrona res run load-test.sh -- 3`, and compare the mix of `200` and `503`. Requests sent one at a time never trip a limit on requests at the same time.
 - Raise `http1MaxPendingRequests` to `10` and find how many parallel connections bring the `503`s back.
 - Remove `http1MaxPendingRequests` and keep only `maxConnections`. Do the `503`s stop?
 - Find the `UO` flag in `kubectl logs -n starfleet deploy/fortio -c istio-proxy`, then look for `inbound` lines with `UO` in the access logs of the `probe` pods' proxies.

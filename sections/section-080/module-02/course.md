@@ -58,13 +58,11 @@ Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
-### Helpers to paste first
+### Helpers
 
-Paste these into each new terminal. `call_httpbin` sends one plain `http://` request from the shuttle to `httpbin.org/get` and prints the address that `httpbin.org` says it was called on, plus the status code. `call_partner` does the same for the partner server. The other two print the newest line of each access log: the shuttle's sidecar proxy, and the egress gateway.
+The playground scripts `call-httpbin.sh` and `call-partner.sh` run from the host with `astrona res run`. `call-httpbin.sh` sends one plain `http://` request from the shuttle to `httpbin.org/get` and prints the address that `httpbin.org` says it was called on, plus the status code. `call-partner.sh` does the same for the partner server. Paste the two shell functions `log_shuttle` and `log_gate` into each new terminal. They print the newest line of each access log: the shuttle's sidecar proxy, and the egress gateway.
 
 ```sh
-call_httpbin() { kubectl exec -n starfleet deploy/shuttle -- curl -s --max-time 15 -w "\n%{http_code}\n" http://httpbin.org/get | grep -E '"url"|^[0-9]{3}$'; }
-call_partner() { kubectl exec -n starfleet deploy/shuttle -- curl -s --max-time 10 -w "%{http_code}\n" http://partner.outpost.example/; }
 log_shuttle() { sleep 2; kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1; }
 log_gate() { sleep 2; kubectl logs -n istio-egress deploy/istio-egress --tail=1; }
 ```
