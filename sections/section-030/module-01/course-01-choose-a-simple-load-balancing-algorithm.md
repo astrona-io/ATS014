@@ -27,12 +27,9 @@ Before you change anything, look at the pods behind the `probe` Service and at h
 
 <!-- astrona:playground:renew -->
 
-First paste this helper into your terminal. The `count_pods` function sends 8 requests from the `shuttle` pod to the `probe` Service and counts which pod answered each one. The path `/hostname` returns the name of the pod that served the request. Any `curl` options you add, such as a header, are passed on:
+The playground ships a helper script, `count-pods.sh`. It sends 8 requests from the `shuttle` pod to the `probe` Service and counts which pod answered each one. The path `/hostname` returns the name of the pod that served the request. Run it with `astrona res run count-pods.sh --`. Everything after `--` goes to `curl`, such as a header. First set the address that you pass to it:
 
 ```sh
-count_pods() { for i in $(seq 1 8); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o '"probe-[^"]*"'
-done | sort | uniq -c; }
 HOSTNAME_URL=http://probe:8000/hostname
 ```
 
@@ -52,7 +49,7 @@ probe-g28v5   IPv4          8080    10.244.0.7,10.244.0.8,10.244.0.9 + 1 more...
 The Service has four endpoints: three `probe-v1` pods and one `probe-v2` pod. Now send 8 requests that all carry the same header, `x-user: alice`:
 
 ```sh
-count_pods -H "x-user: alice" $HOSTNAME_URL
+astrona res run count-pods.sh -- -H "x-user: alice" $HOSTNAME_URL
 ```
 
 You should see a mix, for example:
@@ -121,7 +118,7 @@ kubectl apply -f destinationrule-probe.yaml
 Then send 8 requests:
 
 ```sh
-count_pods $HOSTNAME_URL
+astrona res run count-pods.sh -- $HOSTNAME_URL
 ```
 
 You should see each pod exactly twice:
@@ -144,7 +141,7 @@ kubectl apply -f destinationrule-probe.yaml
 Then send 8 requests:
 
 ```sh
-count_pods $HOSTNAME_URL
+astrona res run count-pods.sh -- $HOSTNAME_URL
 ```
 
 One run gave:
