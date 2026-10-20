@@ -16,12 +16,9 @@ If you leave `ttl` out, Istio only hashes a cookie the client already has. That 
 
 ### Let the sidecar proxy create a cookie
 
-First paste this helper into your terminal. The `count_pods` function sends 8 requests from the `shuttle` pod to the `probe` Service and counts which pod answered each one. The path `/hostname` returns the name of the pod that served the request. Any `curl` options you add are passed on:
+The playground ships a helper script, `count-pods.sh`. It sends 8 requests from the `shuttle` pod to the `probe` Service and counts which pod answered each one. The path `/hostname` returns the name of the pod that served the request. Run it with `astrona res run count-pods.sh --`. Everything after `--` goes to `curl`. First set the address that you pass to it:
 
 ```sh
-count_pods() { for i in $(seq 1 8); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o '"probe-[^"]*"'
-done | sort | uniq -c; }
 HOSTNAME_URL=http://probe:8000/hostname
 ```
 
@@ -63,7 +60,7 @@ set-cookie: session="3413e938a0751f42"; Max-Age=3600; HttpOnly
 The sidecar proxy created a cookie called `session`, valid for 3600 seconds. The application did not send it. Now send 8 requests that carry a cookie:
 
 ```sh
-count_pods -b "session=abc123" $HOSTNAME_URL
+astrona res run count-pods.sh -- -b "session=abc123" $HOSTNAME_URL
 ```
 
 ```text
@@ -123,7 +120,7 @@ kubectl apply -f destinationrule-probe.yaml
 Then send 8 requests, without any header:
 
 ```sh
-count_pods $HOSTNAME_URL
+astrona res run count-pods.sh -- $HOSTNAME_URL
 ```
 
 ```text
@@ -163,8 +160,8 @@ kubectl apply -f destinationrule-probe.yaml
 Then send 8 requests with `?user=alice`, and 8 without it:
 
 ```sh
-count_pods "$HOSTNAME_URL?user=alice"
-count_pods $HOSTNAME_URL
+astrona res run count-pods.sh -- "$HOSTNAME_URL?user=alice"
+astrona res run count-pods.sh -- $HOSTNAME_URL
 ```
 
 One run gave:

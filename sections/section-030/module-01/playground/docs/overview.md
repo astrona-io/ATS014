@@ -15,12 +15,9 @@ There is **no `DestinationRule`**, so Istio's default load balancer, `LEAST_REQU
 
 ## The helper you need
 
-Paste this into each new terminal. The `count_pods` function sends 8 requests from the `shuttle` pod to the `probe` Service and counts which pod answered each one. Any `curl` options you add are passed on:
+The playground ships a helper script, `count-pods.sh`. It sends 8 requests from the `shuttle` pod to the `probe` Service and counts which pod answered each one. The path `/hostname` returns the name of the pod that served the request. Run it with `astrona res run count-pods.sh --`. Everything after `--` goes to `curl`, such as a header. First set the address that you pass to it:
 
 ```sh
-count_pods() { for i in $(seq 1 8); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o '"probe-[^"]*"'
-done | sort | uniq -c; }
 HOSTNAME_URL=http://probe:8000/hostname
 ```
 
@@ -28,13 +25,13 @@ HOSTNAME_URL=http://probe:8000/hostname
 
 Each idea is a small change to a `DestinationRule` for `probe`, the Istio object that holds policies for traffic to one host. Write the YAML to a file, apply it with `kubectl apply -f`, and watch what changes.
 
-- Run `count_pods $HOSTNAME_URL` with no `DestinationRule`, then with `simple: ROUND_ROBIN`. With round robin, each of the four pods answers twice.
+- Run `astrona res run count-pods.sh -- $HOSTNAME_URL` with no `DestinationRule`, then with `simple: ROUND_ROBIN`. With round robin, each of the four pods answers twice.
 - Make the `x-user` header sticky with `consistentHash.httpHeaderName` and compare `alice`, `bob` and `carol`. Two names landing on one pod is a collision, not a bug.
 - Under the same policy, send requests with **no** `x-user` header, and watch the stickiness disappear.
 - Hash a cookie with `ttl`, and look for the `set-cookie` line:
   `kubectl exec -n starfleet deploy/shuttle -- curl -s -i $HOSTNAME_URL | grep -i -E 'set-cookie|hostname'`.
 - Hash the source IP (`useSourceIp: true`). Every request from the `shuttle` pod lands on one pod.
-- Hash a query parameter and call `count_pods "$HOSTNAME_URL?user=alice"`. Keep the quotes: `?` is a wildcard in zsh.
+- Hash a query parameter and call `astrona res run count-pods.sh -- "$HOSTNAME_URL?user=alice"`. Keep the quotes: `?` is a wildcard in zsh.
 - Give subset `v1` its own policy, route everything to `v1` with a `VirtualService`, and compare each cluster's `lbPolicy`.
 - Scale `probe-v1` from 3 to 4 pods during a sticky run, and count how many of your test names move.
 - Put `simple` and `consistentHash` in the same `trafficPolicy`, and read the error.
@@ -60,7 +57,7 @@ astrona destroy ats-014-playground-030-01
 
 ## Practice tasks
 
-Try the task on your own first, then open the solution. The solution was run and checked on the playground cluster, and it uses the `count_pods` helper.
+Try the task on your own first, then open the solution. The solution was run and checked on the playground cluster, and it uses the `count-pods.sh` helper.
 
 ### Sticky sessions by header
 
@@ -93,8 +90,8 @@ kubectl apply -f destinationrule-probe.yaml
 Then send 8 requests for each of two session ids:
 
 ```sh
-count_pods -H "x-session-id: abc" $HOSTNAME_URL
-count_pods -H "x-session-id: xyz" $HOSTNAME_URL
+astrona res run count-pods.sh -- -H "x-session-id: abc" $HOSTNAME_URL
+astrona res run count-pods.sh -- -H "x-session-id: xyz" $HOSTNAME_URL
 ```
 
 One run gave:
