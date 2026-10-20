@@ -97,7 +97,7 @@ istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet
 0
 ```
 
-There is no `lbPolicy` line at all. Round robin is Envoy's own default, and the dump leaves default values out. `RING_HASH` is gone. Now send 8 requests again:
+There is no `lbPolicy` line at all. Round robin is Envoy's own default, and the dump leaves default values out. `RING_HASH` is gone. Now send 8 requests again. This is the same loop as in Step 1, so you can run `astrona res run count-pods.sh 8`:
 
 ```sh
 for i in $(seq 1 8); do

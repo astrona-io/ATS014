@@ -8,6 +8,8 @@ A troubleshooting lab. In the `starfleet` namespace, the `probe` Service has fou
 
 The learner finds the cause in the `probe` `DestinationRule` and in the `shuttle` pod's proxy configuration, then changes the load balancer policy so the requests are spread over all four pods, in turn.
 
+The lab ships two resources: `probe-destinationrule.yaml`, the starting `DestinationRule` that `bootstrap/03-seed-fault.sh` applies, and `count-pods.sh`, which counts which probe pod answers each request. Learners list them with `astrona res`.
+
 ## Launching the Lab
 
 Run this command to start the cluster with the fault already in place:
