@@ -4,14 +4,11 @@ A routing rule that looks right can still send requests to the wrong place. A co
 
 A **`VirtualService`** is the Istio object that sets where requests to a host go. Its `http` field is an ordered list of rules, and each rule can have a `match` that says which requests it applies to. The **sidecar proxy** (Envoy) of the client pod reads these rules and picks the destination before the request leaves the pod.
 
-The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. A subset is a named group of pods, picked by a pod label such as `version: v2`. The commands also use the `count_versions` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`. Paste the helper into your terminal if it is not there yet:
+The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. A subset is a named group of pods, picked by a pod label such as `version: v2`. The commands also use the `count-versions.sh` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`. Run it with `astrona res run count-versions.sh --`. Set `$SCOUT` first:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-count_versions() { for i in $(seq 1 10); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o 'scout-v[0-9]' || echo none
-done | sort | uniq -c; }
 SCOUT=http://scout:9080/reviews
 ```
 
@@ -76,8 +73,8 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result:
 
 ```sh
-count_versions -H "end-user: jane" $SCOUT/0
-count_versions -H "end-user: bob" $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: jane" $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: bob" $SCOUT/0
 ```
 
 You should see:
@@ -124,8 +121,8 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result:
 
 ```sh
-count_versions -H "end-user: jane" $SCOUT/0
-count_versions -H "end-user: jasonx" $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: jane" $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: jasonx" $SCOUT/0
 ```
 
 You should see:
@@ -184,8 +181,8 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result:
 
 ```sh
-count_versions "$SCOUT/0?canary=true"
-count_versions $SCOUT/0
+astrona res run count-versions.sh -- "$SCOUT/0?canary=true"
+astrona res run count-versions.sh -- $SCOUT/0
 ```
 
 You should see:

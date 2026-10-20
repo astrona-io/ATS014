@@ -110,13 +110,10 @@ istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn probe.starfleet
 
 ### Watch some users move
 
-Keep the header policy. The `who` helper below prints the pod that each of eight users lands on. Run it, write down the result, and then add a fourth `probe-v1` pod and look again:
+Keep the header policy. The playground helper `pod-per-user.sh` prints the pod that each of eight users lands on. Run it with `astrona res run pod-per-user.sh`, write down the result, and then add a fourth `probe-v1` pod and look again:
 
 ```sh
-who() { for u in alice bob carol dave erin frank grace heidi; do
-  printf "%-6s %s\n" $u "$(kubectl exec -n starfleet deploy/shuttle -- curl -s -H "x-user: $u" $HOSTNAME_URL | grep -o 'probe-[^"]*')"
-done; }
-who
+astrona res run pod-per-user.sh
 ```
 
 One run gave:

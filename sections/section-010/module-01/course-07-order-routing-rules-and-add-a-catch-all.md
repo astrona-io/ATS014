@@ -4,7 +4,7 @@ When a `VirtualService` has several rules, more than one rule can match the same
 
 A **`VirtualService`** is the Istio object that sets where requests to a host go. The **sidecar proxy** (Envoy) of the client pod reads its rules and picks the destination before the request leaves the pod.
 
-The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. A subset is a named group of pods, picked by a pod label such as `version: v2`. The commands also use the `count_versions` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`.
+The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. A subset is a named group of pods, picked by a pod label such as `version: v2`. The commands also use the `count-versions.sh` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`.
 
 ## First match wins
 
@@ -78,7 +78,7 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result. Send 10 requests with the `end-user: jason` header:
 
 ```sh
-count_versions -H "end-user: jason" $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: jason" $SCOUT/0
 ```
 
 You should see:
@@ -128,7 +128,7 @@ kubectl apply -f virtualservice-scout-wrong-order.yaml
 Then check the result. Send the `jason` requests again, and run `istioctl analyze`, the command that runs Istio's own checks over the objects in a namespace:
 
 ```sh
-count_versions -H "end-user: jason" $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: jason" $SCOUT/0
 istioctl analyze -n starfleet
 ```
 

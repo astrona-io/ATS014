@@ -19,16 +19,15 @@ The playground is a small cluster with Istio and a sample app that can be slow o
 
 You need `kubectl` and `istioctl` 1.30.5 on your own machine. `astrona check` tells you which tools are missing.
 
-## Helper functions
+## Helpers
 
-Paste these into your terminal once per new terminal window:
+`status-and-time.sh` is a script that ships with this playground. Run it with `astrona res run status-and-time.sh --`. Paste `count_received` once per new terminal window:
 
 ```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
 count_received() { sleep 4; kubectl logs -n starfleet -l app=probe -c istio-proxy --since=${2:-8s} | grep -c "$1"; }
 ```
 
-`status_and_time` sends one request from `shuttle` and prints the status code and the total time. `count_received` counts how many requests the `probe` pods really received, from their access logs. That is the only place you can see retries, because the client only ever gets one response.
+`status-and-time.sh` sends one request from `shuttle` and prints the status code and the total time. `count_received` counts how many requests the `probe` pods really received, from their access logs. That is the only place you can see retries, because the client only ever gets one response.
 
 ## Things to try
 
@@ -171,7 +170,7 @@ kubectl apply -f virtualservice-navcom-and-scout.yaml
 Then check the result:
 
 ```sh
-status_and_time http://scout:9080/reviews/0
+astrona res run status-and-time.sh -- http://scout:9080/reviews/0
 ```
 
 You should see:
@@ -221,8 +220,8 @@ kubectl apply -f virtualservice-probe-retry-503-only.yaml
 Then check the result. Send one `503` and one `500`, and count how often each reached the probe:
 
 ```sh
-status_and_time http://probe:8000/status/503; count_received "status/503"
-status_and_time http://probe:8000/status/500; count_received "status/500"
+astrona res run status-and-time.sh -- http://probe:8000/status/503; count_received "status/503"
+astrona res run status-and-time.sh -- http://probe:8000/status/500; count_received "status/500"
 ```
 
 You should see:

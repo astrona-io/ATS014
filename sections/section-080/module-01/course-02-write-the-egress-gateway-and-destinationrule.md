@@ -106,7 +106,7 @@ Next, look at the egress gateway's listeners again, and send a request:
 
 ```sh
 istioctl proxy-config listener deploy/istio-egress -n istio-egress
-call_external
+astrona res run call-external.sh
 log_shuttle
 ```
 

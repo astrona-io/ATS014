@@ -29,18 +29,14 @@ A host in the registry gets a named Envoy **cluster**, such as `outbound|443||ht
 
 After a normal install, the sidecar proxy passes traffic for unknown hosts straight through. It does not route it, time it out or check it. Istio chose this default on purpose: a mesh that blocked every outbound request on day one would break most applications. The cost is that the mesh cannot see or control where your workloads send data.
 
-You can see this in your playground. If your terminal does not have the `call_external` helper yet, paste it first. It sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`:
+You can see this in your playground. The playground helper `call-external.sh` sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`. Run it with `astrona res run call-external.sh --`.
 
 <!-- astrona:playground:renew -->
-
-```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "$@"; echo "  exit=$?"; }
-```
 
 Now call `httpbin.org`, a public test API on the internet, and read the last line of the `shuttle` pod's access log:
 
 ```sh
-call_external https://httpbin.org/get
+astrona res run call-external.sh -- https://httpbin.org/get
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 ```
 
@@ -105,8 +101,8 @@ kubectl apply -f sidecar-registry-only.yaml
 Then call the same host on the internet, and the `probe` Service inside the cluster, and read the access log:
 
 ```sh
-call_external https://httpbin.org/get
-call_external http://probe:8000/get
+astrona res run call-external.sh -- https://httpbin.org/get
+astrona res run call-external.sh -- http://probe:8000/get
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
 ```
 
@@ -135,7 +131,7 @@ A refused request does not come back with a message that names the policy. What 
 A **listener** is the part of Envoy that accepts connections on one port. You can see the second case now, because no known host uses port `80` yet:
 
 ```sh
-call_external http://httpbin.org/get
+astrona res run call-external.sh -- http://httpbin.org/get
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 ```
 

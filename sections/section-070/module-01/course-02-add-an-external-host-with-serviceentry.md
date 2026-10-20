@@ -64,13 +64,9 @@ The `resolution` field tells the sidecar proxy where the endpoint addresses come
 
 Now add a real host to the registry, with the four answers from the table above: its name, port `443` with `HTTPS`, somebody else's service (`MESH_EXTERNAL`), and found by `DNS`.
 
-If your terminal does not have the `call_external` helper yet, paste it first. It sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`:
+The playground helper `call-external.sh` sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`. Run it with `astrona res run call-external.sh --`.
 
 <!-- astrona:playground:renew -->
-
-```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "$@"; echo "  exit=$?"; }
-```
 
 Save this as `serviceentry-httpbin-org.yaml`:
 
@@ -100,8 +96,8 @@ kubectl apply -f serviceentry-httpbin-org.yaml
 Then call the host over HTTPS and over plain HTTP, and read the `shuttle` pod's access log, where the sidecar proxy writes one line per request or connection:
 
 ```sh
-call_external https://httpbin.org/get
-call_external http://httpbin.org/get
+astrona res run call-external.sh -- https://httpbin.org/get
+astrona res run call-external.sh -- http://httpbin.org/get
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
 ```
 
@@ -152,7 +148,7 @@ It has to be `NONE`, because DNS cannot look up a wildcard: there is no single n
 First, check that Wikipedia is refused:
 
 ```sh
-call_external https://de.wikipedia.org/
+astrona res run call-external.sh -- https://de.wikipedia.org/
 ```
 
 ```text
@@ -189,8 +185,8 @@ kubectl apply -f serviceentry-wikipedia.yaml
 Then call two different Wikipedia hosts, and read the access log:
 
 ```sh
-call_external https://de.wikipedia.org/
-call_external https://en.wikipedia.org/wiki/Istio
+astrona res run call-external.sh -- https://de.wikipedia.org/
+astrona res run call-external.sh -- https://en.wikipedia.org/wiki/Istio
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
 ```
 

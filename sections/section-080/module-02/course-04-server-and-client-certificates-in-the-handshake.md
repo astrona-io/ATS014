@@ -2,7 +2,7 @@
 
 Some external servers are stricter than `httpbin.org`. Before they answer, they check two things: that the caller reached the right server, and who the caller is. In this part you route requests from the `shuttle` pod to such a server through the egress gateway. You then watch the TLS (Transport Layer Security) handshake fail on each of the two checks, one after the other, and learn to read each failure.
 
-The commands below need the `Gateway` `departure-gate` and the `DestinationRule` `departure-gate` applied in your playground, and the helper functions `call_partner` and `log_gate` defined in your terminal.
+The commands below need the `Gateway` `departure-gate` and the `DestinationRule` `departure-gate` applied in your playground, and the helper functions `call-partner.sh` and `log_gate` defined in your terminal.
 
 ## Two certificates in one handshake
 
@@ -175,7 +175,7 @@ kubectl apply -f destinationrule-partner-tls.yaml
 Then call the partner server and read the egress gateway's access log:
 
 ```sh
-call_partner
+astrona res run call-partner.sh
 log_gate
 ```
 
@@ -200,7 +200,7 @@ kubectl patch destinationrule partner-tls -n starfleet --type json \
 Then call the partner server again:
 
 ```sh
-call_partner
+astrona res run call-partner.sh
 ```
 
 You should see:

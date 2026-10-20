@@ -19,13 +19,9 @@ None of this needs help from the external host. The sidecar proxy (Envoy) in you
 
 There is a catch. The `httpbin-org` `ServiceEntry` declares `httpbin.org` only on port `443` with `protocol: HTTPS`. On HTTPS the sidecar proxy sees only encrypted bytes. It cannot see where one request ends, so a timeout has nothing to measure. HTTP rules need a **plain HTTP port**. To see this, try a timeout on a port that is not in the registry yet.
 
-If your terminal does not have the `call_external` helper yet, paste it first. It sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`:
+The playground helper `call-external.sh` sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`. Run it with `astrona res run call-external.sh --`.
 
 <!-- astrona:playground:renew -->
-
-```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "$@"; echo "  exit=$?"; }
-```
 
 Save this as `virtualservice-httpbin-org-timeout.yaml`:
 
@@ -58,7 +54,7 @@ kubectl apply -f virtualservice-httpbin-org-timeout.yaml
 Then call a path that waits 4 seconds before it responds, and run `istioctl analyze`, which checks Istio objects for mistakes:
 
 ```sh
-call_external http://httpbin.org/delay/4
+astrona res run call-external.sh -- http://httpbin.org/delay/4
 istioctl analyze -n starfleet
 ```
 
@@ -104,8 +100,8 @@ kubectl apply -f serviceentry-httpbin-org-http-and-https.yaml
 Then call the slow path and a fast one, and read the `shuttle` pod's access log, where the sidecar proxy writes one line per request:
 
 ```sh
-call_external http://httpbin.org/delay/4
-call_external http://httpbin.org/get
+astrona res run call-external.sh -- http://httpbin.org/delay/4
+astrona res run call-external.sh -- http://httpbin.org/get
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=2
 ```
 
@@ -130,7 +126,7 @@ Port `80` now has an HTTP **listener** in the `shuttle` pod's sidecar proxy. A l
 
 ```sh
 istioctl proxy-config routes deploy/shuttle -n starfleet --name 80
-call_external http://www.google.com/
+astrona res run call-external.sh -- http://www.google.com/
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 ```
 

@@ -8,13 +8,9 @@ The commands below run under `REGISTRY_ONLY`, the outbound traffic policy that m
 
 ## A `Sidecar` that takes in the entry
 
-Start from a `Sidecar` that already lets the `starfleet` pods see `httpbin.org` from the namespace `default`. It refuses every host outside the registry, and its `egress.hosts` list takes in the `starfleet` namespace, `istio-system`, and the one host `default/httpbin.org`, in the form `<namespace>/<host>`. If your terminal does not have the `call_external` helper yet, paste it now. It sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`:
+Start from a `Sidecar` that already lets the `starfleet` pods see `httpbin.org` from the namespace `default`. It refuses every host outside the registry, and its `egress.hosts` list takes in the `starfleet` namespace, `istio-system`, and the one host `default/httpbin.org`, in the form `<namespace>/<host>`. Use the playground helper `call-external.sh` again: `astrona res run call-external.sh --`. It sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`.
 
 <!-- astrona:playground:renew -->
-
-```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "$@"; echo "  exit=$?"; }
-```
 
 Then make sure the `Sidecar` is in place. Save this as `sidecar-registry-only-with-default.yaml`:
 
@@ -74,7 +70,7 @@ kubectl apply -f serviceentry-httpbin-org-in-default-private.yaml
 Then check the result:
 
 ```sh
-call_external https://httpbin.org/get
+astrona res run call-external.sh -- https://httpbin.org/get
 istioctl proxy-config cluster deploy/shuttle -n starfleet | grep httpbin.org || echo "(no match)"
 istioctl analyze -n starfleet
 ```
@@ -134,8 +130,8 @@ kubectl apply -f serviceentry-httpbin-org-private.yaml
 Then call the allowed host and one that is not in the registry:
 
 ```sh
-call_external https://httpbin.org/get
-call_external https://www.google.com
+astrona res run call-external.sh -- https://httpbin.org/get
+astrona res run call-external.sh -- https://www.google.com
 istioctl proxy-config cluster deploy/shuttle -n starfleet | grep httpbin.org || echo "(no match)"
 ```
 

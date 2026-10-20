@@ -2,7 +2,7 @@
 
 A plain request from the `shuttle` pod now reaches `httpbin.org` over `https://`. The response looks the same whether the egress gateway or the sidecar proxy started the TLS (Transport Layer Security) connection. In this part you prove which proxy did it by reading the configuration of both proxies. On the way you find that every sidecar proxy also received the TLS settings, and you keep them on the egress gateway alone with `exportTo`.
 
-The commands below need five objects applied in your playground: the `ServiceEntry` `httpbin-org`, the `Gateway` `departure-gate`, the `DestinationRule` objects `departure-gate` and `httpbin-org-tls`, and the `VirtualService` `httpbin-org-via-gate` with rule 2 on port `443`. They also need the helper functions `call_httpbin` and `log_shuttle` defined in your terminal.
+The commands below need five objects applied in your playground: the `ServiceEntry` `httpbin-org`, the `Gateway` `departure-gate`, the `DestinationRule` objects `departure-gate` and `httpbin-org-tls`, and the `VirtualService` `httpbin-org-via-gate` with rule 2 on port `443`. They also need the helper functions `call-httpbin.sh` and `log_shuttle` defined in your terminal.
 
 ## Two facts, two proofs
 
@@ -85,7 +85,7 @@ echo -n "gate: "
 istioctl proxy-config cluster deploy/istio-egress -n istio-egress --fqdn httpbin.org -o json | grep -c transportSocket
 echo -n "shuttle: "
 istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn httpbin.org -o json | grep -c transportSocket
-call_httpbin
+astrona res run call-httpbin.sh
 ```
 
 You should see:
@@ -147,7 +147,7 @@ kubectl apply -f destinationrule-departure-gate-wrong-tls.yaml
 Then send a request and read the shuttle's access log:
 
 ```sh
-call_httpbin
+astrona res run call-httpbin.sh
 log_shuttle
 ```
 

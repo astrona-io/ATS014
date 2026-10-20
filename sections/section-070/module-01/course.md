@@ -21,7 +21,7 @@ After this module you can:
 
 ## Before you start
 
-This module builds on the basic Istio objects. It also needs a playground with outbound internet access, and one shell helper.
+This module builds on the basic Istio objects. It also needs a playground with outbound internet access, and one helper script.
 
 ### What you should already know
 
@@ -47,15 +47,11 @@ Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
-### One helper to paste first
+### One helper script
 
-Paste this into each new terminal. It sends one request from the `shuttle` pod and prints the status code, the time, and the exit code of `curl`:
+The playground ships the helper script `call-external.sh`. It sends one request from the `shuttle` pod and prints the status code, the time, and the exit code of `curl`.
 
-```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "$@"; echo "  exit=$?"; }
-```
-
-Use it like this: `call_external https://httpbin.org/get`. A result of `000` with exit code `35` or `56` means the connection was closed before any HTTP response came back.
+Use it like this: `astrona res run call-external.sh -- https://httpbin.org/get`. A result of `000` with exit code `35` or `56` means the connection was closed before any HTTP response came back.
 
 ## The order of the parts
 

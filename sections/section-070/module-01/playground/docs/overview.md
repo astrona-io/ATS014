@@ -19,11 +19,7 @@ This playground calls `httpbin.org`, `de.wikipedia.org`, `en.wikipedia.org` and 
 
 ## Helper
 
-Paste this once in each new terminal. It sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`. `000` with exit code `35` or `56` means the connection was closed before any response:
-
-```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "$@"; echo "  exit=$?"; }
-```
+`call-external.sh` is a helper script in this playground. It sends one request from the `shuttle` pod and prints the status code, the time and the exit code of `curl`. `000` with exit code `35` or `56` means the connection was closed before any response.
 
 To see what the `shuttle` pod's sidecar proxy did with the last request:
 
@@ -63,7 +59,7 @@ astrona destroy ats-014-playground-070-01
 
 ## Practice tasks
 
-This is an exam-style task for this playground. Paste the `call_external` helper first, because the solution uses it. Try it on your own first, then open the solution. The solution was run and checked on a cluster like this one.
+This is an exam-style task for this playground. The solution uses the `call-external.sh` helper script. Try it on your own first, then open the solution. The solution was run and checked on a cluster like this one.
 
 > Pods in `starfleet` may reach only one outside host: **www.google.com** over HTTPS. Every other outside host must stay blocked, and the `ServiceEntry` must not open `www.google.com` for any other namespace.
 
@@ -122,8 +118,8 @@ kubectl apply -f serviceentry-google.yaml
 Then check the result:
 
 ```sh
-call_external https://www.google.com
-call_external https://httpbin.org/get
+astrona res run call-external.sh -- https://www.google.com
+astrona res run call-external.sh -- https://httpbin.org/get
 ```
 
 You should see:

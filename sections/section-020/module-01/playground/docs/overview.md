@@ -19,15 +19,7 @@ Every pod shows `2/2`: the application container plus its `istio-proxy` sidecar 
 
 ## The helper used in this module
 
-Paste this once in each new terminal. It sends a number of requests (20 if you give no number) from `shuttle` to `scout` and counts which version answered. The `scout` answers on the path `/reviews/0`. The path is built into the app, so it keeps its original name. The response contains `"podname": "scout-vX-..."`, which is how the helper tells the versions apart. Extra `curl` options go after the number:
-
-```sh
-count_versions() { n=${1:-20}; [ $# -gt 0 ] && shift; for i in $(seq 1 $n); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" http://scout:9080/reviews/0 | grep -o 'scout-v[0-9]'
-done | sort | uniq -c; }
-# count_versions 40                        40 requests
-# count_versions 10 -H "end-user: jason"   10 requests as jason
-```
+`count-versions.sh` is a helper script in this playground. It sends a number of requests (20 if you give no number) from `shuttle` to `scout` and counts which version answered. The `scout` answers on the path `/reviews/0`. The path is built into the app, so it keeps its original name. The response contains `"podname": "scout-vX-..."`, which is how the helper tells the versions apart. Extra `curl` options go after the number.
 
 ## Things to try
 
@@ -59,7 +51,7 @@ astrona destroy ats-014-playground-020-01
 
 ## Practice tasks
 
-This is an exam-style task. It uses the `count_versions` helper from the top of this page. Try it on your own first, then open the solution. The solution was run and checked on a cluster like this one.
+This is an exam-style task. It uses the `count-versions.sh` helper from the top of this page. Try it on your own first, then open the solution. The solution was run and checked on a cluster like this one.
 
 > Send **10%** of `scout` requests to **v2** and the rest to **v1**. Check it with 40 requests, then with 100.
 
@@ -97,8 +89,8 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result. Count 40 requests, and then 100:
 
 ```sh
-count_versions 40
-count_versions 100
+astrona res run count-versions.sh -- 40
+astrona res run count-versions.sh -- 100
 ```
 
 You should see something like:

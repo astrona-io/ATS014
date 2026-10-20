@@ -158,11 +158,11 @@ The `DestinationRule` you applied already changed the configuration in the proxy
 
 ### See the new clusters
 
-Predict the result before you run it: more clusters in the proxy of `shuttle`, and the same random mix of versions as before. The `count_versions` helper sends 10 requests from `shuttle` to `scout` and counts the versions that answered; `$SCOUT` holds `http://scout:9080/reviews`.
+Predict the result before you run it: more clusters in the proxy of `shuttle`, and the same random mix of versions as before. The `count-versions.sh` helper sends 10 requests from `shuttle` to `scout` and counts the versions that answered; `$SCOUT` holds `http://scout:9080/reviews`.
 
 ```sh
 istioctl proxy-config clusters deploy/shuttle -n starfleet | grep scout
-count_versions $SCOUT/0
+astrona res run count-versions.sh -- $SCOUT/0
 ```
 
 ```text
@@ -172,7 +172,7 @@ scout.starfleet.svc.cluster.local          9080      v2         outbound      ED
 scout.starfleet.svc.cluster.local          9080      v3         outbound      EDS              scout.starfleet
 ```
 
-`count_versions` still gives a random mix of v1, v2 and v3. Look at the third column, `SUBSET`: it now has `-`, `v1`, `v2` and `v3`. The last column names the `DestinationRule` that built them. The traffic did not move, because no route *uses* the subsets yet.
+`count-versions.sh` still gives a random mix of v1, v2 and v3. Look at the third column, `SUBSET`: it now has `-`, `v1`, `v2` and `v3`. The last column names the `DestinationRule` that built them. The traffic did not move, because no route *uses* the subsets yet.
 
 The row with `-` did not go away. Requests that ask for no subset still have a cluster to go to.
 

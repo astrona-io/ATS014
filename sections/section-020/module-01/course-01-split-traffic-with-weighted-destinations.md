@@ -10,18 +10,12 @@ A `VirtualService` is the Istio object that tells the sidecar proxies where to s
 
 <!-- astrona:playground:renew -->
 
-The commands in this part use a small helper. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Paste it into your terminal if it is not there yet:
-
-```sh
-count_versions() { n=${1:-20}; [ $# -gt 0 ] && shift; for i in $(seq 1 $n); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" http://scout:9080/reviews/0 | grep -o 'scout-v[0-9]'
-done | sort | uniq -c; }
-```
+The commands in this part use the playground helper `count-versions.sh`. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Run it with `astrona res run count-versions.sh`; a number goes after `--`.
 
 First, count where the requests go before any `VirtualService` exists:
 
 ```sh
-count_versions
+astrona res run count-versions.sh
 ```
 
 ```text
@@ -64,8 +58,8 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result. Count 20 requests, twice:
 
 ```sh
-count_versions
-count_versions
+astrona res run count-versions.sh
+astrona res run count-versions.sh
 ```
 
 You should see something like:

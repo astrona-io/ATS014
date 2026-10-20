@@ -39,14 +39,11 @@ The mistake gives no error in either direction. Put three alternatives into one 
 
 ## The same two conditions, AND then OR
 
-The best way to learn the difference is to run both forms against the same requests. The commands use the `count_versions` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`. Paste it into your terminal if it is not there yet:
+The best way to learn the difference is to run both forms against the same requests. The commands use the `count-versions.sh` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. `$SCOUT` holds `http://scout:9080/reviews`. Run it with `astrona res run count-versions.sh --`. Set `$SCOUT` first:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-count_versions() { for i in $(seq 1 10); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o 'scout-v[0-9]' || echo none
-done | sort | uniq -c; }
 SCOUT=http://scout:9080/reviews
 ```
 
@@ -89,9 +86,9 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result:
 
 ```sh
-count_versions -H "end-user: jason" $SCOUT/0
-count_versions -H "end-user: jason" $SCOUT/1
-count_versions $SCOUT/1
+astrona res run count-versions.sh -- -H "end-user: jason" $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: jason" $SCOUT/1
+astrona res run count-versions.sh -- $SCOUT/1
 ```
 
 You should see:
@@ -143,9 +140,9 @@ kubectl apply -f virtualservice-scout-or.yaml
 Then run the same three checks again:
 
 ```sh
-count_versions -H "end-user: jason" $SCOUT/0
-count_versions -H "end-user: jason" $SCOUT/1
-count_versions $SCOUT/1
+astrona res run count-versions.sh -- -H "end-user: jason" $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: jason" $SCOUT/1
+astrona res run count-versions.sh -- $SCOUT/1
 ```
 
 You should see:

@@ -52,11 +52,10 @@ istio-ingress   ClusterIP   10.96.80.93   <none>        15021/TCP,80/TCP,443/TCP
 
 The Service type is `ClusterIP`, so nothing outside the cluster can reach it directly. The playground reaches it through a port forward from `127.0.0.1:8080` to the Service's port `80`.
 
-Now send a request through the gateway. The `gateway_status` helper below sends one request for a path, with a `Host` header (`starfleet.example.com` unless you name another host), and prints only the HTTP status code. Paste it into your terminal if you have not done so yet, then call it:
+Now send a request through the gateway. The playground helper `gateway-status.sh` sends one request for a path, with a `Host` header (`starfleet.example.com` unless you name another host), and prints only the HTTP status code. Call it:
 
 ```sh
-gateway_status() { curl -s -o /dev/null -w "%{http_code}\n" -H "Host: ${2:-starfleet.example.com}" "http://localhost:8080$1"; }
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 ```
 
 ```text
@@ -104,7 +103,7 @@ gateway.networking.istio.io/starfleet-gateway created
 Then send a request, run `istioctl analyze`, and list the gateway's listeners:
 
 ```sh
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 istioctl analyze -n starfleet
 istioctl proxy-config listener deploy/istio-ingress -n istio-ingress
 ```
@@ -195,7 +194,7 @@ gateway.networking.istio.io/starfleet-gateway configured
 Then send a request, read the gateway's access log, and list its listeners again:
 
 ```sh
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 kubectl logs -n istio-ingress deploy/istio-ingress --tail=1
 istioctl proxy-config listener deploy/istio-ingress -n istio-ingress
 ```

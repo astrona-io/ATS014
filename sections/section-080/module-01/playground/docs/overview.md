@@ -17,10 +17,9 @@ This playground calls `https://httpbin.org` and `https://www.google.com`, so it 
 
 ## Helpers
 
-Paste these once in each new terminal. `call_external` sends one request from `shuttle` (by default to `https://httpbin.org/get`). `log_shuttle` and `log_gate` print the newest line of the `shuttle` sidecar's access log and of the egress gateway's access log.
+`call-external.sh` is a script that ships with this playground. It sends one request from `shuttle` (by default to `https://httpbin.org/get`). Paste the shell functions `log_shuttle` and `log_gate` once in each new terminal. They print the newest line of the `shuttle` sidecar's access log and of the egress gateway's access log.
 
 ```sh
-call_external() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "${1:-https://httpbin.org/get}"; echo "  exit=$?"; }
 log_shuttle() { sleep 2; kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1; }
 log_gate() { sleep 2; kubectl logs -n istio-egress deploy/istio-egress --tail=1; }
 ```
@@ -131,7 +130,7 @@ kubectl apply -f virtualservice-google-via-egress.yaml
 Then check the result:
 
 ```sh
-call_external https://www.google.com
+astrona res run call-external.sh -- https://www.google.com
 log_gate
 ```
 

@@ -49,16 +49,9 @@ Start your playground now, and keep it running while you read the parts:
 
 ### Two helper functions
 
-Paste these into each new terminal before you start:
+The playground ships two helper scripts. `status-and-time.sh` sends one request from the `shuttle` pod and prints the HTTP status code and the time the request took. `count-navcom-status.sh` sends 10 requests straight to `navcom` and counts the status codes.
 
-```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
-count_navcom_status() { for i in $(seq 1 10); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://navcom:9080/ratings/0
-done | sort | uniq -c; }
-```
-
-`status_and_time` sends one request from the `shuttle` pod and prints the HTTP status code and the time the request took. Add `-H "end-user: jason"` before the address to send the request as the user `jason`. `count_navcom_status` sends 10 requests from the `shuttle` pod straight to `navcom` and counts the status codes, so you can see a fault that hits only a share of the requests.
+`status-and-time.sh` sends one request from the `shuttle` pod and prints the HTTP status code and the time the request took. Add `-H "end-user: jason"` before the address to send the request as the user `jason`. `count-navcom-status.sh` sends 10 requests from the `shuttle` pod straight to `navcom` and counts the status codes, so you can see a fault that hits only a share of the requests.
 
 ## The order of the parts
 

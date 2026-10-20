@@ -29,27 +29,20 @@ The difference between Kubernetes and the proxies is easiest to see side by side
 
 <!-- astrona:playground:renew -->
 
-The commands in this part use four shell helper functions. Paste them into your terminal first. Each comment says what the helper does:
+The commands in this part use two playground scripts, `count-status.sh` and `load-test.sh` (run them with `astrona res run`), and two shell functions. Paste the functions into your terminal first. Each comment says what the helper does:
 
 ```sh
-# 15 single requests from the shuttle to the probe, counted by status code
-count_status() { for i in $(seq 1 15); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://probe:8000/get
-done | sort | uniq -c; }
 # the probe's endpoints as the shuttle's proxy sees them, with the OUTLIER CHECK column
 show_endpoints() { istioctl proxy-config endpoints deploy/shuttle -n starfleet --cluster "outbound|8000||probe.starfleet.svc.cluster.local"; }
 # the shuttle proxy's outlier-detection counters for the probe
 ejection_stats() { kubectl exec -n starfleet deploy/shuttle -c istio-proxy -- \
   pilot-agent request GET stats 2>/dev/null | grep -E 'probe.starfleet.*outlier_detection.ejections_(active|total|enforced_consecutive_5xx):'; }
-# 30 requests to the probe over N parallel connections, from fortio
-load_test() { kubectl exec -n starfleet deploy/fortio -c fortio -- \
-  fortio load -c "$1" -qps 0 -n 30 -loglevel Warning http://probe:8000/get 2>&1 | grep -E "^Code"; }
 ```
 
 Send a round of requests, so the `shuttle` proxy has fresh failures to count. Then compare what Kubernetes lists with what the `shuttle` proxy and the `fortio` proxy hold:
 
 ```sh
-count_status
+astrona res run count-status.sh
 kubectl get endpointslices -n starfleet -l kubernetes.io/service-name=probe
 kubectl get pods -n starfleet -l app=probe -o wide
 show_endpoints
@@ -79,7 +72,7 @@ ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
 
 The EndpointSlice still lists all three addresses, including `10.244.0.13`, the broken pod. In the `shuttle` proxy's list, that endpoint has `OUTLIER CHECK: FAILED`. In the `fortio` proxy's list, the same endpoint is `OK`.
 
-Read the two columns separately. `STATUS: HEALTHY` comes from Kubernetes through `istiod`: the pod is a ready endpoint of the Service. `OUTLIER CHECK` is **this proxy's own decision**. The difference between those two columns is outlier detection, and no Kubernetes command shows it. If every row in the `shuttle` list says `OK`, the ejection time has run out; run `count_status` and check again.
+Read the two columns separately. `STATUS: HEALTHY` comes from Kubernetes through `istiod`: the pod is a ready endpoint of the Service. `OUTLIER CHECK` is **this proxy's own decision**. The difference between those two columns is outlier detection, and no Kubernetes command shows it. If every row in the `shuttle` list says `OK`, the ejection time has run out; run `count-status.sh` and check again.
 
 ## Read the ejection counters
 
@@ -116,7 +109,7 @@ This loop prints the two counters every 20 seconds for four minutes. It keeps se
 ```sh
 for i in $(seq 1 12); do
   ejection_stats | grep -E 'ejections_(active|total)' | awk -F'.' '{print $NF}' | tr '\n' ' '; echo
-  count_status >/dev/null
+  astrona res run count-status.sh >/dev/null
   sleep 20
 done
 ```
@@ -177,7 +170,7 @@ kubectl apply -f destinationrule-probe-full-circuit-breaker.yaml
 Then send 30 requests over 3 parallel connections from `fortio`, a load generator that sends many requests at the same time. Read the `fortio` proxy's counters for both halves of the rule:
 
 ```sh
-load_test 3
+astrona res run load-test.sh -- 3
 kubectl exec -n starfleet deploy/fortio -c istio-proxy -- pilot-agent request GET stats 2>/dev/null \
   | grep -E 'probe.starfleet.*(upstream_rq_pending_overflow|outlier_detection.ejections_total):'
 ```

@@ -76,7 +76,7 @@ kubectl apply -f virtualservice-httpbin-org-allowed-only.yaml
 Then send a request from `shuttle`, which has no label, and read its access log and its listener:
 
 ```sh
-call_external
+astrona res run call-external.sh
 log_shuttle
 istioctl proxy-config listener deploy/shuttle -n starfleet --port 443 | head -3
 ```
@@ -113,7 +113,7 @@ deployment "shuttle" successfully rolled out
 Then send a request again and read both access logs:
 
 ```sh
-call_external
+astrona res run call-external.sh
 log_shuttle
 log_gate
 ```

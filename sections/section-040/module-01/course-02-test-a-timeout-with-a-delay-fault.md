@@ -24,13 +24,9 @@ The diagram shows that each sidecar proxy does one job. The `scout-v2` sidecar p
 
 ### Make navcom slow
 
-The commands below use a helper that sends one request from `shuttle` and prints the status code and the total time. Paste it into your terminal first:
+The commands below use a helper that sends one request from `shuttle` and prints the status code and the total time. It is the playground script `status-and-time.sh`. Run it with `astrona res run status-and-time.sh --`; the address goes after `--`.
 
 <!-- astrona:playground:renew -->
-
-```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
-```
 
 The delay rule routes to a subset of `navcom`. A subset is a named group of a Service's pods, selected by labels, and a `DestinationRule` defines it. A `DestinationRule` is the Istio object that sets what happens after routing picks a host, such as subsets and load balancing. Save this as `destinationrule-navcom.yaml`:
 
@@ -86,7 +82,7 @@ kubectl apply -f virtualservice-navcom-delay.yaml
 Then check the result. The playground already has a `scout` `VirtualService` that sends requests with the header `end-user: jason` to `scout` v2. Send one request with that header:
 
 ```sh
-status_and_time -H "end-user: jason" http://scout:9080/reviews/0
+astrona res run status-and-time.sh -- -H "end-user: jason" http://scout:9080/reviews/0
 ```
 
 You should see:
@@ -127,7 +123,7 @@ kubectl apply -f virtualservice-scout-timeout.yaml
 Then send one request, and read the `scout-v2` sidecar proxy's access log line for its call to `navcom`:
 
 ```sh
-status_and_time http://scout:9080/reviews/0
+astrona res run status-and-time.sh -- http://scout:9080/reviews/0
 kubectl logs -n starfleet deploy/scout-v2 -c istio-proxy --tail=4 | grep ratings
 ```
 
@@ -208,7 +204,7 @@ kubectl apply -f virtualservice-navcom-delay-and-timeout.yaml
 Then send one request straight to `navcom`:
 
 ```sh
-status_and_time http://navcom:9080/ratings/0
+astrona res run status-and-time.sh -- http://navcom:9080/ratings/0
 ```
 
 You should see:

@@ -4,23 +4,20 @@ A service that answers slowly can pull its clients down with it. Each waiting re
 
 ## The baseline: no limit yet
 
-Before you set any limit, see what the `probe` Service handles on its own. The tests in this module use two shell helpers. `load_test` makes the `fortio` load generator send 30 requests to the `probe` Service over a given number of parallel connections and prints the status-code summary. `overflow_stats` reads the circuit-breaker counters that `fortio`'s sidecar proxy keeps for the `probe` Service. Paste both into your terminal:
+Before you set any limit, see what the `probe` Service handles on its own. The tests in this module use two helpers. `load-test.sh` makes the `fortio` load generator send 30 requests to the `probe` Service over a given number of parallel connections and prints the status-code summary. `overflow_stats` reads the circuit-breaker counters that `fortio`'s sidecar proxy keeps for the `probe` Service. `load-test.sh` is a playground script that you run with `astrona res run load-test.sh -- 3`. Paste `overflow_stats` into your terminal:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-# 30 requests to the probe over N parallel connections, from fortio; prints the status-code summary
-load_test() { kubectl exec -n starfleet deploy/fortio -c fortio -- \
-  fortio load -c "$1" -qps 0 -n 30 -loglevel Warning http://probe:8000/get 2>&1 | grep -E "^Code"; }
 # fortio's own circuit-breaker counters for the probe
 overflow_stats() { kubectl exec -n starfleet deploy/fortio -c istio-proxy -- \
   pilot-agent request GET stats 2>/dev/null | grep 'probe.starfleet' | grep -E 'pending_overflow|cx_overflow|pending_active'; }
 ```
 
-`load_test 3` means "30 requests, with 3 open at any moment, as fast as possible". Run it now:
+`astrona res run load-test.sh -- 3` means "30 requests, with 3 open at any moment, as fast as possible". Run it now:
 
 ```sh
-load_test 3
+astrona res run load-test.sh -- 3
 ```
 
 You should see:
@@ -99,7 +96,7 @@ kubectl apply -f destinationrule-probe-connection-pool.yaml
 Then check the result. Send 30 requests, one at a time:
 
 ```sh
-load_test 1
+astrona res run load-test.sh -- 1
 ```
 
 You should see:
@@ -115,7 +112,7 @@ Thirty requests went through a pool of one connection, and all of them got a `20
 Raise the number of parallel connections above the limit, and refusals appear at once. Send the same 30 requests, but now 3 at a time:
 
 ```sh
-load_test 3
+astrona res run load-test.sh -- 3
 ```
 
 You should see a split, for example:
@@ -170,7 +167,7 @@ kubectl apply -f destinationrule-probe-max-connections-only.yaml
 Then check the result with 30 requests, 3 at a time:
 
 ```sh
-load_test 3
+astrona res run load-test.sh -- 3
 ```
 
 You should see:
@@ -181,7 +178,7 @@ Code 200 : 30 (100.0 %)
 
 The proxy refused nothing. The requests waited in the queue instead of failing fast.
 
-The same happens the other way round. Keep one connection but allow 10 waiting requests (`http1MaxPendingRequests: 10`), and `load_test 3` returns `Code 200 : 30 (100.0 %)` again. With 3 parallel connections the queue never fills, so the proxy refuses nothing, and the requests are only a little slower. So if a task says "the client must refuse requests to the probe when more than one is open", you need `http1MaxPendingRequests` as well as `maxConnections`, and usually `maxRequestsPerConnection: 1` too.
+The same happens the other way round. Keep one connection but allow 10 waiting requests (`http1MaxPendingRequests: 10`), and `astrona res run load-test.sh -- 3` returns `Code 200 : 30 (100.0 %)` again. With 3 parallel connections the queue never fills, so the proxy refuses nothing, and the requests are only a little slower. So if a task says "the client must refuse requests to the probe when more than one is open", you need `http1MaxPendingRequests` as well as `maxConnections`, and usually `maxRequestsPerConnection: 1` too.
 
 Put the full limits back before you go on:
 

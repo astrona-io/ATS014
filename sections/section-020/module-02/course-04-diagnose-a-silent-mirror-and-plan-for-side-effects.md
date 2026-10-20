@@ -2,7 +2,7 @@
 
 Three topics about mirroring are left. The first can cause real damage: a mirrored request does real work, and Istio does not know what that work is. The second is the check that shows whether the client's proxy holds a mirror at all, and what to look at when the shadow stays quiet. The third is how much load a mirror adds when you combine it with a weighted split.
 
-The commands below need a `DestinationRule` named `probe` in the `starfleet` namespace with the subsets `v1` and `v2` over the `version` label. They also need the `mark_start`, `count_received` and `send_requests` shell helpers in your terminal.
+The commands below need a `DestinationRule` named `probe` in the `starfleet` namespace with the subsets `v1` and `v2` over the `version` label. They also need the `mark_start` and `count_received` shell helpers in your terminal and the `send-requests.sh` playground script.
 
 ## The response is thrown away, the work is not
 
@@ -140,7 +140,7 @@ kubectl apply -f virtualservice-probe-split-mirror.yaml
 Then send 20 requests and count both sides:
 
 ```sh
-mark_start; send_requests 20; count_received
+mark_start; astrona res run send-requests.sh -- 20; count_received
 ```
 
 You should see something like:

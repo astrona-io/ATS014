@@ -2,13 +2,9 @@
 
 A broken ingress gateway shows only a few results: no response, a `404` or a `503`. Most of the work is telling them apart, because each one points at a different object. This part creates each failure on purpose, shows which command confirms it, and ends with a short order of checks you can use on any gateway.
 
-The commands below need the `starfleet-gateway` `Gateway` (selector `istio: ingress`, port `80`, host `starfleet.example.com`) and the `bridge` `VirtualService` applied. That `VirtualService` serves `starfleet.example.com`, has `gateways: [starfleet-gateway]`, and is saved as `virtualservice-bridge.yaml`. The commands also use the `gateway_status` helper, which sends one request through the gateway with a `Host` header and prints the status code:
+The commands below need the `starfleet-gateway` `Gateway` (selector `istio: ingress`, port `80`, host `starfleet.example.com`) and the `bridge` `VirtualService` applied. That `VirtualService` serves `starfleet.example.com`, has `gateways: [starfleet-gateway]`, and is saved as `virtualservice-bridge.yaml`. The commands also use the `gateway-status.sh` helper, which sends one request through the gateway with a `Host` header and prints the status code:
 
 <!-- astrona:playground:renew -->
-
-```sh
-gateway_status() { curl -s -o /dev/null -w "%{http_code}\n" -H "Host: ${2:-starfleet.example.com}" "http://localhost:8080$1"; }
-```
 
 ## `000`, `404` and `503`
 
@@ -29,8 +25,8 @@ A short way to remember it: `000` points at the `Gateway`, `404` at the `Virtual
 Start from the working gateway. Send one request with a host the `Gateway` does not serve, and one with the right host but a path that is not in the `VirtualService`:
 
 ```sh
-gateway_status /productpage wrong.example.com
-gateway_status /nothing-here
+astrona res run gateway-status.sh -- /productpage wrong.example.com
+astrona res run gateway-status.sh -- /nothing-here
 ```
 
 ```text
@@ -79,7 +75,7 @@ virtualservice.networking.istio.io/bridge configured
 Then check the result:
 
 ```sh
-gateway_status /productpage
+astrona res run gateway-status.sh -- /productpage
 istioctl analyze -n starfleet
 ```
 

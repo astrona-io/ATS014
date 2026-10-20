@@ -24,14 +24,7 @@ A test shows the default at work. It needs a client proxy with no ejection histo
 
 <!-- astrona:playground:renew -->
 
-The commands in this part use one shell helper function, `count_status`. Paste it into your terminal first. It sends 15 requests from the `shuttle` pod to the `probe` Service and counts the responses by status code:
-
-```sh
-# 15 single requests from the shuttle to the probe, counted by status code
-count_status() { for i in $(seq 1 15); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://probe:8000/get
-done | sort | uniq -c; }
-```
+The commands in this part use the playground script `count-status.sh`. Run it with `astrona res run count-status.sh`. It sends 15 requests from the `shuttle` pod to the `probe` Service and counts the responses by status code.
 
 Restart the `shuttle` Deployment. Its new pod gets a new sidecar proxy that starts with no ejection history:
 
@@ -67,8 +60,8 @@ kubectl apply -f destinationrule-probe-10-percent.yaml
 Then send two rounds of 15 requests, and read the proxy's outlier detection counters. `pilot-agent request GET stats` asks the Envoy in the `istio-proxy` container for its statistics. The `grep` keeps the counters for the `probe` Service, including the one that counts blocked ejections:
 
 ```sh
-count_status
-count_status
+astrona res run count-status.sh
+astrona res run count-status.sh
 kubectl exec -n starfleet deploy/shuttle -c istio-proxy -- pilot-agent request GET stats 2>/dev/null \
   | grep -E 'probe.starfleet.*outlier_detection.(ejections_active|ejections_total|ejections_overflow|ejections_detected_consecutive_5xx|ejections_enforced_consecutive_5xx):'
 ```

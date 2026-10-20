@@ -41,12 +41,11 @@ The choice between `5xx` and `gateway-error` also matters. `gateway-error` means
 
 The client cannot see retries, because it gets one response. The proof is at the **receiver**: every try arrives there as its own request, with its own line in the receiver's sidecar proxy access log. In this playground, access logs are switched on, so every sidecar proxy writes one line per request.
 
-The commands below use two helpers. `status_and_time` sends one request from the `shuttle` test pod and prints the status code and the total time. `count_received` waits a moment, then counts the lines that match a text in the access logs of the `probe` pods, an HTTP echo server on port 8000 whose `/status/<code>` path answers with exactly that status code. Paste both into your terminal:
+The commands below use two helpers. `status-and-time.sh` sends one request from the `shuttle` test pod and prints the status code and the total time. `count_received` waits a moment, then counts the lines that match a text in the access logs of the `probe` pods, an HTTP echo server on port 8000 whose `/status/<code>` path answers with exactly that status code. Paste `count_received` into your terminal. `status-and-time.sh` is a playground script that you run with `astrona res run status-and-time.sh --`:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
 count_received() { sleep 4; kubectl logs -n starfleet -l app=probe -c istio-proxy --since=${2:-8s} | grep -c "$1"; }
 ```
 
@@ -81,8 +80,8 @@ kubectl apply -f virtualservice-probe-retry-gateway-error.yaml
 Then send a `500` and a `502`, and count each at the probe:
 
 ```sh
-status_and_time http://probe:8000/status/500; count_received "status/500"
-status_and_time http://probe:8000/status/502; count_received "status/502"
+astrona res run status-and-time.sh -- http://probe:8000/status/500; count_received "status/500"
+astrona res run status-and-time.sh -- http://probe:8000/status/502; count_received "status/502"
 ```
 
 You should see:
@@ -127,8 +126,8 @@ kubectl apply -f virtualservice-probe-retry-503.yaml
 Then send a `503` and a `502`:
 
 ```sh
-status_and_time http://probe:8000/status/503; count_received "status/503"
-status_and_time http://probe:8000/status/502; count_received "status/502"
+astrona res run status-and-time.sh -- http://probe:8000/status/503; count_received "status/503"
+astrona res run status-and-time.sh -- http://probe:8000/status/502; count_received "status/502"
 ```
 
 You should see:

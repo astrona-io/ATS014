@@ -4,14 +4,11 @@ A `DestinationRule` gives the `scout` versions their names, but it does not send
 
 This part shows the object, the shape of one routing rule, and what a rule can read in a request. At the end, requests from the user `jason` go to their own version of `scout`.
 
-The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. They also use the `count_versions` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. Paste it into your terminal if it is not there yet:
+The commands below need the `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3` applied in your playground. They also use the `count-versions.sh` helper, which sends 10 requests from the `shuttle` pod to `scout` and counts which version answered. Run it with `astrona res run count-versions.sh --`. Set `$SCOUT` first:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-count_versions() { for i in $(seq 1 10); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o 'scout-v[0-9]' || echo none
-done | sort | uniq -c; }
 SCOUT=http://scout:9080/reviews
 ```
 
@@ -65,7 +62,7 @@ One more field is set for you. A `VirtualService` with no `gateways` field appli
 Then check the result. Send 10 requests and count the answers:
 
 ```sh
-count_versions $SCOUT/0
+astrona res run count-versions.sh -- $SCOUT/0
 ```
 
 ```text
@@ -174,8 +171,8 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result. Send 10 requests with the `end-user: jason` header, then 10 without it:
 
 ```sh
-count_versions -H "end-user: jason" $SCOUT/0
-count_versions $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: jason" $SCOUT/0
+astrona res run count-versions.sh -- $SCOUT/0
 ```
 
 ```text
@@ -196,8 +193,8 @@ The value is compared exactly. `exact: jason` means these five letters, all in l
 Send the same request twice, once with the name in mixed case and once with the value in mixed case:
 
 ```sh
-count_versions -H "End-User: jason" $SCOUT/0
-count_versions -H "end-user: Jason" $SCOUT/0
+astrona res run count-versions.sh -- -H "End-User: jason" $SCOUT/0
+astrona res run count-versions.sh -- -H "end-user: Jason" $SCOUT/0
 ```
 
 ```text

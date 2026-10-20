@@ -19,7 +19,7 @@ After this module you can:
 
 ## Before you start
 
-This module expects some knowledge of Istio routing, a running playground, and three shell helpers in your terminal.
+This module expects some knowledge of Istio routing, a running playground, and three helpers: two shell functions and one playground script.
 
 ### What you should already know
 
@@ -42,27 +42,24 @@ Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
-### Three helpers to paste first
+### Three helpers
 
-A mirror makes two numbers differ: which version **sent the response** to the client, and which versions **received** the request. These helpers measure both. Paste them into each new terminal before you start:
+A mirror makes two numbers differ: which version **sent the response** to the client, and which versions **received** the request. These helpers measure both. `send-requests.sh` is a script that ships with the playground. Paste the two shell functions into each new terminal before you start:
 
 ```sh
 mark_start() { START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ); }
 count_received()  { sleep 3; for v in v1 v2; do
   echo "probe-$v received: $(kubectl logs -n starfleet deploy/probe-$v -c probe --since-time=$START_TIME | grep -c 'GET /hostname')"
 done; }
-send_requests() { for i in $(seq 1 ${1:-5}); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/hostname | grep -o 'probe-v[0-9]'
-done | sort | uniq -c; }
 ```
 
 The helpers do three jobs:
 
-- `send_requests` sends requests from `shuttle` (5 if you give no number) and counts which version **sent the response**.
+- `send-requests.sh` sends requests from `shuttle` (5 if you give no number) and counts which version **sent the response**.
 - `mark_start` saves the current time in `START_TIME`, before a test.
 - `count_received` counts the requests each version **received** since that time, from the application log of each version.
 
-Use them together like this: `mark_start; send_requests 5; count_received`.
+Use them together like this: `mark_start; astrona res run send-requests.sh -- 5; count_received`.
 
 ## The order of the parts
 

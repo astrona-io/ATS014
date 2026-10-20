@@ -77,10 +77,10 @@ kubectl apply -f virtualservice-navcom-abort-50.yaml
 
 It has the name `navcom`, so it replaces any earlier `VirtualService` with that name in the namespace, for example one with a delay.
 
-Then check the result. The `count_navcom_status` helper function sends 10 requests from the `shuttle` pod straight to `navcom` and counts the status codes:
+Then check the result. The `count-navcom-status.sh` helper function sends 10 requests from the `shuttle` pod straight to `navcom` and counts the status codes:
 
 ```sh
-count_navcom_status
+astrona res run count-navcom-status.sh
 ```
 
 You should see a split close to half, for example:

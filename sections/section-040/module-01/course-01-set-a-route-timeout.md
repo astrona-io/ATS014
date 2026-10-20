@@ -8,18 +8,14 @@ In Istio, a timeout is one field on a rule of a `VirtualService`. A `VirtualServ
 
 Istio sets **no** HTTP timeout unless you write one. A request to a backend that takes 3 seconds to answer simply takes 3 seconds. A request to a backend that never answers keeps waiting.
 
-You can see this from the `shuttle` pod, the test client in the `starfleet` namespace. Paste this helper into your terminal first. It sends one request from `shuttle` with `curl` and prints the status code and the total time:
+You can see this from the `shuttle` pod, the test client in the `starfleet` namespace. The playground helper `status-and-time.sh` sends one request from `shuttle` with `curl` and prints the status code and the total time. Run it with `astrona res run status-and-time.sh --`; the address goes after `--`.
 
 <!-- astrona:playground:renew -->
-
-```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
-```
 
 The `probe` Service is an HTTP echo server on port 8000. Its `/delay/3` path waits 3 seconds before it answers. Send one request to it:
 
 ```sh
-status_and_time http://probe:8000/delay/3
+astrona res run status-and-time.sh -- http://probe:8000/delay/3
 ```
 
 You should see:
@@ -65,8 +61,8 @@ kubectl apply -f virtualservice-probe-timeout.yaml
 Then check the result. Send a slow request and a fast one:
 
 ```sh
-status_and_time http://probe:8000/delay/3
-status_and_time http://probe:8000/delay/0
+astrona res run status-and-time.sh -- http://probe:8000/delay/3
+astrona res run status-and-time.sh -- http://probe:8000/delay/0
 ```
 
 You should see:

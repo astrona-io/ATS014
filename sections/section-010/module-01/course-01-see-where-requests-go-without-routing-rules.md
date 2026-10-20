@@ -34,21 +34,18 @@ Without Istio, a Kubernetes component called **`kube-proxy`** picks one of the p
 
 ### See it in your playground
 
-The `shuttle` pod is a test client in the mesh. You send test requests from it with `curl`. Paste this helper into your terminal first. It sends 10 requests from `shuttle` to `scout` and counts which version answered each one:
+The `shuttle` pod is a test client in the mesh. You send test requests from it with `curl`. The playground helper `count-versions.sh` sends 10 requests from `shuttle` to `scout` and counts which version answered each one. Run it with `astrona res run count-versions.sh --`. First set the address of `scout`:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-count_versions() { for i in $(seq 1 10); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o 'scout-v[0-9]' || echo none
-done | sort | uniq -c; }
 SCOUT=http://scout:9080/reviews
 ```
 
 Now run it against the path `/reviews/0`:
 
 ```sh
-count_versions $SCOUT/0
+astrona res run count-versions.sh -- $SCOUT/0
 ```
 
 You get a mix of all three versions. One run gave:
@@ -61,7 +58,7 @@ You get a mix of all three versions. One run gave:
 
 Run it again and the numbers change, but all three versions keep answering. The Service only looks at `app=scout`, and every `scout` pod has that label. Right now you have no way to say "only v2". The rest of the module adds that.
 
-After every routing change, run `count_versions` again. If the mix did not change, your rule has not reached the proxy of `shuttle` yet, or it does not match the request.
+After every routing change, run `count-versions.sh` again. If the mix did not change, your rule has not reached the proxy of `shuttle` yet, or it does not match the request.
 
 ## The client's proxy makes the decision
 
@@ -150,4 +147,4 @@ A Service selects pods by one label and cannot read a request. In the mesh, the 
 > [!WARNING]
 > - **Expecting the Service to read the `version` label.** A Service only looks at its selector, here `app=scout`. Every pod with that label receives requests, whatever its version.
 > - **Debugging the pod that answered.** The sidecar proxy of the pod that *sent* the request made the choice. Point your `istioctl proxy-config` and `kubectl logs` commands at the client, here `deploy/shuttle`.
-> - **Trusting one run of `count_versions`.** Ten requests give a random mix. Run it a few times before you decide what the split is.
+> - **Trusting one run of `count-versions.sh`.** Ten requests give a random mix. Run it a few times before you decide what the split is.

@@ -78,7 +78,7 @@ kubectl apply -f serviceentry-httpbin-org.yaml
 Then send a request and read the access log of the `shuttle` sidecar:
 
 ```sh
-call_external
+astrona res run call-external.sh
 log_shuttle
 ```
 

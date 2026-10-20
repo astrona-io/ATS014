@@ -26,13 +26,7 @@ With a way to measure in place, you can move the rollout forward. Each step of t
 
 <!-- astrona:playground:renew -->
 
-The commands in this part use a small helper. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Extra `curl` options go after the number. Paste it into your terminal if it is not there yet:
-
-```sh
-count_versions() { n=${1:-20}; [ $# -gt 0 ] && shift; for i in $(seq 1 $n); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" http://scout:9080/reviews/0 | grep -o 'scout-v[0-9]'
-done | sort | uniq -c; }
-```
+The commands in this part use the playground helper `count-versions.sh`. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Extra `curl` options go after the number. Run it with `astrona res run count-versions.sh`; the number and the options go after `--`.
 
 Start by moving from an 80/20 split to 50/50. Save this as `virtualservice-scout-50-50.yaml`:
 
@@ -66,7 +60,7 @@ kubectl apply -f virtualservice-scout-50-50.yaml
 Then check the result. Count 20 requests:
 
 ```sh
-count_versions
+astrona res run count-versions.sh
 ```
 
 You should see something like:
@@ -105,7 +99,7 @@ kubectl apply -f virtualservice-scout-v3.yaml
 Then check the result:
 
 ```sh
-count_versions
+astrona res run count-versions.sh
 ```
 
 You should see:
@@ -161,7 +155,7 @@ kubectl apply -f virtualservice-scout-v1.yaml
 Then check the result:
 
 ```sh
-count_versions
+astrona res run count-versions.sh
 ```
 
 You should see:

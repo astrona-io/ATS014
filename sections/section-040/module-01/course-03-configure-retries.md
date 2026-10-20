@@ -55,12 +55,11 @@ In the example, `retryOn: 5xx,connect-failure,reset` retries any response with a
 
 The client cannot see retries, because it gets one response. The proof is at the **receiver**: every try arrives there as its own request, with its own line in the receiver's sidecar proxy access log. In this playground, access logs are switched on, so every sidecar proxy writes one line per request.
 
-The commands below use two helpers. `status_and_time` sends one request from the `shuttle` test pod and prints the status code and the total time. `count_received` waits a moment, then counts the lines that match a text in the access logs of the `probe` pods, an HTTP echo server on port 8000. Paste both into your terminal:
+The commands below use two helpers. `status-and-time.sh` sends one request from the `shuttle` test pod and prints the status code and the total time. `count_received` waits a moment, then counts the lines that match a text in the access logs of the `probe` pods, an HTTP echo server on port 8000. Paste `count_received` into your terminal. `status-and-time.sh` is a playground script that you run with `astrona res run status-and-time.sh --`:
 
 <!-- astrona:playground:renew -->
 
 ```sh
-status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" "$@"; }
 count_received() { sleep 4; kubectl logs -n starfleet -l app=probe -c istio-proxy --since=${2:-8s} | grep -c "$1"; }
 ```
 
@@ -97,7 +96,7 @@ kubectl apply -f virtualservice-probe-retries.yaml
 Then check the result. The probe's `/status/503` path always answers `503`. Send one request to it, count how many reached the probe, and read the `shuttle` access log:
 
 ```sh
-status_and_time http://probe:8000/status/503
+astrona res run status-and-time.sh -- http://probe:8000/status/503
 count_received "status/503"
 kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1
 ```
@@ -152,7 +151,7 @@ virtualservice.networking.istio.io "probe" deleted from starfleet namespace
 ```sh
 istioctl proxy-config routes deploy/shuttle -n starfleet --name 8000 -o json \
   | grep -E 'retryOn|numRetries'
-status_and_time http://probe:8000/status/503; count_received "status/503"
+astrona res run status-and-time.sh -- http://probe:8000/status/503; count_received "status/503"
 ```
 
 You should see (shortened):
@@ -201,7 +200,7 @@ kubectl apply -f virtualservice-probe-no-retries.yaml
 Then send one `503`, and run the flaky loop again:
 
 ```sh
-status_and_time http://probe:8000/status/503; count_received "status/503"
+astrona res run status-and-time.sh -- http://probe:8000/status/503; count_received "status/503"
 for i in $(seq 1 10); do
   kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" "http://probe:8000/status/200,503"
 done | sort | uniq -c

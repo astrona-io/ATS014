@@ -12,13 +12,7 @@ What happens if you write 50 and 30, which add up to 80? On Istio 1.30.5 the `Vi
 
 <!-- astrona:playground:renew -->
 
-The commands in this part use a small helper. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Paste it into your terminal if it is not there yet:
-
-```sh
-count_versions() { n=${1:-20}; [ $# -gt 0 ] && shift; for i in $(seq 1 $n); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" http://scout:9080/reviews/0 | grep -o 'scout-v[0-9]'
-done | sort | uniq -c; }
-```
+The commands in this part use the playground helper `count-versions.sh`. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Run it with `astrona res run count-versions.sh`; a number goes after `--`.
 
 Save this as `virtualservice-scout.yaml`, replacing the old file if you have one:
 
@@ -52,7 +46,7 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result. Count 100 requests, run `istioctl analyze` (the `istioctl` command that checks your Istio objects for known problems), and print the weights that the `shuttle` proxy received:
 
 ```sh
-count_versions 100
+astrona res run count-versions.sh -- 100
 istioctl analyze -n starfleet
 istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080 -o json | grep '"weight"'
 ```
@@ -109,8 +103,8 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result. Count 40 requests, and then 100:
 
 ```sh
-count_versions 40
-count_versions 100
+astrona res run count-versions.sh -- 40
+astrona res run count-versions.sh -- 100
 ```
 
 You should see something like:
@@ -162,7 +156,7 @@ kubectl apply -f virtualservice-scout.yaml
 Then check the result. Count, and print the clusters in the `shuttle` proxy's route. A **cluster** is Envoy's name for one destination it can send requests to, and each subset becomes its own cluster:
 
 ```sh
-count_versions
+astrona res run count-versions.sh
 istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080 -o json | grep -B1 '"weight"' | grep -E 'name|weight'
 ```
 

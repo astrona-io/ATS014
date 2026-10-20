@@ -2,7 +2,7 @@
 
 The partner server checks certificates in both directions, so the egress gateway needs two things: the partner's certificate authority (CA), to verify the partner server, and a client certificate, to prove its own identity. In this part you give the egress gateway both with `tls.mode: MUTUAL` and one field, `credentialName`. You then find out which namespace the certificate must be stored in, and why it matters.
 
-The commands below need the four partner routing objects (the `ServiceEntry` `partner`, the `Gateway` and `DestinationRule` `departure-gate` with the partner host and subset, and the `VirtualService` `partner-via-gate`), the `DestinationRule` `partner-tls`, and the helper functions `call_partner` and `log_gate` defined in your terminal.
+The commands below need the four partner routing objects (the `ServiceEntry` `partner`, the `Gateway` and `DestinationRule` `departure-gate` with the partner host and subset, and the `VirtualService` `partner-via-gate`), the `DestinationRule` `partner-tls`, and the helper functions `call-partner.sh` and `log_gate` defined in your terminal.
 
 ## `MUTUAL` and `credentialName`
 
@@ -65,7 +65,7 @@ Then wait about 20 seconds, call the partner server and read the egress gateway'
 
 ```sh
 sleep 20
-call_partner
+astrona res run call-partner.sh
 log_gate
 ```
 
@@ -131,7 +131,7 @@ secret/partner-client-cert created
 Then call the partner server again:
 
 ```sh
-call_partner
+astrona res run call-partner.sh
 ```
 
 You should see:

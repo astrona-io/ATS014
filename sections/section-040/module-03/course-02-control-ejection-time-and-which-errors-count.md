@@ -44,14 +44,7 @@ There is one more rule. Gateway errors also count as 5xx errors. So if `consecut
 
 <!-- astrona:playground:renew -->
 
-To see this on a real pod, replace the broken pod with one that answers `500` instead of `503`. The commands in this part use one shell helper function, `count_status`. Paste it into your terminal first. It sends 15 requests from the `shuttle` pod to the `probe` Service and counts the responses by status code:
-
-```sh
-# 15 single requests from the shuttle to the probe, counted by status code
-count_status() { for i in $(seq 1 15); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://probe:8000/get
-done | sort | uniq -c; }
-```
+To see this on a real pod, replace the broken pod with one that answers `500` instead of `503`. The commands in this part use the playground script `count-status.sh`. Run it with `astrona res run count-status.sh`. It sends 15 requests from the `shuttle` pod to the `probe` Service and counts the responses by status code.
 
 Remove the Deployment of the pod that answers `503`. Its file is `deployment-probe-broken.yaml`:
 
@@ -124,8 +117,8 @@ kubectl apply -f destinationrule-probe-gateway-errors-only.yaml
 Then send two rounds of 15 requests:
 
 ```sh
-count_status
-count_status
+astrona res run count-status.sh
+astrona res run count-status.sh
 ```
 
 You should see:
@@ -145,8 +138,8 @@ The opposite case proves the default. The first rule of this module uses `consec
 
 ```sh
 kubectl apply -f destinationrule-probe-outlier-detection.yaml
-count_status
-count_status
+astrona res run count-status.sh
+astrona res run count-status.sh
 ```
 
 You should see (the `apply` line is left out):

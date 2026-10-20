@@ -35,13 +35,7 @@ The theory says the pod count cannot move the share. You can prove this on the p
 
 <!-- astrona:playground:renew -->
 
-The commands in this part use a small helper. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Paste it into your terminal if it is not there yet:
-
-```sh
-count_versions() { n=${1:-20}; [ $# -gt 0 ] && shift; for i in $(seq 1 $n); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" http://scout:9080/reviews/0 | grep -o 'scout-v[0-9]'
-done | sort | uniq -c; }
-```
+The commands in this part use the playground helper `count-versions.sh`. It sends a number of requests from the `shuttle` pod to `scout` (20 if you give no number) and counts which version answered. Run it with `astrona res run count-versions.sh`; a number goes after `--`.
 
 Start from a 50/50 split between v1 and v3. Save this as `virtualservice-scout-50-50.yaml`:
 
@@ -93,7 +87,7 @@ scout-v3   1/1     1            1           5m39s
 Then check the result. Count 100 requests:
 
 ```sh
-count_versions 100
+astrona res run count-versions.sh -- 100
 ```
 
 You should see something like:

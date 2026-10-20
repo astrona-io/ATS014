@@ -51,17 +51,11 @@ Start your playground now, and keep it running while you read the parts:
 
 <!-- astrona:playground -->
 
-### One helper to paste first
+### One helper script
 
-Paste this into each new terminal. It sends a number of requests from `shuttle` to `scout` (20 if you give no number) and counts which version answered. Extra `curl` options go after the number:
+The playground ships the helper script `count-versions.sh`. It sends a number of requests from `shuttle` to `scout` (20 if you give no number) and counts which version answered. Extra `curl` options go after the number.
 
-```sh
-count_versions() { n=${1:-20}; [ $# -gt 0 ] && shift; for i in $(seq 1 $n); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" http://scout:9080/reviews/0 | grep -o 'scout-v[0-9]'
-done | sort | uniq -c; }
-```
-
-Use it like this: `count_versions` for 20 requests, `count_versions 100` for 100, or `count_versions 10 -H "end-user: jason"` for 10 requests with the header `end-user: jason`.
+Use it like this: `count-versions.sh` for 20 requests, `astrona res run count-versions.sh -- 100` for 100, or `astrona res run count-versions.sh -- 10 -H "end-user: jason"` for 10 requests with the header `end-user: jason`.
 
 ## The order of the parts
 

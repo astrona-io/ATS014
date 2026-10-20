@@ -20,16 +20,13 @@ The playground is one cluster with Istio and a small sample application. Nothing
 
 ## Helpers
 
-Paste this once in each new terminal. `count_versions` sends 10 requests from `shuttle` to `scout` and counts which version answered. Any `curl` options you give it are passed on.
+`count-versions.sh` is a helper script in this playground. It sends 10 requests from `shuttle` to `scout` and counts which version answered. Run it with `astrona res run count-versions.sh --`. Everything after `--` goes to `curl`. First set the address of `scout`:
 
 ```sh
-count_versions() { for i in $(seq 1 10); do
-  kubectl exec -n starfleet deploy/shuttle -- curl -s "$@" | grep -o 'scout-v[0-9]' || echo none
-done | sort | uniq -c; }
 SCOUT=http://scout:9080/reviews
 ```
 
-Use it like this: `count_versions $SCOUT/0`, or `count_versions -H "end-user: jason" $SCOUT/0`.
+Use it like this: `astrona res run count-versions.sh -- $SCOUT/0`, or `astrona res run count-versions.sh -- -H "end-user: jason" $SCOUT/0`.
 
 ## Start over without a new cluster
 
@@ -58,7 +55,7 @@ astrona destroy ats-014-playground-010-01
 
 Each idea below is a small change to a `VirtualService` or `DestinationRule` you write yourself. Edit your saved file (for example `virtualservice-scout.yaml`), apply it with `kubectl apply -f`, and watch what happens. Most of them need a `scout` `DestinationRule` with the subsets `v1`, `v2` and `v3`, so create that first.
 
-- Run `count_versions $SCOUT/0` with no rules at all. All three versions answer. Then apply only the `DestinationRule` with the three subsets and run it again. Nothing changes, because a `DestinationRule` alone routes no request.
+- Run `astrona res run count-versions.sh -- $SCOUT/0` with no rules at all. All three versions answer. Then apply only the `DestinationRule` with the three subsets and run it again. Nothing changes, because a `DestinationRule` alone routes no request.
 - In your `VirtualService`, change the subset to `v4`, a name the `DestinationRule` does not define. Read the `503` and the `NC` flag in the access log, then run `istioctl analyze -n starfleet`.
 - Set the subset back to `v1`, and instead change the label of the `v1` subset in the `DestinationRule` to `version: v9`. You get `503` again, but this time with `UH`.
 - In a `VirtualService` with a `jason` rule and a catch-all, move the catch-all to the top. The `jason` rule is never used, and `istioctl analyze` warns with `IST0130`.
@@ -66,7 +63,7 @@ Each idea below is a small change to a `VirtualService` or `DestinationRule` you
 - Write a `match` with a header and a path in one item, then split them into two items. One `-` is the only difference between AND and OR.
 - Compare `istioctl proxy-config routes deploy/shuttle -n starfleet --name 9080` before and after you apply a `VirtualService`.
 
-The two tasks below are exam-style. Try each one on your own first, then open the solution. The solutions were run and checked on a real cluster, and they use the `count_versions` helper.
+The two tasks below are exam-style. Try each one on your own first, then open the solution. The solutions were run and checked on a real cluster, and they use the `count-versions.sh` helper.
 
 ### Task 1: every request to one version
 
@@ -124,7 +121,7 @@ Then check the result:
 
 ```bash
 
-count_versions $SCOUT/0                               # 10 scout-v2
+astrona res run count-versions.sh -- $SCOUT/0                               # 10 scout-v2
 kubectl exec -n starfleet deploy/shuttle -- curl -s http://bridge:9080/productpage | grep -c glyphicon-star
 # a number > 0 = stars are shown (v1 shows none)
 ```
@@ -168,8 +165,8 @@ Then check the result:
 
 ```bash
 
-count_versions -H "x-canary: true" $SCOUT/0      #  10 scout-v3
-count_versions $SCOUT/0                          #  10 scout-v1
+astrona res run count-versions.sh -- -H "x-canary: true" $SCOUT/0      #  10 scout-v3
+astrona res run count-versions.sh -- $SCOUT/0                          #  10 scout-v1
 ```
 
 `"true"` must be quoted: it is a string, not a YAML boolean.

@@ -106,7 +106,7 @@ kubectl apply -f virtualservice-httpbin-org-via-egress.yaml
 Then send a request and read **both** access logs:
 
 ```sh
-call_external
+astrona res run call-external.sh
 log_shuttle
 log_gate
 ```
