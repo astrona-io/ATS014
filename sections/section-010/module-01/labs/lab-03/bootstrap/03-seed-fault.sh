@@ -4,48 +4,9 @@
 # requests (sent to v2 by the VirtualService) end in 503 UH.
 # Fixing the DestinationRule is the task - the VirtualService is correct.
 set -euo pipefail
+cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: DestinationRule
-metadata:
-  name: scout
-  namespace: starfleet
-spec:
-  host: scout
-  subsets:
-  - name: v1
-    labels:
-      version: v1
-  - name: v2
-    labels:
-      version: v20
-  - name: v3
-    labels:
-      version: v3
-YAML
+kubectl apply -f ../resources/destinationrule-scout.yaml
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: scout
-  namespace: starfleet
-spec:
-  hosts:
-  - scout
-  http:
-  - match:
-    - headers:
-        end-user:
-          exact: jason
-    route:
-    - destination:
-        host: scout
-        subset: v2
-  - route:
-    - destination:
-        host: scout
-        subset: v1
-YAML
+kubectl apply -f ../resources/virtualservice-scout.yaml
 echo "==> Lab ats-014-lab-010-01-03 ready"

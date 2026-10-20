@@ -4,22 +4,6 @@
 # fail the same way every time, so the probe gets four requests for every one.
 # Narrowing the policy is the task.
 set -euo pipefail
+cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: probe
-  namespace: starfleet
-spec:
-  hosts:
-  - probe
-  http:
-  - route:
-    - destination:
-        host: probe
-    retries:
-      attempts: 3
-      retryOn: 5xx
-    timeout: 10s
-YAML
+kubectl apply -f ../resources/virtualservice-probe.yaml

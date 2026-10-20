@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1
+kind: Sidecar
+metadata:
+  name: shuttle-only
+  namespace: starfleet
+spec:
+  workloadSelector:
+    labels:
+      app: shuttle
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY
+  egress:
+  - hosts:
+    - "./*"

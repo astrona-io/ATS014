@@ -8,48 +8,9 @@
 #   3. the jason rule names subset v4, which the DestinationRule never defines
 # Repairing the VirtualService is the task - the DestinationRule is correct.
 set -euo pipefail
+cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: DestinationRule
-metadata:
-  name: scout
-  namespace: starfleet
-spec:
-  host: scout
-  subsets:
-  - name: v1
-    labels:
-      version: v1
-  - name: v2
-    labels:
-      version: v2
-  - name: v3
-    labels:
-      version: v3
-YAML
+kubectl apply -f ../resources/destinationrule-scout.yaml
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: scout
-  namespace: default
-spec:
-  hosts:
-  - scout
-  http:
-  - route:
-    - destination:
-        host: scout
-        subset: v1
-  - match:
-    - headers:
-        end-user:
-          exact: jason
-    route:
-    - destination:
-        host: scout
-        subset: v4
-YAML
+kubectl apply -f ../resources/virtualservice-scout.yaml
 echo "==> Lab ats-014-lab-010-01-04 ready"

@@ -24,3 +24,5 @@ Repair the `shuttle` proxy's configuration, so that:
 6.  Leave the namespace-wide `Sidecar` `default` unchanged, and do not add another `Sidecar` to `starfleet`. Leave the Deployments, pod labels and Services unchanged.
 
 The grader reads the `Sidecar` objects and the `shuttle` proxy's configuration, and sends live requests, so the configuration must really be repaired.
+
+The lab saves its starting state in the files `sidecar-default.yaml` and `sidecar-shuttle-only.yaml` in its `resources` folder. `astrona res` lists them.

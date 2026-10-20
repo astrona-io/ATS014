@@ -20,3 +20,5 @@ Istio 1.30.5 is installed and access logs are switched on. There is no fault yet
 5.  The `scout` `VirtualService`, the Deployments and the Services stay unchanged.
 
 The grader sends real requests from `shuttle`, reads the access logs of `shuttle`, `scout-v2` and `probe`, and checks both `VirtualService` objects.
+
+The lab saves its starting state in the file `starting-state.yaml` in its `resources` folder. `astrona res` lists it.

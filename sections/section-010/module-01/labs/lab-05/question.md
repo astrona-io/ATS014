@@ -29,3 +29,5 @@ Restore HTTP routing so that:
 7.  Leave the `DestinationRule`, the Deployments and their pod labels unchanged. Do not add or remove workloads.
 
 The grader sends real requests from the `shuttle` pod, so the routing has to work, not only look right.
+
+The lab saves its starting state in the file `destinationrule-probe-and-virtualservice-probe.yaml` in its `resources` folder. `astrona res` lists it.

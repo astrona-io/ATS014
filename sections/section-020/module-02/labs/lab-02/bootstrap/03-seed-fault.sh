@@ -7,41 +7,8 @@
 # receives nothing.
 # Fixing the DestinationRule is the task - the VirtualService is correct.
 set -euo pipefail
+cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: DestinationRule
-metadata:
-  name: probe
-  namespace: starfleet
-spec:
-  host: probe
-  subsets:
-  - name: v1
-    labels:
-      version: v1
-  - name: v2
-    labels:
-      version: canary
-YAML
+kubectl apply -f ../resources/destinationrule-probe.yaml
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: probe
-  namespace: starfleet
-spec:
-  hosts:
-  - probe
-  http:
-  - route:
-    - destination:
-        host: probe
-        subset: v1
-    mirror:
-      host: probe
-      subset: v2
-    mirrorPercentage:
-      value: 100.0
-YAML
+kubectl apply -f ../resources/virtualservice-probe.yaml

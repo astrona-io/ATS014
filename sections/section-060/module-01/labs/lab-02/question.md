@@ -37,3 +37,5 @@ Fix the problem so that:
 7.  Leave the gateway Deployment, its pod labels, the `starfleet` Deployments and the Services unchanged.
 
 The grader sends live requests from the `shuttle` pod to the gateway Service and reads the gateway's proxy configuration, so the fix has to work, not only exist.
+
+The lab saves its starting state in the files `gateway-starfleet-gateway.yaml` and `virtualservice-bridge.yaml` in its `resources` folder. `astrona res` lists them.

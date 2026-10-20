@@ -23,3 +23,5 @@ Find out why the mirror sends nothing, and fix it so that:
 6.  Leave the Deployments, the pod labels and the Service unchanged, and do not add or remove workloads.
 
 The client's responses cannot tell you whether the mirror works. Find the proof on the receiving side, and in the proxy of `shuttle`.
+
+The lab saves its starting state in the files `destinationrule-probe.yaml` and `virtualservice-probe.yaml` in its `resources` folder. `astrona res` lists them.

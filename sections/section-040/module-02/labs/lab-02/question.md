@@ -29,3 +29,5 @@ Change the retry policy so that:
 7.  The `DestinationRule` named `probe` is **left unchanged**. Leave the Deployments and the Service unchanged, and do not add or remove workloads: `starfleet` must keep exactly its 3 Deployments.
 
 The grader counts the requests that arrive at the probe pods in their sidecar proxies' access logs, so the fix has to work, not only exist.
+
+The lab saves its starting state in the files `destinationrule-probe.yaml` and `virtualservice-probe.yaml` in its `resources` folder. `astrona res` lists them.

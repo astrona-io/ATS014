@@ -36,3 +36,5 @@ The first response can take up to 30 seconds. There is more than one fault. Find
 * Keep the object names. Do not add a second `VirtualService` or `Gateway` in `starfleet`.
 * Keep `partner-tls` as it is: host `partner.outpost.example`, `MUTUAL` on port `443`, `credentialName: partner-client-cert`, `exportTo: [istio-egress]`, and no `insecureSkipVerify`.
 * Use the delivered client certificate. Leave the partner server and its configuration in `outpost` alone.
+
+The lab saves its starting state in the file `starting-state.yaml` in its `resources` folder. `astrona res` lists it.

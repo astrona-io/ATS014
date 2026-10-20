@@ -7,51 +7,10 @@
 #      does not exist.
 # The Gateway's selector and port, and the Starfleet itself, are correct.
 set -euo pipefail
+cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: Gateway
-metadata:
-  name: starfleet-gateway
-  namespace: starfleet
-spec:
-  selector:
-    istio: ingress
-  servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - starfleet.exmaple.com
-YAML
+kubectl apply -f ../resources/gateway-starfleet-gateway.yaml
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: VirtualService
-metadata:
-  name: bridge
-  namespace: starfleet
-spec:
-  hosts:
-  - starfleet.example.com
-  http:
-  - match:
-    - uri:
-        exact: /productpage
-    - uri:
-        prefix: /static
-    - uri:
-        exact: /login
-    - uri:
-        exact: /logout
-    - uri:
-        prefix: /api/v1/products
-    route:
-    - destination:
-        host: bridges
-        port:
-          number: 9080
-YAML
+kubectl apply -f ../resources/virtualservice-bridge.yaml
 
 kubectl get gateway,virtualservice -n starfleet

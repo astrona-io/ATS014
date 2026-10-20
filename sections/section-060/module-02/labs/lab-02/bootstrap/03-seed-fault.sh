@@ -6,33 +6,8 @@
 # Fixing the IngressClass is the task. spec.controller is immutable, so the fix
 # is delete and create again.
 set -euo pipefail
+cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.k8s.io/v1
-kind: IngressClass
-metadata:
-  name: istio
-spec:
-  controller: istio.io/ingress-controllers
-YAML
+kubectl apply -f ../resources/ingressclass-istio.yaml
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: starfleet
-  namespace: starfleet
-spec:
-  ingressClassName: istio
-  rules:
-  - host: starfleet.example.com
-    http:
-      paths:
-      - path: /anything
-        pathType: Prefix
-        backend:
-          service:
-            name: probe
-            port:
-              number: 8000
-YAML
+kubectl apply -f ../resources/ingress-starfleet.yaml

@@ -6,23 +6,7 @@
 # path to zone-b still works. The student replaces the preference with a fixed
 # 80/20 split.
 set -euo pipefail
+cd "$(dirname "$0")"
 
-kubectl apply -f - <<'YAML'
-apiVersion: networking.istio.io/v1
-kind: DestinationRule
-metadata:
-  name: probe
-  namespace: starfleet
-spec:
-  host: probe
-  trafficPolicy:
-    outlierDetection:
-      consecutive5xxErrors: 2
-      interval: 5s
-      baseEjectionTime: 30s
-      maxEjectionPercent: 100
-    loadBalancer:
-      localityLbSetting:
-        enabled: true
-YAML
+kubectl apply -f ../resources/destinationrule-probe.yaml
 kubectl get destinationrule -n starfleet

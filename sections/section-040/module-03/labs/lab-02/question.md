@@ -28,3 +28,5 @@ Configure a circuit breaker so that:
 7. The five Deployments, their labels and the `probe` Service stay unchanged. Do not add or remove workloads. The `shuttle` proxy must remove the broken pod on its own, so Kubernetes must still list it as an endpoint of the `probe` Service.
 
 The grader sends live requests from `fortio` and the `shuttle` and reads both proxies, so the configuration has to work, not only exist.
+
+The lab saves its starting state in the file `deployment-probe-broken.yaml` in its `resources` folder. `astrona res` lists it.
