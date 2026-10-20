@@ -385,7 +385,7 @@ A lab folder holds:
 | `config.yaml` | Lab definition; `metadata.docs` has `question: "question.md"` and `solution: "solution.md"` |
 | `README.md` | Short intro with `estimated_duration` front matter and the run, submit and destroy commands |
 | `question.md` | The exam-style task. Starts with `# Question` and `Solve this question on: \`terminal\`` |
-| `solution.md` | Step-by-step walkthrough with real output |
+| `solution.md` | Answers `question.md` item by item, with real output (see "Lab solutions" below) |
 | `bootstrap/` | Istio install, `bootstrap/manifests/` and the starting state, never the graded objects |
 | `solution/apply.sh` | Reference end state, applied only by `astrona test` |
 | `validation/validate-completed.sh` | Behavioural grading (sends real traffic) |
@@ -493,6 +493,30 @@ comes right after the module's summary page:
 - The writing rules for course pages apply to prompts, options and
   explanations. The questions are practice material, not official exam
   questions.
+
+### Lab solutions
+
+A lab's `solution.md` answers its `question.md` from top to bottom. It is not
+an article.
+
+- Open with one or two sentences: the walkthrough follows the task, and each
+  section ends with a check.
+- Add a `## Start` section when the task describes a starting state: run the
+  commands that show it is true, and the one that shows the problem.
+- Then one `##` section per numbered item of the task, in the same order and
+  with the same numbers. If one item is only the result of later items, put it
+  after them and say so in the opening sentences. Quote the item word for word in a `> **Task item N:**`
+  block. Then say what to do, show the command or the file, and end with a
+  check that proves this item. Items that only make sense together (for
+  example two fields in one object) share a section; say so in one sentence.
+- Show the failing state before the fix when the task warns about it.
+- End with `## Submit` (the `astrona submit` command) and
+  `## Mistakes That Fail The Grader`, each mistake tagged with the item it
+  breaks.
+- Every command and output comes from a real run of the lab. Wait before you
+  read an access log: the proxy writes the line a moment after the request.
+- The items, the checks and the Mistakes list must match what `validation/`
+  really checks.
 
 ### Running things
 
