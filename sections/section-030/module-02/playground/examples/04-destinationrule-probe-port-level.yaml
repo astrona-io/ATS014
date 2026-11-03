@@ -1,0 +1,16 @@
+# Host level DISABLE, overridden for port 8000 by a port-level setting.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    tls:
+      mode: DISABLE
+    portLevelSettings:
+    - port:
+        number: 8000
+      tls:
+        mode: ISTIO_MUTUAL

@@ -1,0 +1,26 @@
+# Shift TCP Connections With Weights — Playground environment
+# A clean sandbox: it spins up, installs Istio and the probe v1/v2, then stays
+# running for free exploration. No task, no grading, no `astrona submit`.
+#   astrona run -c .                              new kind cluster "astro-ats-014-playground-020-03"
+#   astrona destroy ats-014-playground-020-03     delete the cluster again
+metadata:
+  name: "ats-014-playground-020-03"
+  docs:
+    guide: "docs/overview.md"
+
+runtime:
+  type: kind
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Istio 1.30.5 (istio-base + istiod) with Helm"
+      type: "file"
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Namespace starfleet, access logs, the shuttle and the probe v1/v2"
+      type: "file"
+      source: "bootstrap/deploy.sh"
+
+teardown:
+  keepCluster: false

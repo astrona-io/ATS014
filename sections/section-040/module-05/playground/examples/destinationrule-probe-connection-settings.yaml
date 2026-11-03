@@ -1,0 +1,18 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        connectTimeout: 2s
+        maxConnectionDuration: 10m
+        tcpKeepalive:
+          time: 60s
+          interval: 10s
+          probes: 4
+      http:
+        idleTimeout: 90s

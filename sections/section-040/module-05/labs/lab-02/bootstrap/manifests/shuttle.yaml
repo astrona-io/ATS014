@@ -1,0 +1,33 @@
+# The shuttle: the test client pod inside the mesh.
+# Send every test request from it with:
+#   kubectl exec -n starfleet deploy/shuttle -- curl -s http://<service>:<port>/...
+# It has a sidecar proxy, so VirtualService and DestinationRule objects apply to
+# its outgoing requests, exactly like for a real application.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: shuttle
+  namespace: starfleet
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shuttle
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shuttle
+  template:
+    metadata:
+      labels:
+        app: shuttle
+    spec:
+      serviceAccountName: shuttle
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: shuttle
+        image: curlimages/curl:8.11.1
+        # Keep the container running so that kubectl exec works.
+        command: ["sleep", "infinity"]

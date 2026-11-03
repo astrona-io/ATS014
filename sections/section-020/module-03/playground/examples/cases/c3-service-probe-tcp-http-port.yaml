@@ -1,0 +1,16 @@
+# The same Service, but the port is named "http". Istio now treats it as HTTP
+# and the tcp route in the VirtualService does not apply.
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-tcp
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  selector:
+    app: probe
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8080

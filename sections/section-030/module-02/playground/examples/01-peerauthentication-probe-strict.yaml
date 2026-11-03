@@ -1,0 +1,11 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  mtls:
+    mode: STRICT

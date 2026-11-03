@@ -1,0 +1,39 @@
+# secure: decrypted by the gateway, so an http route works.
+# archive: passthrough, so the route is a tls match on the SNI.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: secure
+  namespace: starfleet
+spec:
+  hosts:
+  - secure.starfleet.example.com
+  gateways:
+  - starfleet-gateway
+  http:
+  - route:
+    - destination:
+        host: probe
+        port:
+          number: 8000
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: archive
+  namespace: starfleet
+spec:
+  hosts:
+  - archive.starfleet.example.com
+  gateways:
+  - starfleet-gateway
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - archive.starfleet.example.com
+    route:
+    - destination:
+        host: archive
+        port:
+          number: 443

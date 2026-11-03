@@ -1,0 +1,27 @@
+# Connection Timeouts, Keepalive And Nearby Endpoints — Playground environment
+# A clean sandbox: it spins up, installs Istio, the shuttle and the probe in two
+# zones, then stays running for free exploration. No task, no grading, no
+# `astrona submit`.
+#   astrona run -c .                           new kind cluster "astro-ats-014-playground-040-05"
+#   astrona destroy ats-014-playground-040-05   delete the cluster again
+metadata:
+  name: "ats-014-playground-040-05"
+  docs:
+    guide: "docs/overview.md"
+
+runtime:
+  type: kind
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Istio 1.30.5 (istio-base + istiod) with Helm"
+      type: "file"
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Node labelled local/zone-a, namespace starfleet, access logs, the shuttle and the probe in zone-a and zone-b (plus a failing zone-a probe at 0 replicas)"
+      type: "file"
+      source: "bootstrap/deploy.sh"
+
+teardown:
+  keepCluster: false

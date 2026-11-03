@@ -1,0 +1,28 @@
+# The root VirtualService: it owns the host and hands two path prefixes to delegates.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - match:
+    - uri:
+        prefix: /hostname
+    delegate:
+      name: probe-hostname
+      namespace: starfleet
+  - match:
+    - uri:
+        prefix: /delay
+    delegate:
+      name: probe-delay
+      namespace: starfleet
+  - route:
+    - destination:
+        host: probe
+        subset: v1
+        port:
+          number: 8000

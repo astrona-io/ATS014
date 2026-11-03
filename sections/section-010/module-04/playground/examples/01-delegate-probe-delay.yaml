@@ -1,0 +1,18 @@
+# A delegate with its own, narrower match: only /delay/ requests, with a 2 second timeout.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe-delay
+  namespace: starfleet
+spec:
+  http:
+  - match:
+    - uri:
+        prefix: /delay/
+    timeout: 2s
+    route:
+    - destination:
+        host: probe
+        subset: v1
+        port:
+          number: 8000

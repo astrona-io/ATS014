@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-010-04-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-010-04-02-workloads"
+      description: "Creates the namespaces starfleet, dock and depot with sidecar injection, the probe v1 and v2 in starfleet, mesh-wide access logs and a shuttle client in each namespace"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-010-04-02-fault"
+      description: "Applies a DestinationRule and a VirtualService for the probe that are both exported to starfleet only, so the clients in dock and depot do not receive them"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-export-to"
+      description: "Confirms the VirtualService and the DestinationRule are exported to starfleet and dock only, and proves with real requests and the proxies' cluster lists that dock and starfleet reach v2 while depot keeps the default behaviour"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

@@ -1,0 +1,42 @@
+# Secure An Istio Ingress Gateway With TLS (PLAYGROUND) — Playground environment
+# A clean sandbox: it spins up, installs Istio, the ingress gateway and the Starfleet, then stays running
+# for free exploration. No task, no grading, no `astrona submit`.
+#   astrona run -c .                          new kind cluster "astro-ats-014-playground-060-04"
+#   astrona destroy ats-014-playground-060-04 delete the cluster again
+metadata:
+  name: "ats-014-playground-060-04"
+  docs:
+    guide: "docs/overview.md"
+
+# Port forwards: astrona keeps these running on 127.0.0.1 (astrona port-forward list).
+runtime:
+  type: kind
+  portForwards:
+    - name: ingress-http
+      resource: svc/istio-ingressgateway
+      namespace: istio-system
+      hostPort: 8080
+      targetPort: 80
+      scheme: http
+      description: "Ingress gateway HTTP – send Host: starfleet.example.com"
+    - name: ingress-https
+      resource: svc/istio-ingressgateway
+      namespace: istio-system
+      hostPort: 8443
+      targetPort: 443
+      scheme: https
+      description: "Ingress gateway HTTPS – answers once a Gateway with a tls block and its secret exist"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Istio 1.30.5 (istio-base, istiod, ingress gateway istio-ingressgateway in istio-system) with Helm"
+      type: "file"
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Namespace starfleet, access logs, the Starfleet (bridge, cargo, scout v1-v3, navcom), shuttle, probe v1/v2 and the archive (an nginx server that terminates TLS itself)"
+      type: "file"
+      source: "bootstrap/deploy.sh"
+
+teardown:
+  keepCluster: false

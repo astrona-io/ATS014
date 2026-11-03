@@ -1,0 +1,26 @@
+# Case 3: one match entry with two conditions. Both must be true (AND).
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - match:
+    - sourceLabels:
+        app: patrol
+      port: 8001
+    route:
+    - destination:
+        host: probe
+        subset: v2
+        port:
+          number: 8001
+  - route:
+    - destination:
+        host: probe
+        subset: v1
+        port:
+          number: 8000

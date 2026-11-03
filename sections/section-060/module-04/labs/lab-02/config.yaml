@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-060-04-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base, istiod and the istio-ingressgateway gateway) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-060-04-02-workloads"
+      description: "Creates the starfleet namespace with the echo probe, the shuttle client, the archive (an nginx server that terminates TLS itself), mesh-wide access logs and a certificate and key for starfleet.example.com in /tmp"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-060-04-02-fault"
+      description: "Applies the starting state: a Gateway with an HTTPS server and a PASSTHROUGH server, their VirtualServices, and a TLS secret in the wrong namespace"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-gateway-tls-faults"
+      description: "Confirms HTTPS for starfleet.example.com serves the provided certificate, the passthrough host reaches the archive with the archive's own certificate, the Gateway servers keep their modes, and the gateway proxy holds the secret as ACTIVE"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

@@ -1,0 +1,106 @@
+# The probe in two zones, behind one Service. The cluster has one node, so each
+# pod sets its own locality with the `istio-locality` label (region.zone, with a
+# dot, because a label value cannot contain a slash). The label overrides the
+# locality the pod would otherwise take from its node.
+#   probe-zone-a-damaged  locality local/zone-a (the shuttle's zone). nginx that
+#                         answers 503 to every request but stays ready, so
+#                         Kubernetes keeps it as an endpoint.
+#   probe-zone-b          healthy go-httpbin, locality local/zone-b
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: probe
+  namespace: starfleet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  selector:
+    app: probe
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-zone-b
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      zone: b
+  template:
+    metadata:
+      labels:
+        app: probe
+        zone: b
+        istio-locality: local.zone-b
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080
+---
+# A failing probe: nginx answers 503 to every request but the pod stays ready,
+# so Kubernetes keeps it as an endpoint. Only outlier detection notices it.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: damaged-probe
+  namespace: starfleet
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      location / {
+        return 503 "damaged probe in zone-a\n";
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-zone-a-damaged
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      zone: a
+      condition: damaged
+  template:
+    metadata:
+      labels:
+        app: probe
+        zone: a
+        condition: damaged
+        istio-locality: local.zone-a
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: nginx:1.27-alpine
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: conf
+        configMap:
+          name: damaged-probe

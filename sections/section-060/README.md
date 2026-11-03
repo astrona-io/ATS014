@@ -28,6 +28,9 @@ Reading all three together is the point of this section: the ICA expects you to 
 - `HTTPRoute` as a `VirtualService` translation: `parentRefs`, `hostnames`, `matches`, `backendRefs`, `weight`, `filters`.
 - Diagnosing with status conditions — `Accepted`, `Programmed`, `ResolvedRefs` — and what each `False` points at.
 - The line around the Gateway API: `DestinationRule` policy and Istio's faults, retries and timeouts still apply to routes it carries.
+- The `Gateway` `tls:` block: `mode` SIMPLE, MUTUAL and PASSTHROUGH, `credentialName`, and `httpsRedirect` on a port 80 server.
+- A TLS secret that lives in the gateway's namespace, and the `WARMING` status that shows when it is missing.
+- Several hosts on port 443, each with its own certificate chosen by SNI, and a PASSTHROUGH server routed by a `tls:` match with `sniHosts`.
 
 ---
 
@@ -73,9 +76,20 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
    - Lab: Share One Gateway API Gateway Across Two Namespaces Lab
 5. Summary
 
+### Secure An Istio Ingress Gateway With TLS
+
+3 parts and 2 labs:
+
+1. Terminate HTTPS With tls.mode SIMPLE And credentialName
+2. Redirect HTTP To HTTPS And Serve Several Hosts
+   - Lab: Secure An Ingress Gateway With HTTPS And A Redirect Lab
+3. Require Client Certificates With MUTUAL And Pass Encrypted Traffic Through With PASSTHROUGH
+   - Lab: Fix A Secret In The Wrong Namespace And A Passthrough Mismatch Lab
+4. Summary
+
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **Expose Three Services Through Three Ingress APIs Capstone Lab**.
+The section ends with two capstone labs that use everything in it: **Expose Three Services Through Three Ingress APIs Capstone Lab** and **Build A Secure Edge With HTTPS, A Redirect And Header Routing Capstone Lab**.
 
 ---
 

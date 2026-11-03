@@ -1,0 +1,18 @@
+# Case 1: a VirtualService that only the proxies in starfleet receive.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  exportTo:
+  - "."
+  http:
+  - route:
+    - destination:
+        host: probe
+        subset: v2
+        port:
+          number: 8000

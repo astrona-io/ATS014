@@ -1,0 +1,33 @@
+metadata:
+  name: "ats-014-lab-040-05-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-05-02-workloads"
+      description: "Labels the node region local / zone zone-a and creates the starfleet namespace with the shuttle, the probe in zone-a and zone-b and mesh-wide access logs. The probe Service has no trafficDistribution"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-prefer-close"
+      description: "Confirms the probe Service has trafficDistribution PreferClose and an unchanged selector, that the probe DestinationRule has outlierDetection that can eject and no localityLbSetting, that the workloads are unchanged, and that 20 live requests from the shuttle all reach probe-zone-a"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

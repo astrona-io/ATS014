@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-014-lab-030-02-01"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "ats-014-lab-030-02-01-workloads"
+      description: "Creates the starfleet namespace with the shuttle client, the probe (3 v1 pods, 1 v2 pod) and mesh-wide access logs, and the outpost namespace with the drifter, a client with no sidecar proxy"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "ats-014-lab-030-02-01-start"
+      description: "Applies the starting state: a STRICT PeerAuthentication on the probe and a VirtualService that routes to subsets v1 and v2, with no DestinationRule yet"
+      type: "file"
+      source: "bootstrap/03-seed-start.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-strict-destination"
+      description: "Confirms the probe DestinationRule defines subsets v1 and v2 with tls ISTIO_MUTUAL at host level and a RANDOM override on v2 only, the shuttle's proxy holds mTLS for both subset clusters, the PeerAuthentication stays STRICT, live requests reach v1 and v2 with status 200, and the drifter is still refused"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

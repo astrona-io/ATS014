@@ -1,0 +1,30 @@
+# Starting state: the Gateway starfleet-gateway.
+# One HTTPS server that terminates TLS for starfleet.example.com, and one
+# server that passes encrypted traffic for archive.starfleet.example.com
+# through to the archive without decrypting it.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 443
+      name: https-starfleet
+      protocol: HTTPS
+    hosts:
+    - starfleet.example.com
+    tls:
+      mode: SIMPLE
+      credentialName: starfleet-tls
+  - port:
+      number: 443
+      name: tls-archive
+      protocol: TLS
+    hosts:
+    - archive.starfleet.example.com
+    tls:
+      mode: PASSTHROUGH

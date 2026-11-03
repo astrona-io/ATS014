@@ -1,0 +1,28 @@
+# The namespace "outpost" has NO istio-injection label, on purpose.
+# The drifter runs in it with no sidecar proxy (1/1 containers). Its requests
+# never pass through a proxy, so it cannot speak mTLS.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outpost
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drifter
+  namespace: outpost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drifter
+  template:
+    metadata:
+      labels:
+        app: drifter
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: drifter
+        image: curlimages/curl:8.11.1
+        command: ["sleep", "infinity"]

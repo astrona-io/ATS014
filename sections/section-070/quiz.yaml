@@ -1,0 +1,256 @@
+# Knowledge check for section 070. Listed in astrona.yaml as a `type: quiz` entry after the last capstone lab. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-070
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-070
+  title: "Connecting In-Mesh Workloads To External Workloads And Services"
+questions:
+  - id: ats014-070-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Block unknown hosts in one namespace with `outboundTrafficPolicy` on a `Sidecar` resource."
+    source_readings:
+      - sections/section-070/module-01/course-01-block-unknown-hosts-with-registry-only.md
+    prompt: |-
+      Commander Riker sets `REGISTRY_ONLY` for `starfleet`. A request from `shuttle` to `httpbin.org` now ends as a closed connection (`000`, `curl` exit code `35` or `56`). The `drifter` pod in `outpost` still reaches `httpbin.org`. Why?
+    options:
+      - id: a
+        text: "`drifter` runs a different `curl` version that ignores the policy."
+        explanation: "The `curl` version has no effect on the policy."
+      - id: b
+        text: "The sidecar proxy enforces the policy, and `drifter` has no sidecar proxy."
+        explanation: "Correct. A pod without a sidecar is not limited by `REGISTRY_ONLY`."
+      - id: c
+        text: "`outpost` is in the service registry, so `drifter` may call any host."
+        explanation: "Being in the registry has no effect on what a pod with no sidecar can reach."
+      - id: d
+        text: "`REGISTRY_ONLY` only blocks HTTPS, and `drifter` uses plain HTTP."
+        explanation: "The policy blocks every host that is not in the registry, whatever the protocol."
+    correct_option: b
+    explanation: "The sidecar proxy enforces the outbound traffic policy, so `REGISTRY_ONLY` is not a firewall. A pod with no sidecar is not limited."
+
+  - id: ats014-070-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Read `PassthroughCluster`, `BlackHoleCluster` and `outbound|443||<host>` in the access log, and say which path a request took."
+    source_readings:
+      - sections/section-070/module-01/course-01-block-unknown-hosts-with-registry-only.md
+      - sections/section-070/module-01/course-02-add-an-external-host-with-serviceentry.md
+    prompt: |-
+      An access log line of the `shuttle` proxy shows the cluster `outbound|443||httpbin.org`. What does that tell you about the request?
+    options:
+      - id: a
+        text: "The proxy refused the request as `BlackHoleCluster`."
+        explanation: "A refusal shows `BlackHoleCluster`, or `block_all` on a `502`."
+      - id: b
+        text: "The proxy let it through as `PassthroughCluster`, with no rules."
+        explanation: "A request let through under `ALLOW_ANY` shows `PassthroughCluster`."
+      - id: c
+        text: "The request went to the egress gateway."
+        explanation: "The cluster name does not say anything about an egress gateway."
+      - id: d
+        text: "The host was in the registry, from a `ServiceEntry`, so mesh rules could apply."
+        explanation: "Correct. `outbound|443||<host>` means the host came from a `ServiceEntry`."
+    correct_option: d
+    explanation: "`PassthroughCluster` means let through, `BlackHoleCluster` and `block_all` mean refused, and `outbound|443||<host>` means the host is in the registry."
+
+  - id: ats014-070-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Describe a machine outside Kubernetes with a `WorkloadEntry`: its address, labels and service account."
+    source_readings:
+      - sections/section-070/module-03/course-01-describe-a-machine-with-workloadentry.md
+    prompt: |-
+      Lieutenant Uhura creates only a `WorkloadEntry` named `freighter-vm-1` with an `address`, `labels` and a `serviceAccount`. She then calls the machine by a host name from a `shuttle` pod. What happens?
+    options:
+      - id: a
+        text: "It does not work by name. A `WorkloadEntry` has no host name and no port, so the proxy builds no cluster until a `ServiceEntry` selects it."
+        explanation: "Correct. A `WorkloadEntry` alone describes one machine and is not callable by name."
+      - id: b
+        text: "It works, because `istiod` derives the host name from the entry name."
+        explanation: "`istiod` does not invent a host name from the entry name."
+      - id: c
+        text: "It works, but only with mTLS turned off."
+        explanation: "The problem is the missing host and port, not mTLS."
+      - id: d
+        text: "It works only from the namespace `istio-system`."
+        explanation: "The namespace has no effect on a missing host name."
+    correct_option: a
+    explanation: "A `WorkloadEntry` needs a `ServiceEntry` with a matching `workloadSelector` to give the machine a host name and port."
+
+  - id: ats014-070-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Write a `ServiceEntry` for an external host, with the right `location` and `resolution`."
+    source_readings:
+      - sections/section-070/module-01/course-05-limit-a-serviceentry-with-exportto.md
+      - sections/section-070/module-01/course-04-find-a-serviceentry-hidden-by-a-sidecar.md
+    prompt: |-
+      Under `REGISTRY_ONLY`, a `ServiceEntry` for `httpbin.org` works from `starfleet` but gives a refusal from another namespace. `istioctl analyze` reports nothing. What is the best next step?
+    options:
+      - id: a
+        text: "Run `istioctl analyze` with more flags until it reports the problem."
+        explanation: "The entry is valid on its own, so `analyze` stays quiet."
+      - id: b
+        text: "Switch the `Sidecar` back to `ALLOW_ANY`."
+        explanation: "The request then gets out through `PassthroughCluster` with no rules. The refusal is gone, and so is the control."
+      - id: c
+        text: "Run `istioctl proxy-config cluster` on the calling pod, then check the entry's `exportTo` and the caller's `Sidecar` `egress.hosts`."
+        explanation: "Correct. A hidden entry gives the same refusal as a missing one. The proxy configuration shows whether the caller can see the host."
+      - id: d
+        text: "Write a second `ServiceEntry` with `resolution: STATIC`."
+        explanation: "The entry exists. The question is who may see it."
+    correct_option: c
+    explanation: "A `ServiceEntry` works only for a caller that may see it: its `exportTo` must include the caller's namespace and the caller's `Sidecar` must take in the entry's namespace."
+
+  - id: ats014-070-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Explain what `sni` is and why you set it."
+    source_readings:
+      - sections/section-070/module-02/course-02-originate-tls-with-three-istio-objects.md
+      - sections/section-070/module-01/course-03-apply-timeouts-and-connection-pools-to-an-external-host.md
+    prompt: |-
+      The `shuttle` application must call `httpbin.org` over TLS, and Captain Picard wants a route timeout to work for that external service. Which design does this?
+    options:
+      - id: a
+        text: "A `ServiceEntry` with ports `80` as `HTTP` and `443` as `HTTPS`, a `VirtualService` that sends port `80` to port `443`, and a `DestinationRule` with `tls.mode: SIMPLE` and `sni` under `portLevelSettings` for port `443`. The application calls `http://`."
+        explanation: "Correct. The proxy adds TLS on the way out, and it can read the plain HTTP request, so the timeout works."
+      - id: b
+        text: "Only a `ServiceEntry` with port `443` as `HTTPS`. The application calls `https://`."
+        explanation: "The proxy sees only encrypted bytes and the SNI name, so a route timeout does not work."
+      - id: c
+        text: "A `DestinationRule` with `tls` at the top of `trafficPolicy`, and the application calls `https://`."
+        explanation: "This encrypts the request twice, and `curl` fails with exit code `35`."
+      - id: d
+        text: "A `Sidecar` resource with `REGISTRY_ONLY`, and the application calls `http://`."
+        explanation: "`REGISTRY_ONLY` blocks unknown hosts. It does not add TLS."
+    correct_option: a
+    explanation: "TLS origination lets the application send plain HTTP while its sidecar proxy adds TLS, so request-level features work again."
+
+  - id: ats014-070-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Put `tls.mode: SIMPLE` under `portLevelSettings` for the right port, and explain what breaks otherwise."
+    source_readings:
+      - sections/section-070/module-02/course-03-troubleshoot-top-level-tls-and-double-encryption.md
+    prompt: |-
+      A `DestinationRule` for `httpbin.org` has `tls.mode: SIMPLE` at the top of `trafficPolicy`. Requests that the `VirtualService` redirects from port `80` to `443` work. A request that stays on port `80` fails. What does the access log show?
+    options:
+      - id: a
+        text: "A `404` with `NR`, because no route matched."
+        explanation: "`NR` means no route. A route exists here."
+      - id: b
+        text: "A `200` with `PassthroughCluster`, because port `80` bypasses the proxy."
+        explanation: "The request is not let through. The TLS setting also covers port `80`."
+      - id: c
+        text: "A `504` with `UT`, because TLS slows the handshake."
+        explanation: "The failure is a handshake error, not a timeout."
+      - id: d
+        text: "A `503` with `UF` and `WRONG_VERSION_NUMBER`, because TLS is also turned on for plain port `80`."
+        explanation: "Correct. A top-level `tls` covers every port, and the redirect hides the mistake."
+    correct_option: d
+    explanation: "Put `tls` under `portLevelSettings` for port `443` only. A top-level `tls` turns on TLS for every port."
+
+  - id: ats014-070-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "State what `MESH_INTERNAL` changes compared with `MESH_EXTERNAL`, and recognise the failed mTLS (mutual TLS) handshake it causes when the machine has no sidecar proxy."
+    source_readings:
+      - sections/section-070/module-03/course-02-name-the-machines-with-a-mesh-internal-serviceentry.md
+    prompt: |-
+      A stand-in for `freighter-vm-1` runs without a sidecar proxy. After you set `location: MESH_INTERNAL`, callers get `503 UF` with `WRONG_VERSION_NUMBER`. Which fix is correct for a stand-in that can never accept mTLS?
+    options:
+      - id: a
+        text: "Change the entry to `MESH_EXTERNAL`."
+        explanation: "Requests then work, but the machine gets no identity, so it is the wrong fix."
+      - id: b
+        text: "Add a `DestinationRule` with `tls` mode `DISABLE`, so callers send plain HTTP."
+        explanation: "Correct. It is only for a machine that cannot accept mTLS. A real machine with `istio-agent` does not need it."
+      - id: c
+        text: "Add `insecureSkipVerify: true`."
+        explanation: "This setting turns off the server certificate check. It does not change the mTLS handshake."
+      - id: d
+        text: "Remove the `serviceAccount` from the `WorkloadEntry`."
+        explanation: "Without a `serviceAccount`, the machine has no identity, and callers still use mTLS."
+    correct_option: b
+    explanation: "`MESH_INTERNAL` makes callers use mTLS toward the machine. A machine without a sidecar fails that handshake with `503 UF` and `WRONG_VERSION_NUMBER`."
+
+  - id: ats014-070-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Find a `workloadSelector` that matches no entry from a `503 UH` and the proxy's endpoint list."
+    source_readings:
+      - sections/section-070/module-03/course-03-put-several-machines-behind-one-host.md
+    prompt: |-
+      Two `WorkloadEntry` objects carry the label `app: freighter`. A `ServiceEntry` selects `app: freighters`. Callers get `503 UH`, and `istioctl analyze` reports nothing. Which check shows the cause first?
+    options:
+      - id: a
+        text: "`istioctl proxy-status`, to see if the proxy is in sync."
+        explanation: "The proxy can be in sync and still hold an empty endpoint list."
+      - id: b
+        text: "The access log of the machines, to read their errors."
+        explanation: "No request reaches a machine when there is no endpoint."
+      - id: c
+        text: "`istioctl proxy-config endpoints` for the host, which shows an empty list."
+        explanation: "Correct. An empty endpoint list with `503 UH` means the selector and the entry labels do not match."
+      - id: d
+        text: "The service account of the entries, because `UH` is an identity failure."
+        explanation: "`UH` means no healthy upstream, not an identity problem."
+    correct_option: c
+    explanation: "The selector matches no entry, so the cluster has zero endpoints. `analyze` reports nothing because each object is valid on its own."
+
+  - id: ats014-070-q09
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Prove that TLS origination happened, from the external service's view and from the proxy's configuration."
+    source_readings:
+      - sections/section-070/module-02/course-04-verify-tls-origination-and-configure-mutual-tls.md
+    prompt: |-
+      After a change, the request to `httpbin.org` returns `200`. A teammate says TLS origination works. Which evidence do you collect to prove it?
+    options:
+      - id: a
+        text: "The destination reports the `https` scheme, and the proxy's cluster for port `443` has the `envoy.transport_sockets.tls` transport socket with the `sni` name."
+        explanation: "Correct. The proof comes from both ends."
+      - id: b
+        text: "The status code `200` and a short duration."
+        explanation: "A `200` alone does not prove TLS origination."
+      - id: c
+        text: "A clean `istioctl analyze` result."
+        explanation: "`analyze` checks links between objects, not TLS on a connection."
+      - id: d
+        text: "The `READY` column of the `shuttle` pod showing `2/2`."
+        explanation: "`2/2` only shows that the proxy container exists."
+    correct_option: a
+    explanation: "Check the destination's view and the proxy's cluster for port `443`."
+
+  - id: ats014-070-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Group entries into one host with a `MESH_INTERNAL` `ServiceEntry` and a `workloadSelector`."
+    source_readings:
+      - sections/section-070/module-03/course-04-register-virtual-machines-with-workloadgroup.md
+    prompt: |-
+      A `WorkloadGroup` template has the labels `app: freighter`. A virtual machine with `istio-agent` registers, and the `ServiceEntry` host has no endpoints. Which statement explains it and says what to check?
+    options:
+      - id: a
+        text: "A `WorkloadGroup` creates endpoints by itself, so the missing endpoints mean `istiod` is down."
+        explanation: "Nothing appears until a machine with `istio-agent` registers against the group."
+      - id: b
+        text: "The registered `WorkloadEntry` gets a fixed `address` from the template, so the `ServiceEntry` needs `resolution: DNS`."
+        explanation: "The template has no address, and `STATIC` is the right resolution when a selector selects entries."
+      - id: c
+        text: "The group is a template for pods, so a machine cannot join it."
+        explanation: "A machine running `istio-agent` registers against a group."
+      - id: d
+        text: "`istiod` creates a `WorkloadEntry` with the group's labels. Check that the `workloadSelector` matches them, and that the machine reaches `istiod` on port `15012`."
+        explanation: "Correct. If the selector does not match the registered labels, the host has no endpoints. The machine also needs a network path to `istiod` on port `15012`."
+    correct_option: d
+    explanation: "A `WorkloadGroup` relates to `WorkloadEntry` objects as a Deployment relates to Pods. Registered entries take the group's labels."

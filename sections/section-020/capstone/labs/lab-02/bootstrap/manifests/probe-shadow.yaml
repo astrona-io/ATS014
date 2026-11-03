@@ -1,0 +1,42 @@
+# The shadow target: the same echo server image, as its own Deployment and
+# Service. Its pods carry app=probe-shadow, so neither Service "probe" nor
+# "probe-tcp" selects them. Only a mirror policy sends it traffic.
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-shadow
+  namespace: starfleet
+  labels:
+    app: probe-shadow
+spec:
+  selector:
+    app: probe-shadow
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-shadow
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe-shadow
+  template:
+    metadata:
+      labels:
+        app: probe-shadow
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080

@@ -1,0 +1,38 @@
+# Port 80 redirects to HTTPS; two hosts on port 443, one certificate each.
+# Server names on the same port must be different. SNI picks the certificate.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - starfleet.example.com
+    - probe.example.com
+    tls:
+      httpsRedirect: true
+  - port:
+      number: 443
+      name: https-starfleet
+      protocol: HTTPS
+    hosts:
+    - starfleet.example.com
+    tls:
+      mode: SIMPLE
+      credentialName: starfleet-tls
+  - port:
+      number: 443
+      name: https-probe
+      protocol: HTTPS
+    hosts:
+    - probe.example.com
+    tls:
+      mode: SIMPLE
+      credentialName: probe-tls

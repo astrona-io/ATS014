@@ -1,0 +1,87 @@
+# The probe: an HTTP echo server (go-httpbin) in two versions, v1 and v2,
+# behind one Service. Useful paths:
+#   /get            echo the request
+#   /headers        echo the request headers
+#   /hostname       the name of the pod that answered
+#   /status/503     always answer 503
+#   /delay/3        wait 3 seconds, then answer
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: probe
+  namespace: starfleet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  # Selects both versions. Subsets in a DestinationRule split them by "version".
+  selector:
+    app: probe
+  ports:
+  # A port name that starts with "http" tells Istio that the protocol is HTTP.
+  - name: http
+    port: 8000
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-v1
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: probe
+        version: v1
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        # Makes /hostname return the real pod name, so a test can see which
+        # pod answered.
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-v2
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: probe
+        version: v2
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        # Makes /hostname return the real pod name, so a test can see which
+        # pod answered.
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080

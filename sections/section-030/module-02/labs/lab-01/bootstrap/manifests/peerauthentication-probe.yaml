@@ -1,0 +1,15 @@
+# A PeerAuthentication tells a workload's sidecar proxy which connections it
+# accepts. Mode STRICT: only mutual TLS (mTLS) connections; plain connections
+# are reset. This one covers the probe pods. The lab's DestinationRule must
+# match it, so it is part of the starting state and never graded as work.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  mtls:
+    mode: STRICT

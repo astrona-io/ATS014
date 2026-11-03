@@ -1,0 +1,41 @@
+# Routes by who sends the request and by which port the request uses.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  http:
+  - match:
+    - sourceLabels:
+        app: patrol
+    route:
+    - destination:
+        host: probe
+        subset: v2
+        port:
+          number: 8000
+  - match:
+    - sourceNamespace: dock
+    route:
+    - destination:
+        host: probe
+        subset: v2
+        port:
+          number: 8000
+  - match:
+    - port: 8001
+    route:
+    - destination:
+        host: probe
+        subset: v2
+        port:
+          number: 8001
+  - route:
+    - destination:
+        host: probe
+        subset: v1
+        port:
+          number: 8000

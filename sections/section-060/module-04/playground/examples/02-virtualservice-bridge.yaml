@@ -1,0 +1,28 @@
+# Routes for starfleet.example.com on the gateway starfleet-gateway.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bridge
+  namespace: starfleet
+spec:
+  hosts:
+  - starfleet.example.com
+  gateways:
+  - starfleet-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /productpage
+    route:
+    - destination:
+        host: bridge
+        port:
+          number: 9080
+  - match:
+    - uri:
+        prefix: /anything
+    route:
+    - destination:
+        host: probe
+        port:
+          number: 8000

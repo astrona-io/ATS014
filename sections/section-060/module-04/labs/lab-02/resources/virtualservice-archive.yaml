@@ -1,0 +1,17 @@
+# Starting state: the route for archive.starfleet.example.com.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: archive
+  namespace: starfleet
+spec:
+  hosts:
+  - archive.starfleet.example.com
+  gateways:
+  - starfleet-gateway
+  http:
+  - route:
+    - destination:
+        host: archive
+        port:
+          number: 443

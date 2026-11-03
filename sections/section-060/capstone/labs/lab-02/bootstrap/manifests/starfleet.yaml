@@ -1,0 +1,316 @@
+# The Starfleet: the Istio Bookinfo sample (release-1.30, images 1.20.3)
+# with space names. Same images and behaviour; only the names change:
+#   productpage -> bridge   (the flagship page astronauts see)
+#   details     -> cargo    (the supply ship)
+#   reviews     -> scout    (three ship classes: v1 no stars, v2 black, v3 red)
+#   ratings     -> navcom   (the navigation computer the v2/v3 scouts ask)
+# The images find each other through the *_HOSTNAME environment variables.
+# URL paths are built into the images and stay the same:
+#   /productpage, /details/0, /reviews/0, /ratings/0
+apiVersion: v1
+kind: Service
+metadata:
+  name: cargo
+  labels:
+    app: cargo
+    service: cargo
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: cargo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: starfleet-cargo
+  labels:
+    account: cargo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cargo-v1
+  labels:
+    app: cargo
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cargo
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: cargo
+        version: v1
+    spec:
+      serviceAccountName: starfleet-cargo
+      containers:
+      - name: cargo
+        image: registry.istio.io/release/examples-bookinfo-details-v1:1.20.3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: navcom
+  labels:
+    app: navcom
+    service: navcom
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: navcom
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: starfleet-navcom
+  labels:
+    account: navcom
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: navcom-v1
+  labels:
+    app: navcom
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: navcom
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: navcom
+        version: v1
+    spec:
+      serviceAccountName: starfleet-navcom
+      containers:
+      - name: navcom
+        image: registry.istio.io/release/examples-bookinfo-ratings-v1:1.20.3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scout
+  labels:
+    app: scout
+    service: scout
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: scout
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: starfleet-scout
+  labels:
+    account: scout
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scout-v1
+  labels:
+    app: scout
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scout
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: scout
+        version: v1
+    spec:
+      serviceAccountName: starfleet-scout
+      containers:
+      - name: scout
+        image: registry.istio.io/release/examples-bookinfo-reviews-v1:1.20.3
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: LOG_DIR
+          value: /tmp/logs
+        - name: RATINGS_HOSTNAME
+          value: navcom
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: wlp-output
+          mountPath: /opt/ibm/wlp/output
+      volumes:
+      - name: wlp-output
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scout-v2
+  labels:
+    app: scout
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scout
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: scout
+        version: v2
+    spec:
+      serviceAccountName: starfleet-scout
+      containers:
+      - name: scout
+        image: registry.istio.io/release/examples-bookinfo-reviews-v2:1.20.3
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: LOG_DIR
+          value: /tmp/logs
+        - name: RATINGS_HOSTNAME
+          value: navcom
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: wlp-output
+          mountPath: /opt/ibm/wlp/output
+      volumes:
+      - name: wlp-output
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scout-v3
+  labels:
+    app: scout
+    version: v3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scout
+      version: v3
+  template:
+    metadata:
+      labels:
+        app: scout
+        version: v3
+    spec:
+      serviceAccountName: starfleet-scout
+      containers:
+      - name: scout
+        image: registry.istio.io/release/examples-bookinfo-reviews-v3:1.20.3
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: LOG_DIR
+          value: /tmp/logs
+        - name: RATINGS_HOSTNAME
+          value: navcom
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: wlp-output
+          mountPath: /opt/ibm/wlp/output
+      volumes:
+      - name: wlp-output
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bridge
+  labels:
+    app: bridge
+    service: bridge
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: bridge
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: starfleet-bridge
+  labels:
+    account: bridge
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bridge-v1
+  labels:
+    app: bridge
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bridge
+      version: v1
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9080'
+        prometheus.io/path: /metrics
+      labels:
+        app: bridge
+        version: v1
+    spec:
+      serviceAccountName: starfleet-bridge
+      containers:
+      - name: bridge
+        image: registry.istio.io/release/examples-bookinfo-productpage-v1:1.20.3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        env:
+        - name: DETAILS_HOSTNAME
+          value: cargo
+        - name: REVIEWS_HOSTNAME
+          value: scout
+        - name: RATINGS_HOSTNAME
+          value: navcom
+      volumes:
+      - name: tmp
+        emptyDir: {}

@@ -1,0 +1,21 @@
+# Host level ISTIO_MUTUAL; subset v2 sets its own tls DISABLE, so only v2 breaks.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+    trafficPolicy:
+      tls:
+        mode: DISABLE

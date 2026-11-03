@@ -8,6 +8,8 @@ The section starts with the path of one request: how a rule matches, which desti
 
 Then it looks at the proxy's configuration size. By default every sidecar proxy gets configuration for every host in the service registry. The `Sidecar` resource cuts that down to only the hosts a workload needs.
 
+Next, it covers how to compose and scope the objects: a root `VirtualService` that hands part of its route table to delegate `VirtualService` objects, the `exportTo` field that decides which namespaces receive an object, and the `match` fields that depend on the sender and the destination port.
+
 Finally, it covers order: how to apply and remove these objects so no route ever points at something that does not exist yet ("make before break"), and the defaults Istio uses when you leave a setting out.
 
 ---
@@ -31,3 +33,13 @@ Finally, it covers order: how to apply and remove these objects so no route ever
 - What a `tcp` or `tls` rule can match on when there is no request to read, and what per-connection balancing costs you.
 - Reading a proxy's live configuration with `istioctl proxy-config routes`, `cluster`, `endpoints` and `listener`.
 - The order to apply and remove `ServiceEntry`, `DestinationRule`, `Gateway` and `VirtualService` ("make before break"), and Istio's defaults for timeouts, retries, load balancing and outbound traffic.
+- Splitting one host's route table across a root `VirtualService` and delegate `VirtualService` objects, and what a delegate cannot have (`hosts`, `gateways`, `tcp` and `tls` routes).
+- How `istiod` merges a root and its delegates into one route table, and how the root's `match` narrows the delegate's.
+- Using `exportTo` (`"."`, `"*"`, `"~"` or a list of namespaces) to limit who receives a `VirtualService` or a `DestinationRule`, and why a visible `VirtualService` with a hidden `DestinationRule` gives `503` with the `NC` flag.
+- Matching on `sourceLabels`, `sourceNamespace` and `port`, why each proxy gets its own route table, and why these matches route requests but do not prove who sent them.
+
+---
+
+## Capstone labs
+
+The section ends with two graded integration labs. The first combines subsets, header, path and query matches, and the `Sidecar` resource. The second, "Compose A Delegated Canary With Scoped Visibility", combines a root `VirtualService`, two delegates, a header rule, two timeouts and an `exportTo` list for one host, and proves with real requests from three namespaces that the rules reach only the namespaces they are exported to.

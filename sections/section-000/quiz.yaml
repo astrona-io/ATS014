@@ -1,0 +1,258 @@
+# Knowledge check for section 000. Listed in astrona.yaml as a `type: quiz` entry after the last module quiz. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-000
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-000
+  title: "Mesh Foundations"
+questions:
+  - id: ats014-000-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain what sidecar injection adds to a pod, and why a namespace label alone does not change running pods."
+    source_readings:
+      - sections/section-000/module-01/course-01-what-sidecar-injection-adds-to-a-pod.md
+    prompt: |-
+      Chief O'Brien reads the `shuttle` Deployment in `starfleet` and finds no `istio-proxy` container anywhere in its pod template. Yet every `shuttle` pod shows `2/2`. What explains this?
+    options:
+      - id: a
+        text: "The Deployment was edited by `istiod` at install time and the change was hidden from `kubectl`."
+        explanation: "`istiod` never edits the Deployment."
+      - id: b
+        text: "The `READY` column counts the node's own proxy, so `2/2` says nothing about the pod."
+        explanation: "`READY` counts containers in the pod, and the second one is the sidecar proxy that injection added."
+      - id: c
+        text: "The mutating admission webhook changes each new pod before it starts. The Deployment is not changed, only the pods it creates."
+        explanation: "Correct. The Kubernetes API server sends each new pod to `istiod`, which sends back a pod spec with `istio-init` and `istio-proxy` added."
+      - id: d
+        text: "Kubernetes adds `istio-proxy` to `spec.containers` of the Deployment only after the first request arrives."
+        explanation: "Nothing is added after a request, and the proxy must be running before the application sends its first request."
+    correct_option: c
+    explanation: "Injection happens when a pod is created. The mutating admission webhook adds `istio-init` and `istio-proxy` to the pod, and the Deployment stays as written."
+
+  - id: ats014-000-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Expand LDS, RDS, CDS and EDS, and say which one carries a given kind of configuration."
+    source_readings:
+      - sections/section-000/module-01/course-03-how-istiod-sends-configuration-over-xds.md
+    prompt: |-
+      Lieutenant Worf needs the part of the proxy configuration that holds the rules that choose a destination for a request. Which xDS API carries it?
+    options:
+      - id: a
+        text: "LDS, the Listener Discovery Service."
+        explanation: "LDS carries the ports and addresses the proxy accepts connections on."
+      - id: b
+        text: "RDS, the Route Discovery Service."
+        explanation: "Correct. RDS carries the rules that choose a destination."
+      - id: c
+        text: "CDS, the Cluster Discovery Service."
+        explanation: "CDS carries the named destinations themselves, not the rules that pick one."
+      - id: d
+        text: "EDS, the Endpoint Discovery Service."
+        explanation: "EDS carries the pod addresses behind each destination."
+    correct_option: b
+    explanation: "RDS carries the rules that choose a destination. LDS carries listeners, CDS the named destinations and EDS the pod addresses."
+
+  - id: ats014-000-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Describe how outgoing and incoming traffic reaches the proxy without the application knowing."
+    source_readings:
+      - sections/section-000/module-01/course-02-follow-a-request-through-two-proxies.md
+    prompt: |-
+      A connection arrives at the `cargo` pod from another pod. The `iptables` rules written by `istio-init` redirect it into the sidecar proxy. Which port of the proxy receives it?
+    options:
+      - id: a
+        text: "`15001`, because every connection goes through the outbound port."
+        explanation: "`15001` receives only connections that leave the pod."
+      - id: b
+        text: "`15000`, the administration port of Envoy."
+        explanation: "`15000` is Envoy's administration interface and is only reachable inside the pod."
+      - id: c
+        text: "`15021`, the health check port of the proxy."
+        explanation: "`15021` is the health check of the proxy itself, which Kubernetes asks whether the proxy is ready."
+      - id: d
+        text: "`15006`, the inbound port."
+        explanation: "Correct. Connections arriving at the pod are redirected to port `15006`."
+    correct_option: d
+    explanation: "Outgoing connections go to port `15001` and incoming connections go to port `15006`. The other ports have other jobs."
+
+  - id: ats014-000-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Say which side of a call decides routing, and what a client without a proxy loses."
+    source_readings:
+      - sections/section-000/module-01/course-02-follow-a-request-through-two-proxies.md
+      - sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
+    prompt: |-
+      Commander Riker applied a routing rule for `cargo`, and requests from `shuttle` reach the wrong pod. He wants to read the configuration that made the decision. Which command is aimed at the right proxy?
+    options:
+      - id: a
+        text: "`istioctl proxy-config routes deploy/shuttle -n starfleet`"
+        explanation: "Correct. The client's proxy decides routing, so you read the routes held by the proxy of the pod that sent the request."
+      - id: b
+        text: "`istioctl proxy-config routes deploy/cargo-v1 -n starfleet`"
+        explanation: "The `cargo` proxy is the receiver. It checks who may call and decrypts traffic, but it does not choose the destination."
+      - id: c
+        text: "`istioctl proxy-config bootstrap deploy/cargo-v1 -n starfleet`"
+        explanation: "`bootstrap` shows the fixed settings a proxy started with, not routes, and the pod is the wrong one."
+      - id: d
+        text: "`istioctl analyze -n istio-system`"
+        explanation: "`analyze` checks links between objects in one namespace. It does not show what a proxy holds."
+    correct_option: a
+    explanation: "The client's proxy decides routing, retries and timeouts. Point `istioctl proxy-config` at the pod that sent the request."
+
+  - id: ats014-000-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Explain what sidecar injection adds to a pod, and why a namespace label alone does not change running pods."
+    source_readings:
+      - sections/section-000/module-01/course-03-how-istiod-sends-configuration-over-xds.md
+      - sections/section-000/module-01/course-01-what-sidecar-injection-adds-to-a-pod.md
+    prompt: |-
+      `istioctl proxy-status` shows a row for every pod in `starfleet`. It shows no row for `drifter` in `outpost`. What does that tell you?
+    options:
+      - id: a
+        text: "`istiod` is down for the `outpost` namespace and must be restarted."
+        explanation: "`istiod` serves the whole mesh. A missing row for one pod does not mean it is down."
+      - id: b
+        text: "The `drifter` proxy is connected but out of date."
+        explanation: "An out of date proxy still has a row. The list only shows connected proxies."
+      - id: c
+        text: "`drifter` has no sidecar proxy, so `istiod` has nothing to connect to."
+        explanation: "Correct. The list only shows pods with a sidecar proxy, and `drifter` runs as `1/1` with none."
+      - id: d
+        text: "`drifter` runs a different proxy version, so it is hidden from the list."
+        explanation: "A different `VERSION` shows in the `VERSION` column. It does not hide the row."
+    correct_option: c
+    explanation: "A pod without a sidecar proxy is not in `istioctl proxy-status`. A pod that should be in the mesh and is missing needs its injection or its proxy container checked."
+
+  - id: ats014-000-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Say which side of a call decides routing, and what a client without a proxy loses."
+    source_readings:
+      - sections/section-000/module-01/course-04-read-listeners-routes-clusters-and-endpoints.md
+      - sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
+    prompt: |-
+      Counselor Troi applied a `VirtualService` for `probe`. In `istioctl proxy-config routes deploy/shuttle -n starfleet --name 8000`, the `VIRTUAL SERVICE` column for the `probe` host is empty. What is the best reading?
+    options:
+      - id: a
+        text: "Nothing is wrong. An empty column is the normal state of a healthy route."
+        explanation: "The column is empty only when no `VirtualService` is attached to that host. You applied one, so you expected its name."
+      - id: b
+        text: "The `VirtualService` is not attached to that host. Check its host name and namespace, then check that the push arrived."
+        explanation: "Correct. A `VirtualService` that reached the host shows its name in this column. Common causes are the wrong namespace, a host name that points at nothing, or a push that has not arrived."
+      - id: c
+        text: "The `probe` pods are not running, so the route is empty."
+        explanation: "Pods show in the endpoints layer. The route layer is built from the Service and your objects."
+      - id: d
+        text: "The cluster port and the endpoint port differ, so Istio hides the name."
+        explanation: "The ports always differ by design. This has no effect on the `VIRTUAL SERVICE` column."
+    correct_option: b
+    explanation: "The column is the quickest check that your `VirtualService` reached the host you meant. An empty column after you applied one means it did not attach."
+
+  - id: ats014-000-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Say which side of a call decides routing, and what a client without a proxy loses."
+    source_readings:
+      - sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
+    prompt: |-
+      A request from `shuttle` to `cargo` returns `404`. The access log of the `shuttle` proxy shows the response flag `NR`. Where do you look first?
+    options:
+      - id: a
+        text: "At the `cargo` Deployment, to see whether it has pods."
+        explanation: "Missing pods give `UH` with a `503`, not `NR` with a `404`."
+      - id: b
+        text: "At the `istio-proxy` container of `cargo`, to see whether it restarted."
+        explanation: "The request never reached `cargo`, so its proxy cannot be the cause."
+      - id: c
+        text: "At the circuit breaker limits of the destination."
+        explanation: "A circuit breaker limit gives `UO`, not `NR`."
+      - id: d
+        text: "At your routing: the host the request asked for, and the rules that should have matched it."
+        explanation: "Correct. `NR` means No Route: the request matched no route, so the host name is wrong or no rule fitted."
+    correct_option: d
+    explanation: "`NR` comes with a `404` and points at routing. `NC` and `UH` come with a `503` and point at the destination."
+
+  - id: ats014-000-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Say which side of a call decides routing, and what a client without a proxy loses."
+    source_readings:
+      - sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
+      - sections/section-000/module-01/course-03-how-istiod-sends-configuration-over-xds.md
+    prompt: |-
+      You applied a `VirtualService` for `cargo`, and the behaviour is wrong. `kubectl get` shows the object, `istioctl analyze -n starfleet` is clean, `istioctl proxy-status` for the `shuttle` pod shows `Match` on every line, and `proxy-config routes` shows the `VirtualService` name against the `cargo` host. What is the next step in the fixed order?
+    options:
+      - id: a
+        text: "Send a real request and read the `shuttle` access log, because it is the final evidence of what happened to one request."
+        explanation: "Correct. The earlier steps show that the object exists, links correctly, was pushed and is held by the proxy. Only the access log shows what happened to a request."
+      - id: b
+        text: "Run `istioctl analyze` again, because a second clean result proves the rule is sensible."
+        explanation: "A clean `analyze` never proves the rule is sensible, and repeating it adds nothing."
+      - id: c
+        text: "Restart `istiod`, because a push that shows `Match` may still be wrong."
+        explanation: "`Match` means the proxy holds exactly what `istiod` sent, so the push is not the problem."
+      - id: d
+        text: "Delete the namespace label, because the proxy holds the route but cannot use it."
+        explanation: "Removing the label does not help. The proxy already holds and uses the configuration."
+    correct_option: a
+    explanation: "Each tool narrows the search. When the object, the push and the proxy configuration all look right, the access log of the client's proxy shows what really happened."
+
+  - id: ats014-000-q09
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Expand LDS, RDS, CDS and EDS, and say which one carries a given kind of configuration."
+    source_readings:
+      - sections/section-000/module-01/course-04-read-listeners-routes-clusters-and-endpoints.md
+    prompt: |-
+      Two Services, `probe` and `cargo`, both use port `8000` in `starfleet`. Captain Picard asks how the `shuttle` proxy tells their requests apart. What is the correct description?
+    options:
+      - id: a
+        text: "It has one listener per Service. Each listener is named after the Service."
+        explanation: "The listener on port `8000` is shared by every Service on that port."
+      - id: b
+        text: "It tells them apart by pod IP address, because a listener cannot read host names."
+        explanation: "The route layer chooses by host name. Pod addresses are only chosen at the endpoint layer."
+      - id: c
+        text: "One listener on `0.0.0.0:8000` hands HTTP to the route table `8000`. That table has one virtual host per Service and chooses by host name."
+        explanation: "Correct. The listener does not exist for one Service alone, and the next layer, the route, chooses between Services by host name."
+      - id: d
+        text: "It sends all traffic on port `8000` to `PassthroughCluster`, which splits it by Service."
+        explanation: "`PassthroughCluster` is the fallback for traffic that is not HTTP. It forwards bytes without reading them."
+    correct_option: c
+    explanation: "The listener accepts by address and port, and the route picks the destination by host name. Each Service on the port has its own virtual host in the shared route table."
+
+  - id: ats014-000-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Tell an injected pod from an uninjected one, and bring a workload into the mesh."
+    source_readings:
+      - sections/section-000/module-01/course-01-what-sidecar-injection-adds-to-a-pod.md
+      - sections/section-000/module-01/course-03-how-istiod-sends-configuration-over-xds.md
+    prompt: |-
+      After a rollout restart, every pod of `scout` shows `2/2` and `Running`. A teammate says: "the mesh configuration is applied to these pods." What is the correct response?
+    options:
+      - id: a
+        text: "Correct, because `2/2` means the proxy is healthy and holds its configuration."
+        explanation: "`2/2` does not mean the proxy is healthy or configured."
+      - id: b
+        text: "`2/2` only proves the proxy container exists. A proxy with no useful configuration still shows `2/2`, so check `istioctl proxy-status` for the pod."
+        explanation: "Correct. `READY` counts containers. `istioctl proxy-status` shows whether the proxy is connected and in sync."
+      - id: c
+        text: "It is wrong, because native sidecars are not counted in the `READY` column."
+        explanation: "Kubernetes does count a native sidecar in `READY`, which is why one application container shows `2/2`."
+      - id: d
+        text: "It is wrong, because a pod with `istio-init` in its init containers is never ready."
+        explanation: "`istio-init` runs once and exits, and the pod becomes ready after that."
+    correct_option: b
+    explanation: "The `READY` column only counts containers. Whether the proxy holds the configuration is shown by `istioctl proxy-status`."

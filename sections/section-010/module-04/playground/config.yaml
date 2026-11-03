@@ -1,0 +1,24 @@
+# Compose And Scope VirtualServices With delegate And exportTo (PLAYGROUND) - Playground environment
+# A clean sandbox: it starts a kind cluster, installs Istio, deploys the probe in
+# starfleet, a second namespace (dock) with its own client pod, and then stays running
+# for free exploration. No task, no grading, no `astrona submit`.
+#   astrona run -c .                          new kind cluster "astro-ats-014-playground-010-04"
+#   astrona destroy ats-014-playground-010-04 delete the cluster again
+metadata:
+  name: "ats-014-playground-010-04"
+  docs:
+    guide: "docs/overview.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Namespaces starfleet and dock with sidecar injection, access logs, the probe v1 and v2 with its subsets, and the client pods shuttle and patrol (starfleet) and shuttle (dock)"
+      type: "file"
+      source: "bootstrap/deploy.sh"
+
+teardown:
+  keepCluster: false

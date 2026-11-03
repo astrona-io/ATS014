@@ -1,0 +1,10 @@
+# Namespace "starfleet" for the sample workloads.
+# The istio-injection=enabled label makes Istio add a sidecar proxy (Envoy) to
+# every pod created here. Pods created before the label was added get no
+# sidecar; restart them with "kubectl rollout restart deploy -n starfleet".
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: starfleet
+  labels:
+    istio-injection: enabled

@@ -1,0 +1,257 @@
+# Knowledge check for section 080. Listed in astrona.yaml as a `type: quiz` entry after the last capstone lab. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-080
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-080
+  title: "Configuring Ingress And Egress Traffic — Egress"
+questions:
+  - id: ats014-080-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain why a running egress gateway carries no traffic until routing sends traffic to it."
+    source_readings:
+      - sections/section-080/module-01/course-01-why-an-egress-gateway-carries-no-traffic.md
+    prompt: |-
+      The egress gateway pod is `Running`, and requests from `shuttle` to `httpbin.org` return `200`. The egress gateway's access log is empty. What explains this?
+    options:
+      - id: a
+        text: "Nothing routes requests to the egress gateway, so every sidecar proxy sends them straight to the outside host."
+        explanation: "Correct. A running egress gateway carries no traffic by itself. Routing must choose it."
+      - id: b
+        text: "Access logs are switched off on gateways, so no line is ever written."
+        explanation: "Access logs are on. Once traffic passes through the egress gateway, its log shows lines."
+      - id: c
+        text: "The `200` is cached by the `shuttle` proxy, so no request leaves the pod."
+        explanation: "The `shuttle` proxy does not cache responses, and the request reaches the outside host."
+      - id: d
+        text: "The egress gateway only logs failed requests."
+        explanation: "It logs requests that pass through it, successful or not."
+    correct_option: a
+    explanation: "An idle and a busy egress gateway look the same in `kubectl get pods`. Count its access log lines to see whether it is used."
+
+  - id: ats014-080-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Write a `Gateway` for the egress gateway, with the **outside** host name in `servers[].hosts`."
+    source_readings:
+      - sections/section-080/module-01/course-02-write-the-egress-gateway-and-destinationrule.md
+    prompt: |-
+      Ensign Kim writes the `Gateway` for the egress gateway. Which value belongs in `servers[].hosts`?
+    options:
+      - id: a
+        text: "The full name of the egress gateway's own Service."
+        explanation: "`servers[].hosts` names the outside host, not the egress gateway's own Service."
+      - id: b
+        text: "The name of the `shuttle` Service."
+        explanation: "The client is not listed in the `Gateway`."
+      - id: c
+        text: "The outside host, for example `httpbin.org`."
+        explanation: "Correct. Read the object from the egress gateway's point of view: it accepts requests for the outside host."
+      - id: d
+        text: "`mesh`."
+        explanation: "`mesh` is a reserved gateway name used in a `VirtualService`, not a host."
+    correct_option: c
+    explanation: "A wrong value gives `IST0132` from `istioctl analyze`, because the `Gateway` does not serve the host."
+
+  - id: ats014-080-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain why the egress gateway listens on port `80` but sends to port `443`, and what happens when the second routing rule uses the wrong port."
+    source_readings:
+      - sections/section-080/module-02/course-01-route-plain-http-through-the-egress-gateway.md
+      - sections/section-080/module-02/course-06-summary.md
+    prompt: |-
+      With TLS origination at the egress gateway, the egress gateway listens on port `80` and sends to port `443` of the external host. What do the two numbers describe?
+    options:
+      - id: a
+        text: "A mistake. Both ports must be `443`."
+        explanation: "Both numbers are correct."
+      - id: b
+        text: "The sidecar proxy's inbound and outbound ports."
+        explanation: "Those are ports `15006` and `15001`."
+      - id: c
+        text: "The port of the `Gateway` for HTTP and the port of the `DestinationRule` for load balancing."
+        explanation: "Neither number describes a load balancing setting."
+      - id: d
+        text: "Two directions: where the egress gateway listens, and where it sends."
+        explanation: "Correct. The application sends plain HTTP to port `80`, and the egress gateway sends the request on to port `443` with TLS."
+    correct_option: d
+    explanation: "The listening port and the onward port do not need to match. The egress gateway turns plain HTTP into TLS between them."
+
+  - id: ats014-080-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Explain what the reserved gateway name `mesh` means, and why the top-level `gateways` list must name it."
+    source_readings:
+      - sections/section-080/module-01/course-03-write-the-two-stage-virtualservice.md
+      - sections/section-080/module-01/course-04-prove-the-egress-hop-and-find-broken-virtualservice-rules.md
+    prompt: |-
+      A `VirtualService` has a rule for `mesh` and a rule for the egress gateway, but its top-level `gateways` list names only the egress gateway. Requests return `200`. What is true?
+    options:
+      - id: a
+        text: "The requests pass the egress gateway, and `istioctl analyze` shows `IST0101`."
+        explanation: "`IST0101` is for a missing subset or host."
+      - id: b
+        text: "The sidecars never get hop 1 and send the requests straight out. `istioctl analyze` reports nothing."
+        explanation: "Correct. Naming only the egress gateway replaces the implicit `mesh`. Read hop 1 in the client's sidecar log."
+      - id: c
+        text: "The egress gateway rejects every request with `NR`."
+        explanation: "The request never reaches it."
+      - id: d
+        text: "The requests fail with `503 UH`, because the egress gateway has no pods."
+        explanation: "The requests succeed, and the pods exist."
+    correct_option: b
+    explanation: "`mesh` is the reserved name for every sidecar proxy. A `200` proves nothing, because a request that skips the egress gateway also succeeds."
+
+  - id: ats014-080-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Explain the subset with no labels in the `DestinationRule` for the egress gateway's own Service."
+    source_readings:
+      - sections/section-080/module-01/course-02-write-the-egress-gateway-and-destinationrule.md
+      - sections/section-080/module-01/course-05-diagnose-a-broken-egress-gateway-or-destinationrule.md
+    prompt: |-
+      Lieutenant Worf deletes the `DestinationRule` for the egress gateway's Service because its subset has no labels and looks pointless. The `VirtualService` still names that subset in hop 1. What shows in the `shuttle` sidecar log and in `istioctl analyze`?
+    options:
+      - id: a
+        text: "`NC` in the `shuttle` sidecar log and `IST0101` from `istioctl analyze`."
+        explanation: "Correct. Hop 1 names the subset, so without it the sidecar has no cluster."
+      - id: b
+        text: "`UH` and `IST0132`."
+        explanation: "`UH` means the cluster has no pods, and `IST0132` is for a `Gateway` that does not serve the host."
+      - id: c
+        text: "`NR` and nothing from `istioctl analyze`."
+        explanation: "`NR` means no route matched. The route exists here."
+      - id: d
+        text: "`UO` and `IST0129`."
+        explanation: "`UO` is a circuit breaker limit, and `IST0129` warns about missing CA certificates."
+    correct_option: a
+    explanation: "The subset narrows nothing, but hop 1 names it, so it must exist."
+
+  - id: ats014-080-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Originate TLS at the egress gateway with a `DestinationRule` on the external host, using `portLevelSettings` and `sni`."
+    source_readings:
+      - sections/section-080/module-02/course-02-originate-tls-on-the-external-host.md
+    prompt: |-
+      Commander Data puts `tls.mode: SIMPLE` in the `DestinationRule` of the egress gateway's own Service. Requests now fail with `503 URX,UF` and `WRONG_VERSION_NUMBER`. Why?
+    options:
+      - id: a
+        text: "The egress gateway has no `sni` setting, so the handshake is refused."
+        explanation: "A missing `sni` is a different problem. This error comes from TLS on a plain port."
+      - id: b
+        text: "A `DestinationRule` for a Service applies only in its own namespace."
+        explanation: "This is not why the handshake fails."
+      - id: c
+        text: "The sidecar proxy applies a rule for the Service it calls, so it tries TLS with the egress gateway on plain port `80`."
+        explanation: "Correct. The TLS rule must name the external host, under `portLevelSettings` for port `443`."
+      - id: d
+        text: "`SIMPLE` is only valid for mutual TLS."
+        explanation: "`SIMPLE` is the normal TLS client mode. `MUTUAL` adds a client certificate."
+    correct_option: c
+    explanation: "A `DestinationRule` is applied by the proxy that calls the host it names. The egress gateway calls the external host, so the rule names that host."
+
+  - id: ats014-080-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Prove which proxy holds the TLS settings by comparing the clusters of the egress gateway and of the sidecar proxy with `istioctl proxy-config`."
+    source_readings:
+      - sections/section-080/module-02/course-03-prove-which-proxy-originates-tls.md
+    prompt: |-
+      Rule 2 of the `VirtualService` sends the request to port `80` of `httpbin.org` instead of `443`. The server also speaks plain HTTP, and the call returns `200`. Which evidence shows the problem?
+    options:
+      - id: a
+        text: "The `200` status code."
+        explanation: "A `200` alone proves little here."
+      - id: b
+        text: "A clean `istioctl analyze` result."
+        explanation: "A clean result does not prove that TLS starts."
+      - id: c
+        text: "The `READY` column of the egress gateway pod."
+        explanation: "It does not show which port the request used."
+      - id: d
+        text: "The upstream port in the egress gateway's access log, and the scheme the server reports."
+        explanation: "Correct. If rule 2 routes to port `80`, the TLS settings for `443` are never used, and the log shows port `80`."
+    correct_option: d
+    explanation: "Check where TLS started with the server's `url` field and the upstream port in the egress gateway's access log."
+
+  - id: ats014-080-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Write the two-stage `VirtualService`, and say which proxy runs each stage."
+    source_readings:
+      - sections/section-080/module-01/course-06-limit-the-egress-route-with-sourcelabels.md
+    prompt: |-
+      A hop 1 rule uses `sourceLabels` so that only `shuttle` pods go through the egress gateway. The security team says pods without the label can no longer reach `httpbin.org`. Is that right?
+    options:
+      - id: a
+        text: "Yes. `sourceLabels` is a permission, and unlabelled pods are refused."
+        explanation: "`sourceLabels` limits the route, not the permission."
+      - id: b
+        text: "No. A pod without the label goes direct and still gets `200`. Real egress control also needs `REGISTRY_ONLY`, an `AuthorizationPolicy` on the egress gateway and a Kubernetes `NetworkPolicy`."
+        explanation: "Correct. The route is not enforcement."
+      - id: c
+        text: "Yes, but only if the label is on the Deployment and not on the pod."
+        explanation: "`sourceLabels` reads the pod's labels. Set them in `spec.template.metadata.labels`."
+      - id: d
+        text: "No. Unlabelled pods are routed to `BlackHoleCluster` and get `502`."
+        explanation: "Unlabelled pods are not blocked by this rule."
+    correct_option: b
+    explanation: "A route sends traffic. It does not stop a pod from leaving directly."
+
+  - id: ats014-080-q09
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Name the five objects that route a request through the egress gateway with TLS origination, and the job of each one."
+    source_readings:
+      - sections/section-080/module-02/course-05-present-a-client-certificate-with-credentialname.md
+    prompt: |-
+      The partner server needs a client certificate. The `DestinationRule` uses `tls.mode: MUTUAL` and a `credentialName`. The `Secret` is in the `starfleet` namespace. Calls fail with `503 URX,UF` and `Secret_is_not_supplied_by_SDS`. What is the cause and the check?
+    options:
+      - id: a
+        text: "The egress gateway reads `credentialName` from its own namespace. Put the `Secret` there, and check `istioctl proxy-config secret` for `WARMING` and the `istiod` log for `not found`."
+        explanation: "Correct. `credentialName` is read from the namespace of the proxy that uses it, and `kubectl apply` accepts a name that points at nothing."
+      - id: b
+        text: "`MUTUAL` is only valid on sidecars. Use `SIMPLE` on the egress gateway."
+        explanation: "The egress gateway can use `MUTUAL`."
+      - id: c
+        text: "`insecureSkipVerify: true` is missing. Add it and keep it."
+        explanation: "It turns off the server check and is never the fix."
+      - id: d
+        text: "The `Secret` must be named `ca.crt`."
+        explanation: "The `Secret` holds `tls.crt`, `tls.key` and `ca.crt`. Its name is free."
+    correct_option: a
+    explanation: "`istioctl analyze` stays quiet about a `credentialName` that points at nothing. Wait about 15 seconds after the fix before you test."
+
+  - id: ats014-080-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Write the two-stage `VirtualService`, and say which proxy runs each stage."
+    source_readings:
+      - sections/section-080/module-01/course-04-prove-the-egress-hop-and-find-broken-virtualservice-rules.md
+      - sections/section-080/module-01/course-05-diagnose-a-broken-egress-gateway-or-destinationrule.md
+    prompt: |-
+      Hop 1 exists, but hop 2 is missing. Requests from `shuttle` fail, and the egress gateway's access log has no new lines. Where is the evidence?
+    options:
+      - id: a
+        text: "In the egress gateway's log, as `NR` lines."
+        explanation: "The egress gateway has no listener and writes nothing."
+      - id: b
+        text: "In the `istiod` log, as a rejected push."
+        explanation: "The configuration is valid, so `istiod` pushes it."
+      - id: c
+        text: "In the `shuttle` sidecar's log: `UF,URX` with `Connection_refused`, because the egress gateway has no listener."
+        explanation: "Correct. A refused request leaves no line in the egress gateway's log."
+      - id: d
+        text: "In `istioctl analyze`, as `IST0101`."
+        explanation: "`analyze` reports nothing for a missing hop 2."
+    correct_option: c
+    explanation: "The client's sidecar log shows what happened when the egress gateway refuses the connection."

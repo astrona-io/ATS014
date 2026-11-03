@@ -1,0 +1,42 @@
+metadata:
+  name: "ats-014-capstone-020-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+runtime:
+  type: kind
+  kind:
+    # Loaded into the node from the host cache: Istio starts without a
+    # registry pull on every run.
+    preloadImages:
+      - "registry.istio.io/release/pilot:1.30.5"
+      - "registry.istio.io/release/proxyv2:1.30.5"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "capstone-020-02-setup"
+      description: "Creates the starfleet namespace with the probe v1/v2 behind an HTTP Service and a TCP Service, a separate probe-shadow Deployment and Service, and the shuttle client"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-section-020-capstone-2"
+      description: "Confirms an HTTP VirtualService with a header rule above an 80/20 split that mirrors to probe-shadow, a TCP VirtualService with a 70/30 tcp route, that both splits and the mirror hold in the proxy and in real traffic, that one reused connection splits per request on the HTTP Service and stays on one pod on the TCP Service, and that no workload was changed"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

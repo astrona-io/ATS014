@@ -1,0 +1,256 @@
+# Knowledge check for section 030. Listed in astrona.yaml as a `type: quiz` entry after the last capstone lab. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-030
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-030
+  title: "Defining Traffic Policies With Destination Rules"
+questions:
+  - id: ats014-030-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Name the default load balancing algorithm and how it picks a pod."
+    source_readings:
+      - sections/section-030/module-01/course-01-choose-a-simple-load-balancing-algorithm.md
+    prompt: |-
+      No `loadBalancer` is set for a host with several pods. Which algorithm does Istio use?
+    options:
+      - id: a
+        text: "`LEAST_REQUEST`, which picks two random pods and uses the less busy one."
+        explanation: "Correct. This is why its spread looks a little uneven."
+      - id: b
+        text: "`ROUND_ROBIN`, one pod after the other."
+        explanation: "Round robin is Envoy's own default, and Istio's default is `LEAST_REQUEST`."
+      - id: c
+        text: "`RANDOM`, any pod."
+        explanation: "`RANDOM` is a valid choice, but it is not the default."
+      - id: d
+        text: "`PASSTHROUGH`, the original address."
+        explanation: "`PASSTHROUGH` switches the choice off."
+    correct_option: a
+    explanation: "The cluster dump shows the algorithm as `lbPolicy`, and `ROUND_ROBIN` shows no `lbPolicy` line."
+
+  - id: ats014-030-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Choose the client TLS mode for a destination inside the mesh."
+    source_readings:
+      - sections/section-030/module-02/course-01-client-tls-modes-in-trafficpolicy-tls.md
+    prompt: |-
+      Which `tls.mode` is meant for a destination inside the mesh, and needs no certificate fields?
+    options:
+      - id: a
+        text: "`SIMPLE`"
+        explanation: "`SIMPLE` is for outside destinations, and it sends no client certificate."
+      - id: b
+        text: "`MUTUAL`"
+        explanation: "`MUTUAL` needs a client certificate, a key and a CA that you provide."
+      - id: c
+        text: "`ISTIO_MUTUAL`"
+        explanation: "Correct. Istio supplies the certificate that `istiod` gave to the proxy."
+      - id: d
+        text: "`DISABLE`"
+        explanation: "`DISABLE` opens a plain connection."
+    correct_option: c
+    explanation: "`SIMPLE` and `MUTUAL` are for destinations whose certificates you manage yourself."
+
+  - id: ats014-030-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Recognise a consistent hash in the proxy."
+    source_readings:
+      - sections/section-030/module-01/course-02-pin-requests-to-a-pod-with-consistent-hash.md
+    prompt: |-
+      A `DestinationRule` uses `consistentHash` on a header. What does the cluster dump show as `lbPolicy`?
+    options:
+      - id: a
+        text: "`LEAST_REQUEST`"
+        explanation: "That is the policy for the simple form."
+      - id: b
+        text: "`ROUND_ROBIN`"
+        explanation: "Round robin shows no `lbPolicy` line at all."
+      - id: c
+        text: "No `lbPolicy` line."
+        explanation: "A missing line means `ROUND_ROBIN`."
+      - id: d
+        text: "`RING_HASH`"
+        explanation: "Correct. Envoy places each pod at many points on a ring and moves clockwise from the hash."
+    correct_option: d
+    explanation: "A request that carries no hashed value falls back to normal load balancing, with no error."
+
+  - id: ats014-030-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Say what happens with no tls block."
+    source_readings:
+      - sections/section-030/module-02/course-01-client-tls-modes-in-trafficpolicy-tls.md
+    prompt: |-
+      No `tls` block applies to the `probe` host. The pod of `probe` has a sidecar. How does the client proxy connect?
+    options:
+      - id: a
+        text: "With a plain connection, because nothing asks for TLS."
+        explanation: "Automatic mTLS makes the proxy use mTLS to endpoints that have a sidecar."
+      - id: b
+        text: "With mTLS, through automatic mTLS."
+        explanation: "Correct. It chooses per endpoint: mTLS for endpoints with a sidecar and plain for the others."
+      - id: c
+        text: "With `SIMPLE`, and no client certificate."
+        explanation: "`SIMPLE` is only used when you set it."
+      - id: d
+        text: "It fails until a `DestinationRule` exists."
+        explanation: "No rule is needed."
+    correct_option: b
+    explanation: "An explicit `tls` block always replaces the automatic choice."
+
+  - id: ats014-030-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Hash a cookie with a ttl."
+    source_readings:
+      - sections/section-030/module-01/course-03-hash-a-cookie-source-ip-or-query-parameter.md
+    prompt: |-
+      A `consistentHash` on `httpCookie` has no `ttl`. A first-time visitor arrives with no cookie. What does the proxy do?
+    options:
+      - id: a
+        text: "It creates no cookie, and the request is balanced normally. Only a `ttl` makes the proxy create the cookie."
+        explanation: "Correct. Without `ttl`, the proxy only hashes a cookie the client already has."
+      - id: b
+        text: "It creates a cookie for the visitor with a ttl of one hour."
+        explanation: "The proxy creates a cookie only when the `ttl` is set."
+      - id: c
+        text: "It rejects the request."
+        explanation: "A request without the value is balanced normally."
+      - id: d
+        text: "It hashes the source IP address instead."
+        explanation: "The proxy does not switch the hashed value."
+    correct_option: a
+    explanation: "The source IP is a trap behind a gateway or any shared address."
+
+  - id: ats014-030-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Predict what a subset inherits and what it replaces."
+    source_readings:
+      - sections/section-030/module-02/course-03-override-tls-per-subset-and-per-port.md
+      - sections/section-030/module-01/course-04-set-a-load-balancer-per-subset.md
+    prompt: |-
+      The host sets `tls` and a `consistentHash`. Subset `v2` sets only `loadBalancer.simple: RANDOM`. What does `v2` have?
+    options:
+      - id: a
+        text: "`consistentHash` and `RANDOM` merged."
+        explanation: "Nothing inside a replaced field is merged."
+      - id: b
+        text: "No `tls`, because setting any field drops the others."
+        explanation: "Only the field the subset sets is replaced."
+      - id: c
+        text: "An error from `istiod`, because the two objects disagree."
+        explanation: "Istio reports no error. The cluster dump shows the result."
+      - id: d
+        text: "The host's `tls`, and `RANDOM`. The subset's `loadBalancer` replaced the host's whole one."
+        explanation: "Correct. A subset inherits the fields it does not set and replaces the fields it does set, with no error."
+    correct_option: d
+    explanation: "Read the cluster dump for every subset after you add a subset `trafficPolicy`."
+
+  - id: ats014-030-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Name the port in portLevelSettings."
+    source_readings:
+      - sections/section-030/module-01/course-05-set-a-load-balancer-per-port.md
+      - sections/section-030/module-02/course-03-override-tls-per-subset-and-per-port.md
+    prompt: |-
+      The `probe` Service listens on `8000` and sends to container port `8080`. Which number does `portLevelSettings` use?
+    options:
+      - id: a
+        text: "`8080`, the container port."
+        explanation: "The container port is never matched."
+      - id: b
+        text: "Either one."
+        explanation: "Only the Service port matches."
+      - id: c
+        text: "`8000`, the Service port."
+        explanation: "Correct. The number is the port that clients call."
+      - id: d
+        text: "The `nodePort`."
+        explanation: "A node port is not used by this field."
+    correct_option: c
+    explanation: "A port-level field replaces the host's field for that port."
+
+  - id: ats014-030-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Explain a DISABLE rule against a STRICT destination."
+    source_readings:
+      - sections/section-030/module-02/course-02-match-a-destination-that-requires-mtls.md
+    prompt: |-
+      The `probe` pods have `PeerAuthentication` mode `STRICT`. A `DestinationRule` for `probe` sets `tls.mode: DISABLE`. What do clients with a sidecar get?
+    options:
+      - id: a
+        text: "`200`, because automatic mTLS still applies."
+        explanation: "An explicit `DISABLE` stops automatic mTLS."
+      - id: b
+        text: "`503`. The proxy sends plain text, the destination resets the connection, and the client proxy answers `503`."
+        explanation: "Correct. The symptom is a reset connection and `503`, not a certificate message."
+      - id: c
+        text: "A TLS certificate error that names the rule."
+        explanation: "The failure does not mention TLS."
+      - id: d
+        text: "`404 NR`, because no route matches."
+        explanation: "The route matches. The connection fails."
+    correct_option: b
+    explanation: "The fix is `ISTIO_MUTUAL` or no `tls` block, not a weaker `PeerAuthentication`."
+
+  - id: ats014-030-q09
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Say why stickiness does not keep a user on one version in a weighted split."
+    source_readings:
+      - sections/section-030/module-01/course-02-pin-requests-to-a-pod-with-consistent-hash.md
+      - sections/section-030/module-01/course-04-set-a-load-balancer-per-subset.md
+    prompt: |-
+      A route splits 50/50 between v1 and v2, and the `DestinationRule` hashes the header `x-user`. Does a user stay on one version?
+    options:
+      - id: a
+        text: "No. The proxy picks the subset by weight first, and hashes only inside the subset."
+        explanation: "Correct. To keep a user on one version, route by header."
+      - id: b
+        text: "Yes, because the hash decides the subset."
+        explanation: "The hash decides the pod, after the subset."
+      - id: c
+        text: "Yes, but only for cookies."
+        explanation: "A cookie hash works inside the subset in the same way."
+      - id: d
+        text: "No, because `consistentHash` is rejected with weights."
+        explanation: "It is accepted. It does not affect the subset."
+    correct_option: a
+    explanation: "The proxy makes three decisions in order: the rule, the subset and then the endpoint."
+
+  - id: ats014-030-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Explain why a DestinationRule cannot help a client with no sidecar."
+    source_readings:
+      - sections/section-030/module-02/course-02-match-a-destination-that-requires-mtls.md
+    prompt: |-
+      The `drifter` pod has no sidecar, and `probe` is `STRICT`. Its requests are reset. Which fix works?
+    options:
+      - id: a
+        text: "Set `ISTIO_MUTUAL` in a `DestinationRule` for `probe`."
+        explanation: "Nothing reads the rule in the `drifter` pod."
+      - id: b
+        text: "Set `tls.mode: SIMPLE` for `probe`."
+        explanation: "`SIMPLE` sends no client certificate either."
+      - id: c
+        text: "Add a `VirtualService` for `probe`."
+        explanation: "A `VirtualService` is read by a sidecar proxy too."
+      - id: d
+        text: "Change the destination side with `PERMISSIVE`, or give the `drifter` a sidecar."
+        explanation: "Correct. The sidecar of the client reads `DestinationRule` objects, and the `drifter` has none."
+    correct_option: d
+    explanation: "Who reads the rule is the key: the sidecar proxy of the client."

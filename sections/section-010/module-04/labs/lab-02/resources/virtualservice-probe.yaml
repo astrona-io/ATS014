@@ -1,0 +1,19 @@
+# Sends every request for the probe to subset v2.
+# This VirtualService is exported to its own namespace only.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  exportTo:
+  - "."
+  http:
+  - route:
+    - destination:
+        host: probe
+        subset: v2
+        port:
+          number: 8000

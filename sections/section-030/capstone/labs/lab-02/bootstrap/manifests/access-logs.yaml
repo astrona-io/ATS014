@@ -1,0 +1,15 @@
+# Turn on Envoy access logs for the whole mesh.
+# Every proxy then prints one line per request, so
+# "kubectl logs <pod> -c istio-proxy" shows the status code, the response
+# flags and the upstream cluster of each request.
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  # A Telemetry in the root namespace (istio-system) is the mesh-wide default.
+  name: mesh-default
+  namespace: istio-system
+spec:
+  accessLogging:
+  # "envoy" is the built-in provider: plain-text logs to the proxy's stdout.
+  - providers:
+    - name: envoy

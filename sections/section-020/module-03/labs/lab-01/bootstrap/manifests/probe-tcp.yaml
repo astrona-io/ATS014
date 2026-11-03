@@ -1,0 +1,18 @@
+# A second Service for the same probe pods. The port is named "tcp", so Istio
+# treats traffic to this Service as plain TCP: the sidecar proxy does not read
+# HTTP, and a VirtualService "tcp" route applies to it.
+# The pods still speak HTTP, so curl and the /hostname path keep working.
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-tcp
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  selector:
+    app: probe
+  ports:
+  - name: tcp
+    port: 8000
+    targetPort: 8080

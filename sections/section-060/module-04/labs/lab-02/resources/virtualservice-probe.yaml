@@ -1,0 +1,17 @@
+# Starting state: the route for starfleet.example.com.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - starfleet.example.com
+  gateways:
+  - starfleet-gateway
+  http:
+  - route:
+    - destination:
+        host: probe
+        port:
+          number: 8000

@@ -1,0 +1,738 @@
+# Final domain knowledge check across all sections (000-080).
+schema_version: 1
+kind: question_bank
+id: ats014-final
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: domain
+  id: traffic-management
+  title: "Traffic Management"
+questions:
+  - id: ats014-final-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain how application traffic reaches the sidecar proxy."
+    source_readings:
+      - sections/section-000/module-01/course-01-what-sidecar-injection-adds-to-a-pod.md
+      - sections/section-000/module-01/course-02-follow-a-request-through-two-proxies.md
+    prompt: |-
+      Which component sends outgoing connections of an application to port `15001` and incoming connections to port `15006` of the proxy?
+    options:
+      - id: a
+        text: "The application, through an environment variable."
+        explanation: "The application does not know the proxy is there."
+      - id: b
+        text: "The `iptables` rules that the `istio-init` container writes."
+        explanation: "Correct. The application never connects to the proxy on purpose."
+      - id: c
+        text: "`istiod`, by rewriting the Service."
+        explanation: "`istiod` sends configuration to the proxy. It does not redirect packets."
+      - id: d
+        text: "The kubelet, through the readiness probe."
+        explanation: "The probe does not redirect traffic."
+    correct_option: b
+    explanation: "The proxy then opens its own connection to the destination."
+
+  - id: ats014-final-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain what injection does for pods that already run."
+    source_readings:
+      - sections/section-000/module-01/course-01-what-sidecar-injection-adds-to-a-pod.md
+    prompt: |-
+      A namespace gets the label `istio-injection: enabled` while a pod is running. What happens to that pod?
+    options:
+      - id: a
+        text: "It gets a proxy within a minute."
+        explanation: "A running pod is not changed."
+      - id: b
+        text: "It is deleted by `istiod`."
+        explanation: "`istiod` does not delete pods."
+      - id: c
+        text: "It gets only the `istio-init` container."
+        explanation: "A pod gets both containers when it is created, or neither."
+      - id: d
+        text: "Nothing, until it restarts. Only new pods get the proxy."
+        explanation: "Correct. The mutating admission webhook runs when a pod is created."
+    correct_option: d
+    explanation: "A pod that shows `1/1` where you expected `2/2` has no proxy, and no Istio rule can reach it."
+
+  - id: ats014-final-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Tell routing failures from destination failures with response flags."
+    source_readings:
+      - sections/section-000/module-01/course-05-diagnose-the-mesh-with-istioctl-and-access-logs.md
+    prompt: |-
+      The access log shows `404` with the flag `NR`. Which layer do you check?
+    options:
+      - id: a
+        text: "Routing: no route matched in the route table."
+        explanation: "Correct. `NC` and `UH` come with `503` and point at the destination."
+      - id: b
+        text: "The endpoint: the cluster has no pods."
+        explanation: "That gives `503 UH`."
+      - id: c
+        text: "The cluster: the route names a missing subset."
+        explanation: "That gives `503 NC`."
+      - id: d
+        text: "The connection pool: a limit was crossed."
+        explanation: "That gives `503 UO`."
+    correct_option: a
+    explanation: "The response flag tells the failures apart."
+
+  - id: ats014-final-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Say which proxy applies routing, retries and timeouts."
+    source_readings:
+      - sections/section-000/module-01/course-02-follow-a-request-through-two-proxies.md
+    prompt: |-
+      A client pod has no sidecar and calls a meshed Service. Which `VirtualService` rules does it get?
+    options:
+      - id: a
+        text: "All of them, because the destination's proxy applies them."
+        explanation: "The server's proxy only accepts the request."
+      - id: b
+        text: "Only the timeouts."
+        explanation: "Timeouts are applied by the client's proxy too."
+      - id: c
+        text: "None. The client's proxy applies routing, retries and timeouts, and there is none."
+        explanation: "Correct. The request still reaches the mesh, but without those rules."
+      - id: d
+        text: "Only the retries."
+        explanation: "Retries are applied by the client's proxy too."
+    correct_option: c
+    explanation: "When the wrong version answers, debug the client's proxy."
+
+  - id: ats014-final-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Pick which Sidecar resource applies to a pod."
+    source_readings:
+      - sections/section-010/module-02/course-03-which-sidecar-applies-to-a-workload.md
+    prompt: |-
+      A namespace has a namespace-wide `Sidecar` and a selector `Sidecar` that matches the pod `shuttle`. Which one applies, and what follows?
+    options:
+      - id: a
+        text: "Both apply, and their host lists are merged."
+        explanation: "Only one `Sidecar` applies to a pod."
+      - id: b
+        text: "The namespace-wide one, because it comes first."
+        explanation: "A selector `Sidecar` is used first."
+      - id: c
+        text: "Neither, because two objects cancel each other."
+        explanation: "`istiod` picks one."
+      - id: d
+        text: "The selector `Sidecar` applies alone, so it must list every host the pod needs again."
+        explanation: "Correct. The winner replaces the others completely, including `istio-system/*`."
+    correct_option: d
+    explanation: "A `Sidecar` decides what a proxy knows. It never limits incoming traffic."
+
+  - id: ats014-final-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Apply objects in dependency order."
+    source_readings:
+      - sections/section-010/module-03/course-01-apply-and-remove-objects-in-dependency-order.md
+    prompt: |-
+      A `VirtualService` that names subset `v2` reaches a proxy before the `DestinationRule` that defines it. What does the proxy answer?
+    options:
+      - id: a
+        text: "`404` with `NR`."
+        explanation: "The route exists."
+      - id: b
+        text: "`503` with `NC`, and `istioctl analyze` reports `IST0101`."
+        explanation: "Correct. Create the object that is pointed at first: make before break."
+      - id: c
+        text: "`503` with `UH`."
+        explanation: "`UH` means a cluster with no endpoints."
+      - id: d
+        text: "`200` from a random pod."
+        explanation: "A route to an unknown subset does not fall back."
+    correct_option: b
+    explanation: "Remove in the reverse order, pointer first."
+
+  - id: ats014-final-q07
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Use delegation for a split route table."
+    source_readings:
+      - sections/section-010/module-04/course-01-split-a-route-table-with-a-delegate-virtualservice.md
+    prompt: |-
+      Which two statements about a delegate `VirtualService` are true?
+    options:
+      - id: a
+        text: "It needs `hosts`, and the root has its own `route` as well."
+        explanation: "A delegate with hosts is a normal object."
+      - id: b
+        text: "It may hold `tcp` routes, and it may name a second delegate."
+        explanation: "A delegate holds `http` rules and is one level deep."
+      - id: c
+        text: "It has no `hosts`, and the root rule that points at it has no `route` of its own."
+        explanation: "Correct. The root finds the delegate by `name` and `namespace`, and a rule has a `delegate` or its own `route`, not both."
+      - id: d
+        text: "It needs `gateways`, and the root has no `match`."
+        explanation: "The host and the gateways belong to the root."
+    correct_option: c
+    explanation: "Apply the delegate before the root."
+
+  - id: ats014-final-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Limit who receives configuration."
+    source_readings:
+      - sections/section-010/module-04/course-02-limit-who-sees-a-virtualservice-or-destinationrule-with-exportto.md
+    prompt: |-
+      The `VirtualService` for `probe` is exported to `"*"`. The `DestinationRule` with its subsets is exported to `"."`. What does a client in another namespace get?
+    options:
+      - id: a
+        text: "`503` with `NC`: it has the route and not the subsets."
+        explanation: "Correct. Give both objects the same `exportTo`."
+      - id: b
+        text: "`200`, because the subsets are optional."
+        explanation: "A route to a subset the proxy cannot build fails."
+      - id: c
+        text: "`404 NR`."
+        explanation: "The route exists in that proxy."
+      - id: d
+        text: "`000`, because `exportTo` closes the port."
+        explanation: "`exportTo` hides configuration. It does not block requests."
+    correct_option: a
+    explanation: "The value `\"~\"` exports an object to no namespace at all."
+
+  - id: ats014-final-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Know what a mirror does."
+    source_readings:
+      - sections/section-020/module-02/course-01-add-a-mirror-destination-to-an-http-route.md
+      - sections/section-020/module-02/course-02-mirror-requests-to-a-failing-version.md
+    prompt: |-
+      Which statement about `mirror` is true?
+    options:
+      - id: a
+        text: "The shadow's response replaces the real one when it is faster."
+        explanation: "Only the route's response is used."
+      - id: b
+        text: "The client's proxy sends a copy, and it throws the shadow's response away."
+        explanation: "Correct. The client never sees what the shadow returns."
+      - id: c
+        text: "`mirror` takes a `weight` like a route destination."
+        explanation: "It is one destination with no `weight`."
+      - id: d
+        text: "The shadow receives only a sample of requests by default."
+        explanation: "The default `mirrorPercentage` is 100%."
+    correct_option: b
+    explanation: "Give the shadow its own datastore before you mirror requests with side effects."
+
+  - id: ats014-final-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Say what changes a TCP weighted route."
+    source_readings:
+      - sections/section-020/module-03/course-02-per-connection-weights-connection-reuse-and-counting.md
+      - sections/section-020/module-03/course-03-roll-a-tcp-service-forward-and-back.md
+    prompt: |-
+      Which statement about a weighted `tcp` route is true?
+    options:
+      - id: a
+        text: "The proxy makes one pick per request, as for `http`."
+        explanation: "The proxy never reads requests on a TCP port."
+      - id: b
+        text: "`match.port` is the container port."
+        explanation: "It is the Service port."
+      - id: c
+        text: "The proxy makes one pick per connection, and a weight change reaches only new connections."
+        explanation: "Correct. Count at least 100 fresh connections to judge a split."
+      - id: d
+        text: "A weight of 0 is rejected."
+        explanation: "A weight of 0 only sends no new connection there."
+    correct_option: c
+    explanation: "A `tcp` route on a port named `http` never applies, and shows no error."
+
+  - id: ats014-final-q11
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Change a canary without losing rules."
+    source_readings:
+      - sections/section-020/module-01/course-04-change-weights-with-a-patch-and-a-header-rule.md
+    prompt: |-
+      A merge patch sets `spec.http` to a new list with only the weighted rule. What happens to the other `http` rules?
+    options:
+      - id: a
+        text: "They are gone. A merge patch replaces the whole list."
+        explanation: "Correct. A patch must restate every rule, or you apply the full object again."
+      - id: b
+        text: "They are kept, because a merge patch adds items."
+        explanation: "A merge patch of a list replaces it."
+      - id: c
+        text: "They move below the new rule."
+        explanation: "The list is replaced, not reordered."
+      - id: d
+        text: "They are kept as disabled rules."
+        explanation: "Istio has no disabled state for a rule."
+    correct_option: a
+    explanation: "Run `istioctl analyze` after every weight change."
+
+  - id: ats014-final-q12
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Name the default load balancer."
+    source_readings:
+      - sections/section-030/module-01/course-01-choose-a-simple-load-balancing-algorithm.md
+    prompt: |-
+      What is the default load balancing algorithm in Istio?
+    options:
+      - id: a
+        text: "`ROUND_ROBIN`"
+        explanation: "Round robin is Envoy's own default, not Istio's."
+      - id: b
+        text: "`RING_HASH`"
+        explanation: "Ring hashing is the proxy's name for `consistentHash`."
+      - id: c
+        text: "`PASSTHROUGH`"
+        explanation: "`PASSTHROUGH` switches the choice off."
+      - id: d
+        text: "`LEAST_REQUEST`"
+        explanation: "Correct. It picks two random pods and uses the less busy one."
+    correct_option: d
+    explanation: "`simple` and `consistentHash` cannot be set together."
+
+  - id: ats014-final-q13
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Choose the TLS mode that matches a STRICT destination."
+    source_readings:
+      - sections/section-030/module-02/course-02-match-a-destination-that-requires-mtls.md
+    prompt: |-
+      The `probe` pods are `STRICT`. Which client setting works from a sidecar?
+    options:
+      - id: a
+        text: "`DISABLE`"
+        explanation: "This gives a reset connection and `503`."
+      - id: b
+        text: "`SIMPLE`"
+        explanation: "`SIMPLE` sends no client certificate."
+      - id: c
+        text: "`ISTIO_MUTUAL`, or no `tls` block at all."
+        explanation: "Correct. `DISABLE` and `SIMPLE` send no client certificate, so `STRICT` rejects them."
+      - id: d
+        text: "`MUTUAL` with no certificate files."
+        explanation: "`MUTUAL` needs files that you provide."
+    correct_option: c
+    explanation: "Never weaken `STRICT` to make a test pass."
+
+  - id: ats014-final-q14
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Predict subset inheritance."
+    source_readings:
+      - sections/section-030/module-02/course-03-override-tls-per-subset-and-per-port.md
+    prompt: |-
+      The host sets `tls: ISTIO_MUTUAL` and a `consistentHash`. A subset sets only `loadBalancer.simple: RANDOM`. What does the cluster dump show for the subset?
+    options:
+      - id: a
+        text: "`RANDOM`, and the TLS transport socket. The sticky policy is lost without an error."
+        explanation: "Correct. A set field replaces the host's whole field. A field not set is inherited."
+      - id: b
+        text: "`RING_HASH` and the TLS transport socket."
+        explanation: "The subset's `loadBalancer` replaced the host's."
+      - id: c
+        text: "`RANDOM` and no TLS transport socket."
+        explanation: "The subset did not set `tls`, so it inherits it."
+      - id: d
+        text: "An error from `istiod`."
+        explanation: "Istio reports no error."
+    correct_option: a
+    explanation: "Read the cluster dump for every subset after a change."
+
+  - id: ats014-final-q15
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Fit retries inside the timeout."
+    source_readings:
+      - sections/section-040/module-01/course-05-fit-retries-inside-the-timeout.md
+    prompt: |-
+      Which condition keeps the retries from being cut short by the route timeout?
+    options:
+      - id: a
+        text: "`timeout` at most `attempts x perTryTimeout`."
+        explanation: "This makes the cut-off more likely."
+      - id: b
+        text: "`timeout` at least `(attempts + 1) x perTryTimeout`."
+        explanation: "Correct. Otherwise the client gets `504` and no configuration error appears."
+      - id: c
+        text: "`timeout` equal to `perTryTimeout`."
+        explanation: "Then only the first try can finish."
+      - id: d
+        text: "`attempts` equal to 0."
+        explanation: "This turns retries off, and it is not a rule about the timeout."
+    correct_option: b
+    explanation: "Retries plus a timeout that fired show `URX,UT` in the access log."
+
+  - id: ats014-final-q16
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Know the signature of a circuit-breaker refusal."
+    source_readings:
+      - sections/section-040/module-02/course-02-identify-overflow-with-the-uo-flag-and-counters.md
+    prompt: |-
+      Which log line proves a circuit-breaker refusal?
+    options:
+      - id: a
+        text: "`504` with the flag `UT`."
+        explanation: "That is a route timeout."
+      - id: b
+        text: "`503` with the flag `UF`."
+        explanation: "That is a connection failure."
+      - id: c
+        text: "`404` with the flag `NR`."
+        explanation: "That is a missing route."
+      - id: d
+        text: "`503` with the flag `UO` and `\"-\"` as the upstream host."
+        explanation: "Correct. The `upstream_rq_pending_overflow` counter goes up as well."
+    correct_option: d
+    explanation: "The application behind the Service never sees a refused request."
+
+  - id: ats014-final-q17
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Tell the connect timeout from the route timeout."
+    source_readings:
+      - sections/section-040/module-05/course-01-limit-how-long-a-connection-attempt-waits.md
+    prompt: |-
+      Which setting limits the whole request and gives `504` with `UT`?
+    options:
+      - id: a
+        text: "`connectionPool.tcp.connectTimeout`."
+        explanation: "That gives `503` with `UF`."
+      - id: b
+        text: "The route `timeout` of a `VirtualService`."
+        explanation: "Correct. The connect timeout limits only the opening of a connection."
+      - id: c
+        text: "`connectionPool.http.idleTimeout`."
+        explanation: "That closes a connection without active requests."
+      - id: d
+        text: "`outlierDetection.interval`."
+        explanation: "That sets how often endpoints are checked."
+    correct_option: b
+    explanation: "Both are set by the caller."
+
+  - id: ats014-final-q18
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Know what outlier detection does."
+    source_readings:
+      - sections/section-040/module-03/course-01-eject-a-failing-endpoint-with-outlier-detection.md
+      - sections/section-040/module-03/course-04-verify-ejections-and-add-a-connection-pool.md
+    prompt: |-
+      An endpoint is ejected by outlier detection. What does Kubernetes show?
+    options:
+      - id: a
+        text: "The pod becomes `NotReady`."
+        explanation: "Outlier detection never changes Kubernetes."
+      - id: b
+        text: "The pod is deleted."
+        explanation: "Nothing is deleted."
+      - id: c
+        text: "The Service has one endpoint less."
+        explanation: "The EndpointSlice is unchanged."
+      - id: d
+        text: "No change. The EndpointSlice still lists it, and only the proxy's pool and the `OUTLIER CHECK` column show the ejection."
+        explanation: "Correct. Each proxy decides on its own from its own responses."
+    correct_option: d
+    explanation: "An ejection always ends, after `baseEjectionTime` times the ejection count."
+
+  - id: ats014-final-q19
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Find an injected delay in a log."
+    source_readings:
+      - sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
+    prompt: |-
+      Which proxy's access log shows the flag `DI` for an injected delay?
+    options:
+      - id: a
+        text: "The log of the client, whose proxy applied the fault."
+        explanation: "Correct. The destination gets a delayed request with its own timing untouched."
+      - id: b
+        text: "The log of the destination."
+        explanation: "The destination does not know about the fault."
+      - id: c
+        text: "The log of `istiod`."
+        explanation: "`istiod` writes no access log for requests."
+      - id: d
+        text: "The log of the ingress gateway only."
+        explanation: "Any client proxy that applies the rule logs it."
+    correct_option: a
+    explanation: "`FI` with `fault_filter_abort` marks an injected abort."
+
+  - id: ats014-final-q20
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Know why a fault rule ignores a timeout."
+    source_readings:
+      - sections/section-050/module-01/course-04-test-timeouts-and-retries-with-fault-injection.md
+    prompt: |-
+      One rule has a `fault.delay` of 5 seconds and a `timeout` of 1 second. What does the client get?
+    options:
+      - id: a
+        text: "`504` after 1 second."
+        explanation: "The fault filter runs before the router that applies the timeout."
+      - id: b
+        text: "`503` after 5 seconds."
+        explanation: "The delay still passes the request on."
+      - id: c
+        text: "A response after 5 seconds, and no `504`. A rule with a `fault` ignores its own `timeout`."
+        explanation: "Correct. Put the timeout on the client's route, one hop away from the fault."
+      - id: d
+        text: "A rejection when you apply the rule."
+        explanation: "Istio accepts the rule."
+    correct_option: c
+    explanation: "Faults exist to test timeouts and retries."
+
+  - id: ats014-final-q21
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Choose a fault to test outlier detection."
+    source_readings:
+      - sections/section-050/module-01/course-02-abort-requests-in-the-client-proxy.md
+    prompt: |-
+      Why can an abort fault not test outlier detection of a destination?
+    options:
+      - id: a
+        text: "`abort` works only on `gRPC`."
+        explanation: "It takes `httpStatus` or `grpcStatus`."
+      - id: b
+        text: "Outlier detection needs `percentage: 100`."
+        explanation: "The percentage does not matter here."
+      - id: c
+        text: "The abort only fires after a delay."
+        explanation: "An abort works alone."
+      - id: d
+        text: "The abort is answered in the client's proxy, so no pod ever returns an error."
+        explanation: "Correct. The request never leaves the client's pod."
+    correct_option: d
+    explanation: "Use a pod that really returns errors for this test."
+
+  - id: ats014-final-q22
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Tie a VirtualService to a gateway."
+    source_readings:
+      - sections/section-060/module-01/course-02-bind-a-virtualservice-to-a-gateway.md
+    prompt: |-
+      What must a `VirtualService` hold so that the ingress gateway uses its routes?
+    options:
+      - id: a
+        text: "Only a matching `hosts` list."
+        explanation: "Without `gateways:` the routes go to the sidecars."
+      - id: b
+        text: "A `gateways:` field that names the `Gateway`, and hosts that overlap with the `Gateway`'s hosts."
+        explanation: "Correct. Without the field the default is `mesh`."
+      - id: c
+        text: "A `selector` for the gateway pods."
+        explanation: "The `selector` is on the `Gateway`."
+      - id: d
+        text: "An `exportTo` of `\"~\"`."
+        explanation: "That hides the object from every namespace."
+    correct_option: b
+    explanation: "A bare `Gateway` name is looked up in the `VirtualService`'s own namespace."
+
+  - id: ats014-final-q23
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Locate the TLS secret."
+    source_readings:
+      - sections/section-060/module-04/course-01-terminate-https-with-tls-mode-simple-and-credentialname.md
+    prompt: |-
+      Where must the secret for `credentialName` be, for a `SIMPLE` server?
+    options:
+      - id: a
+        text: "In the namespace of the `Gateway` object."
+        explanation: "The proxy that needs the key runs elsewhere."
+      - id: b
+        text: "In the namespace of the Service behind it."
+        explanation: "That has no link to the gateway."
+      - id: c
+        text: "In the namespace of the gateway pod, with the type `kubernetes.io/tls`."
+        explanation: "Correct. In the playground that is `istio-system`."
+      - id: d
+        text: "In the `default` namespace."
+        explanation: "The gateway does not look there."
+    correct_option: c
+    explanation: "`WARMING` in `istioctl proxy-config secret` means `istiod` did not find it."
+
+  - id: ats014-final-q24
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Pass encrypted traffic through."
+    source_readings:
+      - sections/section-060/module-04/course-03-require-client-certificates-with-mutual-and-pass-encrypted-traffic-through-with-passthrough.md
+    prompt: |-
+      A host with `PASSTHROUGH` needs which `VirtualService` section?
+    options:
+      - id: a
+        text: "A `tls:` section with a `match` on `sniHosts`."
+        explanation: "Correct. The gateway reads only the SNI and cannot read paths or headers."
+      - id: b
+        text: "An `http:` section with a `uri` match."
+        explanation: "The gateway cannot read paths."
+      - id: c
+        text: "A `tcp:` section with a `weight`."
+        explanation: "This does not match by SNI."
+      - id: d
+        text: "No section, because `Gateway` routes it."
+        explanation: "A `Gateway` routes nothing."
+    correct_option: a
+    explanation: "The server uses `protocol: TLS`."
+
+  - id: ats014-final-q25
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Assign an Ingress to Istio."
+    source_readings:
+      - sections/section-060/module-02/course-01-assign-an-ingress-to-istio-with-an-ingressclass.md
+    prompt: |-
+      A Kubernetes `Ingress` gets no listener, and clients get `000`. The `IngressClass` has a different controller. Which value does Istio need?
+    options:
+      - id: a
+        text: "`spec.controller: istio.io/gateway-controller`."
+        explanation: "That is the controller of the Gateway API class `istio`."
+      - id: b
+        text: "`spec.controller: istio.io/ingress-controller`, and the field cannot be edited, so recreate the class."
+        explanation: "Correct. Kubernetes accepts the `Ingress` and reports no error."
+      - id: c
+        text: "Any value, because Istio serves every `Ingress`."
+        explanation: "Only the right class makes Istio take it."
+      - id: d
+        text: "`spec.controller: istio.io/ingress-controller`, edited in place."
+        explanation: "That field cannot be edited."
+    correct_option: b
+    explanation: "The `CLASS` and `CONTROLLER` columns show the cause."
+
+  - id: ats014-final-q26
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Know what REGISTRY_ONLY does."
+    source_readings:
+      - sections/section-070/module-01/course-01-block-unknown-hosts-with-registry-only.md
+    prompt: |-
+      Under `REGISTRY_ONLY`, a pod calls a host that is not in the registry. What does its proxy do?
+    options:
+      - id: a
+        text: "It lets the request through as `PassthroughCluster`."
+        explanation: "That is `ALLOW_ANY`."
+      - id: b
+        text: "It adds the host to the registry."
+        explanation: "Only a `ServiceEntry` does that."
+      - id: c
+        text: "It sends the request to the `BlackHoleCluster`, and `curl` shows `000`."
+        explanation: "Correct. Under `ALLOW_ANY` it would use `PassthroughCluster`."
+      - id: d
+        text: "It answers `404 NR`."
+        explanation: "The refusal shows as a closed connection."
+    correct_option: c
+    explanation: "A pod without a sidecar is not limited."
+
+  - id: ats014-final-q27
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Find the top-level tls mistake."
+    source_readings:
+      - sections/section-070/module-02/course-03-troubleshoot-top-level-tls-and-double-encryption.md
+    prompt: |-
+      A `DestinationRule` sets `tls` at the top level of `trafficPolicy` for an external host with ports 80 and 443. What breaks?
+    options:
+      - id: a
+        text: "TLS applies to port 80 too, so requests that stay on port 80 fail with `503 UF`."
+        explanation: "Correct. Put `tls` under `portLevelSettings` for port 443 only."
+      - id: b
+        text: "Nothing, because the redirect hides it for good."
+        explanation: "The redirect hides it only for requests that move to 443."
+      - id: c
+        text: "Port 443 loses TLS."
+        explanation: "TLS is on for every port."
+      - id: d
+        text: "`istiod` rejects the object."
+        explanation: "`kubectl apply` passes without a warning."
+    correct_option: a
+    explanation: "An application that calls `https://` gets its request encrypted twice."
+
+  - id: ats014-final-q28
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Find a hidden ServiceEntry."
+    source_readings:
+      - sections/section-070/module-01/course-05-limit-a-serviceentry-with-exportto.md
+      - sections/section-070/module-01/course-04-find-a-serviceentry-hidden-by-a-sidecar.md
+    prompt: |-
+      A correct `ServiceEntry` works from one namespace and not from another. `istioctl analyze` is quiet. Which two things do you check?
+    options:
+      - id: a
+        text: "The `PeerAuthentication` and the `Gateway` selector."
+        explanation: "Neither hides a `ServiceEntry`."
+      - id: b
+        text: "The `weight` and the `mirror` field."
+        explanation: "These are not involved."
+      - id: c
+        text: "The `IngressClass` and `credentialName`."
+        explanation: "These are for ingress and TLS."
+      - id: d
+        text: "The `exportTo` of the entry, and the `egress.hosts` of the caller's `Sidecar`."
+        explanation: "Correct. A hidden entry gives the same refusal as a missing one."
+    correct_option: d
+    explanation: "`istioctl proxy-config cluster` shows whether the caller's proxy has the host."
+
+  - id: ats014-final-q29
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Know what an egress gateway does alone."
+    source_readings:
+      - sections/section-080/module-01/course-01-why-an-egress-gateway-carries-no-traffic.md
+    prompt: |-
+      An egress gateway runs, and its access log is empty. What explains it?
+    options:
+      - id: a
+        text: "The gateway pod is not ready."
+        explanation: "A running gateway is not the problem."
+      - id: b
+        text: "`ALLOW_ANY` blocks the gateway."
+        explanation: "The policy does not block it."
+      - id: c
+        text: "Nothing routes traffic to it. Every sidecar sends outbound requests straight to the outside host."
+        explanation: "Correct. A running egress gateway carries no traffic by itself."
+      - id: d
+        text: "The `ServiceEntry` is exported to `\"~\"`."
+        explanation: "That would hide the host, not empty the log."
+    correct_option: c
+    explanation: "A `200` proves nothing, because a request that skips the gateway also succeeds."
+
+  - id: ats014-final-q30
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Put the TLS rule on the right DestinationRule."
+    source_readings:
+      - sections/section-080/module-02/course-02-originate-tls-on-the-external-host.md
+      - sections/section-080/module-02/course-03-prove-which-proxy-originates-tls.md
+    prompt: |-
+      The egress gateway must originate TLS to the external host. Which `DestinationRule` carries the `SIMPLE` setting?
+    options:
+      - id: a
+        text: "The one for the external host, under `portLevelSettings` for port `443`, with `sni`."
+        explanation: "Correct. The egress gateway calls the host, so its settings are read there."
+      - id: b
+        text: "The one for the egress gateway's own Service."
+        explanation: "The sidecars read that one and try TLS on a plain port."
+      - id: c
+        text: "The `Gateway` object, in `servers[].tls`."
+        explanation: "That sets how the gateway accepts connections."
+      - id: d
+        text: "The `VirtualService`, in `tls.mode`."
+        explanation: "A `VirtualService` has no mode field."
+    correct_option: a
+    explanation: "Count the `transportSocket` in each proxy's cluster to prove it."

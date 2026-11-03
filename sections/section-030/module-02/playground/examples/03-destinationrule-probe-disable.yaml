@@ -1,0 +1,11 @@
+# Breaks calls to a STRICT probe: the client proxy sends plain text.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    tls:
+      mode: DISABLE

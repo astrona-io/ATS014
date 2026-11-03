@@ -1,0 +1,14 @@
+# The delegate: it has no hosts. Everything that reaches it goes to subset v2.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe-hostname
+  namespace: starfleet
+spec:
+  http:
+  - route:
+    - destination:
+        host: probe
+        subset: v2
+        port:
+          number: 8000

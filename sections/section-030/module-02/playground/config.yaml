@@ -1,0 +1,24 @@
+# TLS Settings In A DestinationRule (PLAYGROUND) — Playground environment
+# A clean sandbox: a new kind cluster "astro-ats-014-playground-030-02" with
+# Istio and the apps this module uses. It then stays running for free
+# exploration. No task, no grading, no `astrona submit`.
+#   astrona run -c .
+#   astrona destroy ats-014-playground-030-02
+metadata:
+  name: "ats-014-playground-030-02"
+  docs:
+    guide: "docs/overview.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Istio (istio-base + istiod) with Helm"
+      type: "file"
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Namespace starfleet with access logs, the shuttle and the probe (v1: 3 pods, v2: 1 pod), and namespace outpost with the drifter (no sidecar)"
+      type: "file"
+      source: "bootstrap/deploy.sh"
+
+teardown:
+  keepCluster: false

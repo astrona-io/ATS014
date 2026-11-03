@@ -1,0 +1,23 @@
+# Port 443 for starfleet.example.com with ordinary TLS (SIMPLE).
+# The secret starfleet-tls (type kubernetes.io/tls) must be in istio-system,
+# the namespace of the gateway pod, not in the namespace of this Gateway.
+#   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout starfleet.key -out starfleet.crt -subj "/CN=starfleet.example.com/O=starfleet"
+#   kubectl create secret tls starfleet-tls -n istio-system --key=starfleet.key --cert=starfleet.crt
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - starfleet.example.com
+    tls:
+      mode: SIMPLE
+      credentialName: starfleet-tls

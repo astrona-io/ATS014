@@ -1,0 +1,254 @@
+# Knowledge check for section 040. Listed in astrona.yaml as a `type: quiz` entry after the last capstone lab. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-040
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-040
+  title: "Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries)"
+questions:
+  - id: ats014-040-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "State the default route timeout."
+    source_readings:
+      - sections/section-040/module-01/course-01-set-a-route-timeout.md
+    prompt: |-
+      No `timeout` is set on a rule, and the backend takes 40 seconds to answer. What does the client wait for?
+    options:
+      - id: a
+        text: "15 seconds, then a `504`."
+        explanation: "Istio has no such default."
+      - id: b
+        text: "10 seconds, then a `503`."
+        explanation: "10 seconds is the default connect timeout, which is a different setting."
+      - id: c
+        text: "The full 40 seconds. Istio sets no HTTP route timeout unless you write one."
+        explanation: "Correct. The `timeout` field on a rule sets the longest wait."
+      - id: d
+        text: "30 seconds, then a `504` with `UT`."
+        explanation: "`UT` appears only when a route timeout expires, and none is set."
+    correct_option: c
+    explanation: "The client's own sidecar proxy measures the timeout and answers `504` when it runs out."
+
+  - id: ats014-040-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Tell the connect timeout failure from the route timeout failure."
+    source_readings:
+      - sections/section-040/module-05/course-01-limit-how-long-a-connection-attempt-waits.md
+    prompt: |-
+      The proxy of `shuttle` cannot open a TCP connection to a `probe` pod within `connectTimeout`. What does the client get?
+    options:
+      - id: a
+        text: "`503` with the response flag `UF`."
+        explanation: "Correct. The proxy has not sent the request yet, so it answers itself."
+      - id: b
+        text: "`504` with the response flag `UT`."
+        explanation: "That is the route timeout, which covers the whole request."
+      - id: c
+        text: "`503` with the response flag `UO`."
+        explanation: "`UO` means a circuit breaker limit was crossed."
+      - id: d
+        text: "`404` with the response flag `NR`."
+        explanation: "`NR` means no route matched."
+    correct_option: a
+    explanation: "The connect timeout is set under `connectionPool.tcp.connectTimeout` and defaults to 10 seconds."
+
+  - id: ats014-040-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Place trafficDistribution on the right object."
+    source_readings:
+      - sections/section-040/module-05/course-03-prefer-nearby-endpoints-with-trafficdistribution.md
+    prompt: |-
+      Which object holds the field `trafficDistribution: PreferClose`?
+    options:
+      - id: a
+        text: "The `DestinationRule`, under `trafficPolicy`."
+        explanation: "A `DestinationRule` has `localityLbSetting` instead."
+      - id: b
+        text: "The Kubernetes `Service`, under `spec`."
+        explanation: "Correct. Istio 1.30 reads the field and applies it in the sidecar proxies."
+      - id: c
+        text: "The `VirtualService`, on each `http` rule."
+        explanation: "A `VirtualService` has no such field."
+      - id: d
+        text: "The `Sidecar` resource."
+        explanation: "A `Sidecar` limits what a proxy knows. It has no such field."
+    correct_option: b
+    explanation: "`PreferClose` asks every client of the Service to prefer endpoints in its own zone."
+
+  - id: ats014-040-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Count attempts correctly."
+    source_readings:
+      - sections/section-040/module-01/course-03-configure-retries.md
+    prompt: |-
+      A rule has `retries.attempts: 3`. How many requests can the backend receive for one client request at most?
+    options:
+      - id: a
+        text: "Three."
+        explanation: "`attempts` does not include the first try."
+      - id: b
+        text: "Two, because the default is 2."
+        explanation: "The default applies only when no `retries` block exists."
+      - id: c
+        text: "Six."
+        explanation: "Istio does not double the count."
+      - id: d
+        text: "Four, the first try and three retries."
+        explanation: "Correct. `attempts` counts retries after the first try."
+    correct_option: d
+    explanation: "The route timeout covers the first try and every retry together."
+
+  - id: ats014-040-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Describe what the keepalive fields do."
+    source_readings:
+      - sections/section-040/module-05/course-02-idle-keepalive-and-maximum-connection-age.md
+    prompt: |-
+      In `tcpKeepalive`, what does `probes` set?
+    options:
+      - id: a
+        text: "How long a connection must be idle before the first probe."
+        explanation: "That is `time`."
+      - id: b
+        text: "The time between two probes."
+        explanation: "That is `interval`."
+      - id: c
+        text: "How many probes may go unanswered before the connection is declared dead and closed."
+        explanation: "Correct. `time` is the idle time before the first probe, and `interval` is the time between probes."
+      - id: d
+        text: "The maximum age of a connection."
+        explanation: "That is `maxConnectionDuration`."
+    correct_option: c
+    explanation: "Keepalive asks the other end whether it still answers. The idle timeout and the maximum duration are decisions of the proxy."
+
+  - id: ats014-040-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Put the connection pool fields in the right block."
+    source_readings:
+      - sections/section-040/module-05/course-02-idle-keepalive-and-maximum-connection-age.md
+    prompt: |-
+      Which block holds `idleTimeout`, and which holds `maxConnectionDuration`?
+    options:
+      - id: a
+        text: "`idleTimeout` is under `connectionPool.http`, and `maxConnectionDuration` is under `connectionPool.tcp`."
+        explanation: "Correct. A field under the wrong block is rejected when you apply it."
+      - id: b
+        text: "Both are under `connectionPool.tcp`."
+        explanation: "`idleTimeout` belongs under `http`."
+      - id: c
+        text: "Both are under `connectionPool.http`."
+        explanation: "`maxConnectionDuration` belongs under `tcp`."
+      - id: d
+        text: "`idleTimeout` is under `tcp`, and `maxConnectionDuration` is under `http`."
+        explanation: "This swaps the two blocks."
+    correct_option: a
+    explanation: "`connectTimeout` and `tcpKeepalive` are also under `tcp`."
+
+  - id: ats014-040-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Know the ejection limit that blocks small pools."
+    source_readings:
+      - sections/section-040/module-03/course-03-limit-ejections-with-maxejectionpercent-and-minhealthpercent.md
+    prompt: |-
+      Outlier detection is configured for a Service with two endpoints, and one endpoint fails every request. It is not ejected. Which default most likely blocks it?
+    options:
+      - id: a
+        text: "`interval` defaults to `10s`, and so it waits for ever."
+        explanation: "The interval only sets how often the check runs."
+      - id: b
+        text: "`consecutive5xxErrors` defaults to 0."
+        explanation: "Inside an `outlierDetection` block it defaults to 5."
+      - id: c
+        text: "`baseEjectionTime` is longer than the test."
+        explanation: "That sets the length of an ejection, not whether one happens."
+      - id: d
+        text: "`maxEjectionPercent` defaults to 10%, which cannot eject one of two endpoints."
+        explanation: "Correct. Raise it, for example to `100`. The `ejections_overflow` counter shows each blocked attempt."
+    correct_option: d
+    explanation: "Kubernetes still lists the pod. Only the proxy's pool changes."
+
+  - id: ats014-040-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Spot a timeout that is shorter than the retry budget."
+    source_readings:
+      - sections/section-040/module-01/course-05-fit-retries-inside-the-timeout.md
+    prompt: |-
+      A rule has `timeout: 2s`, `attempts: 3` and `perTryTimeout: 1s`. The backend always takes 5 seconds. What does the client get, and after how long?
+    options:
+      - id: a
+        text: "`504` after about 4 seconds, with all retries used."
+        explanation: "The route timeout covers all tries together, and 2 seconds ends the request."
+      - id: b
+        text: "`504` after about 2 seconds. The route timeout cuts the retries short."
+        explanation: "Correct. The timeout should be at least `(attempts + 1) x perTryTimeout`, here 4 seconds."
+      - id: c
+        text: "`200` after the third retry."
+        explanation: "The backend never answers in time."
+      - id: d
+        text: "A configuration error when you apply the rule."
+        explanation: "Istio gives no error for this arithmetic mistake."
+    correct_option: b
+    explanation: "`istioctl proxy-config routes` shows both settings, so you can check the arithmetic first."
+
+  - id: ats014-040-q09
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Explain why PreferClose is not failover."
+    source_readings:
+      - sections/section-040/module-05/course-03-prefer-nearby-endpoints-with-trafficdistribution.md
+    prompt: |-
+      A `Service` uses `PreferClose`. The pod in the client's zone stays ready but returns `503` to every request. What happens to the requests from that zone?
+    options:
+      - id: a
+        text: "They move to the other zone at once."
+        explanation: "The field does not detect failing endpoints."
+      - id: b
+        text: "They are refused with `UO`."
+        explanation: "`UO` comes from a connection pool limit."
+      - id: c
+        text: "They keep going to that pod, until outlier detection ejects it."
+        explanation: "Correct. An endpoint counts as available while it is in the endpoint list."
+      - id: d
+        text: "They are split 50/50 between the zones."
+        explanation: "The field has no weights."
+    correct_option: c
+    explanation: "A service that must fail over also needs a `DestinationRule` with `outlierDetection`."
+
+  - id: ats014-040-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Explain what a connection pool limit counts."
+    source_readings:
+      - sections/section-040/module-02/course-01-limit-concurrent-requests-with-a-connection-pool.md
+      - sections/section-040/module-02/course-02-identify-overflow-with-the-uo-flag-and-counters.md
+    prompt: |-
+      A host has `maxConnections: 1` and `http1MaxPendingRequests: 1`. A client sends 1000 requests one after another. How many are refused with `UO`?
+    options:
+      - id: a
+        text: "None. The limits count work open at the same time, not the total."
+        explanation: "Correct. A real test needs more parallel connections than the limit."
+      - id: b
+        text: "999, because only one connection is allowed in total."
+        explanation: "The limit is about requests open at the same time."
+      - id: c
+        text: "About 500, because the queue is half the size."
+        explanation: "The limits are not a share."
+      - id: d
+        text: "All of them, because the limit is lower than the load."
+        explanation: "Sequential requests never fill the connection and the queue."
+    correct_option: a
+    explanation: "`UO` and the `upstream_rq_pending_overflow` counter prove a circuit-breaker refusal."

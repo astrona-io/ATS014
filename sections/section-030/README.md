@@ -20,6 +20,8 @@ This section covers the endpoint-selection half of that field, and the precedenc
 - The silent fallback: a request with nothing to hash gets ordinary load balancing, with no error.
 - Istio generating a session cookie when `httpCookie.ttl` is set, and why leaving `ttl` out is sometimes right.
 - `trafficPolicy` at host, subset and port level: a more specific level overrides only the settings it sets (for example the whole `loadBalancer` block) and inherits the rest.
+- The client TLS modes `DISABLE`, `SIMPLE`, `MUTUAL` and `ISTIO_MUTUAL`, automatic mTLS, and why a `DISABLE` rule breaks calls to a workload that requires mTLS.
+- Setting `tls` per subset and per port, and why a subset that sets a field replaces the host's whole field.
 - Reading `lbPolicy` per cluster from `istioctl proxy-config cluster` to prove a subset override took effect.
 
 ---
@@ -42,9 +44,20 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
    - Lab: Issue A Sticky Cookie On One Port Lab
 6. Summary
 
+### TLS Settings In A DestinationRule
+
+3 parts and 2 labs:
+
+1. Client TLS Modes In `trafficPolicy.tls`
+2. Match A Destination That Requires mTLS
+3. Override TLS Per Subset And Per Port
+   - Lab: Build A DestinationRule For A STRICT Destination Lab
+   - Lab: Fix A DISABLE Rule And A Subset Override Lab
+4. Summary
+
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **Combine Session Affinity With Traffic Mirroring Capstone Lab**.
+The section ends with two capstone labs that use everything in it: **Combine Session Affinity With Traffic Mirroring Capstone Lab** and **Combine TLS Settings With Load Balancing Capstone Lab**.
 
 ---
 

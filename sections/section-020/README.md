@@ -2,7 +2,7 @@
 
 This section is about releasing a new version of a service while the old one keeps serving traffic. Releasing a new version is a traffic problem before it is a deployment problem. Starting the new pods is easy. The hard questions are how many real requests reach them, and how fast you can go back.
 
-Istio gives two answers, and this section covers both. Weighted routing sends a set percentage of live requests to the new version. Real users get real responses from it, and one apply undoes it. Mirroring sends the new version a *copy* of each request and throws its response away. The new version sees real load, and no user ever gets its response.
+Istio gives two answers, and this section covers both, for HTTP requests and for plain TCP connections. Weighted routing sends a set percentage of live requests to the new version. Real users get real responses from it, and one apply undoes it. Mirroring sends the new version a *copy* of each request and throws its response away. The new version sees real load, and no user ever gets its response.
 
 The two features solve the same problem from opposite ends, so choosing between them is a real decision. Weights show you the new version's responses. Mirroring shows you its behaviour under load, but gives you no way to compare its output.
 
@@ -25,6 +25,10 @@ The two features solve the same problem from opposite ends, so choosing between 
 - The three-state mirror diagnostic: policy absent, policy present but no endpoints, or working.
 - That the mesh discards the mirrored response but not the work the shadow did — and what that means before mirroring anything with side effects.
 - Reading `weightedClusters` and `requestMirrorPolicies` out of a live proxy.
+- A second Service whose port is named `tcp`, so that a `tcp` route of a `VirtualService` applies, with `match.port` on the Service port.
+- Why a TCP weight is drawn once per connection, why one reused connection stays on one pod, and why a TCP split is measured with fresh connections.
+- Rolling a TCP service from 100/0 to 90/10, 50/50 and 0/100 with `kubectl patch`, and rolling it back, knowing that a change reaches new connections only.
+- Telling a `tcp` route on a port named `http` from a working one: no weighted clusters in the listener, a host in the route table, and answers that ignore the weights.
 
 ---
 
@@ -57,9 +61,20 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
    - Lab: Troubleshoot A Mirror That Sends No Copies Lab
 5. Summary
 
+### Shift TCP Connections With Weights
+
+3 parts and 2 labs:
+
+1. Write A Weighted tcp Route
+2. Per-Connection Weights, Connection Reuse And Counting
+   - Lab: Split TCP Connections 80/20 Between Two Subsets Lab
+3. Roll A TCP Service Forward And Back
+   - Lab: Fix A TCP Split That Never Happens Lab
+4. Summary
+
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **Combine A Header Rule, A Weighted Canary And A Mirror Capstone Lab**.
+The section ends with two capstone labs that use everything in it: **Combine A Header Rule, A Weighted Canary And A Mirror Capstone Lab** and **Combine An HTTP Canary, A Mirror And A TCP Split Capstone Lab**.
 
 ---
 

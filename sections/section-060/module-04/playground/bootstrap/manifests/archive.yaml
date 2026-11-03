@@ -1,0 +1,73 @@
+# The archive: an nginx server that terminates TLS itself on port 8443.
+# It answers every request with {"service":"archive"}.
+# The certificate comes from the secret "archive-tls" (created by deploy.sh).
+# The pod has no sidecar proxy (sidecar.istio.io/inject: "false"), so the TLS
+# connection from the client ends inside nginx, and nothing else in the path
+# can decrypt it. That is what a TLS passthrough server needs.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: archive-nginx-conf
+  namespace: starfleet
+data:
+  default.conf: |
+    server {
+      listen 8443 ssl;
+      ssl_certificate /etc/nginx/tls/tls.crt;
+      ssl_certificate_key /etc/nginx/tls/tls.key;
+      location / {
+        default_type application/json;
+        return 200 '{"service":"archive"}';
+      }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: archive
+  namespace: starfleet
+  labels:
+    app: archive
+spec:
+  selector:
+    app: archive
+  ports:
+  # Port name "tls" tells Istio the traffic on this port is TLS.
+  - name: tls
+    port: 443
+    targetPort: 8443
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archive
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: archive
+  template:
+    metadata:
+      labels:
+        app: archive
+        sidecar.istio.io/inject: "false"
+    spec:
+      containers:
+      - name: archive
+        image: nginx:1.27-alpine
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - name: nginx-conf
+          mountPath: /etc/nginx/conf.d
+        - name: tls
+          mountPath: /etc/nginx/tls
+          readOnly: true
+      volumes:
+      - name: nginx-conf
+        configMap:
+          name: archive-nginx-conf
+      - name: tls
+        secret:
+          secretName: archive-tls

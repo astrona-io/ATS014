@@ -1,0 +1,257 @@
+# Knowledge check for section 050. Listed in astrona.yaml as a `type: quiz` entry after the last capstone lab. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-050
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-050
+  title: "Using Fault Injection"
+questions:
+  - id: ats014-050-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Add a `fault.delay` and a `fault.abort` to a `VirtualService` rule, and say exactly what the client gets for each."
+    source_readings:
+      - sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
+      - sections/section-050/module-01/course-02-abort-requests-in-the-client-proxy.md
+    prompt: |-
+      Lieutenant Data wants to test how `scout` v2 behaves when `navcom` is slow but still answers correctly. Which fault does he put on the `navcom` rule?
+    options:
+      - id: a
+        text: "`fault.abort` with `httpStatus: 504`."
+        explanation: "An abort answers at once with an error, so `navcom` would look broken, not slow."
+      - id: b
+        text: "`fault.abort` with a `percentage` of `100`."
+        explanation: "An abort never lets the request leave the client's pod, so no correct response comes back."
+      - id: c
+        text: "`fault.delay` with a `fixedDelay`."
+        explanation: "Correct. A delay holds the request and then sends it on, so the client gets a correct response, only late."
+      - id: d
+        text: "A `timeout` on the same rule, shorter than the normal response time."
+        explanation: "A timeout is not a fault, and a rule with a `fault` ignores its own `timeout`."
+    correct_option: c
+    explanation: "`fault.delay` keeps slow apart from broken. The request still succeeds and the response arrives late."
+
+  - id: ats014-050-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain why an aborted request leaves no trace at the destination, and recognise injected faults by the `DI` and `FI` flags in the client's access log."
+    source_readings:
+      - sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
+    prompt: |-
+      The access log of the `scout` v2 sidecar proxy shows `"GET /ratings/0 HTTP/1.1" 200 DI via_upstream` with a duration of `2014` milliseconds. What does `DI` mean?
+    options:
+      - id: a
+        text: "Delay injected: the client's proxy held the request before it sent it on."
+        explanation: "Correct. `DI` means delay injected, and the number is the time the request took in milliseconds."
+      - id: b
+        text: "Downstream interrupted: the client closed the connection early."
+        explanation: "A client that closes the connection first gives `DC`."
+      - id: c
+        text: "Destination idle: `navcom` took two seconds to answer."
+        explanation: "`navcom` answered a normal request in a few milliseconds. The client's proxy held the request."
+      - id: d
+        text: "Deny: the request was refused by a policy."
+        explanation: "`DI` is not a policy flag, and the status is `200`."
+    correct_option: a
+    explanation: "`DI` means delay injected. It appears in the access log of the client, here `scout` v2, and not in the log of `navcom`."
+
+  - id: ats014-050-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Add a `fault.delay` and a `fault.abort` to a `VirtualService` rule, and say exactly what the client gets for each."
+    source_readings:
+      - sections/section-050/module-01/course-02-abort-requests-in-the-client-proxy.md
+    prompt: |-
+      A service called by `shuttle` speaks gRPC. You want an abort fault for its traffic. Which field replaces `httpStatus` in the `abort` block?
+    options:
+      - id: a
+        text: "`grpcCode`"
+        explanation: "This is not the field name that the abort block uses."
+      - id: b
+        text: "`statusCode`"
+        explanation: "This is not a field of the abort block."
+      - id: c
+        text: "`httpStatus` is used for gRPC as well."
+        explanation: "For gRPC traffic, the abort takes a different field."
+      - id: d
+        text: "`grpcStatus`"
+        explanation: "Correct. For gRPC traffic, `abort` takes `grpcStatus` instead of `httpStatus`."
+    correct_option: d
+    explanation: "`abort` takes `httpStatus` for HTTP traffic and `grpcStatus` for gRPC traffic."
+
+  - id: ats014-050-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Apply a fault to a share of the requests with `percentage`, to your own test requests with a header `match`, and to one calling workload with `sourceLabels`."
+    source_readings:
+      - sections/section-050/module-01/course-03-scope-fault-injection-with-match-rules.md
+    prompt: |-
+      A `VirtualService` for `navcom` has a first rule that matches `end-user: jason` and aborts with `500`, and a plain rule below it. Sending `end-user: jason` straight to `navcom` fails as expected. Sending it through `shuttle` to `scout` v2 to `navcom` never fails. What do you check first?
+    options:
+      - id: a
+        text: "Whether the plain rule must move above the fault rule."
+        explanation: "The plain rule is already below. Above the fault rule it would match every request and stop the fault."
+      - id: b
+        text: "Whether the `scout` application copies the `end-user` header onto its own request to `navcom`."
+        explanation: "Correct. A header match only works through a chain if the middle application copies the header. Check header propagation before you blame the `VirtualService`."
+      - id: c
+        text: "Whether the `abort` needs a `delay` on the same rule to fire."
+        explanation: "An abort works alone. It does not need a delay."
+      - id: d
+        text: "Whether `percentage` has to be removed from the rule."
+        explanation: "Without `percentage`, every matching request is aborted, but the problem here is that the request does not match."
+    correct_option: b
+    explanation: "The direct request works, so the rule is correct. Through the chain, the header must reach the second hop, and only the application can copy it."
+
+  - id: ats014-050-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Apply a fault to a share of the requests with `percentage`, to your own test requests with a header `match`, and to one calling workload with `sourceLabels`."
+    source_readings:
+      - sections/section-050/module-01/course-03-scope-fault-injection-with-match-rules.md
+    prompt: |-
+      A colleague saves a `navcom` `VirtualService` that has only one `http` rule: it matches `end-user: jason`, aborts with `500` and routes to subset `v1`. A request from `shuttle` to `navcom` without the header arrives. What does it get?
+    options:
+      - id: a
+        text: "A normal response from `navcom` v1, because only `jason` is affected by the fault."
+        explanation: "Without a plain rule below, the request matches no rule and has no route."
+      - id: b
+        text: "A `500`, because the abort applies to every client once it exists."
+        explanation: "The abort applies only to requests that match the rule."
+      - id: c
+        text: "A `404`, because no rule matches and there is no plain rule below the fault rule."
+        explanation: "Correct. Forgetting the plain rule means a request that does not match the fault rule has no route and gets a `404`."
+      - id: d
+        text: "A `503` with the flag `UO`, because the proxy runs out of connections."
+        explanation: "`UO` means a circuit breaker limit was hit, which is unrelated here."
+    correct_option: c
+    explanation: "Keep the plain rule below the fault rule for everyone else. Without it, requests that do not match get a `404`."
+
+  - id: ats014-050-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Apply a fault to a share of the requests with `percentage`, to your own test requests with a header `match`, and to one calling workload with `sourceLabels`."
+    source_readings:
+      - sections/section-050/module-01/course-03-scope-fault-injection-with-match-rules.md
+      - sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
+    prompt: |-
+      A `navcom` rule uses `sourceLabels` with `app: scout` and aborts with `500`. Why can the rule select requests by the pod that sends them, and what does a request from `shuttle` to `navcom` get?
+    options:
+      - id: a
+        text: "The client's own sidecar proxy applies the fault and knows its pod's labels. The `shuttle` request works, because `shuttle` does not carry `app: scout`."
+        explanation: "Correct. `sourceLabels` matches the labels of the sending pod, and the client's proxy applies the fault."
+      - id: b
+        text: "`navcom` reads the labels of every caller. The `shuttle` request works because `navcom` ignores it."
+        explanation: "The destination does not apply the fault. The client's proxy does."
+      - id: c
+        text: "`istiod` checks the labels at request time. The `shuttle` request fails, because `istiod` blocks unknown callers."
+        explanation: "`istiod` only sends configuration. It does not see requests."
+      - id: d
+        text: "`sourceLabels` matches the headers of the request. The `shuttle` request fails, because it has no `app` header."
+        explanation: "`headers` matches what a request carries. `sourceLabels` matches the labels of the sender."
+    correct_option: a
+    explanation: "The sidecar proxy of the client applies the fault, so it can match on the labels of its own pod."
+
+  - id: ats014-050-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Use a delay to make a timeout fire on demand, and explain why a rule with a `fault` ignores its own `timeout` and `retries`."
+    source_readings:
+      - sections/section-050/module-01/course-04-test-timeouts-and-retries-with-fault-injection.md
+    prompt: |-
+      A `navcom` route has `fault.abort` at 50% with `httpStatus: 500`, and `retries` with `attempts: 3` and `retryOn: 5xx` on the same route. Ten requests give 6 `200` and 4 `500`, and `navcom` received 6 requests. What is the lesson, and what should Commander Sisko change?
+    options:
+      - id: a
+        text: "Retries ran but ran out. Raise `attempts` to 10 on the same route."
+        explanation: "The proxy never sent a single retry, because `navcom` received exactly as many requests as there were `200` responses."
+      - id: b
+        text: "`retryOn` is wrong. Change it to `connect-failure` on the same route."
+        explanation: "The retries are ignored on a rule that has a fault, whatever `retryOn` says."
+      - id: c
+        text: "The abort fires after the retries. Lower the abort `percentage` to 10 and keep the same route."
+        explanation: "The abort is answered by the fault filter before the router, so the router never sees a failed attempt."
+      - id: d
+        text: "A rule with a `fault` ignores its own `retries`. Put the retry policy on the route of the client, one hop away from the fault."
+        explanation: "Correct. The fault filter runs before the router that sends and retries the request, so the retries never run."
+    correct_option: d
+    explanation: "Istio accepts the configuration without a warning, but the retries on a fault rule never run. The proof is that `navcom` received no extra requests."
+
+  - id: ats014-050-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Use a delay to make a timeout fire on demand, and explain why a rule with a `fault` ignores its own `timeout` and `retries`."
+    source_readings:
+      - sections/section-050/module-01/course-04-test-timeouts-and-retries-with-fault-injection.md
+      - sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
+    prompt: |-
+      The `navcom` `VirtualService` delays every request by 2 seconds. The `scout` `VirtualService` has `timeout: 0.5s` and routes to `v2`. `shuttle` sends one request to `scout`. It gets a `504` after about half a second. Which statement about the two access logs is correct?
+    options:
+      - id: a
+        text: "The `shuttle` log shows `UT` with `response_timeout`. The `scout` v2 log still shows a `200` with `DI` about two seconds later."
+        explanation: "Correct. `shuttle` gave up after 0.5 seconds. `scout` v2 kept waiting for `navcom` and got its `200` later."
+      - id: b
+        text: "The `shuttle` log shows `FI` with `fault_filter_abort`, and `scout` v2 logs nothing."
+        explanation: "No abort was configured. The `504` comes from the timeout."
+      - id: c
+        text: "The `shuttle` log shows `DI`, because `shuttle` is the proxy that holds the request."
+        explanation: "The delay sits on the `navcom` route, so the proxy of `scout` v2 holds that request, not `shuttle`."
+      - id: d
+        text: "Neither log shows a flag, because a timeout leaves no trace in the access log."
+        explanation: "A fired timeout shows as the response flag `UT`."
+    correct_option: a
+    explanation: "The timeout belongs on the client's route, here `scout` for `shuttle`, and the delay on the service that should look slow. Both facts show in two logs with the same request ID."
+
+  - id: ats014-050-q09
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Explain why an aborted request leaves no trace at the destination, and recognise injected faults by the `DI` and `FI` flags in the client's access log."
+    source_readings:
+      - sections/section-050/module-01/course-02-abort-requests-in-the-client-proxy.md
+    prompt: |-
+      Users report some `503` responses that were also slow. The `shuttle` access log shows lines with `503 DI,FI`. The `navcom` pod's access log has no matching lines. Which explanation fits all the evidence?
+    options:
+      - id: a
+        text: "One rule has both a `delay` and an `abort`. The proxy delayed the request and then aborted it, so `navcom` never saw it."
+        explanation: "Correct. The proxy decides each fault on its own, so a request can be delayed and then aborted. An abort never reaches the destination."
+      - id: b
+        text: "`navcom` is overloaded and answers slowly with `503` before its proxy logs the request."
+        explanation: "A real failure at the pod would be logged by the `navcom` proxy, and the flags would not be `DI,FI`."
+      - id: c
+        text: "A circuit breaker opened on `navcom`, so the proxy of `navcom` skipped the logs."
+        explanation: "A circuit breaker gives `UO`. The flags here say a fault was injected."
+      - id: d
+        text: "Two different rules fired: the delay was on the `shuttle` rule and the abort was on `navcom`."
+        explanation: "Both flags are on one line, so one request had both faults, and the abort stops the request at the client."
+    correct_option: a
+    explanation: "`DI,FI` on one line means a delayed and then aborted request. A real failure would leave a line in the destination's log."
+
+  - id: ats014-050-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Name the `VirtualService` a fault belongs on, and the sidecar proxy that applies it."
+    source_readings:
+      - sections/section-050/module-01/course-04-test-timeouts-and-retries-with-fault-injection.md
+      - sections/section-050/module-01/course-01-inject-a-delay-into-requests.md
+    prompt: |-
+      Calls from `scout` v2 to `navcom` are slow, and nobody changed an application. Dr. Crusher suspects a forgotten fault. She runs `istioctl proxy-config routes deploy/navcom-v1 -n starfleet --name 9080 -o json` and finds no fault. What is wrong with her search?
+    options:
+      - id: a
+        text: "She must search for the word `fault`, because the key `envoy.filters.http.fault` is hidden."
+        explanation: "The key `envoy.filters.http.fault` is how the fault appears. Searching only for `fault` also matches ordinary text."
+      - id: b
+        text: "The `navcom` proxy holds the faults of all its callers, so she should have found it."
+        explanation: "The destination does not hold the fault."
+      - id: c
+        text: "She read the proxy of the destination. The client's proxy applies the fault, so she must read the routes of `deploy/scout-v2` and search for `envoy.filters.http.fault`."
+        explanation: "Correct. The client's sidecar proxy applies the fault, so the fault is in its route configuration."
+      - id: d
+        text: "Faults are stored only in `istiod`, so no proxy shows them."
+        explanation: "Faults are sent to the proxy and show under `envoy.filters.http.fault` in its routes."
+    correct_option: c
+    explanation: "The fault is in the route configuration of the client's proxy. Also run `kubectl get virtualservice -A` and search the client's access log for `DI` or `FI`."

@@ -1,0 +1,15 @@
+# Turn on Envoy access logs for the whole mesh.
+# Every sidecar proxy then prints one line per request, so
+# "kubectl logs <pod> -c istio-proxy" shows the status code, the response flags
+# (for example UF = upstream connection failure, UT = upstream request timeout,
+# UO = circuit breaker overflow), the upstream cluster and the duration.
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  # A Telemetry object in the root namespace (istio-system) is the mesh default.
+  name: mesh-default
+  namespace: istio-system
+spec:
+  accessLogging:
+  - providers:
+    - name: envoy

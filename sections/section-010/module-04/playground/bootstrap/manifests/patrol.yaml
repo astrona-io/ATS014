@@ -1,0 +1,30 @@
+# The patrol: a second client pod in the namespace "starfleet", with its own
+# service account and the pod label app=patrol. The module uses it to show a
+# route that depends on the labels of the pod that sends the request.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: patrol
+  namespace: starfleet
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patrol
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: patrol
+  template:
+    metadata:
+      labels:
+        app: patrol
+    spec:
+      serviceAccountName: patrol
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: patrol
+        image: curlimages/curl:8.11.1
+        command: ["sleep", "infinity"]

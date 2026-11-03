@@ -1,0 +1,15 @@
+# Subsets for the probe-tcp host: v1 and v2 select the pods by the version label.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe-tcp
+  namespace: starfleet
+spec:
+  host: probe-tcp
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2

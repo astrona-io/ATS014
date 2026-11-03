@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-tcp
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  selector:
+    app: probe
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8080

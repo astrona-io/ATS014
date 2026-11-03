@@ -1,0 +1,18 @@
+# Case 2: "~" exports the object to no namespace, not even its own.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  exportTo:
+  - "~"
+  http:
+  - route:
+    - destination:
+        host: probe
+        subset: v2
+        port:
+          number: 8000

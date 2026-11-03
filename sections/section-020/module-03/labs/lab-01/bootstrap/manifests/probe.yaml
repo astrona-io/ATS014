@@ -1,0 +1,83 @@
+# The probe: an HTTP echo server (go-httpbin) in two versions, v1 and v2,
+# behind one Service called "probe".
+#   /hostname       name of the pod that answered
+#   /get            echo the request
+#   /headers        echo the request headers
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: probe
+  namespace: starfleet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  # Selects BOTH versions. Subsets in a DestinationRule split them by "version".
+  selector:
+    app: probe
+  ports:
+  # The port name "http" tells Istio the protocol is HTTP.
+  - name: http
+    port: 8000
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-v1
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: probe
+        version: v1
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        # Make /hostname return the real pod name, so tests can see which
+        # pod answered.
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-v2
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: probe
+        version: v2
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080

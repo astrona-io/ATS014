@@ -376,7 +376,8 @@ one sentence that the lab uses a different app.
 | Module reading: landing page, deep-dive parts, summary | `sections/section-0N0/module-0M/course.md`, `course-0N-*.md` |
 | Graded lab: task, walkthrough, setup, grader | `.../labs/lab-0N/` (`question.md`, `solution.md`, `bootstrap/`, `solution/apply.sh`, `validation/`) |
 | Ungraded sandbox for a module | `.../playground/` (`docs/overview.md` is the only learner page: what is in the box, helpers, and a final `## Practice tasks` section; `examples/` holds the authors' reference YAML) |
-| One graded integration lab per section (not section 000) | `sections/section-0N0/capstone/labs/lab-01/` |
+| Graded integration labs per section (not section 000): `lab-01` is the original capstone, `lab-02` covers the modules added later | `sections/section-0N0/capstone/labs/lab-0N/` |
+| Section knowledge check and the final domain check | `sections/section-0N0/quiz.yaml`, `sections/final-domain-quiz.yaml` |
 
 A lab folder holds:
 
@@ -465,6 +466,24 @@ this order:
 - Failure signatures: `404-nr`, `503-nc`, `503-uh`, `503-uo`, `504-ut`,
   `ist0101`, `ist0130`, `ist0173`
 - Tools: `proxy-config`, `proxy-status`, `istioctl-analyze`, `access-log`
+- Added with the extension modules: `delegate`, `export-to`, `mtls`,
+  `connection-timeout`, `keepalive`, `traffic-distribution`,
+  `https-redirect`, `tls-passthrough`
+
+### Section and final quizzes
+
+Every section also ends with a knowledge check of its own, and the course
+ends with one final check across the whole domain. They use the same
+question format as the module quizzes below (`schemas/question-bank.schema.json`,
+`scope.type` is `section` or `domain`).
+
+- `sections/section-0N0/quiz.yaml` holds about 10 questions for the section.
+  In `astrona.yaml` it is a `type: quiz` entry with `pass_score: 70` right
+  after the section's last capstone lab.
+- `sections/final-domain-quiz.yaml` holds about 30 questions drawn from all
+  sections, weighted like the exam topics. It is the last entry of
+  `astrona.yaml`, with `pass_score: 70`.
+- Ids are `ats014-<section>-qNN` and `ats014-final-qNN`.
 
 ### Module quizzes
 
@@ -536,7 +555,7 @@ astrona test -c sections/section-010/module-01/labs/lab-01
 ```
 
 Names: a playground is `ats-014-playground-<section>-<module>` and a
-capstone is `ats-014-capstone-<section>`. The first labs are
+capstone is `ats-014-capstone-<section>` (`ats-014-capstone-<section>-02` for the second capstone). The first labs are
 `ats-014-lab-<section>-<module>`; keep those names. A new lab takes
 `ats-014-lab-<section>-<module>-<lab>`, for example `ats-014-lab-020-01-02`,
 so two labs never share a name. Lab bootstrap scripts do not pin a kube

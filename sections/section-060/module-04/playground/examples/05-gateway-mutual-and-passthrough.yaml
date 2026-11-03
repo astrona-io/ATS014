@@ -1,0 +1,57 @@
+# Adds a MUTUAL server (client certificate required) and a PASSTHROUGH server
+# (the archive terminates TLS itself). The MUTUAL secret is a generic secret:
+#   kubectl create secret generic secure-tls -n istio-system \
+#     --from-file=tls.crt=secure.crt --from-file=tls.key=secure.key --from-file=ca.crt=ca.crt
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - starfleet.example.com
+    - probe.example.com
+    tls:
+      httpsRedirect: true
+  - port:
+      number: 443
+      name: https-starfleet
+      protocol: HTTPS
+    hosts:
+    - starfleet.example.com
+    tls:
+      mode: SIMPLE
+      credentialName: starfleet-tls
+  - port:
+      number: 443
+      name: https-probe
+      protocol: HTTPS
+    hosts:
+    - probe.example.com
+    tls:
+      mode: SIMPLE
+      credentialName: probe-tls
+  - port:
+      number: 443
+      name: https-secure
+      protocol: HTTPS
+    hosts:
+    - secure.starfleet.example.com
+    tls:
+      mode: MUTUAL
+      credentialName: secure-tls
+  - port:
+      number: 443
+      name: tls-archive
+      protocol: TLS
+    hosts:
+    - archive.starfleet.example.com
+    tls:
+      mode: PASSTHROUGH

@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe-tcp
+  namespace: starfleet
+spec:
+  hosts:
+  - probe-tcp
+  tcp:
+  - match:
+    - port: 8000
+    route:
+    - destination:
+        host: probe-tcp
+        subset: v1
+        port:
+          number: 8000
+      weight: 80
+    - destination:
+        host: probe-tcp
+        subset: v2
+        port:
+          number: 8000
+      weight: 20

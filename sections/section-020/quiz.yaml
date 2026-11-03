@@ -1,0 +1,255 @@
+# Knowledge check for section 020. Listed in astrona.yaml as a `type: quiz` entry after the last capstone lab. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-020
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-020
+  title: "Configuring Traffic Shifting"
+questions:
+  - id: ats014-020-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Write a weighted route in a VirtualService and place weight correctly."
+    source_readings:
+      - sections/section-020/module-01/course-01-split-traffic-with-weighted-destinations.md
+    prompt: |-
+      Where does the `weight` field go in a weighted `http` route?
+    options:
+      - id: a
+        text: "Inside `destination`, next to `host`."
+        explanation: "Inside `destination` it is not accepted. It sits next to `destination`."
+      - id: b
+        text: "Next to `destination`, on each item of the `route` list."
+        explanation: "Correct. `weight` sits beside `destination`, and one destination alone counts as 100."
+      - id: c
+        text: "On the `DestinationRule` subset."
+        explanation: "A subset names pods. It carries no weight."
+      - id: d
+        text: "In the `match` block of the rule."
+        explanation: "`match` selects requests. It does not weigh destinations."
+    correct_option: b
+    explanation: "One rule lists several destinations, and each gets a `weight`."
+
+  - id: ats014-020-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "State the default share of a mirror and what the shadow adds to the load."
+    source_readings:
+      - sections/section-020/module-02/course-01-add-a-mirror-destination-to-an-http-route.md
+      - sections/section-020/module-02/course-03-find-mirrored-requests-and-sample-them.md
+    prompt: |-
+      A rule has `mirror` and no `mirrorPercentage`. What share of requests is copied to the shadow?
+    options:
+      - id: a
+        text: "0%, so nothing is copied until you set a percentage."
+        explanation: "The default is 100%, which is why a forgotten mirror still doubles the load."
+      - id: b
+        text: "50%, a fair sample."
+        explanation: "Istio has no 50% default."
+      - id: c
+        text: "Only requests that use the `GET` method."
+        explanation: "The method does not decide this. A `match` block would copy a specific kind of request."
+      - id: d
+        text: "100% of the matched requests."
+        explanation: "Correct. If you leave `mirrorPercentage` out, the share is 100%, not 0%."
+    correct_option: d
+    explanation: "A full mirror doubles the number of requests inside the cluster."
+
+  - id: ats014-020-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain that a weighted pick on a TCP port applies to one connection."
+    source_readings:
+      - sections/section-020/module-03/course-02-per-connection-weights-connection-reuse-and-counting.md
+    prompt: |-
+      A `tcp` route has weights 80 and 20. What does one weighted pick cover?
+    options:
+      - id: a
+        text: "One connection. Every byte of that connection goes to the same pod."
+        explanation: "Correct. The proxy picks once when the connection opens and then copies bytes both ways."
+      - id: b
+        text: "One request, as for an `http` route."
+        explanation: "For TCP the proxy never reads requests, so it can only pick per connection."
+      - id: c
+        text: "One packet."
+        explanation: "The pick is made once for the connection, not for each packet."
+      - id: d
+        text: "One minute of traffic."
+        explanation: "The pick has no clock. It lasts until the connection closes."
+    correct_option: a
+    explanation: "A connection can carry many requests, and all of them follow the first pick."
+
+  - id: ats014-020-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Predict what Istio 1.30.5 does with weights that do not add up to 100."
+    source_readings:
+      - sections/section-020/module-01/course-02-weight-totals-three-way-splits-and-missing-subsets.md
+    prompt: |-
+      A route has weights 50 and 30 on two subsets. What does Istio 1.30.5 do?
+    options:
+      - id: a
+        text: "It rejects the object when you apply it."
+        explanation: "Istio 1.30.5 accepts it."
+      - id: b
+        text: "It sends 50% to the first subset and drops the rest."
+        explanation: "The weights are used as a ratio of 50 to 30."
+      - id: c
+        text: "It accepts them and uses them as a ratio, about 62/38."
+        explanation: "Correct. Write weights that add up to 100 anyway, so the intent is clear."
+      - id: d
+        text: "It sends 80% to the second subset."
+        explanation: "The ratio is 50 to 30, so the first subset gets the larger share."
+    correct_option: c
+    explanation: "The proxy picks a destination at random with the weights as the odds."
+
+  - id: ats014-020-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Separate traffic share from capacity."
+    source_readings:
+      - sections/section-020/module-01/course-05-traffic-share-replica-count-and-the-route-table.md
+    prompt: |-
+      A route splits 50/50 between v1 and v3. v1 has four pods and v3 has one pod. How is the traffic shared?
+    options:
+      - id: a
+        text: "80/20 in favour of v1, because it has more pods."
+        explanation: "Replicas do not change the subset choice. Weights decide it."
+      - id: b
+        text: "50/50 between the subsets, and each v1 pod gets a smaller share than the v3 pod."
+        explanation: "Correct. The proxy picks the subset first, and then picks a pod inside it."
+      - id: c
+        text: "50/50 between all five pods."
+        explanation: "The subset is picked before the pod."
+      - id: d
+        text: "It fails with `503`, because the pod counts differ."
+        explanation: "Different pod counts are valid."
+    correct_option: b
+    explanation: "Weights control traffic share, and replicas control capacity."
+
+  - id: ats014-020-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Place a header rule so that it does or does not take requests out of a weighted split."
+    source_readings:
+      - sections/section-020/module-01/course-04-change-weights-with-a-patch-and-a-header-rule.md
+    prompt: |-
+      A header rule that routes to v3 sits above a weighted 80/20 rule. A request that carries the header arrives. Where does it go?
+    options:
+      - id: a
+        text: "It is counted inside the 80/20 split."
+        explanation: "The weighted rule is never read for a request that the first rule matches."
+      - id: b
+        text: "It goes to v1, because the weights win."
+        explanation: "Weights apply only inside the rule that matched."
+      - id: c
+        text: "It is rejected by `istiod`."
+        explanation: "Two rules for one host are valid."
+      - id: d
+        text: "To v3, outside the split. The first rule that matches wins."
+        explanation: "Correct. A header match above the weighted rule takes its requests out of the split."
+    correct_option: d
+    explanation: "Rules are read from the top, and the first match ends the search."
+
+  - id: ats014-020-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Say why a mirror can fail without the client noticing."
+    source_readings:
+      - sections/section-020/module-02/course-02-mirror-requests-to-a-failing-version.md
+    prompt: |-
+      The shadow answers `503` to every mirrored copy. What does the client of the original request see?
+    options:
+      - id: a
+        text: "Nothing unusual. The proxy throws the shadow's response away."
+        explanation: "Correct. The shadow's own logs show the failure."
+      - id: b
+        text: "A `503` after the normal response."
+        explanation: "The client gets one response from the normal route."
+      - id: c
+        text: "A slower response, because the proxy waits for the shadow."
+        explanation: "The proxy waits only for the route's response."
+      - id: d
+        text: "A `502` from the proxy."
+        explanation: "The shadow's answer never reaches the client."
+    correct_option: a
+    explanation: "Mirroring finds crashes and load problems, but it cannot compare responses."
+
+  - id: ats014-020-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Diagnose a tcp route that does nothing because of the port name."
+    source_readings:
+      - sections/section-020/module-03/course-03-roll-a-tcp-service-forward-and-back.md
+      - sections/section-020/module-03/course-01-write-a-weighted-tcp-route.md
+    prompt: |-
+      A `tcp` route with weights 80 and 20 is valid, but counts show both versions at about 50/50. The Service port is named `http`. What do you see in the proxy of `shuttle`?
+    options:
+      - id: a
+        text: "A listener with `weightedClusters`, and the weights are 50 and 50."
+        explanation: "The weighted clusters exist only when the port is treated as TCP."
+      - id: b
+        text: "An `IST0101` error that names the `tcp` route."
+        explanation: "Both objects are valid. The analyzer may report nothing."
+      - id: c
+        text: "A route table host for the Service, and `0` lines with `weightedClusters` in the listener."
+        explanation: "Correct. Istio treats an `http` port as HTTP, so the `tcp` section never applies. `istioctl analyze` may stay silent."
+      - id: d
+        text: "No change, because the route reads the container port."
+        explanation: "`match.port` is the Service port, and the problem is the port name."
+    correct_option: c
+    explanation: "Name the port `tcp` or `tcp-...`, or set `appProtocol: tcp`."
+
+  - id: ats014-020-q09
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Explain why one curl process with many URLs does not measure a TCP split."
+    source_readings:
+      - sections/section-020/module-03/course-02-per-connection-weights-connection-reuse-and-counting.md
+    prompt: |-
+      One `curl` process fetches 20 URLs from `probe-tcp:8000` over one connection, three times. What do you expect?
+    options:
+      - id: a
+        text: "About 16 answers from v1 and 4 from v2 in every run."
+        explanation: "That needs 20 separate connections. One connection makes one pick."
+      - id: b
+        text: "A split of exactly 80/20 in every run."
+        explanation: "TCP picks are random for each connection. No run is exact."
+      - id: c
+        text: "A different pod for each URL."
+        explanation: "The connection is reused, and so is the pod."
+      - id: d
+        text: "Each run gets all 20 answers from one pod, because there was one weighted pick."
+        explanation: "Correct. To measure the split, start a new process, and so a new connection, for every sample."
+    correct_option: d
+    explanation: "Use at least 100 fresh connections and judge the result with a range."
+
+  - id: ats014-020-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Say which connections a weight change reaches."
+    source_readings:
+      - sections/section-020/module-03/course-03-roll-a-tcp-service-forward-and-back.md
+    prompt: |-
+      You patch a `tcp` route from 100/0 to 0/100 while a client keeps a connection open to v1. What happens to that connection?
+    options:
+      - id: a
+        text: "It moves to v2 at once, because `istiod` pushes the change."
+        explanation: "The proxy made the pick when the connection opened."
+      - id: b
+        text: "It stays on v1 until it closes. Only new connections follow the new weights."
+        explanation: "Correct. A client with a long-lived connection stays on its pod."
+      - id: c
+        text: "It is closed by the proxy at the moment of the push."
+        explanation: "A weight change does not close connections."
+      - id: d
+        text: "It is split between v1 and v2."
+        explanation: "A connection has one pod until it closes."
+    correct_option: b
+    explanation: "A weight of 0 is not an error. It sends no new connection to that subset."

@@ -117,6 +117,12 @@ modules:
         path: sections/section-000/module-01/quiz.yaml
         pass_score: 70
 
+      - type: quiz
+        title: "Section Quiz: Mesh Foundations"
+        path: sections/section-000/quiz.yaml
+        question_count: 10
+        pass_score: 70
+
   - id: module-010
     title: "Configuring Routing Within A Service Mesh"
     description: >
@@ -264,6 +270,7 @@ modules:
         title: "Knowledge Check: Route Requests Within The Mesh"
         path: sections/section-010/module-01/quiz.yaml
         question_count: 10
+        pass_score: 70
 
       - type: reading
         title: "Scope Proxy Configuration With The Sidecar Resource"
@@ -323,6 +330,7 @@ modules:
         title: "Knowledge Check: Scope Proxy Configuration With The Sidecar Resource"
         path: sections/section-010/module-02/quiz.yaml
         question_count: 8
+        pass_score: 70
 
       - type: reading
         title: "Apply And Remove Traffic Rules Safely"
@@ -359,6 +367,59 @@ modules:
         title: "Knowledge Check: Apply And Remove Traffic Rules Safely"
         path: sections/section-010/module-03/quiz.yaml
         question_count: 6
+        pass_score: 70
+
+      - type: reading
+        title: "Compose And Scope VirtualServices With delegate And exportTo"
+        path: sections/section-010/module-04/course.md
+      - type: reading
+        title: "Split A Route Table With A Delegate VirtualService"
+        path: sections/section-010/module-04/course-01-split-a-route-table-with-a-delegate-virtualservice.md
+      - type: lab
+        title: "Split A Probe Route Table Across Delegates Lab"
+        path: sections/section-010/module-04/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: routing
+        task_kind: build
+        tags: [virtualservice, delegate, uri-matching, timeouts, subsets, proxy-config, rule-order]
+        learning_goals:
+          - Split one host's route table into a root VirtualService and two delegates with no hosts
+          - Prove with real requests and the proxy's route table that the delegated rules, the 2 second timeout and the default route all work
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Virtual service delegation"
+            url: https://istio.io/latest/docs/concepts/traffic-management/#delegating-virtual-services
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Limit Who Sees A VirtualService Or DestinationRule With exportTo"
+        path: sections/section-010/module-04/course-02-limit-who-sees-a-virtualservice-or-destinationrule-with-exportto.md
+      - type: lab
+        title: "Show A VirtualService To The Namespaces That Need It Lab"
+        path: sections/section-010/module-04/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: routing
+        task_kind: troubleshooting
+        tags: [virtualservice, destinationrule, export-to, subsets, proxy-config, 503-nc]
+        learning_goals:
+          - Find why a client in another namespace ignores a VirtualService by reading its exportTo list
+          - Export a VirtualService and its DestinationRule to one more namespace without exposing them to a third
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Match By Source Workload, Source Namespace And Port"
+        path: sections/section-010/module-04/course-03-match-by-source-workload-source-namespace-and-port.md
+      - type: reading
+        title: "Summary"
+        path: sections/section-010/module-04/course-04-summary.md
 
       - type: lab
         title: "Route With Subsets And Scope Proxies With A Sidecar Capstone Lab"
@@ -379,6 +440,30 @@ modules:
             url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
           - name: "Sidecar reference"
             url: https://istio.io/latest/docs/reference/config/networking/sidecar/
+      - type: lab
+        title: "Compose A Delegated Canary With Scoped Visibility Capstone Lab"
+        path: sections/section-010/capstone/labs/lab-02
+        difficulty: advanced
+        estimated_duration: 45m
+        topic: routing
+        task_kind: build
+        tags: [virtualservice, destinationrule, delegate, export-to, header-matching, uri-matching, subsets, timeouts]
+        learning_goals:
+          - Combine a root VirtualService, two delegates, a header rule, subsets and two timeouts for one host
+          - Limit the objects to two namespaces with exportTo and prove with live requests that a third namespace is unaffected
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+
+      - type: quiz
+        title: "Section Quiz: Configuring Routing Within A Service Mesh"
+        path: sections/section-010/quiz.yaml
+        question_count: 10
+        pass_score: 70
 
   - id: module-020
     title: "Configuring Traffic Shifting"
@@ -453,6 +538,7 @@ modules:
         title: "Knowledge Check: Shift Traffic With Weighted Routing"
         path: sections/section-020/module-01/quiz.yaml
         question_count: 10
+        pass_score: 70
 
       - type: reading
         title: "Mirror Live Traffic To A Shadow Service"
@@ -510,6 +596,59 @@ modules:
         title: "Knowledge Check: Mirror Live Traffic To A Shadow Service"
         path: sections/section-020/module-02/quiz.yaml
         question_count: 8
+        pass_score: 70
+
+      - type: reading
+        title: "Shift TCP Connections With Weights"
+        path: sections/section-020/module-03/course.md
+      - type: reading
+        title: "Write A Weighted tcp Route"
+        path: sections/section-020/module-03/course-01-write-a-weighted-tcp-route.md
+      - type: reading
+        title: "Per-Connection Weights, Connection Reuse And Counting"
+        path: sections/section-020/module-03/course-02-per-connection-weights-connection-reuse-and-counting.md
+      - type: lab
+        title: "Split TCP Connections 80/20 Between Two Subsets Lab"
+        path: sections/section-020/module-03/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: traffic-shifting
+        task_kind: build
+        tags: [virtualservice, destinationrule, subsets, weighted-routing, tcp-routing, protocol-selection, proxy-config]
+        learning_goals:
+          - Write a weighted tcp route that matches the Service port and splits connections 80/20 between two subsets
+          - Prove the split with many fresh connections, and show that one reused connection stays on one pod
+        resources:
+          - name: "VirtualService TCPRoute reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/#TCPRoute
+          - name: "Protocol selection"
+            url: https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
+          - name: "TCP traffic shifting task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/tcp-traffic-shifting/
+      - type: reading
+        title: "Roll A TCP Service Forward And Back"
+        path: sections/section-020/module-03/course-03-roll-a-tcp-service-forward-and-back.md
+      - type: lab
+        title: "Fix A TCP Split That Never Happens Lab"
+        path: sections/section-020/module-03/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: traffic-shifting
+        task_kind: troubleshooting
+        tags: [virtualservice, destinationrule, tcp-routing, protocol-selection, ist0173, istioctl-analyze, proxy-config]
+        learning_goals:
+          - Find why a tcp route never splits connections by reading the route table, the listener and the cluster endpoints
+          - Fix the Service port name and the subset labels and prove the split with fresh connections
+        resources:
+          - name: "Protocol selection"
+            url: https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Summary"
+        path: sections/section-020/module-03/course-04-summary.md
 
       - type: lab
         title: "Combine A Header Rule, A Weighted Canary And A Mirror Capstone Lab"
@@ -529,6 +668,30 @@ modules:
             url: https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/
           - name: "Mirroring task"
             url: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
+      - type: lab
+        title: "Combine An HTTP Canary, A Mirror And A TCP Split Capstone Lab"
+        path: sections/section-020/capstone/labs/lab-02
+        difficulty: advanced
+        estimated_duration: 40m
+        topic: traffic-shifting
+        task_kind: build
+        tags: [virtualservice, destinationrule, header-matching, weighted-routing, mirroring, tcp-routing, proxy-config]
+        learning_goals:
+          - Combine a header rule, an 80/20 weighted split and a mirror on an http route, and a 70/30 tcp route on the same pods
+          - Prove that HTTP splits per request while TCP splits per connection, and that the shadow receives copies but never answers a client
+        resources:
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Traffic shifting task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/traffic-shifting/
+          - name: "Mirroring task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
+
+      - type: quiz
+        title: "Section Quiz: Configuring Traffic Shifting"
+        path: sections/section-020/quiz.yaml
+        question_count: 10
+        pass_score: 70
 
   - id: module-030
     title: "Defining Traffic Policies With Destination Rules"
@@ -620,6 +783,57 @@ modules:
         title: "Knowledge Check: Load Balancer Policy And Session Affinity"
         path: sections/section-030/module-01/quiz.yaml
         question_count: 10
+        pass_score: 70
+
+      - type: reading
+        title: "TLS Settings In A DestinationRule"
+        path: sections/section-030/module-02/course.md
+      - type: reading
+        title: "Client TLS Modes In trafficPolicy.tls"
+        path: sections/section-030/module-02/course-01-client-tls-modes-in-trafficpolicy-tls.md
+      - type: reading
+        title: "Match A Destination That Requires mTLS"
+        path: sections/section-030/module-02/course-02-match-a-destination-that-requires-mtls.md
+      - type: reading
+        title: "Override TLS Per Subset And Per Port"
+        path: sections/section-030/module-02/course-03-override-tls-per-subset-and-per-port.md
+      - type: lab
+        title: "Build A DestinationRule For A STRICT Destination Lab"
+        path: sections/section-030/module-02/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: destination-rules
+        task_kind: build
+        tags: [destinationrule, mtls, peerauthentication, subsets, load-balancing, proxy-config]
+        learning_goals:
+          - Write a DestinationRule with ISTIO_MUTUAL and two subsets for a destination that requires mTLS
+          - Give one subset its own load balancer and prove it, and the mTLS setting, in the proxy's cluster dump
+          - Prove with live requests that mesh clients work and a client with no sidecar is still refused
+        resources:
+          - name: "DestinationRule TLS settings"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings
+          - name: "Istio mutual TLS migration"
+            url: https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
+      - type: lab
+        title: "Fix A DISABLE Rule And A Subset Override Lab"
+        path: sections/section-030/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: destination-rules
+        task_kind: troubleshooting
+        tags: [destinationrule, mtls, peerauthentication, subsets, consistent-hash, proxy-config, access-log]
+        learning_goals:
+          - Find why a tls DISABLE rule breaks calls to a STRICT workload by reading the access log and the proxy's transport socket
+          - Find the subset load balancer that silently replaces the host's consistentHash and remove it
+          - Prove both fixes with live requests and the lbPolicy of each subset cluster
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "Istio mutual TLS migration"
+            url: https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
+      - type: reading
+        title: "Summary"
+        path: sections/section-030/module-02/course-04-summary.md
 
       - type: lab
         title: "Combine Session Affinity With Traffic Mirroring Capstone Lab"
@@ -639,6 +853,26 @@ modules:
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
           - name: "Mirroring task"
             url: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
+      - type: lab
+        title: "Combine TLS Settings With Load Balancing Capstone Lab"
+        path: sections/section-030/capstone/labs/lab-02
+        difficulty: advanced
+        estimated_duration: 30m
+        topic: destination-rules
+        task_kind: build
+        tags: [destinationrule, mtls, consistent-hash, session-affinity, load-balancing, subsets, proxy-config]
+        learning_goals:
+          - Combine host-level ISTIO_MUTUAL and consistentHash with a ROUND_ROBIN override on one subset
+          - Prove with live requests that one session stays on one pod in v1 and spreads over v2, while a client with no sidecar stays refused
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+
+      - type: quiz
+        title: "Section Quiz: Defining Traffic Policies With Destination Rules"
+        path: sections/section-030/quiz.yaml
+        question_count: 10
+        pass_score: 70
 
   - id: module-040
     title: "Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries)"
@@ -735,6 +969,7 @@ modules:
         title: "Knowledge Check: Timeouts And Retries"
         path: sections/section-040/module-01/quiz.yaml
         question_count: 10
+        pass_score: 70
 
       - type: reading
         title: "Circuit Breaking With Connection Pool Limits"
@@ -794,6 +1029,7 @@ modules:
         title: "Knowledge Check: Circuit Breaking With Connection Pool Limits"
         path: sections/section-040/module-02/quiz.yaml
         question_count: 8
+        pass_score: 70
 
       - type: reading
         title: "Outlier Detection And Endpoint Ejection"
@@ -855,6 +1091,7 @@ modules:
         title: "Knowledge Check: Outlier Detection And Endpoint Ejection"
         path: sections/section-040/module-03/quiz.yaml
         question_count: 8
+        pass_score: 70
 
       - type: reading
         title: "Locality Load Balancing And Failover"
@@ -930,6 +1167,57 @@ modules:
         title: "Knowledge Check: Locality Load Balancing And Failover"
         path: sections/section-040/module-04/quiz.yaml
         question_count: 8
+        pass_score: 70
+
+      - type: reading
+        title: "Connection Timeouts, Keepalive And Nearby Endpoints"
+        path: sections/section-040/module-05/course.md
+      - type: reading
+        title: "Limit How Long A Connection Attempt Waits"
+        path: sections/section-040/module-05/course-01-limit-how-long-a-connection-attempt-waits.md
+      - type: reading
+        title: "Idle, Keepalive And Maximum Connection Age"
+        path: sections/section-040/module-05/course-02-idle-keepalive-and-maximum-connection-age.md
+      - type: lab
+        title: "Set Connection Timeout And Keepalive On A Host Lab"
+        path: sections/section-040/module-05/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: destination-rules
+        task_kind: build
+        tags: [destinationrule, connection-pool, connection-timeout, keepalive, proxy-config]
+        learning_goals:
+          - Set the connect timeout, idle timeout, maximum connection duration and TCP keepalive in one DestinationRule
+          - Read each value back from the cluster JSON of the client's sidecar proxy
+          - Prove with live requests that the host still answers
+        resources:
+          - name: "ConnectionPoolSettings reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#ConnectionPoolSettings
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+      - type: reading
+        title: "Prefer Nearby Endpoints With trafficDistribution"
+        path: sections/section-040/module-05/course-03-prefer-nearby-endpoints-with-trafficdistribution.md
+      - type: lab
+        title: "Keep Requests In The Client's Zone With trafficDistribution Lab"
+        path: sections/section-040/module-05/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: resilience
+        task_kind: build
+        tags: [traffic-distribution, locality-failover, outlier-detection, destinationrule, load-balancing]
+        learning_goals:
+          - Set trafficDistribution PreferClose on a Kubernetes Service
+          - Keep outlierDetection in the DestinationRule so a failing endpoint can be ejected
+          - Prove by counting answering pods that requests from zone-a stay in zone-a
+        resources:
+          - name: "Locality load balancing"
+            url: https://istio.io/latest/docs/tasks/traffic-management/locality-load-balancing/
+          - name: "Kubernetes traffic distribution"
+            url: https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+      - type: reading
+        title: "Summary"
+        path: sections/section-040/module-05/course-04-summary.md
 
       - type: lab
         title: "Combine Timeouts, Retries, Circuit Breaking And Outlier Detection Capstone Lab"
@@ -951,6 +1239,31 @@ modules:
             url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
           - name: "Circuit breaking task"
             url: https://istio.io/latest/docs/tasks/traffic-management/circuit-breaking/
+      - type: lab
+        title: "Combine Connection Settings, Timeouts, Retries, Outlier Detection And PreferClose Capstone Lab"
+        path: sections/section-040/capstone/labs/lab-02
+        difficulty: advanced
+        estimated_duration: 40m
+        topic: resilience
+        task_kind: build
+        tags: [destinationrule, virtualservice, connection-timeout, keepalive, timeouts, retries, outlier-detection, traffic-distribution]
+        learning_goals:
+          - Combine connection settings, a route timeout with retries, outlier detection and PreferClose on one host
+          - Explain why retries and outlier detection together eject a failing nearest endpoint
+          - Prove with live requests that traffic moves to the healthy zone and a slow request fails with 504
+        resources:
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+          - name: "VirtualService reference"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+          - name: "Request timeouts"
+            url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
+
+      - type: quiz
+        title: "Section Quiz: Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries)"
+        path: sections/section-040/quiz.yaml
+        question_count: 10
+        pass_score: 70
 
   - id: module-050
     title: "Using Fault Injection"
@@ -1037,6 +1350,7 @@ modules:
         title: "Knowledge Check: Fault Injection With Delays And Aborts"
         path: sections/section-050/module-01/quiz.yaml
         question_count: 10
+        pass_score: 70
 
       - type: lab
         title: "Test Retries And Timeouts With Scoped Faults Capstone Lab"
@@ -1057,6 +1371,12 @@ modules:
             url: https://istio.io/latest/docs/tasks/traffic-management/fault-injection/
           - name: "Request timeouts task"
             url: https://istio.io/latest/docs/tasks/traffic-management/request-timeouts/
+
+      - type: quiz
+        title: "Section Quiz: Using Fault Injection"
+        path: sections/section-050/quiz.yaml
+        question_count: 10
+        pass_score: 70
 
   - id: module-060
     title: "Configuring Ingress And Egress Traffic — Ingress"
@@ -1146,6 +1466,7 @@ modules:
         title: "Knowledge Check: Expose A Service With An Istio Ingress Gateway"
         path: sections/section-060/module-01/quiz.yaml
         question_count: 8
+        pass_score: 70
 
       - type: reading
         title: "Expose A Service With A Kubernetes Ingress"
@@ -1207,6 +1528,7 @@ modules:
         title: "Knowledge Check: Expose A Service With A Kubernetes Ingress"
         path: sections/section-060/module-02/quiz.yaml
         question_count: 7
+        pass_score: 70
 
       - type: reading
         title: "Ingress With The Kubernetes Gateway API"
@@ -1282,6 +1604,56 @@ modules:
         title: "Knowledge Check: Ingress With The Kubernetes Gateway API"
         path: sections/section-060/module-03/quiz.yaml
         question_count: 10
+        pass_score: 70
+
+      - type: reading
+        title: "Secure An Istio Ingress Gateway With TLS"
+        path: sections/section-060/module-04/course.md
+      - type: reading
+        title: "Terminate HTTPS With tls.mode SIMPLE And credentialName"
+        path: sections/section-060/module-04/course-01-terminate-https-with-tls-mode-simple-and-credentialname.md
+      - type: reading
+        title: "Redirect HTTP To HTTPS And Serve Several Hosts"
+        path: sections/section-060/module-04/course-02-redirect-http-to-https-and-serve-several-hosts.md
+      - type: lab
+        title: "Secure An Ingress Gateway With HTTPS And A Redirect Lab"
+        path: sections/section-060/module-04/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 30m
+        topic: ingress-egress
+        task_kind: build
+        tags: [gateway, ingress-gateway, tls-termination, https-redirect, proxy-config]
+        learning_goals:
+          - Create a TLS secret in the gateway namespace and reference it with credentialName
+          - Terminate HTTPS on the ingress gateway with tls.mode SIMPLE
+          - Redirect plain HTTP to HTTPS with httpsRedirect
+        resources:
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+          - name: "Secure Gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/
+      - type: reading
+        title: "Require Client Certificates With MUTUAL And Pass Encrypted Traffic Through With PASSTHROUGH"
+        path: sections/section-060/module-04/course-03-require-client-certificates-with-mutual-and-pass-encrypted-traffic-through-with-passthrough.md
+      - type: lab
+        title: "Fix A Secret In The Wrong Namespace And A Passthrough Mismatch Lab"
+        path: sections/section-060/module-04/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 30m
+        topic: ingress-egress
+        task_kind: troubleshooting
+        tags: [gateway, tls-termination, tls-passthrough, virtualservice, proxy-config]
+        learning_goals:
+          - Find a TLS secret that the gateway cannot read from its WARMING status
+          - Route a PASSTHROUGH server with a tls match and sniHosts instead of an http rule
+        resources:
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+          - name: "Ingress gateways without TLS termination"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-sni-passthrough/
+      - type: reading
+        title: "Summary"
+        path: sections/section-060/module-04/course-04-summary.md
 
       - type: lab
         title: "Expose Three Services Through Three Ingress APIs Capstone Lab"
@@ -1301,6 +1673,29 @@ modules:
             url: https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/
           - name: "Istio Gateway API task"
             url: https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
+      - type: lab
+        title: "Build A Secure Edge With HTTPS, A Redirect And Header Routing Capstone Lab"
+        path: sections/section-060/capstone/labs/lab-02
+        difficulty: advanced
+        estimated_duration: 45m
+        topic: ingress-egress
+        task_kind: build
+        tags: [gateway, tls-termination, https-redirect, destinationrule, header-matching, proxy-config]
+        learning_goals:
+          - Terminate HTTPS and redirect HTTP on one Gateway
+          - Route by path and by header to subsets of one service
+          - Prove the served certificate and each route with real requests
+        resources:
+          - name: "Gateway reference"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+          - name: "Secure Gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/
+
+      - type: quiz
+        title: "Section Quiz: Configuring Ingress And Egress Traffic — Ingress"
+        path: sections/section-060/quiz.yaml
+        question_count: 10
+        pass_score: 70
 
   - id: module-070
     title: "Connecting In-Mesh Workloads To External Workloads And Services"
@@ -1376,6 +1771,7 @@ modules:
         title: "Knowledge Check: Control External Access With ServiceEntry"
         path: sections/section-070/module-01/quiz.yaml
         question_count: 9
+        pass_score: 70
 
       - type: reading
         title: "TLS Origination For External Services"
@@ -1436,6 +1832,7 @@ modules:
         title: "Knowledge Check: TLS Origination For External Services"
         path: sections/section-070/module-02/quiz.yaml
         question_count: 8
+        pass_score: 70
 
       - type: reading
         title: "Add External Workloads With WorkloadEntry"
@@ -1498,6 +1895,7 @@ modules:
         title: "Knowledge Check: Add External Workloads With WorkloadEntry"
         path: sections/section-070/module-03/quiz.yaml
         question_count: 8
+        pass_score: 70
 
       - type: lab
         title: "Register An External API And A Virtual Machine In A REGISTRY_ONLY Mesh Capstone Lab"
@@ -1517,6 +1915,12 @@ modules:
             url: https://istio.io/latest/docs/reference/config/networking/workload-entry/
           - name: "Egress TLS origination task"
             url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/
+
+      - type: quiz
+        title: "Section Quiz: Connecting In-Mesh Workloads To External Workloads And Services"
+        path: sections/section-070/quiz.yaml
+        question_count: 10
+        pass_score: 70
 
   - id: module-080
     title: "Configuring Ingress And Egress Traffic — Egress"
@@ -1597,6 +2001,7 @@ modules:
         title: "Knowledge Check: Route External Traffic Through An Egress Gateway"
         path: sections/section-080/module-01/quiz.yaml
         question_count: 10
+        pass_score: 70
 
       - type: reading
         title: "TLS Origination At The Egress Gateway"
@@ -1659,6 +2064,7 @@ modules:
         title: "Knowledge Check: TLS Origination At The Egress Gateway"
         path: sections/section-080/module-02/quiz.yaml
         question_count: 9
+        pass_score: 70
 
       - type: lab
         title: "Route Two External Hosts Through One Egress Gateway Capstone Lab"
@@ -1678,3 +2084,15 @@ modules:
             url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-gateway-tls-origination/
           - name: "Gateway reference"
             url: https://istio.io/latest/docs/reference/config/networking/gateway/
+
+      - type: quiz
+        title: "Section Quiz: Configuring Ingress And Egress Traffic — Egress"
+        path: sections/section-080/quiz.yaml
+        question_count: 10
+        pass_score: 70
+
+      - type: quiz
+        title: "Final Domain Quiz: Traffic Management"
+        path: sections/final-domain-quiz.yaml
+        question_count: 30
+        pass_score: 70

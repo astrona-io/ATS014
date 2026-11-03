@@ -4,7 +4,7 @@ This section is about failure. Every pod in the mesh depends on services it does
 
 Resilience features are what the **calling** side can do about that, without any change to the service it calls. It can stop waiting after a set time (a timeout), send a failed request again (a retry), reject requests at once instead of queueing work that cannot finish (circuit breaking), remove a failing endpoint for a while (outlier detection), and prefer endpoints in a locality that still works (locality failover).
 
-All four modules configure the **calling** side. Nothing here requires the backend to change, and nothing here protects the server. A connection pool limit applies per client, and an ejection is the decision of one proxy only. The exam keeps coming back to that point.
+All five modules configure the **calling** side. Nothing here requires the backend to change, and nothing here protects the server. A connection pool limit applies per client, and an ejection is the decision of one proxy only. The exam keeps coming back to that point.
 
 The modules build on each other, and so do their failure modes. Timeouts and retries share one time budget. Circuit breaking limits the connection pool that retries can fill up. Outlier detection is what marks an endpoint as failing, and locality failover cannot work without it. Together they stop one failing service from becoming a single point of failure for the whole application.
 
@@ -31,6 +31,9 @@ The modules build on each other, and so do their failure modes. Timeouts and ret
 - That locality preference is on by default but only takes effect when `outlierDetection` is set, and that `localityLbSetting` exists to change it.
 - `distribute` versus `failover`, their mutual exclusion, and why `failover` is region-level.
 - **The section's headline fact:** locality failover has no health checker of its own, so without `outlierDetection` it never fires.
+- `connectionPool.tcp.connectTimeout` as the limit on opening a connection (`503` with `UF`), unlike the route `timeout` (`504` with `UT`).
+- `idleTimeout`, `maxConnectionDuration` and `tcpKeepalive`, and where each appears in the cluster JSON.
+- `spec.trafficDistribution: PreferClose` on a Service, and why failover still needs `outlierDetection`.
 - Reading it all back with `istioctl proxy-config` and `pilot-agent request GET stats`.
 
 ---
@@ -89,9 +92,20 @@ Work through the modules in this order. Each part teaches one idea. A graded lab
    - Lab: Fail Over From A Failing Zone With Outlier Detection Lab
 4. Summary
 
+### Connection Timeouts, Keepalive And Nearby Endpoints
+
+3 parts and 2 labs:
+
+1. Limit How Long A Connection Attempt Waits
+2. Idle, Keepalive And Maximum Connection Age
+   - Lab: Set Connection Timeout And Keepalive On A Host Lab
+3. Prefer Nearby Endpoints With trafficDistribution
+   - Lab: Keep Requests In The Client's Zone With trafficDistribution Lab
+4. Summary
+
 ### Capstone
 
-The section ends with a capstone lab that uses everything in it: **Combine Timeouts, Retries, Circuit Breaking And Outlier Detection Capstone Lab**.
+The section ends with two capstone labs that use everything in it: **Combine Timeouts, Retries, Circuit Breaking And Outlier Detection Capstone Lab**, and **Combine Connection Settings, Timeouts, Retries, Outlier Detection And PreferClose Capstone Lab**.
 
 ---
 

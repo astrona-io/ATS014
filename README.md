@@ -13,7 +13,7 @@ The repository has four layers:
 | **Manifest** | `astrona.yaml` | The course outline the platform reads — every reading and lab, in order |
 | **Reading** | `sections/section-0N0/module-0M/` | A short landing page, ordered parts that teach one idea each with hands-on steps, and a summary |
 | **Practice** | `.../module-0M/labs/lab-0N/` and `.../playground/` | Graded labs placed right after the part they practise, and one ungraded sandbox per module |
-| **Integration** | `sections/section-0N0/capstone/labs/lab-01/` | One graded capstone per section, combining that section's modules |
+| **Integration** | `sections/section-0N0/capstone/labs/lab-01/` | Graded capstones per section, combining that section's modules (`lab-01`, plus `lab-02` in sections 010, 020, 030, 040 and 060) |
 
 How to work through a module: read its parts with its playground running alongside. When a part ends with **Your mission**, pause the playground and take that lab without looking at the solution. The last page of the module closes it and removes the playground. Finish each section with its capstone, a bigger graded lab that combines everything in that section.
 
@@ -33,7 +33,7 @@ The Traffic Management domain is seven topics. Every section below is named afte
 | --- | --- | --- |
 | 1 | Configuring Ingress and Egress Traffic | [060 — ingress](sections/section-060) and [080 — egress](sections/section-080) |
 | 2 | Configuring Routing within a Service Mesh | [010](sections/section-010) |
-| 3 | Defining Traffic Policies with Destination Rules | [030](sections/section-030) |
+| 4 | Defining Traffic Policies with Destination Rules | [030](sections/section-030) |
 | 4 | Configuring Traffic Shifting | [020](sections/section-020) |
 | 5 | Connecting In-Mesh Workloads to External Workloads and Services | [070](sections/section-070) |
 | 6 | Using Resilience Features (circuit breaking, failover, outlier detection, timeouts, retries) | [040](sections/section-040) |
@@ -47,17 +47,17 @@ Section [000](sections/section-000) is not an exam topic. It covers the basics t
 | --- | --- | --- | --- |
 | [000](sections/section-000) | Mesh Foundations | 1 | *prerequisite — not an exam item* |
 | [010](sections/section-010) | Configuring Routing Within A Service Mesh | 3 | Configuring Routing within a Service Mesh |
-| [020](sections/section-020) | Configuring Traffic Shifting | 2 | Configuring Traffic Shifting |
-| [030](sections/section-030) | Defining Traffic Policies With Destination Rules | 1 | Defining Traffic Policies with Destination Rules |
-| [040](sections/section-040) | Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries) | 4 | Using Resilience Features |
+| [020](sections/section-020) | Configuring Traffic Shifting | 3 | Configuring Traffic Shifting |
+| [030](sections/section-030) | Defining Traffic Policies With Destination Rules | 2 | Defining Traffic Policies with Destination Rules |
+| [040](sections/section-040) | Using Resilience Features (Circuit Breaking, Failover, Outlier Detection, Timeouts, Retries) | 5 | Using Resilience Features |
 | [050](sections/section-050) | Using Fault Injection | 1 | Using Fault Injection |
-| [060](sections/section-060) | Configuring Ingress And Egress Traffic — Ingress | 3 | Configuring Ingress and Egress Traffic |
+| [060](sections/section-060) | Configuring Ingress And Egress Traffic — Ingress | 4 | Configuring Ingress and Egress Traffic |
 | [070](sections/section-070) | Connecting In-Mesh Workloads To External Workloads And Services | 3 | Connecting In-Mesh Workloads to External Workloads and Services |
 | [080](sections/section-080) | Configuring Ingress And Egress Traffic — Egress | 2 | Configuring Ingress and Egress Traffic |
 
-**20 modules · 96 parts · 48 graded labs · 8 capstones · 20 playgrounds.**
+**25 modules · 108 parts · 58 graded module labs · 13 capstones · 25 playgrounds · 9 section quizzes and a final quiz of 30 questions.**
 
-The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml): 258 entries across the introduction and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
+The reading pages and labs are listed in [`astrona.yaml`](astrona.yaml): 272 entries across the introduction and the 9 sections, in the order a learner should work through them. Lab solutions (`solution.md`) are left out on purpose, so learners try each lab before they see the answer.
 
 Sections are ordered so each needs only what came before. Section 000 is foundations — what a sidecar is, how `istiod` programs it, and how to read a proxy's live configuration — because every section after it assumes all three. `VirtualService` and `DestinationRule` are introduced first because everything else is a field on one of them; `ServiceEntry` (070) precedes the egress gateway (080) that depends on it.
 
@@ -73,17 +73,22 @@ Each module is a landing page, its ordered parts and a closing page. The landing
 | 010-01 | [Route Requests Within The Mesh](sections/section-010/module-01/course.md) | 12 | 5 |
 | 010-02 | [Scope Proxy Configuration With The Sidecar Resource](sections/section-010/module-02/course.md) | 4 | 2 |
 | 010-03 | [Apply And Remove Traffic Rules Safely](sections/section-010/module-03/course.md) | 2 | 1 |
+| 010-04 | [Compose And Scope VirtualServices With delegate And exportTo](sections/section-010/module-04/course.md) | 3 | 2 |
 | 020-01 | [Shift Traffic With Weighted Routing](sections/section-020/module-01/course.md) | 5 | 2 |
 | 020-02 | [Mirror Live Traffic To A Shadow Service](sections/section-020/module-02/course.md) | 4 | 2 |
+| 020-03 | [Shift TCP Connections With Weights](sections/section-020/module-03/course.md) | 3 | 2 |
 | 030-01 | [Load Balancer Policy And Session Affinity](sections/section-030/module-01/course.md) | 5 | 3 |
+| 030-02 | [TLS Settings In A DestinationRule](sections/section-030/module-02/course.md) | 3 | 2 |
 | 040-01 | [Timeouts And Retries](sections/section-040/module-01/course.md) | 6 | 3 |
 | 040-02 | [Circuit Breaking With Connection Pool Limits](sections/section-040/module-02/course.md) | 3 | 2 |
 | 040-03 | [Outlier Detection And Endpoint Ejection](sections/section-040/module-03/course.md) | 4 | 2 |
 | 040-04 | [Locality Load Balancing And Failover](sections/section-040/module-04/course.md) | 3 | 3 |
+| 040-05 | [Connection Timeouts, Keepalive And Nearby Endpoints](sections/section-040/module-05/course.md) | 3 | 2 |
 | 050-01 | [Fault Injection With Delays And Aborts](sections/section-050/module-01/course.md) | 4 | 3 |
 | 060-01 | [Expose A Service With An Istio Ingress Gateway](sections/section-060/module-01/course.md) | 4 | 3 |
 | 060-02 | [Expose A Service With A Kubernetes Ingress](sections/section-060/module-02/course.md) | 4 | 2 |
 | 060-03 | [Ingress With The Kubernetes Gateway API](sections/section-060/module-03/course.md) | 4 | 3 |
+| 060-04 | [Secure An Istio Ingress Gateway With TLS](sections/section-060/module-04/course.md) | 3 | 2 |
 | 070-01 | [Control External Access With ServiceEntry](sections/section-070/module-01/course.md) | 5 | 2 |
 | 070-02 | [TLS Origination For External Services](sections/section-070/module-02/course.md) | 4 | 2 |
 | 070-03 | [Add External Workloads With WorkloadEntry](sections/section-070/module-03/course.md) | 4 | 2 |

@@ -1,0 +1,255 @@
+# Knowledge check for section 010. Listed in astrona.yaml as a `type: quiz` entry after the last capstone lab. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-010
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-010
+  title: "Configuring Routing Within A Service Mesh"
+questions:
+  - id: ats014-010-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain why requests to a Service with several versions land on a mix of pods when no routing rule exists."
+    source_readings:
+      - sections/section-010/module-01/course-01-see-where-requests-go-without-routing-rules.md
+    prompt: |-
+      No `DestinationRule` and no `VirtualService` exist for `scout`, which has pods for v1, v2 and v3 behind one Service. What happens to requests from `shuttle`?
+    options:
+      - id: a
+        text: "They are spread over the pods of all three versions, because the Service selects pods by one label such as `app=scout`."
+        explanation: "Correct. A Service cannot read a request, so the client's proxy spreads requests over every endpoint."
+      - id: b
+        text: "They all go to v1, the oldest version."
+        explanation: "Istio has no notion of an oldest version. Nothing selects v1."
+      - id: c
+        text: "They are refused with `404 NR`."
+        explanation: "`NR` appears when a route table has no matching route. With no rules, the Service still has its default behaviour."
+      - id: d
+        text: "They go to the version with the most pods."
+        explanation: "Replica count does not pick a version. Each endpoint can receive requests."
+    correct_option: a
+    explanation: "Without Istio rules the Service behaviour applies, and the client proxy chooses among all endpoints."
+
+  - id: ats014-010-q02
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Say what a DestinationRule does on its own, and what it needs to change where requests go."
+    source_readings:
+      - sections/section-010/module-01/course-02-define-subsets-with-a-destinationrule.md
+      - sections/section-010/module-01/course-03-route-requests-with-a-virtualservice.md
+    prompt: |-
+      Lieutenant Data applies a `DestinationRule` for `scout` with the subsets `v1`, `v2` and `v3`, and nothing else. What changes for requests from `shuttle`?
+    options:
+      - id: a
+        text: "All requests go to v1, the first subset in the list."
+        explanation: "The order of subsets does not choose a destination."
+      - id: b
+        text: "Requests are split equally between the three subsets."
+        explanation: "A subset receives requests only when a route names it."
+      - id: c
+        text: "Nothing moves yet, because a `DestinationRule` only names groups of pods and a `VirtualService` must send requests to them."
+        explanation: "Correct. Each subset becomes a cluster in the proxy, but nothing routes to it until a `VirtualService` names it."
+      - id: d
+        text: "Requests fail with `503 UH`."
+        explanation: "`UH` appears when a cluster has no endpoints. These subsets select pods."
+    correct_option: c
+    explanation: "A `DestinationRule` alone moves no traffic. The `VirtualService` makes the choice."
+
+  - id: ats014-010-q03
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Place a catch-all rule correctly and say what a catch-all that comes first does."
+    source_readings:
+      - sections/section-010/module-01/course-07-order-routing-rules-and-add-a-catch-all.md
+    prompt: |-
+      A `VirtualService` for `scout` has a rule with no `match` as its first rule, and a header rule below it. What does `istioctl analyze` report, and what do requests with the header get?
+    options:
+      - id: a
+        text: "`IST0101`: the header rule names a subset that does not exist."
+        explanation: "`IST0101` is about a missing subset or host. The problem here is the order of rules."
+      - id: b
+        text: "Nothing, and the header rule still wins because it is more specific."
+        explanation: "Istio does not rank rules by specificity. It reads them from the top."
+      - id: c
+        text: "`IST0173`: the subset selects no pods."
+        explanation: "`IST0173` is about a subset with no pods, not about rule order."
+      - id: d
+        text: "`IST0130`: the header rule is never used, and every request follows the first rule."
+        explanation: "Correct. The first rule that matches wins, and a rule with no `match` matches everything."
+    correct_option: d
+    explanation: "Put the most specific rule first and the catch-all last. A rule with no `match` placed first hides every rule below it."
+
+  - id: ats014-010-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Use regex, exact and prefix matches correctly, including how a regex is applied."
+    source_readings:
+      - sections/section-010/module-01/course-04-match-text-with-exact-prefix-and-regex.md
+    prompt: |-
+      A rule uses `regex: "v2"` on the header `x-release`. A request arrives with `x-release: v2-beta`. Does the rule match?
+    options:
+      - id: a
+        text: "Yes. A regex matches when any part of the value fits."
+        explanation: "That is how a search works. A `regex` match in a `VirtualService` must fit the whole value."
+      - id: b
+        text: "No. A `regex` must fit the whole value, and `v2` does not fit `v2-beta`."
+        explanation: "Correct. Istio uses RE2 and the expression must match the whole header value."
+      - id: c
+        text: "Yes, because `regex` works like `prefix`."
+        explanation: "`prefix` compares the start of the text. `regex` needs the full value to fit."
+      - id: d
+        text: "It depends on the case of the letters in the header name."
+        explanation: "Header names ignore case. This question is about the value."
+    correct_option: b
+    explanation: "Write `v2.*` if you also want `v2-beta` to match."
+
+  - id: ats014-010-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Combine match conditions with AND and OR and say which one a YAML layout produces."
+    source_readings:
+      - sections/section-010/module-01/course-05-combine-match-conditions-with-and-or-or.md
+    prompt: |-
+      One rule has a `match` list with two `-` items: the first holds `headers` for `end-user: jason`, and the second holds `uri.prefix: /ratings`. Which requests does the rule match?
+    options:
+      - id: a
+        text: "Only requests that carry the header and whose path starts with `/ratings`."
+        explanation: "That is the result of putting both conditions in one `-` item."
+      - id: b
+        text: "Only requests with the header, because it is listed first."
+        explanation: "The order inside the list does not make one item stronger."
+      - id: c
+        text: "Requests that carry the header, or whose path starts with `/ratings`."
+        explanation: "Correct. Separate `-` items are combined with OR. Conditions inside one item are combined with AND."
+      - id: d
+        text: "No request, because two items in one list are rejected."
+        explanation: "Istio accepts a list of several items."
+    correct_option: c
+    explanation: "AND comes from conditions inside one `-` item, and OR comes from separate `-` items."
+
+  - id: ats014-010-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Say how the root match narrows the delegate match and why a delegate has no hosts."
+    source_readings:
+      - sections/section-010/module-04/course-01-split-a-route-table-with-a-delegate-virtualservice.md
+    prompt: |-
+      A root rule matches `prefix: /delay` and points at a delegate. The delegate rule matches `prefix: /delay/`. Which requests reach the delegate rule?
+    options:
+      - id: a
+        text: "Requests that satisfy both matches, so the path starts with `/delay/`."
+        explanation: "Correct. Istio combines the two matches. The delegate can only narrow the set the root passes on."
+      - id: b
+        text: "Every request whose path starts with `/delay`, because the root decides alone."
+        explanation: "The delegate's own `match` is combined with the root's, so it narrows the set further."
+      - id: c
+        text: "Only requests that the root matches with `exact`."
+        explanation: "The root used `prefix`. The type of match does not turn on exact matching."
+      - id: d
+        text: "No request, because a delegate cannot hold a `match`."
+        explanation: "A delegate rule can hold a `match`. It has no `hosts`, and it holds `http` rules only."
+    correct_option: a
+    explanation: "The route table shows the merge: the delay row has the narrower match `/delay/*`."
+
+  - id: ats014-010-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Match on sourceNamespace, sourceLabels and port to make a rule depend on the sender."
+    source_readings:
+      - sections/section-010/module-04/course-01-split-a-route-table-with-a-delegate-virtualservice.md
+      - sections/section-010/module-01/course-03-route-requests-with-a-virtualservice.md
+    prompt: |-
+      A rule must apply only to requests that come from pods in the namespace `dock`. Which field does the rule's `match` use?
+    options:
+      - id: a
+        text: "`exportTo: [\"dock\"]`"
+        explanation: "`exportTo` controls which namespaces receive the object. It is not a match field."
+      - id: b
+        text: "`gateways: [\"dock\"]`"
+        explanation: "`gateways` names gateways or `mesh`, not namespaces of clients."
+      - id: c
+        text: "`namespace: dock`"
+        explanation: "This is not a field of `match` in a `VirtualService`."
+      - id: d
+        text: "`sourceNamespace: dock`"
+        explanation: "Correct. `sourceNamespace` matches the namespace of the calling workload."
+    correct_option: d
+    explanation: "`sourceLabels` matches the labels of the calling pod, `sourceNamespace` its namespace, and `port` the destination port."
+
+  - id: ats014-010-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Name what a delegate VirtualService cannot do."
+    source_readings:
+      - sections/section-010/module-04/course-01-split-a-route-table-with-a-delegate-virtualservice.md
+    prompt: |-
+      A team writes a delegate `VirtualService` that has a `tcp` route and a rule that names a second delegate. What happens?
+    options:
+      - id: a
+        text: "Both work, because delegation is recursive."
+        explanation: "Delegation is one level only."
+      - id: b
+        text: "Neither works. A delegate holds `http` rules only, and it can be only one level deep."
+        explanation: "Correct. The root points at delegates and the chain ends there. `tcp` and `tls` routes are not accepted in a delegate."
+      - id: c
+        text: "The `tcp` route works and the second delegate is ignored."
+        explanation: "A delegate cannot hold `tcp` routes at all."
+      - id: d
+        text: "Both work, but only after the delegate gets a `hosts` field."
+        explanation: "Adding `hosts` makes it a normal object that owns the host, and it does not allow either feature."
+    correct_option: b
+    explanation: "The `delegate` field exists only in `http` rules, and the delegate has no hosts and no gateways."
+
+  - id: ats014-010-q09
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Prove from a second namespace that a VirtualService is visible and its DestinationRule is not."
+    source_readings:
+      - sections/section-010/module-04/course-02-limit-who-sees-a-virtualservice-or-destinationrule-with-exportto.md
+    prompt: |-
+      A `VirtualService` for `probe` is exported to all namespaces and routes `/hostname` to subset `v2`. The `DestinationRule` with the subsets has `exportTo: ["."]`. The client in `starfleet` gets `probe-v2`. What does the client in `dock` get, and with what log flag?
+    options:
+      - id: a
+        text: "`503` with the flag `NC`: the route names a subset for which the proxy has no cluster."
+        explanation: "Correct. The `dock` proxy got the `VirtualService` but not the subsets."
+      - id: b
+        text: "`404` with the flag `NR`, because the route table is empty."
+        explanation: "The `dock` proxy has a route, so `NR` does not apply."
+      - id: c
+        text: "`200` from a random pod, because the subset is ignored."
+        explanation: "A route that names a subset the proxy cannot build fails. It does not fall back."
+      - id: d
+        text: "`503` with the flag `UH`, because the subset has no pods."
+        explanation: "The subset selects pods in `starfleet`. The failure is that the proxy has no cluster."
+    correct_option: a
+    explanation: "Give the `VirtualService` and the `DestinationRule` the same `exportTo`."
+
+  - id: ats014-010-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Explain what exportTo does and does not control."
+    source_readings:
+      - sections/section-010/module-04/course-02-limit-who-sees-a-virtualservice-or-destinationrule-with-exportto.md
+    prompt: |-
+      A `VirtualService` in `starfleet` has `exportTo: ["."]`. A client in `dock` calls `probe.starfleet.svc.cluster.local`. What is true?
+    options:
+      - id: a
+        text: "The client is refused, because `exportTo` is access control."
+        explanation: "`exportTo` removes configuration from proxies. It does not deny requests."
+      - id: b
+        text: "The client receives the object after a few seconds anyway."
+        explanation: "`\".\"` keeps it in the object's own namespace."
+      - id: c
+        text: "The client can still reach the Service. The proxy in `dock` only lacks the routing rules."
+        explanation: "Correct. `exportTo` hides configuration and does not block requests. An `AuthorizationPolicy` denies requests."
+      - id: d
+        text: "The client's proxy receives an error object that names the rule."
+        explanation: "No such object exists. The proxy simply has no such rule."
+    correct_option: c
+    explanation: "Use `exportTo` to limit who receives configuration, and use an `AuthorizationPolicy` to limit who may call."

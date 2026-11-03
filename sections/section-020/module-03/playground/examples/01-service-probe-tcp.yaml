@@ -1,0 +1,16 @@
+# A second Service for the same probe pods. The port name "tcp" makes Istio
+# treat it as plain TCP, so a VirtualService tcp route applies.
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-tcp
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  selector:
+    app: probe
+  ports:
+  - name: tcp
+    port: 8000
+    targetPort: 8080

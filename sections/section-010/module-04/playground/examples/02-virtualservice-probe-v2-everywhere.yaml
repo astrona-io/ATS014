@@ -1,0 +1,26 @@
+# Routes /hostname to subset v2. The VirtualService is visible in every namespace.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  hosts:
+  - probe
+  exportTo:
+  - "*"
+  http:
+  - match:
+    - uri:
+        prefix: /hostname
+    route:
+    - destination:
+        host: probe
+        subset: v2
+        port:
+          number: 8000
+  - route:
+    - destination:
+        host: probe
+        port:
+          number: 8000
