@@ -1,0 +1,63 @@
+---
+schema_version: 1
+course_id: ATS014
+status: draft
+banks:
+- id: ats014-000
+  path: sections/section-000/quiz.yaml
+  question_count: 10
+  covered_sections:
+  - section-000
+- id: ats014-010
+  path: sections/section-010/quiz.yaml
+  question_count: 10
+  covered_sections:
+  - section-010
+- id: ats014-020
+  path: sections/section-020/quiz.yaml
+  question_count: 10
+  covered_sections:
+  - section-020
+- id: ats014-030
+  path: sections/section-030/quiz.yaml
+  question_count: 10
+  covered_sections:
+  - section-030
+- id: ats014-040
+  path: sections/section-040/quiz.yaml
+  question_count: 10
+  covered_sections:
+  - section-040
+- id: ats014-050
+  path: sections/section-050/quiz.yaml
+  question_count: 10
+  covered_sections:
+  - section-050
+- id: ats014-060
+  path: sections/section-060/quiz.yaml
+  question_count: 10
+  covered_sections:
+  - section-060
+- id: ats014-070
+  path: sections/section-070/quiz.yaml
+  question_count: 10
+  covered_sections:
+  - section-070
+- id: ats014-080
+  path: sections/section-080/quiz.yaml
+  question_count: 10
+  covered_sections:
+  - section-080
+- id: ats014-final
+  path: sections/final-domain-quiz.yaml
+  question_count: 30
+  covered_sections:
+  - section-000
+  - section-010
+  - section-020
+  - section-030
+  - section-040
+  - section-050
+  - section-060
+  - section-070
+  - section-080

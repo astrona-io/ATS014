@@ -1,6 +1,6 @@
 # Summary
 
-This module was about *when* your rules reach the proxies, not what they say. Correct objects can still break requests if they reach the proxies in the wrong order.
+The order in which rules reach the proxies matters as much as what the rules say. Correct objects can still break requests if they reach the proxies in the wrong order.
 
 The `VirtualService` and the `DestinationRule` are read by the sidecar proxy of the pod that **sends** the request. At the edge of the mesh, a gateway proxy reads them instead. `istiod` pushes each object to every proxy over xDS, and for a short time some proxies have the new configuration while others still have the old one.
 

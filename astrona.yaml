@@ -420,6 +420,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-010/module-04/course-04-summary.md
+      - type: quiz
+        title: "Knowledge Check: Compose And Scope VirtualServices With delegate And exportTo"
+        path: sections/section-010/module-04/quiz.yaml
+        question_count: 6
+        pass_score: 70
 
       - type: lab
         title: "Route With Subsets And Scope Proxies With A Sidecar Capstone Lab"
@@ -649,6 +654,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-020/module-03/course-04-summary.md
+      - type: quiz
+        title: "Knowledge Check: Shift TCP Connections With Weights"
+        path: sections/section-020/module-03/quiz.yaml
+        question_count: 6
+        pass_score: 70
 
       - type: lab
         title: "Combine A Header Rule, A Weighted Canary And A Mirror Capstone Lab"
@@ -834,6 +844,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-030/module-02/course-04-summary.md
+      - type: quiz
+        title: "Knowledge Check: TLS Settings In A DestinationRule"
+        path: sections/section-030/module-02/quiz.yaml
+        question_count: 6
+        pass_score: 70
 
       - type: lab
         title: "Combine Session Affinity With Traffic Mirroring Capstone Lab"
@@ -1218,6 +1233,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-040/module-05/course-04-summary.md
+      - type: quiz
+        title: "Knowledge Check: Connection Timeouts, Keepalive And Nearby Endpoints"
+        path: sections/section-040/module-05/quiz.yaml
+        question_count: 6
+        pass_score: 70
 
       - type: lab
         title: "Combine Timeouts, Retries, Circuit Breaking And Outlier Detection Capstone Lab"
@@ -1654,6 +1674,11 @@ modules:
       - type: reading
         title: "Summary"
         path: sections/section-060/module-04/course-04-summary.md
+      - type: quiz
+        title: "Knowledge Check: Secure An Istio Ingress Gateway With TLS"
+        path: sections/section-060/module-04/quiz.yaml
+        question_count: 6
+        pass_score: 70
 
       - type: lab
         title: "Expose Three Services Through Three Ingress APIs Capstone Lab"

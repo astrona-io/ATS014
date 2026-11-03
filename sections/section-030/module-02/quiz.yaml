@@ -1,0 +1,154 @@
+# Knowledge check for section 030, module 02. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-030-02
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: module
+  id: section-030/module-02
+  title: TLS Settings In A DestinationRule
+questions:
+- id: ats014-030-02-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Tell the four client TLS modes apart.
+  source_readings:
+  - sections/section-030/module-02/course-01-client-tls-modes-in-trafficpolicy-tls.md
+  prompt: Which `tls.mode` opens an mTLS connection with the certificate that `istiod`
+    gave to the proxy?
+  options:
+  - id: a
+    text: "`ISTIO_MUTUAL`"
+    explanation: Correct. This mode needs no certificate fields.
+  - id: b
+    text: "`SIMPLE`"
+    explanation: "`SIMPLE` opens TLS and sends no client certificate."
+  - id: c
+    text: "`MUTUAL`"
+    explanation: "`MUTUAL` sends a client certificate that you provide as files."
+  - id: d
+    text: "`DISABLE`"
+    explanation: "`DISABLE` opens a plain connection."
+  correct_option: a
+  explanation: This mode needs no certificate fields.
+- id: ats014-030-02-q02
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain automatic mTLS.
+  source_readings:
+  - sections/section-030/module-02/course-01-client-tls-modes-in-trafficpolicy-tls.md
+  prompt: A `DestinationRule` has no `tls` block. What does the client proxy do?
+  options:
+  - id: a
+    text: It always opens a plain connection
+    explanation: Automatic mTLS is the default.
+  - id: b
+    text: It opens mTLS to endpoints that have a sidecar proxy and a plain connection
+      to the others
+    explanation: Correct. This is automatic mTLS.
+  - id: c
+    text: It always opens mTLS and fails for pods without a sidecar
+    explanation: It checks each endpoint.
+  - id: d
+    text: It waits for a `PeerAuthentication`
+    explanation: The client decision does not depend on the `PeerAuthentication`.
+  correct_option: b
+  explanation: This is automatic mTLS.
+- id: ats014-030-02-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Read the TLS mode in the cluster dump.
+  source_readings:
+  - sections/section-030/module-02/course-02-match-a-destination-that-requires-mtls.md
+  prompt: How does `istioctl proxy-config cluster -o json` show that the mode is `DISABLE`?
+  options:
+  - id: a
+    text: 'The transport socket shows `mode: DISABLE`'
+    explanation: The dump shows sockets, not the mode name.
+  - id: b
+    text: The cluster is missing from the output
+    explanation: The cluster exists; only the socket is missing.
+  - id: c
+    text: The transport socket `envoy.transport_sockets.tls` is missing
+    explanation: Correct. A plain connection needs no TLS transport socket.
+  - id: d
+    text: The cluster has the flag `UF`
+    explanation: "`UF` is a response flag, not a field of the dump."
+  correct_option: c
+  explanation: A plain connection needs no TLS transport socket.
+- id: ats014-030-02-q04
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Diagnose DISABLE against a STRICT workload.
+  source_readings:
+  - sections/section-030/module-02/course-02-match-a-destination-that-requires-mtls.md
+  prompt: 'A `PeerAuthentication` is `STRICT`, and a `DestinationRule` sets `tls.mode:
+    DISABLE` for the same workload. What does the client get?'
+  options:
+  - id: a
+    text: "`200`, because `DISABLE` wins over `STRICT`"
+    explanation: "`STRICT` always requires mTLS."
+  - id: b
+    text: A certificate error message
+    explanation: The symptom is a reset connection, not a certificate message.
+  - id: c
+    text: "`403` from an authorization policy"
+    explanation: No authorization policy is involved.
+  - id: d
+    text: "`503`, because the destination proxy resets the plain connection"
+    explanation: Correct. The destination accepts only mTLS, so it resets plain text.
+  correct_option: d
+  explanation: The destination accepts only mTLS, so it resets plain text.
+- id: ats014-030-02-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Predict what a subset inherits.
+  source_readings:
+  - sections/section-030/module-02/course-03-override-tls-per-subset-and-per-port.md
+  prompt: A subset sets only `loadBalancer`. The host sets `consistentHash` in `loadBalancer`
+    and sets `tls`. What does the subset get?
+  options:
+  - id: a
+    text: The host `consistentHash` merged into its `loadBalancer`
+    explanation: Nothing is merged inside a field.
+  - id: b
+    text: Its own `loadBalancer` without `consistentHash`, and the host `tls`
+    explanation: Correct. A field that the subset sets replaces the host field as
+      a whole; other fields are inherited.
+  - id: c
+    text: Nothing from the host
+    explanation: A subset keeps every top-level field it does not set.
+  - id: d
+    text: The host `loadBalancer` and no `tls`
+    explanation: The subset sets `loadBalancer`, so that field is its own.
+  correct_option: b
+  explanation: A field that the subset sets replaces the host field as a whole; other
+    fields are inherited.
+- id: ats014-030-02-q06
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Name the port that portLevelSettings uses.
+  source_readings:
+  - sections/section-030/module-02/course-03-override-tls-per-subset-and-per-port.md
+  prompt: Which port does `portLevelSettings` name?
+  options:
+  - id: a
+    text: The Service port
+    explanation: Correct. The setting is matched on the Service port.
+  - id: b
+    text: The container port
+    explanation: The container port does not appear in the `DestinationRule`.
+  - id: c
+    text: The node port
+    explanation: Node ports are not used in a `DestinationRule`.
+  - id: d
+    text: The port of the sidecar proxy listener
+    explanation: The listener port is internal to the proxy.
+  correct_option: a
+  explanation: The setting is matched on the Service port.

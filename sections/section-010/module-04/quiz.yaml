@@ -1,0 +1,160 @@
+# Knowledge check for section 010, module 04. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-010-04
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: module
+  id: section-010/module-04
+  title: Compose And Scope VirtualServices With delegate And exportTo
+questions:
+- id: ats014-010-04-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Say what a delegate VirtualService does not contain.
+  source_readings:
+  - sections/section-010/module-04/course-01-split-a-route-table-with-a-delegate-virtualservice.md
+  prompt: Which fields does a delegate `VirtualService` leave out?
+  options:
+  - id: a
+    text: "`hosts` and `gateways`"
+    explanation: Correct. The root object owns the host, so the delegate has neither.
+  - id: b
+    text: "`http` rules"
+    explanation: A delegate holds `http` rules only; that is its whole purpose.
+  - id: c
+    text: "`metadata.name`"
+    explanation: Every Kubernetes object has a name, and the root names the delegate
+      with it.
+  - id: d
+    text: "`route` destinations"
+    explanation: The delegate holds the `route` destinations that the root hands over.
+  correct_option: a
+  explanation: The root object owns the host, so the delegate has neither.
+- id: ats014-010-04-q02
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain how the root match and the delegate match combine.
+  source_readings:
+  - sections/section-010/module-04/course-01-split-a-route-table-with-a-delegate-virtualservice.md
+  prompt: 'A root rule has `match` with `uri.prefix: /api`. The delegate rule has
+    `match` with `uri.prefix: /api/v2`. Which requests reach the delegate rule?'
+  options:
+  - id: a
+    text: Every request that starts with `/api`
+    explanation: The delegate match still applies on top of the root match.
+  - id: b
+    text: Only requests with the exact path `/api/v2`
+    explanation: The match uses `prefix`, not `exact`.
+  - id: c
+    text: Requests that satisfy both matches, so paths that start with `/api/v2`
+    explanation: Correct. The root match narrows the delegate match, so a request
+      must satisfy both.
+  - id: d
+    text: No request, because a delegate cannot have a `match`
+    explanation: A delegate can have a `match`; the root match narrows it.
+  correct_option: c
+  explanation: The root match narrows the delegate match, so a request must satisfy
+    both.
+- id: ats014-010-04-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Use the default and the values of exportTo.
+  source_readings:
+  - sections/section-010/module-04/course-02-limit-who-sees-a-virtualservice-or-destinationrule-with-exportto.md
+  prompt: 'What does `exportTo: ["."]` on a `DestinationRule` do?'
+  options:
+  - id: a
+    text: It sends the object to every namespace
+    explanation: That is `"*"`, which is also the default.
+  - id: b
+    text: It sends the object only to proxies in the namespace of the object
+    explanation: Correct. The value `.` is the namespace of the object itself.
+  - id: c
+    text: It sends the object to no namespace
+    explanation: That is `"~"`.
+  - id: d
+    text: It blocks traffic from other namespaces
+    explanation: "`exportTo` limits configuration, not traffic."
+  correct_option: b
+  explanation: The value `.` is the namespace of the object itself.
+- id: ats014-010-04-q04
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Explain why a visible VirtualService with a hidden DestinationRule
+    fails.
+  source_readings:
+  - sections/section-010/module-04/course-02-limit-who-sees-a-virtualservice-or-destinationrule-with-exportto.md
+  prompt: 'A `VirtualService` is exported to namespace `dock` and routes to subset
+    `v2`. The `DestinationRule` that defines `v2` has `exportTo: ["."]`. What do requests
+    from `dock` get?'
+  options:
+  - id: a
+    text: "`200`, because the subset is found by pod labels"
+    explanation: Subsets exist only through the `DestinationRule`, which `dock` does
+      not receive.
+  - id: b
+    text: "`404`, because the route is missing"
+    explanation: The route exists; the cluster behind it does not.
+  - id: c
+    text: "`403`, because `exportTo` denies access"
+    explanation: "`exportTo` is not access control."
+  - id: d
+    text: "`503` with the response flag `NC`"
+    explanation: Correct. The proxy in `dock` has the route but no cluster for subset
+      `v2`.
+  correct_option: d
+  explanation: The proxy in `dock` has the route but no cluster for subset `v2`.
+- id: ats014-010-04-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Use sourceLabels and sourceNamespace in a match.
+  source_readings:
+  - sections/section-010/module-04/course-03-match-by-source-workload-source-namespace-and-port.md
+  prompt: What does `sourceLabels` in an `http` match compare?
+  options:
+  - id: a
+    text: The labels of the destination pod
+    explanation: Subsets select destination pods; `sourceLabels` selects senders.
+  - id: b
+    text: The labels of the destination Service
+    explanation: "`sourceLabels` looks at the sender only."
+  - id: c
+    text: The labels of the pod that sends the request
+    explanation: Correct. `sourceLabels` selects the sending workload.
+  - id: d
+    text: The labels of the namespace of the destination
+    explanation: "`sourceNamespace` compares the sender namespace by name, not labels
+      of the destination."
+  correct_option: c
+  explanation: "`sourceLabels` selects the sending workload."
+- id: ats014-010-04-q06
+  type: single_choice
+  difficulty: advanced
+  learning_objective: State what source matches cannot do.
+  source_readings:
+  - sections/section-010/module-04/course-03-match-by-source-workload-source-namespace-and-port.md
+  prompt: Why is a `sourceLabels` match not a way to deny access?
+  options:
+  - id: a
+    text: It works only for `tcp` routes
+    explanation: It is an `http` match field.
+  - id: b
+    text: It only chooses a route, and the sender controls its own labels
+    explanation: Correct. A route rule changes where a request goes; it does not authenticate
+      the sender.
+  - id: c
+    text: It is removed by `istiod` after a minute
+    explanation: "`istiod` keeps the match as long as the object exists."
+  - id: d
+    text: It needs a certificate on the sender
+    explanation: It uses pod labels, which are not proof of identity.
+  correct_option: b
+  explanation: A route rule changes where a request goes; it does not authenticate
+    the sender.

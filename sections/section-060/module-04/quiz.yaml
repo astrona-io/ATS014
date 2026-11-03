@@ -1,0 +1,153 @@
+# Knowledge check for section 060, module 04. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-060-04
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: module
+  id: section-060/module-04
+  title: Secure An Istio Ingress Gateway With TLS
+questions:
+- id: ats014-060-04-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Name the secret type for SIMPLE termination.
+  source_readings:
+  - sections/section-060/module-04/course-01-terminate-https-with-tls-mode-simple-and-credentialname.md
+  prompt: 'A `Gateway` server uses `tls.mode: SIMPLE`. Which secret does `credentialName`
+    name?'
+  options:
+  - id: a
+    text: A `kubernetes.io/tls` secret with `tls.crt` and `tls.key`, in the namespace
+      of the gateway pod
+    explanation: Correct. `istiod` reads it and sends it to the gateway over SDS.
+  - id: b
+    text: A secret in the namespace of the `Gateway` object
+    explanation: The secret must be next to the gateway pod.
+  - id: c
+    text: A `ConfigMap` with the certificate
+    explanation: Certificates and keys are secrets.
+  - id: d
+    text: A `Secret` with only `ca.crt`
+    explanation: "`ca.crt` is for `MUTUAL`."
+  correct_option: a
+  explanation: "`istiod` reads it and sends it to the gateway over SDS."
+- id: ats014-060-04-q02
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Prove which certificate the gateway sends.
+  source_readings:
+  - sections/section-060/module-04/course-01-terminate-https-with-tls-mode-simple-and-credentialname.md
+  prompt: Which command shows the certificate that the gateway sends for a host?
+  options:
+  - id: a
+    text: "`curl` without `--resolve`"
+    explanation: It does not set the SNI host name for a local port.
+  - id: b
+    text: "`openssl s_client -servername <host>`"
+    explanation: Correct. The server name is sent as SNI, so the gateway picks the
+      certificate.
+  - id: c
+    text: "`kubectl get gateway`"
+    explanation: It shows the object, not the certificate.
+  - id: d
+    text: "`istioctl analyze`"
+    explanation: It checks configuration, not the sent certificate.
+  correct_option: b
+  explanation: The server name is sent as SNI, so the gateway picks the certificate.
+- id: ats014-060-04-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Read the secret state in the gateway.
+  source_readings:
+  - sections/section-060/module-04/course-02-redirect-http-to-https-and-serve-several-hosts.md
+  prompt: "`istioctl proxy-config secret` shows `kubernetes://web-cert` as `WARMING`.
+    What does that mean?"
+  options:
+  - id: a
+    text: The certificate is valid and in use
+    explanation: That is `ACTIVE`.
+  - id: b
+    text: The certificate expires soon
+    explanation: The state does not show expiry.
+  - id: c
+    text: "`istiod` cannot find the secret, so the host cannot finish a TLS handshake"
+    explanation: Correct. `ACTIVE` means the gateway holds the certificate.
+  - id: d
+    text: The gateway pod is restarting
+    explanation: A restart is not shown this way.
+  correct_option: c
+  explanation: "`ACTIVE` means the gateway holds the certificate."
+- id: ats014-060-04-q04
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Configure an HTTP to HTTPS redirect.
+  source_readings:
+  - sections/section-060/module-04/course-02-redirect-http-to-https-and-serve-several-hosts.md
+  prompt: How do you answer plain HTTP requests with a redirect to HTTPS?
+  options:
+  - id: a
+    text: 'Set `tls.mode: SIMPLE` on port 80'
+    explanation: That would require TLS on port 80.
+  - id: b
+    text: Add a `redirect` to the `DestinationRule`
+    explanation: A `DestinationRule` does not redirect.
+  - id: c
+    text: 'Set `tls.mode: PASSTHROUGH` on port 443'
+    explanation: "`PASSTHROUGH` forwards encrypted traffic."
+  - id: d
+    text: 'Set `tls.httpsRedirect: true` on the server for port 80'
+    explanation: Correct. The gateway answers with a `301` to the same host and path.
+  correct_option: d
+  explanation: The gateway answers with a `301` to the same host and path.
+- id: ats014-060-04-q05
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Know what MUTUAL adds.
+  source_readings:
+  - sections/section-060/module-04/course-03-require-client-certificates-with-mutual-and-pass-encrypted-traffic-through-with-passthrough.md
+  prompt: 'What changes in the secret when you use `tls.mode: MUTUAL`?'
+  options:
+  - id: a
+    text: It needs no `tls.key`
+    explanation: The gateway still needs its own key.
+  - id: b
+    text: It needs a third key, `ca.crt`, to check the client certificate
+    explanation: Correct. The gateway checks the client certificate against that CA.
+  - id: c
+    text: It must be of type `kubernetes.io/tls`
+    explanation: It is a generic secret, because of the extra key.
+  - id: d
+    text: It moves to the namespace of the `Gateway`
+    explanation: It stays in the namespace of the gateway pod.
+  correct_option: b
+  explanation: The gateway checks the client certificate against that CA.
+- id: ats014-060-04-q06
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Route PASSTHROUGH traffic.
+  source_readings:
+  - sections/section-060/module-04/course-03-require-client-certificates-with-mutual-and-pass-encrypted-traffic-through-with-passthrough.md
+  prompt: 'A server uses `tls.mode: PASSTHROUGH`. Which `VirtualService` rule applies?'
+  options:
+  - id: a
+    text: An `http:` rule that matches `uri.prefix`
+    explanation: The gateway does not decrypt the request, so it cannot read the path.
+  - id: b
+    text: A `tcp:` rule with `weight` only
+    explanation: An encrypted connection has no `weight` to read; routing needs the
+      SNI match.
+  - id: c
+    text: A `tls:` rule that matches `sniHosts`
+    explanation: Correct. The gateway cannot read the request, so it routes by SNI.
+  - id: d
+    text: No rule, because `PASSTHROUGH` needs none
+    explanation: The `VirtualService` must route the connection to the backend.
+  correct_option: c
+  explanation: The gateway cannot read the request, so it routes by SNI.

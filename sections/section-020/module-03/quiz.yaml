@@ -1,0 +1,153 @@
+# Knowledge check for section 020, module 03. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-020-03
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: module
+  id: section-020/module-03
+  title: Shift TCP Connections With Weights
+questions:
+- id: ats014-020-03-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Name how Istio picks the protocol of a Service port.
+  source_readings:
+  - sections/section-020/module-03/course-01-write-a-weighted-tcp-route.md
+  prompt: A Service port is named `tcp` and has no `appProtocol`. How does the sidecar
+    proxy treat it?
+  options:
+  - id: a
+    text: As plain TCP, so the `tcp` section of a `VirtualService` applies
+    explanation: Correct. Istio reads `appProtocol` first and then the port name.
+  - id: b
+    text: As HTTP, so the `http` section applies
+    explanation: The name `http` selects HTTP, not `tcp`.
+  - id: c
+    text: As gRPC
+    explanation: The name would have to start with `grpc`.
+  - id: d
+    text: It rejects the port and reports an error
+    explanation: Istio accepts the port and treats it as TCP.
+  correct_option: a
+  explanation: Istio reads `appProtocol` first and then the port name.
+- id: ats014-020-03-q02
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Explain what the weight in a tcp route applies to.
+  source_readings:
+  - sections/section-020/module-03/course-02-per-connection-weights-connection-reuse-and-counting.md
+  prompt: What does a weight of 20 in a `tcp` route mean?
+  options:
+  - id: a
+    text: 20 percent of the requests go there
+    explanation: The proxy reads no requests on a TCP port.
+  - id: b
+    text: About 20 percent of new connections go to that destination
+    explanation: Correct. The proxy picks a destination once for each connection.
+  - id: c
+    text: 20 percent of the bytes of every connection go there
+    explanation: All bytes of one connection go to the pod it chose.
+  - id: d
+    text: Exactly 20 of every 100 connections go there
+    explanation: The pick is random, so the count varies from run to run.
+  correct_option: b
+  explanation: The proxy picks a destination once for each connection.
+- id: ats014-020-03-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Count a TCP split correctly.
+  source_readings:
+  - sections/section-020/module-03/course-02-per-connection-weights-connection-reuse-and-counting.md
+  prompt: You run one `curl` process that sends 50 requests over one connection. Which
+    pods answer?
+  options:
+  - id: a
+    text: The pods answer in the 80/20 ratio
+    explanation: The ratio appears only over many connections.
+  - id: b
+    text: Two pods share the 50 requests equally
+    explanation: There is no per-request split on a TCP route.
+  - id: c
+    text: One pod answers all 50, because one connection has one destination
+    explanation: Correct. The pick happens when the connection opens.
+  - id: d
+    text: No pod answers, because `curl` uses HTTP
+    explanation: "`curl` works over a TCP connection and the proxy forwards it."
+  correct_option: c
+  explanation: The pick happens when the connection opens.
+- id: ats014-020-03-q04
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Roll a TCP service forward with weight changes.
+  source_readings:
+  - sections/section-020/module-03/course-03-roll-a-tcp-service-forward-and-back.md
+  prompt: You change a `tcp` route from 100/0 to 0/100. What happens to a connection
+    that was open before the change?
+  options:
+  - id: a
+    text: It moves to the new pod at once
+    explanation: Open connections are not moved.
+  - id: b
+    text: The proxy closes it with a `503`
+    explanation: The proxy does not close connections for a weight change.
+  - id: c
+    text: It splits between both pods
+    explanation: A connection has one destination for its whole life.
+  - id: d
+    text: It stays on its original pod until it closes
+    explanation: Correct. A weight change affects only new connections.
+  correct_option: d
+  explanation: A weight change affects only new connections.
+- id: ats014-020-03-q05
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Diagnose a tcp route on a port named http.
+  source_readings:
+  - sections/section-020/module-03/course-03-roll-a-tcp-service-forward-and-back.md
+  prompt: A `tcp` route has weights 90/10, but a port named `http` always answers
+    from one pod, and `istioctl analyze` is silent. What is the cause?
+  options:
+  - id: a
+    text: Weights above 50 are ignored
+    explanation: Any weights that add up to 100 are valid.
+  - id: b
+    text: The `tcp` route never applies to a port that the proxy treats as HTTP
+    explanation: Correct. Both the Service and the `VirtualService` are valid, so
+      no error appears.
+  - id: c
+    text: The `DestinationRule` is missing the `tcp` field
+    explanation: Subsets define pod groups; the protocol comes from the port name.
+  - id: d
+    text: "`istiod` has not started"
+    explanation: Other configuration would also fail.
+  correct_option: b
+  explanation: Both the Service and the `VirtualService` are valid, so no error appears.
+- id: ats014-020-03-q06
+  type: single_choice
+  difficulty: advanced
+  learning_objective: Change TCP weights without replacing the list.
+  source_readings:
+  - sections/section-020/module-03/course-03-roll-a-tcp-service-forward-and-back.md
+  prompt: Which kind of patch changes only the two weights of a `tcp` route?
+  options:
+  - id: a
+    text: A JSON patch on the two weight paths
+    explanation: Correct. A JSON patch addresses single fields.
+  - id: b
+    text: A merge patch with the new `tcp` list
+    explanation: A merge patch replaces the whole `tcp` list.
+  - id: c
+    text: A `kubectl delete` followed by `kubectl apply`
+    explanation: This works, but it is not a patch and removes the route for a moment.
+  - id: d
+    text: A change to the Service port name
+    explanation: The port name selects the protocol, not the weights.
+  correct_option: a
+  explanation: A JSON patch addresses single fields.

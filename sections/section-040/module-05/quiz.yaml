@@ -1,0 +1,155 @@
+# Knowledge check for section 040, module 05. Listed in astrona.yaml as a
+# `type: quiz` entry right after the module summary. Contract:
+# schemas/question-bank.schema.json. Keep question ids stable once published.
+schema_version: 1
+kind: question_bank
+id: ats014-040-05
+course_id: ATS014
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam
+  questions.
+scope:
+  type: module
+  id: section-040/module-05
+  title: Connection Timeouts, Keepalive And Nearby Endpoints
+questions:
+- id: ats014-040-05-q01
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Tell the connect timeout from the route timeout.
+  source_readings:
+  - sections/section-040/module-05/course-01-limit-how-long-a-connection-attempt-waits.md
+  prompt: The connect timeout expires. What does the client get?
+  options:
+  - id: a
+    text: "`503` with the response flag `UF`"
+    explanation: Correct. This is a failed connection attempt.
+  - id: b
+    text: "`504` with the response flag `UT`"
+    explanation: That is the route `timeout` of a `VirtualService`.
+  - id: c
+    text: "`404` with the response flag `NR`"
+    explanation: "`NR` means no route."
+  - id: d
+    text: "`200` after one retry"
+    explanation: A failed connection attempt is not a success.
+  correct_option: a
+  explanation: This is a failed connection attempt.
+- id: ats014-040-05-q02
+  type: single_choice
+  difficulty: beginner
+  learning_objective: Find the field of the connect timeout.
+  source_readings:
+  - sections/section-040/module-05/course-01-limit-how-long-a-connection-attempt-waits.md
+  prompt: Where does the connect timeout live, and what is its default?
+  options:
+  - id: a
+    text: "`connectionPool.http.connectTimeout`, 10 seconds"
+    explanation: The `http` block has `idleTimeout`, not the connect timeout.
+  - id: b
+    text: "`connectionPool.tcp.connectTimeout`, one hour"
+    explanation: One hour is the default idle timeout.
+  - id: c
+    text: "`connectionPool.tcp.connectTimeout`, 10 seconds"
+    explanation: Correct. The `tcp` block holds the connect timeout.
+  - id: d
+    text: "`outlierDetection.connectTimeout`, 5 seconds"
+    explanation: "`outlierDetection` ejects endpoints."
+  correct_option: c
+  explanation: The `tcp` block holds the connect timeout.
+- id: ats014-040-05-q03
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Tell idleTimeout from maxConnectionDuration.
+  source_readings:
+  - sections/section-040/module-05/course-02-idle-keepalive-and-maximum-connection-age.md
+  prompt: Which setting closes a connection a fixed time after it opened, even when
+    it is busy?
+  options:
+  - id: a
+    text: "`http.idleTimeout`"
+    explanation: It closes a connection only after a period without active requests.
+  - id: b
+    text: "`tcp.maxConnectionDuration`"
+    explanation: Correct. It counts from the time the connection was established.
+  - id: c
+    text: "`tcp.tcpKeepalive`"
+    explanation: It sends probes on an idle connection.
+  - id: d
+    text: "`tcp.connectTimeout`"
+    explanation: It limits only the wait for a new connection to open.
+  correct_option: b
+  explanation: It counts from the time the connection was established.
+- id: ats014-040-05-q04
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Name the three tcpKeepalive fields.
+  source_readings:
+  - sections/section-040/module-05/course-02-idle-keepalive-and-maximum-connection-age.md
+  prompt: Which fields make up `tcpKeepalive`?
+  options:
+  - id: a
+    text: "`idle`, `retry` and `limit`"
+    explanation: These are not the field names.
+  - id: b
+    text: "`timeout`, `delay` and `count`"
+    explanation: These are not the field names.
+  - id: c
+    text: "`start`, `stop` and `period`"
+    explanation: These are not the field names.
+  - id: d
+    text: "`time`, `interval` and `probes`"
+    explanation: Correct. These are the delay, the gap and the allowed unanswered
+      probes.
+  correct_option: d
+  explanation: These are the delay, the gap and the allowed unanswered probes.
+- id: ats014-040-05-q05
+  type: single_choice
+  difficulty: intermediate
+  learning_objective: Prove PreferClose by counting answers.
+  source_readings:
+  - sections/section-040/module-05/course-03-prefer-nearby-endpoints-with-trafficdistribution.md
+  prompt: 'You set `spec.trafficDistribution: PreferClose` on a Service. How do you
+    prove it works?'
+  options:
+  - id: a
+    text: Read the weights in the `DestinationRule`
+    explanation: "`PreferClose` has no weights."
+  - id: b
+    text: 'Count which pods answer: requests from `zone-a` stay in `zone-a` while
+      an endpoint there is available'
+    explanation: Correct. The setting is a preference that you see in the answering
+      pods.
+  - id: c
+    text: Look for `UF` in the access log
+    explanation: "`UF` is a connection failure, not a zone check."
+  - id: d
+    text: Check the `exportTo` of the Service
+    explanation: "`exportTo` is unrelated."
+  correct_option: b
+  explanation: The setting is a preference that you see in the answering pods.
+- id: ats014-040-05-q06
+  type: single_choice
+  difficulty: advanced
+  learning_objective: State a limit of trafficDistribution.
+  source_readings:
+  - sections/section-040/module-05/course-03-prefer-nearby-endpoints-with-trafficdistribution.md
+  prompt: An endpoint in the same zone stays ready but returns errors. What does `PreferClose`
+    do?
+  options:
+  - id: a
+    text: It moves requests to another zone at once
+    explanation: It reacts only to endpoint availability.
+  - id: b
+    text: It ejects the endpoint for 30 seconds
+    explanation: Ejection is a feature of `outlierDetection`.
+  - id: c
+    text: 'Nothing: it does not notice the errors, so `outlierDetection` is needed
+      for failover'
+    explanation: Correct. Ejection comes from `outlierDetection`, not from `trafficDistribution`.
+  - id: d
+    text: It closes the connection with `UT`
+    explanation: "`UT` belongs to the route timeout."
+  correct_option: c
+  explanation: Ejection comes from `outlierDetection`, not from `trafficDistribution`.
