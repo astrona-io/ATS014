@@ -6,7 +6,7 @@ kind: question_bank
 id: ats014-010-01
 course_id: ATS014
 exam_code: ICA
-status: draft
+status: alpha
 provenance: Original practice material written for this course; not official exam questions.
 scope:
   type: module

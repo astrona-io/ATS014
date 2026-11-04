@@ -1,7 +1,7 @@
 ---
 schema_version: 1
 course_id: ATS014
-status: draft
+status: alpha
 banks:
 - id: ats014-000
   path: sections/section-000/quiz.yaml
